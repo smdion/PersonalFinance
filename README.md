@@ -86,20 +86,31 @@ A comprehensive web-based financial planning application that helps you calculat
 
 ## Getting Started
 
-### Option 1: Try Demo Data (Recommended for New Users)
-```bash
-# No installation needed! 
-# Simply visit the app and click "Load Demo Data"
-# Explore all features with realistic sample data
-```
+### Run Locally
 
-### Option 2: Run Locally
-
-#### Development Environment (Port 3000)
+#### Main Environment (Port 3000)
 1. **Clone the repository**
    ```bash
-   git clone [repository-url]
-   cd PersonalFinance/dev
+   git clone --branch main https://github.com/smdion/PersonalFinance.git
+   ```
+
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
+
+3. **Start the development server**
+   ```bash
+   npm run start:main
+   ```
+
+4. **Open your browser**
+   Navigate to `http://localhost:3000`
+
+#### Development Environment (Port 3001)
+1. **Clone the repository**
+   ```bash
+   git clone --branch dev https://github.com/smdion/PersonalFinance.git
    ```
 
 2. **Install dependencies**
@@ -113,34 +124,7 @@ A comprehensive web-based financial planning application that helps you calculat
    ```
 
 4. **Open your browser**
-   Navigate to `http://localhost:3000`
-
-#### Main Environment (Port 3001)
-1. **Start the main server** (from same directory)
-   ```bash
-   npm run start:main
-   ```
-
-2. **Open your browser**
    Navigate to `http://localhost:3001`
-
-#### Both Environments Simultaneously
-```bash
-# Terminal 1 - Development
-npm run start:dev
-
-# Terminal 2 - Main (in separate terminal)
-npm run start:main
-```
-
-#### Environment-Specific Builds
-```bash
-# Build for development
-npm run build:dev
-
-# Build for main/production
-npm run build:main
-```
 
 ## Usage Guide
 
