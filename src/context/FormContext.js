@@ -55,96 +55,49 @@ export const FormProvider = ({ children }) => {
     setFormDataState(initialFormData);
   }, []);
 
+  // Helper function to create budget items for a person
+  const createBudgetItemsForPerson = useCallback((personData, personPrefix, personLabel) => {
+    const items = [];
+    const contributions = [
+      { key: 'traditionalIraMonthly', label: 'Traditional IRA' },
+      { key: 'rothIraMonthly', label: 'Roth IRA' },
+      { key: 'retirementBrokerageMonthly', label: 'Retirement Brokerage' },
+      { key: 'longTermSavingsMonthly', label: 'Long-Term Savings' }
+    ];
+
+    contributions.forEach(({ key, label }) => {
+      if (personData[key] > 0) {
+        items.push({
+          id: `${personPrefix}-${key.replace('Monthly', '').replace(/([A-Z])/g, '-$1').toLowerCase()}`,
+          name: `${personLabel} ${label}`,
+          standard: personData[key],
+          tight: personData[key],
+          emergency: personData[key]
+        });
+      }
+    });
+
+    return items;
+  }, []);
+
   // Function to sync budget categories with budget impacting contributions
   const syncBudgetCategories = useCallback(() => {
     let budgetCategories = getBudgetData();
     const existingCategoryIndex = budgetCategories.findIndex(cat => cat.id === 'budget-impacting');
     
     // Create the budget impacting contributions items
-    const budgetItems = [];
+    let budgetItems = [];
     
     // Add your contributions
-    if (formData.yourBudgetImpacting.traditionalIraMonthly > 0) {
-      budgetItems.push({
-        id: 'your-traditional-ira',
-        name: 'Your Traditional IRA',
-        standard: formData.yourBudgetImpacting.traditionalIraMonthly,
-        tight: formData.yourBudgetImpacting.traditionalIraMonthly,
-        emergency: formData.yourBudgetImpacting.traditionalIraMonthly
-      });
-    }
-    
-    if (formData.yourBudgetImpacting.rothIraMonthly > 0) {
-      budgetItems.push({
-        id: 'your-roth-ira',
-        name: 'Your Roth IRA',
-        standard: formData.yourBudgetImpacting.rothIraMonthly,
-        tight: formData.yourBudgetImpacting.rothIraMonthly,
-        emergency: formData.yourBudgetImpacting.rothIraMonthly
-      });
-    }
-    
-    if (formData.yourBudgetImpacting.retirementBrokerageMonthly > 0) {
-      budgetItems.push({
-        id: 'your-retirement-brokerage',
-        name: 'Your Retirement Brokerage',
-        standard: formData.yourBudgetImpacting.retirementBrokerageMonthly,
-        tight: formData.yourBudgetImpacting.retirementBrokerageMonthly,
-        emergency: formData.yourBudgetImpacting.retirementBrokerageMonthly
-      });
-    }
-    
-    if (formData.yourBudgetImpacting.longTermSavingsMonthly > 0) {
-      budgetItems.push({
-        id: 'your-long-term-savings',
-        name: 'Your Long-Term Savings',
-        standard: formData.yourBudgetImpacting.longTermSavingsMonthly,
-        tight: formData.yourBudgetImpacting.longTermSavingsMonthly,
-        emergency: formData.yourBudgetImpacting.longTermSavingsMonthly
-      });
-    }
+    budgetItems = budgetItems.concat(
+      createBudgetItemsForPerson(formData.yourBudgetImpacting, 'your', 'Your')
+    );
 
     // Add spouse contributions if dual calculator is enabled
     if (formData.showSpouseCalculator) {
-      if (formData.spouseBudgetImpacting.traditionalIraMonthly > 0) {
-        budgetItems.push({
-          id: 'spouse-traditional-ira',
-          name: 'Spouse Traditional IRA',
-          standard: formData.spouseBudgetImpacting.traditionalIraMonthly,
-          tight: formData.spouseBudgetImpacting.traditionalIraMonthly,
-          emergency: formData.spouseBudgetImpacting.traditionalIraMonthly
-        });
-      }
-      
-      if (formData.spouseBudgetImpacting.rothIraMonthly > 0) {
-        budgetItems.push({
-          id: 'spouse-roth-ira',
-          name: 'Spouse Roth IRA',
-          standard: formData.spouseBudgetImpacting.rothIraMonthly,
-          tight: formData.spouseBudgetImpacting.rothIraMonthly,
-          emergency: formData.spouseBudgetImpacting.rothIraMonthly
-        });
-      }
-      
-      if (formData.spouseBudgetImpacting.retirementBrokerageMonthly > 0) {
-        budgetItems.push({
-          id: 'spouse-retirement-brokerage',
-          name: 'Spouse Retirement Brokerage',
-          standard: formData.spouseBudgetImpacting.retirementBrokerageMonthly,
-          tight: formData.spouseBudgetImpacting.retirementBrokerageMonthly,
-          emergency: formData.spouseBudgetImpacting.retirementBrokerageMonthly
-        });
-      }
-      
-      if (formData.spouseBudgetImpacting.longTermSavingsMonthly > 0) {
-        budgetItems.push({
-          id: 'spouse-long-term-savings',
-          name: 'Spouse Long-Term Savings',
-          standard: formData.spouseBudgetImpacting.longTermSavingsMonthly,
-          tight: formData.spouseBudgetImpacting.longTermSavingsMonthly,
-          emergency: formData.spouseBudgetImpacting.longTermSavingsMonthly
-        });
-      }
+      budgetItems = budgetItems.concat(
+        createBudgetItemsForPerson(formData.spouseBudgetImpacting, 'spouse', 'Spouse')
+      );
     }
 
     // Only create/update the category if there are items to show
@@ -171,7 +124,7 @@ export const FormProvider = ({ children }) => {
       setBudgetData(updatedCategories);
       window.dispatchEvent(new CustomEvent('budgetDataUpdated'));
     }
-  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator]);
+  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator, createBudgetItemsForPerson]);
 
   // Run sync immediately on mount
   useEffect(() => {

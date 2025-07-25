@@ -89,13 +89,6 @@ export const setPerformanceData = (data) => {
   return setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, data);
 };
 
-// Clear all app data
-export const clearAllData = () => {
-  Object.values(STORAGE_KEYS).forEach(key => {
-    removeFromStorage(key);
-  });
-};
-
 // Export all app data to JSON
 export const exportAllData = () => {
   const timestamp = new Date().toISOString();
@@ -268,32 +261,6 @@ export const dispatchGlobalEvent = (eventName, data = null) => {
   window.dispatchEvent(new CustomEvent(eventName, { detail: data }));
 };
 
-// Import demo data from public directory
-export const importDemoData = async () => {
-  try {
-    const response = await fetch('/demo/import_file.json');
-    if (!response.ok) {
-      throw new Error('Failed to load demo data');
-    }
-    
-    const demoData = await response.json();
-    const result = importAllData(demoData);
-    
-    if (result.success) {
-      // Dispatch events to notify all components - use consistent camelCase
-      dispatchGlobalEvent('paycheckDataUpdated');
-      dispatchGlobalEvent('budgetDataUpdated');
-      dispatchGlobalEvent('historicalDataUpdated');
-      return { success: true, message: 'Demo data loaded successfully!' };
-    } else {
-      return { success: false, message: result.message };
-    }
-  } catch (error) {
-    console.error('Error loading demo data:', error);
-    return { success: false, message: 'Failed to load demo data. Please try again.' };
-  }
-};
-
 // Enhanced export function with consistent timestamp format
 export const exportAllDataWithTimestamp = () => {
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -316,23 +283,19 @@ export const hasExistingData = () => {
     const performanceData = getPerformanceData();
     
     // Check if any meaningful data exists
-    const hasBudgets = budgetData && budgetData.length > 0;
-    const hasPaycheckInfo = paycheckData && (
-      (paycheckData.your && paycheckData.your.salary) ||
-      (paycheckData.spouse && paycheckData.spouse.salary)
-    );
-    const hasHistorical = historicalData && Object.keys(historicalData).length > 0;
-    const hasPerformance = performanceData && performanceData.length > 0;
-    
-    return hasBudgets || hasPaycheckInfo || hasHistorical || hasPerformance;
+    return (budgetData && budgetData.length > 0) ||
+           (paycheckData && ((paycheckData.your && paycheckData.your.salary) || 
+                            (paycheckData.spouse && paycheckData.spouse.salary))) ||
+           (historicalData && Object.keys(historicalData).length > 0) ||
+           (performanceData && performanceData.length > 0);
   } catch (error) {
     console.error('Error checking existing data:', error);
     return false;
   }
 };
 
-// Enhanced import demo data function with export option
-export const importDemoDataWithExportOption = async () => {
+// Consolidated demo data import function with export option
+export const importDemoData = async () => {
   try {
     // Check if user has existing data and offer export
     if (hasExistingData()) {
@@ -360,7 +323,7 @@ export const importDemoDataWithExportOption = async () => {
     const result = importAllData(demoData);
     
     if (result.success) {
-      // Dispatch events to notify all components - use consistent camelCase
+      // Dispatch events to notify all components
       dispatchGlobalEvent('paycheckDataUpdated');
       dispatchGlobalEvent('budgetDataUpdated');
       dispatchGlobalEvent('historicalDataUpdated');

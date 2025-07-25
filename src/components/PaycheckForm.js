@@ -74,13 +74,10 @@ const PaycheckForm = ({
   }, [globalSectionControl]);
 
   const toggleSection = (section) => {
-    setExpandedSections(prev => {
-      const newState = {
-        ...prev,
-        [section]: !prev[section]
-      };
-      return newState;
-    });
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   // Auto-calculate whenever any input changes
@@ -129,21 +126,12 @@ const PaycheckForm = ({
     }
   };
 
+  // Consolidated medical deduction handler
   const handleMedicalDeductionChange = (field, value) => {
-    // Remove currency formatting and non-numeric characters except decimal point
     const rawValue = value.replace(/[$,]/g, '');
     setMedicalDeductions(prev => ({
       ...prev,
       [field]: parseFloat(rawValue) || 0
-    }));
-  };
-
-  const handleEmployerHsaChange = (value) => {
-    // Remove currency formatting and non-numeric characters except decimal point
-    const rawValue = value.replace(/[$,]/g, '');
-    setMedicalDeductions(prev => ({
-      ...prev,
-      employerHsa: parseFloat(rawValue) || 0
     }));
   };
 
@@ -235,22 +223,18 @@ const PaycheckForm = ({
     }
   };
 
-  // Automatically update age-related checkboxes
+  // Consolidated age-related effects
   useEffect(() => {
     const age = calculateAge(birthday);
-    if (age >= 50) {
-      setRetirementOptions((prev) => ({ ...prev, isOver50: true }));
-      setIsIraOver50(true);
-    } else {
-      setRetirementOptions((prev) => ({ ...prev, isOver50: false }));
-      setIsIraOver50(false);
-    }
-    if (age >= 55) {
-      setIsHsaOver55(true);
-    } else {
-      setIsHsaOver55(false);
-    }
-  }, [birthday]);
+    
+    // Update retirement age flags
+    const isOver50 = age >= 50;
+    setRetirementOptions((prev) => ({ ...prev, isOver50 }));
+    setIsIraOver50(isOver50);
+    
+    // Update HSA age flag
+    setIsHsaOver55(age >= 55);
+  }, [birthday, setRetirementOptions]);
 
   const calculateBonusAfterTax = () => {
     const bonus = getEffectiveBonus();
@@ -619,7 +603,7 @@ const PaycheckForm = ({
                         id={`employerHsa-${personName}`}
                         className="form-input"
                         value={formatDeductionDisplay(medicalDeductions.employerHsa || 0)}
-                        onChange={(e) => handleEmployerHsaChange(e.target.value)}
+                        onChange={(e) => handleMedicalDeductionChange('employerHsa', e.target.value)}
                         placeholder="$0.00"
                       />
                     </div>
