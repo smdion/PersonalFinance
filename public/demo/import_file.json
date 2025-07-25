@@ -1,0 +1,927 @@
+{
+    "exportedAt": "2025-01-15T10:00:00.000Z",
+    "version": "1.0.0",
+    "budgetData": [
+      {
+        "id": "budget-impacting",
+        "name": "Budget Impacting Contributions",
+        "isAutoManaged": true,
+        "items": [
+          {
+            "id": "your-roth-ira",
+            "name": "Your Roth IRA",
+            "standard": 500,
+            "tight": 500,
+            "emergency": 500
+          },
+          {
+            "id": "spouse-roth-ira",
+            "name": "Spouse Roth IRA",
+            "standard": 500,
+            "tight": 500,
+            "emergency": 500
+          }
+        ]
+      },
+      {
+        "id": 1753404148542,
+        "name": "Food",
+        "items": [
+          {
+            "id": 1753404195982,
+            "name": "Groceries",
+            "standard": 400,
+            "tight": 300,
+            "emergency": 200
+          },
+          {
+            "id": 1753404199986,
+            "name": "Restaurants",
+            "standard": 150,
+            "tight": 75,
+            "emergency": 0
+          },
+          {
+            "id": 1753404203557,
+            "name": "Restaurants - Alex",
+            "standard": 50,
+            "tight": 25,
+            "emergency": 0
+          },
+          {
+            "id": 1753404206760,
+            "name": "Restaurants - Jordan",
+            "standard": 50,
+            "tight": 25,
+            "emergency": 0
+          },
+          {
+            "id": 1753404209751,
+            "name": "Coffee & Drinks",
+            "standard": 75,
+            "tight": 40,
+            "emergency": 0
+          }
+        ]
+      },
+      {
+        "id": 1753404153810,
+        "name": "Entertainment",
+        "items": [
+          {
+            "id": 1753404237091,
+            "name": "Subscriptions",
+            "standard": 60,
+            "tight": 30,
+            "emergency": 0
+          },
+          {
+            "id": 1753404239090,
+            "name": "Personal Spending - Jordan",
+            "standard": 100,
+            "tight": 50,
+            "emergency": 0
+          },
+          {
+            "id": 1753404241877,
+            "name": "Personal Spending - Alex",
+            "standard": 100,
+            "tight": 50,
+            "emergency": 0
+          },
+          {
+            "id": 1753404244967,
+            "name": "Movies & Shows",
+            "standard": 40,
+            "tight": 20,
+            "emergency": 0
+          },
+          {
+            "id": 1753404247907,
+            "name": "Technology",
+            "standard": 150,
+            "tight": 50,
+            "emergency": 0
+          },
+          {
+            "id": 1753404251835,
+            "name": "Gifts",
+            "standard": 80,
+            "tight": 40,
+            "emergency": 0
+          },
+          {
+            "id": 1753404255247,
+            "name": "Date Night",
+            "standard": 120,
+            "tight": 60,
+            "emergency": 0
+          }
+        ]
+      },
+      {
+        "id": 1753404158299,
+        "name": "Housing",
+        "items": [
+          {
+            "id": 1753404290562,
+            "name": "Rent/Mortgage",
+            "standard": 1800,
+            "tight": 1800,
+            "emergency": 1800
+          },
+          {
+            "id": 1753404294285,
+            "name": "Property Taxes",
+            "standard": 300,
+            "tight": 300,
+            "emergency": 300
+          },
+          {
+            "id": 1753404297264,
+            "name": "HOA Fees",
+            "standard": 50,
+            "tight": 50,
+            "emergency": 50
+          }
+        ]
+      },
+      {
+        "id": 1753404165679,
+        "name": "Home Maintenance",
+        "items": [
+          {
+            "id": 1753404307928,
+            "name": "General Household",
+            "standard": 200,
+            "tight": 100,
+            "emergency": 50
+          },
+          {
+            "id": 1753404312059,
+            "name": "Home Improvement",
+            "standard": 100,
+            "tight": 50,
+            "emergency": 0
+          },
+          {
+            "id": 1753404314778,
+            "name": "Repairs & Maintenance",
+            "standard": 75,
+            "tight": 50,
+            "emergency": 25
+          },
+          {
+            "id": 1753404317372,
+            "name": "Pest Control",
+            "standard": 25,
+            "tight": 25,
+            "emergency": 25
+          },
+          {
+            "id": 1753404320394,
+            "name": "Annual Inspections",
+            "standard": 15,
+            "tight": 15,
+            "emergency": 15
+          },
+          {
+            "id": 1753404322877,
+            "name": "HVAC Service",
+            "standard": 20,
+            "tight": 20,
+            "emergency": 20
+          },
+          {
+            "id": 1753404325658,
+            "name": "Garden & Landscaping",
+            "standard": 60,
+            "tight": 30,
+            "emergency": 0
+          },
+          {
+            "id": 1753404329988,
+            "name": "Lawn Care",
+            "standard": 40,
+            "tight": 20,
+            "emergency": 0
+          },
+          {
+            "id": 1753404332547,
+            "name": "Seasonal Projects",
+            "standard": 30,
+            "tight": 15,
+            "emergency": 0
+          }
+        ]
+      },
+      {
+        "id": 1753404171280,
+        "name": "Taxes",
+        "items": [
+          {
+            "id": 1753404355177,
+            "name": "Tax Preparation",
+            "standard": 75,
+            "tight": 75,
+            "emergency": 75
+          }
+        ]
+      },
+      {
+        "id": 1753404175658,
+        "name": "Insurance",
+        "items": [
+          {
+            "id": 1753404366859,
+            "name": "Auto Insurance",
+            "standard": 140,
+            "tight": 140,
+            "emergency": 140
+          },
+          {
+            "id": 1753404370029,
+            "name": "Life Insurance",
+            "standard": 45,
+            "tight": 45,
+            "emergency": 45
+          },
+          {
+            "id": 1753404373164,
+            "name": "Homeowners Insurance",
+            "standard": 120,
+            "tight": 120,
+            "emergency": 120
+          },
+          {
+            "id": 1753404376585,
+            "name": "Umbrella Policy",
+            "standard": 35,
+            "tight": 35,
+            "emergency": 35
+          }
+        ]
+      },
+      {
+        "id": 1753404182482,
+        "name": "Personal Care",
+        "items": [
+          {
+            "id": 1753404393903,
+            "name": "Health & Beauty - Alex",
+            "standard": 80,
+            "tight": 50,
+            "emergency": 25
+          },
+          {
+            "id": 1753404397118,
+            "name": "Health & Beauty - Jordan",
+            "standard": 60,
+            "tight": 40,
+            "emergency": 20
+          },
+          {
+            "id": 1753404399504,
+            "name": "Clothing - Jordan",
+            "standard": 75,
+            "tight": 40,
+            "emergency": 0
+          },
+          {
+            "id": 1753404402057,
+            "name": "Clothing - Alex",
+            "standard": 100,
+            "tight": 50,
+            "emergency": 0
+          },
+          {
+            "id": 1753404404720,
+            "name": "Haircuts",
+            "standard": 35,
+            "tight": 25,
+            "emergency": 0
+          },
+          {
+            "id": 1753404407534,
+            "name": "Gym Membership",
+            "standard": 50,
+            "tight": 25,
+            "emergency": 0
+          }
+        ]
+      },
+      {
+        "id": 1753404187870,
+        "name": "Transportation",
+        "items": [
+          {
+            "id": 1753404431055,
+            "name": "Fuel",
+            "standard": 120,
+            "tight": 100,
+            "emergency": 80
+          },
+          {
+            "id": 1753404435731,
+            "name": "Car Maintenance",
+            "standard": 100,
+            "tight": 75,
+            "emergency": 50
+          }
+        ]
+      },
+      {
+        "id": 1753404192671,
+        "name": "Utilities",
+        "items": [
+          {
+            "id": 1753404445775,
+            "name": "Cell Phone",
+            "standard": 85,
+            "tight": 85,
+            "emergency": 85
+          },
+          {
+            "id": 1753404448624,
+            "name": "Internet",
+            "standard": 75,
+            "tight": 75,
+            "emergency": 75
+          },
+          {
+            "id": 1753404451512,
+            "name": "Electricity",
+            "standard": 120,
+            "tight": 100,
+            "emergency": 80
+          },
+          {
+            "id": 1753404454435,
+            "name": "Water/Sewer",
+            "standard": 55,
+            "tight": 55,
+            "emergency": 55
+          },
+          {
+            "id": 1753404457406,
+            "name": "Trash & Recycling",
+            "standard": 30,
+            "tight": 30,
+            "emergency": 30
+          },
+          {
+            "id": 1753404462286,
+            "name": "Natural Gas",
+            "standard": 70,
+            "tight": 60,
+            "emergency": 50
+          }
+        ]
+      },
+      {
+        "id": 1753404506504,
+        "name": "Charitable Giving",
+        "items": [
+          {
+            "id": 1753404508718,
+            "name": "Monthly Donations",
+            "standard": 200,
+            "tight": 100,
+            "emergency": 0
+          },
+          {
+            "id": 1753404514132,
+            "name": "Annual Giving",
+            "standard": 150,
+            "tight": 75,
+            "emergency": 0
+          }
+        ]
+      },
+      {
+        "id": 1753408791568,
+        "name": "Savings Goals",
+        "items": [
+          {
+            "id": 1753408806356,
+            "name": "Emergency Fund",
+            "standard": 800,
+            "tight": 400,
+            "emergency": 0
+          },
+          {
+            "id": 1753408810915,
+            "name": "Car Replacement",
+            "standard": 250,
+            "tight": 125,
+            "emergency": 0
+          },
+          {
+            "id": 1753408814872,
+            "name": "Vacation Fund",
+            "standard": 300,
+            "tight": 150,
+            "emergency": 0
+          }
+        ]
+      }
+    ],
+    "paycheckData": {
+      "your": {
+        "name": "Jordan",
+        "employer": "TechCorp",
+        "birthday": "1990-05-15",
+        "salary": "85000",
+        "payPeriod": "biWeekly",
+        "filingStatus": "marriedJointly",
+        "w4Type": "new",
+        "w4Options": {
+          "allowances": 1,
+          "qualifyingChildren": 0,
+          "otherDependents": 0,
+          "additionalIncome": 0,
+          "extraWithholding": 0,
+          "multipleJobs": true
+        },
+        "retirementOptions": {
+          "traditional401kPercent": 0,
+          "roth401kPercent": 8,
+          "isOver50": false
+        },
+        "medicalDeductions": {
+          "dental": 15,
+          "medical": 75,
+          "vision": 8,
+          "shortTermDisability": 25,
+          "longTermDisability": 18,
+          "hsa": 150,
+          "employerHsa": 500
+        },
+        "esppDeductionPercent": 0,
+        "budgetImpacting": {
+          "traditionalIraMonthly": 0,
+          "rothIraMonthly": 500,
+          "retirementBrokerageMonthly": 0,
+          "longtermSavingsMonthly": 0
+        },
+        "bonusMultiplier": 100,
+        "bonusTarget": 10,
+        "hsaCoverageType": "self",
+        "payWeekType": "even",
+        "netTakeHomePaycheck": 2145.83
+      },
+      "spouse": {
+        "name": "Alex",
+        "employer": "FinanceInc",
+        "birthday": "1988-11-22",
+        "salary": "72000",
+        "payPeriod": "biWeekly",
+        "filingStatus": "marriedJointly",
+        "w4Type": "new",
+        "w4Options": {
+          "allowances": 1,
+          "qualifyingChildren": 0,
+          "otherDependents": 0,
+          "additionalIncome": 0,
+          "extraWithholding": 0,
+          "multipleJobs": true
+        },
+        "retirementOptions": {
+          "traditional401kPercent": 12,
+          "roth401kPercent": 0,
+          "isOver50": false
+        },
+        "medicalDeductions": {
+          "dental": 12,
+          "medical": 60,
+          "vision": 6,
+          "shortTermDisability": 0,
+          "longTermDisability": 0,
+          "hsa": 125,
+          "employerHsa": 300
+        },
+        "esppDeductionPercent": 5,
+        "budgetImpacting": {
+          "traditionalIraMonthly": 0,
+          "rothIraMonthly": 500,
+          "retirementBrokerageMonthly": 0,
+          "longtermSavingsMonthly": 0
+        },
+        "bonusMultiplier": 100,
+        "bonusTarget": 8,
+        "hsaCoverageType": "self",
+        "payWeekType": "odd",
+        "netTakeHomePaycheck": 1856.45
+      },
+      "settings": {
+        "showSpouseCalculator": true
+      }
+    },
+    "formData": {
+      "combinedMonthlyTakeHome": 8004.56,
+      "combinedTakeHomePerPayPeriod": 4002.28,
+      "biWeeklyType": "even",
+      "yourBudgetImpacting": {
+        "traditionalIraMonthly": 0,
+        "rothIraMonthly": 500,
+        "retirementBrokerageMonthly": 0,
+        "longtermSavingsMonthly": 0
+      },
+      "spouseBudgetImpacting": {
+        "traditionalIraMonthly": 0,
+        "rothIraMonthly": 500,
+        "retirementBrokerageMonthly": 0,
+        "longtermSavingsMonthly": 0
+      },
+      "showSpouseCalculator": true
+    },
+    "appSettings": {},
+    "historicalData": {
+      "2015": {
+        "year": 2015,
+        "users": {
+          "Jordan": {
+            "employer": "StartupXYZ",
+            "salary": 45000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "LocalBank",
+            "salary": 38000,
+            "bonus": 0
+          }
+        },
+        "agi": 75000,
+        "ssaEarnings": 78000,
+        "effectiveTaxRate": 0.12,
+        "taxPaid": 9000,
+        "netWorthPlus": 15000,
+        "netWorthMinus": 25000,
+        "taxFree": 5000,
+        "taxDeferred": 8000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 2000,
+        "cash": 12000,
+        "house": 0,
+        "mortgage": 0,
+        "othAsset": 8000,
+        "retirement": 13000,
+        "othLia": 35000,
+        "homeImprovements": 0,
+        "liabilities": 35000
+      },
+      "2016": {
+        "year": 2016,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 52000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "LocalBank",
+            "salary": 42000,
+            "bonus": 0
+          }
+        },
+        "agi": 89000,
+        "ssaEarnings": 92000,
+        "effectiveTaxRate": 0.13,
+        "taxPaid": 11570,
+        "netWorthPlus": 45000,
+        "netWorthMinus": 25000,
+        "taxFree": 12000,
+        "taxDeferred": 18000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 3500,
+        "cash": 25000,
+        "house": 0,
+        "mortgage": 0,
+        "othAsset": 11500,
+        "retirement": 30000,
+        "othLia": 0,
+        "homeImprovements": 0,
+        "liabilities": 25000
+      },
+      "2017": {
+        "year": 2017,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 58000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 48000,
+            "bonus": 0
+          }
+        },
+        "agi": 98000,
+        "ssaEarnings": 105000,
+        "effectiveTaxRate": 0.14,
+        "taxPaid": 13720,
+        "netWorthPlus": 85000,
+        "netWorthMinus": 15000,
+        "taxFree": 25000,
+        "taxDeferred": 35000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 5000,
+        "cash": 20000,
+        "house": 0,
+        "mortgage": 0,
+        "othAsset": 15000,
+        "retirement": 60000,
+        "othLia": 0,
+        "homeImprovements": 0,
+        "liabilities": 15000
+      },
+      "2018": {
+        "year": 2018,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 62000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 52000,
+            "bonus": 0
+          }
+        },
+        "agi": 108000,
+        "ssaEarnings": 112000,
+        "effectiveTaxRate": 0.15,
+        "taxPaid": 16200,
+        "netWorthPlus": 135000,
+        "netWorthMinus": 185000,
+        "taxFree": 40000,
+        "taxDeferred": 45000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 7000,
+        "cash": 18000,
+        "house": 275000,
+        "mortgage": 220000,
+        "othAsset": 25000,
+        "retirement": 85000,
+        "othLia": 0,
+        "homeImprovements": 0,
+        "liabilities": 220000
+      },
+      "2019": {
+        "year": 2019,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 68000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 56000,
+            "bonus": 0
+          }
+        },
+        "agi": 118000,
+        "ssaEarnings": 122000,
+        "effectiveTaxRate": 0.16,
+        "taxPaid": 18880,
+        "netWorthPlus": 195000,
+        "netWorthMinus": 210000,
+        "taxFree": 65000,
+        "taxDeferred": 60000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 10000,
+        "cash": 25000,
+        "house": 285000,
+        "mortgage": 210000,
+        "othAsset": 35000,
+        "retirement": 125000,
+        "othLia": 0,
+        "homeImprovements": 5000,
+        "liabilities": 210000
+      },
+      "2020": {
+        "year": 2020,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 72000,
+            "bonus": 2000
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 58000,
+            "bonus": 0
+          }
+        },
+        "agi": 125000,
+        "ssaEarnings": 128000,
+        "effectiveTaxRate": 0.17,
+        "taxPaid": 21250,
+        "netWorthPlus": 285000,
+        "netWorthMinus": 195000,
+        "taxFree": 95000,
+        "taxDeferred": 75000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 15000,
+        "cash": 35000,
+        "house": 310000,
+        "mortgage": 195000,
+        "othAsset": 40000,
+        "retirement": 170000,
+        "othLia": 0,
+        "homeImprovements": 10000,
+        "liabilities": 195000
+      },
+      "2021": {
+        "year": 2021,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 78000,
+            "bonus": 3000
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 62000,
+            "bonus": 2500
+          }
+        },
+        "agi": 138000,
+        "ssaEarnings": 142000,
+        "effectiveTaxRate": 0.18,
+        "taxPaid": 24840,
+        "netWorthPlus": 395000,
+        "netWorthMinus": 180000,
+        "taxFree": 135000,
+        "taxDeferred": 95000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 20000,
+        "cash": 45000,
+        "house": 355000,
+        "mortgage": 180000,
+        "othAsset": 50000,
+        "retirement": 230000,
+        "othLia": 0,
+        "homeImprovements": 15000,
+        "liabilities": 180000
+      },
+      "2022": {
+        "year": 2022,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 82000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 66000,
+            "bonus": 3500
+          }
+        },
+        "agi": 145000,
+        "ssaEarnings": 148000,
+        "effectiveTaxRate": 0.19,
+        "taxPaid": 27550,
+        "netWorthPlus": 475000,
+        "netWorthMinus": 165000,
+        "taxFree": 165000,
+        "taxDeferred": 115000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 25000,
+        "cash": 50000,
+        "house": 385000,
+        "mortgage": 165000,
+        "othAsset": 55000,
+        "retirement": 280000,
+        "othLia": 0,
+        "homeImprovements": 20000,
+        "liabilities": 165000
+      },
+      "2023": {
+        "year": 2023,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 85000,
+            "bonus": 0
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 70000,
+            "bonus": 4000
+          }
+        },
+        "agi": 152000,
+        "ssaEarnings": 155000,
+        "effectiveTaxRate": 0.20,
+        "taxPaid": 30400,
+        "netWorthPlus": 575000,
+        "netWorthMinus": 150000,
+        "taxFree": 205000,
+        "taxDeferred": 140000,
+        "rBrokerage": 0,
+        "ltBrokerage": 0,
+        "espp": 0,
+        "hsa": 30000,
+        "cash": 55000,
+        "house": 415000,
+        "mortgage": 150000,
+        "othAsset": 60000,
+        "retirement": 345000,
+        "othLia": 0,
+        "homeImprovements": 25000,
+        "liabilities": 150000
+      },
+      "2024": {
+        "year": 2024,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 85000,
+            "bonus": 5000
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 72000,
+            "bonus": 4500
+          }
+        },
+        "agi": 158500,
+        "ssaEarnings": 0,
+        "effectiveTaxRate": 0.21,
+        "taxPaid": 33285,
+        "netWorthPlus": 685000,
+        "netWorthMinus": 135000,
+        "taxFree": 255000,
+        "taxDeferred": 165000,
+        "rBrokerage": 5000,
+        "ltBrokerage": 3000,
+        "espp": 0,
+        "hsa": 35000,
+        "cash": 60000,
+        "house": 445000,
+        "mortgage": 135000,
+        "othAsset": 65000,
+        "retirement": 420000,
+        "othLia": 0,
+        "homeImprovements": 30000,
+        "liabilities": 135000
+      },
+      "2025": {
+        "year": 2025,
+        "users": {
+          "Jordan": {
+            "employer": "TechCorp",
+            "salary": 85000,
+            "bonus": 2500
+          },
+          "Alex": {
+            "employer": "FinanceInc",
+            "salary": 72000,
+            "bonus": 5000
+          }
+        },
+        "agi": 162500,
+        "ssaEarnings": 0,
+        "effectiveTaxRate": 0,
+        "taxPaid": 0,
+        "netWorthPlus": 795000,
+        "netWorthMinus": 120000,
+        "taxFree": 305000,
+        "taxDeferred": 190000,
+        "rBrokerage": 8000,
+        "ltBrokerage": 5000,
+        "espp": 2500,
+        "hsa": 40000,
+        "cash": 65000,
+        "house": 475000,
+        "mortgage": 120000,
+        "othAsset": 70000,
+        "retirement": 495000,
+        "othLia": 0,
+        "homeImprovements": 0,
+        "liabilities": 120000
+      }
+    },
+    "performanceData": []
+  }
