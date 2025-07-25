@@ -87,6 +87,7 @@ const Welcome = () => {
                   <li>2025 Tax-Accurate Paycheck Calculator with dual income support</li>
                   <li>Complete Budget Planning with auto-sync and drag & drop categories</li>
                   <li>Historical Financial Data Tracking with 20+ metrics per year</li>
+                  <li>Account Performance Tracker with detailed investment analytics</li>
                   <li>Net Worth Dashboard with interactive charts and analytics</li>
                   <li>Data Import/Export with CSV templates and JSON backup</li>
                   <li>Demo data to explore all features instantly</li>
@@ -100,7 +101,7 @@ const Welcome = () => {
                   <li><strong>Advanced Savings:</strong> Goal tracking, automated savings recommendations</li>
                   <li><strong>Mortgage Tools:</strong> Refinancing calculator, extra payment analysis</li>
                   <li><strong>Enhanced Visualizations:</strong> Interactive charts, trend analysis, forecasting</li>
-                  <li><strong>Market Performance:</strong> Portfolio tracking, investment analysis, ROI metrics</li>
+                  <li><strong>Portfolio Analytics:</strong> Asset allocation, risk analysis, rebalancing recommendations</li>
                   <li><strong>API Integration:</strong> Bank connections, real-time data sync, automated updates</li>
                   <li><strong>Mobile App:</strong> iOS and Android applications with offline sync</li>
                 </ul>
@@ -263,14 +264,14 @@ const Welcome = () => {
               <div className="calculator-icon">📈</div>
               <h3>Performance Tracker</h3>
               <p>
-                Track individual account balances, contributions, gains/losses, and ROI. 
+                Track individual account balances, contributions, gains/losses, and returns. 
                 Monitor 401k, IRA, HSA, and brokerage accounts with detailed performance analytics.
               </p>
               <div className="calculator-features">
                 <span className="feature-tag">Account Tracking</span>
-                <span className="feature-tag">ROI Analysis</span>
-                <span className="feature-tag">CSV Import</span>
-                <span className="feature-tag">Performance Metrics</span>
+                <span className="feature-tag">Gain/Loss Analysis</span>
+                <span className="feature-tag">Return Calculations</span>
+                <span className="feature-tag">Portfolio Summary</span>
               </div>
             </Link>
           </div>
@@ -334,7 +335,7 @@ const Welcome = () => {
                   <div className="step-number">3</div>
                   <div className="step-content">
                     <h4>Track Account Performance</h4>
-                    <p>Add your investment accounts to the Performance Tracker to monitor balances, contributions, and returns over time.</p>
+                    <p>Add your investment accounts to the Performance Tracker to monitor balances, contributions, gains/losses, and returns over time.</p>
                   </div>
                 </div>
                 <div className="step">
