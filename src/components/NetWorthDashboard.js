@@ -93,7 +93,7 @@ const NetWorthDashboard = () => {
     const lastValue = yearData[lastYear]?.[field] || 0;
     const numYears = parseInt(lastYear) - parseInt(firstYear);
     
-    if (firstValue === 0 || numYears === 0) return 0;
+    if (firstValue <= 0 || numYears === 0) return 0;
     return (Math.pow(lastValue / firstValue, 1 / numYears) - 1) * 100;
   };
 

@@ -21,7 +21,7 @@ const Welcome = () => {
   const loadDemoData = async () => {
     try {
       // Check if user has existing data
-      const { hasExistingData, exportAllDataWithTimestamp } = await import('../utils/localStorage');
+      const { hasExistingData, importDemoDataWithExportOption } = await import('../utils/localStorage');
       
       if (hasExistingData()) {
         const shouldExport = window.confirm(
@@ -30,6 +30,7 @@ const Welcome = () => {
         );
         
         if (shouldExport) {
+          const { exportAllDataWithTimestamp } = await import('../utils/localStorage');
           const exportResult = exportAllDataWithTimestamp();
           if (exportResult.success) {
             alert('Your data has been exported successfully! Now loading demo data...');
@@ -39,16 +40,7 @@ const Welcome = () => {
         }
       }
       
-      const response = await fetch('/demo/import_file.json');
-      if (!response.ok) {
-        throw new Error('Failed to load demo data');
-      }
-      
-      const demoData = await response.json();
-      
-      // Import demo data using the same function from localStorage utilities
-      const { importAllData } = await import('../utils/localStorage');
-      const result = importAllData(demoData);
+      const result = await importDemoDataWithExportOption();
       
       if (result.success) {
         if (window.confirm('Demo data loaded successfully! The page will refresh to show the demo data. You can explore all features with realistic financial data.')) {
