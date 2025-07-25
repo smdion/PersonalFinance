@@ -599,6 +599,16 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 30px;
   margin-bottom: 30px;
+  justify-content: center;
+}
+
+/* When there's only one calculator, limit its width and center it */
+.calculators-grid:has(.calculator-card:only-child) {
+  grid-template-columns: minmax(500px, 550px);
+  justify-content: center;
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .calculator-card {
@@ -1898,6 +1908,11 @@ body {
   .calculators-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  
+  .calculators-grid:has(.calculator-card:only-child) {
+    grid-template-columns: 1fr;
+    max-width: none;
   }
   
   .calculator-card {
