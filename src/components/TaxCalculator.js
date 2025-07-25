@@ -1,13 +1,12 @@
-import React, { useState, useCallback, useContext, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useContext, useEffect } from 'react';
 import { calculateTakeHomePay } from '../utils/taxCalculator';
-import { W4_CONFIGS, CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
-import { calculatePercentageOfMax, formatCurrency } from '../utils/calculationHelpers';
+import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
 import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData } from '../utils/localStorage';
 
 const TaxCalculator = () => {
-  const { updateFormData, updateBudgetImpacting, resetFormData } = useContext(FormContext);
+  const { updateFormData, updateBudgetImpacting } = useContext(FormContext);
 
   // Remove settings menu state and ref
   

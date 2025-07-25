@@ -280,7 +280,7 @@ export const importDemoData = async () => {
     const result = importAllData(demoData);
     
     if (result.success) {
-      // Dispatch events to notify all components
+      // Dispatch events to notify all components - use consistent camelCase
       dispatchGlobalEvent('paycheckDataUpdated');
       dispatchGlobalEvent('budgetDataUpdated');
       dispatchGlobalEvent('historicalDataUpdated');
@@ -360,7 +360,7 @@ export const importDemoDataWithExportOption = async () => {
     const result = importAllData(demoData);
     
     if (result.success) {
-      // Dispatch events to notify all components
+      // Dispatch events to notify all components - use consistent camelCase
       dispatchGlobalEvent('paycheckDataUpdated');
       dispatchGlobalEvent('budgetDataUpdated');
       dispatchGlobalEvent('historicalDataUpdated');

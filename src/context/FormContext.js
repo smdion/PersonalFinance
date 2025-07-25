@@ -21,13 +21,13 @@ export const FormProvider = ({ children }) => {
       traditionalIraMonthly: 0,
       rothIraMonthly: 0,
       retirementBrokerageMonthly: 0,
-      longtermSavingsMonthly: 0,
+      longTermSavingsMonthly: 0, // Changed from longtermSavingsMonthly
     },
     spouseBudgetImpacting: {
       traditionalIraMonthly: 0,
       rothIraMonthly: 0,
       retirementBrokerageMonthly: 0,
-      longtermSavingsMonthly: 0,
+      longTermSavingsMonthly: 0, // Changed from longtermSavingsMonthly
     },
     showSpouseCalculator: true,
   };
@@ -94,13 +94,13 @@ export const FormProvider = ({ children }) => {
       });
     }
     
-    if (formData.yourBudgetImpacting.longtermSavingsMonthly > 0) {
+    if (formData.yourBudgetImpacting.longTermSavingsMonthly > 0) {
       budgetItems.push({
-        id: 'your-longterm-savings',
+        id: 'your-long-term-savings',
         name: 'Your Long-Term Savings',
-        standard: formData.yourBudgetImpacting.longtermSavingsMonthly,
-        tight: formData.yourBudgetImpacting.longtermSavingsMonthly,
-        emergency: formData.yourBudgetImpacting.longtermSavingsMonthly
+        standard: formData.yourBudgetImpacting.longTermSavingsMonthly,
+        tight: formData.yourBudgetImpacting.longTermSavingsMonthly,
+        emergency: formData.yourBudgetImpacting.longTermSavingsMonthly
       });
     }
 
@@ -136,13 +136,13 @@ export const FormProvider = ({ children }) => {
         });
       }
       
-      if (formData.spouseBudgetImpacting.longtermSavingsMonthly > 0) {
+      if (formData.spouseBudgetImpacting.longTermSavingsMonthly > 0) {
         budgetItems.push({
-          id: 'spouse-longterm-savings',
+          id: 'spouse-long-term-savings',
           name: 'Spouse Long-Term Savings',
-          standard: formData.spouseBudgetImpacting.longtermSavingsMonthly,
-          tight: formData.spouseBudgetImpacting.longtermSavingsMonthly,
-          emergency: formData.spouseBudgetImpacting.longtermSavingsMonthly
+          standard: formData.spouseBudgetImpacting.longTermSavingsMonthly,
+          tight: formData.spouseBudgetImpacting.longTermSavingsMonthly,
+          emergency: formData.spouseBudgetImpacting.longTermSavingsMonthly
         });
       }
     }
