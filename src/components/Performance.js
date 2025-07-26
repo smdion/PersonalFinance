@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { getPerformanceData, setPerformanceData } from '../utils/localStorage';
+import { getPerformanceData, setPerformanceData, STORAGE_KEYS } from '../utils/localStorage';
+import { calculateROI } from '../utils/calculationHelpers';
 import DataManager from './DataManager';
 
 // Account types for dropdown
@@ -97,11 +98,14 @@ const Performance = () => {
     gains: parseFloat(formData.gains) || 0,
     fees: parseFloat(formData.fees) || 0,
     withdrawals: parseFloat(formData.withdrawals) || 0,
-    // Calculate derived fields
+    // Calculate derived fields using utility function
     totalContributions: (parseFloat(formData.contributions) || 0) + (parseFloat(formData.employerMatch) || 0),
     netGains: (parseFloat(formData.gains) || 0) - (parseFloat(formData.fees) || 0),
-    roi: (parseFloat(formData.balance) || 0) > 0 ? 
-      (((parseFloat(formData.gains) || 0) - (parseFloat(formData.fees) || 0)) / (parseFloat(formData.balance) || 1)) * 100 : 0
+    roi: calculateROI(
+      parseFloat(formData.gains) || 0,
+      parseFloat(formData.fees) || 0,
+      parseFloat(formData.balance) || 0
+    )
   });
 
   // CSV template data
@@ -151,24 +155,35 @@ const Performance = () => {
     
     if (!entryId) return null;
     
+    const gains = parseFloat(values[8]) || 0;
+    const fees = parseFloat(values[9]) || 0;
+    const balance = parseFloat(values[5]) || 0;
+    
     return {
       entryId: entryId,
       accountName: values[1] || '',
       accountType: values[2] || ACCOUNT_TYPES[0],
       employer: values[3] || '',
       year: parseInt(values[4]) || '',
-      balance: parseFloat(values[5]) || 0,
+      balance: balance,
       contributions: parseFloat(values[6]) || 0,
       employerMatch: parseFloat(values[7]) || 0,
-      gains: parseFloat(values[8]) || 0,
-      fees: parseFloat(values[9]) || 0,
+      gains: gains,
+      fees: fees,
       withdrawals: parseFloat(values[10]) || 0,
-      // Calculate derived fields
+      // Calculate derived fields using utility function
       totalContributions: (parseFloat(values[6]) || 0) + (parseFloat(values[7]) || 0),
-      netGains: (parseFloat(values[8]) || 0) - (parseFloat(values[9]) || 0),
-      roi: (parseFloat(values[5]) || 0) > 0 ? 
-        (((parseFloat(values[8]) || 0) - (parseFloat(values[9]) || 0)) / (parseFloat(values[5]) || 1)) * 100 : 0
+      netGains: gains - fees,
+      roi: balance > 0 ? calculateROI(gains, fees, balance) : 0
     };
+  };
+
+  // Define performance-specific field CSS classes
+  const performanceFieldCssClasses = {
+    accountName: 'performance-account-cell',
+    accountType: 'performance-account-cell',
+    employer: 'performance-account-cell',
+    year: 'performance-account-cell'
   };
 
   return (
@@ -181,7 +196,7 @@ const Performance = () => {
       <DataManager
         title="Performance Data"
         subtitle="Add your first account entry to start tracking performance"
-        dataKey="performance_data"
+        dataKey={STORAGE_KEYS.PERFORMANCE_DATA}
         getData={getPerformanceData}
         setData={setPerformanceData}
         schema={schema}
@@ -190,12 +205,13 @@ const Performance = () => {
         getFormDataFromEntry={getFormDataFromEntry}
         getEntryFromFormData={getEntryFromFormData}
         primaryKey="entryId"
-        sortField="entryDate"
+        sortField="year"
         sortOrder="desc"
         csvTemplate={csvTemplate}
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={csvHeaders}
+        fieldCssClasses={performanceFieldCssClasses}
       />
     </div>
   );

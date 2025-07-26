@@ -101,7 +101,10 @@ const NetWorthDashboard = () => {
           value = yearData?.mortgage || 0;
           break;
         default:
+          // Handle any other field by directly accessing the property from yearData
+          // This allows for dynamic field access for chart configurations
           value = yearData?.[field] || 0;
+          break;
       }
 
       return {
@@ -143,7 +146,10 @@ const NetWorthDashboard = () => {
           value = yearData?.mortgage || 0;
           break;
         default:
+          // Handle any other field by directly accessing the property from yearData
+          // This provides flexibility for additional chart types without code changes
           value = yearData?.[field] || 0;
+          break;
       }
 
       return {

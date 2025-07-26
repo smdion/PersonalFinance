@@ -264,7 +264,7 @@ const PaycheckForm = ({
     return (budgetImpacting.traditionalIraMonthly || 0) + 
            (budgetImpacting.rothIraMonthly || 0) + 
            (budgetImpacting.retirementBrokerageMonthly || 0) + 
-           (budgetImpacting.longtermSavingsMonthly || 0);
+           (budgetImpacting.longTermSavingsMonthly || 0);
   };
 
   return (
@@ -756,15 +756,15 @@ const PaycheckForm = ({
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`longtermSavingsMonthly-${personName}`} className="form-label">
+                  <label htmlFor={`longTermSavingsMonthly-${personName}`} className="form-label">
                     Long-Term Savings (Monthly):
                   </label>
                   <input
                     type="text"
-                    id={`longtermSavingsMonthly-${personName}`}
+                    id={`longTermSavingsMonthly-${personName}`}
                     className="form-input"
-                    value={formatCurrency(budgetImpacting.longtermSavingsMonthly || 0)}
-                    onChange={(e) => handleBudgetImpactingChange('longtermSavingsMonthly', e.target.value)}
+                    value={formatCurrency(budgetImpacting.longTermSavingsMonthly || 0)}
+                    onChange={(e) => handleBudgetImpactingChange('longTermSavingsMonthly', e.target.value)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -1037,7 +1037,7 @@ const PaycheckForm = ({
               </button>
             </div>
 
-            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longtermSavingsMonthly > 0) && (
+            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
               <>
                 <div className="results-divider"></div>
                 
@@ -1086,7 +1086,7 @@ const PaycheckForm = ({
                 )}
 
                 {/* Budget Contributions */}
-                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longtermSavingsMonthly > 0) && (
+                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
                   <div className="results-section">
                     <h4 className="results-section-title">
                       📊 {showMonthlyView ? 'Monthly' : 'Per Paycheck'} Contributions
@@ -1125,13 +1125,13 @@ const PaycheckForm = ({
                           </span>
                         </div>
                       )}
-                      {budgetImpacting.longtermSavingsMonthly > 0 && (
+                      {budgetImpacting.longTermSavingsMonthly > 0 && (
                         <div className="results-item">
                           <span className="results-item-label">Long-Term Savings</span>
                           <span className="results-item-value">
                             {showMonthlyView 
-                              ? formatCurrency(budgetImpacting.longtermSavingsMonthly)
-                              : formatCurrency(budgetImpacting.longtermSavingsMonthly / 2)
+                              ? formatCurrency(budgetImpacting.longTermSavingsMonthly)
+                              : formatCurrency(budgetImpacting.longTermSavingsMonthly / 2)
                             }
                           </span>
                         </div>

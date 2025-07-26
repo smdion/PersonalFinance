@@ -83,7 +83,7 @@ export const setHistoricalData = (data) => {
 
 export const getPerformanceData = () => {
   try {
-    const data = localStorage.getItem('performanceData');
+    const data = localStorage.getItem(STORAGE_KEYS.PERFORMANCE_DATA);
     return data ? JSON.parse(data) : [];
   } catch (error) {
     console.error('Error loading performance data:', error);
@@ -93,7 +93,7 @@ export const getPerformanceData = () => {
 
 export const setPerformanceData = (data) => {
   try {
-    localStorage.setItem('performanceData', JSON.stringify(data));
+    localStorage.setItem(STORAGE_KEYS.PERFORMANCE_DATA, JSON.stringify(data));
     return { success: true };
   } catch (error) {
     console.error('Error saving performance data:', error);

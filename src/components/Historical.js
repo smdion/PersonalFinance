@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getHistoricalData, setHistoricalData, getPaycheckData } from '../utils/localStorage';
+import { getHistoricalData, setHistoricalData, getPaycheckData, STORAGE_KEYS } from '../utils/localStorage';
 import DataManager from './DataManager';
 
 // Define per-user fields
@@ -155,69 +155,132 @@ const Historical = () => {
   ];
 
   // Format entry for CSV
-  const formatCSVRow = (entry) => ({
-    Year: entry.year,
-    Employer: entry.users?.employer || '',
-    Salary: entry.users?.salary || 0,
-    Bonus: entry.users?.bonus || 0,
-    AGI: entry.financial?.agi || 0,
-    'SSA Earnings': entry.financial?.ssaEarnings || 0,
-    'Effective Tax Rate': entry.financial?.effectiveTaxRate || 0,
-    'Tax Paid': entry.financial?.taxPaid || 0,
-    'Net Worth Plus': entry.financial?.netWorthPlus || 0,
-    'Net Worth Minus': entry.financial?.netWorthMinus || 0,
-    'Tax Free': entry.financial?.taxFree || 0,
-    'Tax Deferred': entry.financial?.taxDeferred || 0,
-    'R Brokerage': entry.financial?.rBrokerage || 0,
-    'LT Brokerage': entry.financial?.ltBrokerage || 0,
-    'ESPP': entry.financial?.espp || 0,
-    'HSA': entry.financial?.hsa || 0,
-    'Cash': entry.financial?.cash || 0,
-    'House': entry.financial?.house || 0,
-    'Mortgage': entry.financial?.mortgage || 0,
-    'Other Assets': entry.financial?.othAsset || 0,
-    'Retirement': entry.financial?.retirement || 0,
-    'Other Liabilities': entry.financial?.othLia || 0,
-    'Home Improvements': entry.financial?.homeImprovements || 0,
-    'Liabilities': entry.financial?.liabilities || 0
-  });
+  const formatCSVRow = (entry) => {
+    // Handle users data properly - aggregate or use first user's data
+    const usersData = entry.users || {};
+    const userNames = Object.keys(usersData);
+    
+    // For CSV export, we'll aggregate salary/bonus and use first employer
+    // or we could flatten to include all users (would require changing CSV headers)
+    let totalSalary = 0;
+    let totalBonus = 0;
+    let firstEmployer = '';
+    
+    userNames.forEach((userName, index) => {
+      const userData = usersData[userName] || {};
+      totalSalary += userData.salary || 0;
+      totalBonus += userData.bonus || 0;
+      
+      // Use first employer or concatenate multiple employers
+      if (index === 0) {
+        firstEmployer = userData.employer || '';
+      } else if (userData.employer && userData.employer !== firstEmployer) {
+        firstEmployer += ` & ${userData.employer}`;
+      }
+    });
+
+    return {
+      Year: entry.year,
+      Employer: firstEmployer,
+      Salary: totalSalary,
+      Bonus: totalBonus,
+      AGI: entry.agi || 0,
+      'SSA Earnings': entry.ssaEarnings || 0,
+      'Effective Tax Rate': entry.effectiveTaxRate || 0,
+      'Tax Paid': entry.taxPaid || 0,
+      'Net Worth Plus': entry.netWorthPlus || 0,
+      'Net Worth Minus': entry.netWorthMinus || 0,
+      'Tax Free': entry.taxFree || 0,
+      'Tax Deferred': entry.taxDeferred || 0,
+      'R Brokerage': entry.rBrokerage || 0,
+      'LT Brokerage': entry.ltBrokerage || 0,
+      'ESPP': entry.espp || 0,
+      'HSA': entry.hsa || 0,
+      'Cash': entry.cash || 0,
+      'House': entry.house || 0,
+      'Mortgage': entry.mortgage || 0,
+      'Other Assets': entry.othAsset || 0,
+      'Retirement': entry.retirement || 0,
+      'Other Liabilities': entry.othLia || 0,
+      'Home Improvements': entry.homeImprovements || 0,
+      'Liabilities': entry.liabilities || 0
+    };
+  };
 
   // Parse CSV row
   const parseCSVRow = (row) => {
-    const year = parseInt(row['Year']);
+    // Validate that row is an object and has required fields
+    if (!row || typeof row !== 'object') {
+      console.warn('Invalid CSV row format:', row);
+      return null;
+    }
     
-    if (!year || year < 1900 || year > 2100) return null;
+    // Check for required 'Year' field with various possible key formats
+    const yearValue = row['Year'] || row['year'] || row['YEAR'] || row['YR'];
+    const year = parseInt(yearValue);
     
-    return {
-      year: year,
-      users: {
-        employer: row['Employer'] || '',
-        salary: parseFloat(row['Salary']) || 0,
-        bonus: parseFloat(row['Bonus']) || 0
-      },
-      financial: {
-        agi: parseFloat(row['AGI']) || 0,
-        ssaEarnings: parseFloat(row['SSA Earnings']) || 0,
-        effectiveTaxRate: parseFloat(row['Effective Tax Rate']) || 0,
-        taxPaid: parseFloat(row['Tax Paid']) || 0,
-        netWorthPlus: parseFloat(row['Net Worth Plus']) || 0,
-        netWorthMinus: parseFloat(row['Net Worth Minus']) || 0,
-        taxFree: parseFloat(row['Tax Free']) || 0,
-        taxDeferred: parseFloat(row['Tax Deferred']) || 0,
-        rBrokerage: parseFloat(row['R Brokerage']) || 0,
-        ltBrokerage: parseFloat(row['LT Brokerage']) || 0,
-        espp: parseFloat(row['ESPP']) || 0,
-        hsa: parseFloat(row['HSA']) || 0,
-        cash: parseFloat(row['Cash']) || 0,
-        house: parseFloat(row['House']) || 0,
-        mortgage: parseFloat(row['Mortgage']) || 0,
-        othAsset: parseFloat(row['Other Assets']) || 0,
-        retirement: parseFloat(row['Retirement']) || 0,
-        othLia: parseFloat(row['Other Liabilities']) || 0,
-        homeImprovements: parseFloat(row['Home Improvements']) || 0,
-        liabilities: parseFloat(row['Liabilities']) || 0
-      }
+    if (!year || isNaN(year) || year < 1900 || year > 2100) {
+      console.warn('Invalid or missing year in CSV row:', yearValue, row);
+      return null;
+    }
+    
+    // Helper function to safely parse numeric values
+    const safeParseFloat = (value) => {
+      if (value === null || value === undefined || value === '') return 0;
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
     };
+    
+    // Helper function to safely get string values
+    const safeGetString = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    };
+    
+    try {
+      // Create users object with proper userName keys structure
+      // For CSV import, we'll create a single aggregated user entry since CSV format
+      // doesn't distinguish between multiple users in a single row
+      const usersData = {};
+      
+      // Use the first available user name from userNames, or create a default
+      const primaryUserName = userNames.length > 0 ? userNames[0] : 'User';
+      
+      usersData[primaryUserName] = {
+        employer: safeGetString(row['Employer']),
+        salary: safeParseFloat(row['Salary']),
+        bonus: safeParseFloat(row['Bonus'])
+      };
+      
+      return {
+        year: year,
+        users: usersData,
+        // Store financial data directly on the entry object (not nested under 'financial')
+        agi: safeParseFloat(row['AGI']),
+        ssaEarnings: safeParseFloat(row['SSA Earnings']),
+        effectiveTaxRate: safeParseFloat(row['Effective Tax Rate']),
+        taxPaid: safeParseFloat(row['Tax Paid']),
+        netWorthPlus: safeParseFloat(row['Net Worth Plus']),
+        netWorthMinus: safeParseFloat(row['Net Worth Minus']),
+        taxFree: safeParseFloat(row['Tax Free']),
+        taxDeferred: safeParseFloat(row['Tax Deferred']),
+        rBrokerage: safeParseFloat(row['R Brokerage']),
+        ltBrokerage: safeParseFloat(row['LT Brokerage']),
+        espp: safeParseFloat(row['ESPP']),
+        hsa: safeParseFloat(row['HSA']),
+        cash: safeParseFloat(row['Cash']),
+        house: safeParseFloat(row['House']),
+        mortgage: safeParseFloat(row['Mortgage']),
+        othAsset: safeParseFloat(row['Other Assets']),
+        retirement: safeParseFloat(row['Retirement']),
+        othLia: safeParseFloat(row['Other Liabilities']),
+        homeImprovements: safeParseFloat(row['Home Improvements']),
+        liabilities: safeParseFloat(row['Liabilities'])
+      };
+    } catch (error) {
+      console.error('Error parsing CSV row:', error, row);
+      return null;
+    }
   };
 
   return (
@@ -230,7 +293,7 @@ const Historical = () => {
       <DataManager
         title="Historical Data"
         subtitle="Add your first year of financial data to start tracking your progress"
-        dataKey="historical_data"
+        dataKey={STORAGE_KEYS.HISTORICAL_DATA}
         getData={getHistoricalData}
         setData={setHistoricalData}
         schema={schema}

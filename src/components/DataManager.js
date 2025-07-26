@@ -1,9 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../utils/calculationHelpers';
 
-// Define at top-level so it's available everywhere
-const performanceAccountFields = ['accountName', 'accountType', 'employer', 'year'];
-
 const DataManager = ({
   title,
   subtitle,
@@ -25,6 +22,7 @@ const DataManager = ({
   allowAdd = true, // whether to show add button
   allowEdit = true, // whether to show edit button
   allowDelete = true, // whether to show delete button
+  fieldCssClasses = {}, // optional object mapping field names to CSS classes
 }) => {
   const [entryData, setEntryData] = useState({});
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -96,7 +94,82 @@ const DataManager = ({
 
   const addEntry = () => {
     const key = formData[primaryKey];
-    if (key && !entryData[key]) {
+    
+    // Primary key validation
+    if (!key) {
+      alert(`Please enter a valid ${schema.primaryKeyLabel.toLowerCase()}.`);
+      return;
+    }
+    
+    if (entryData[key]) {
+      alert(`An entry with ${schema.primaryKeyLabel.toLowerCase()} "${key}" already exists.`);
+      return;
+    }
+
+    // Validate required fields based on schema
+    const validationErrors = [];
+    
+    // Check each section for required fields
+    schema.sections.forEach(section => {
+      if (section.name === 'users' && userNames.length > 0) {
+        // Validate user-specific fields
+        userNames.forEach(userName => {
+          section.fields.forEach(field => {
+            if (field.required) {
+              const value = formData.users?.[userName]?.[field.name];
+              if (!value || (typeof value === 'string' && value.trim() === '')) {
+                validationErrors.push(`${userName} - ${field.label} is required`);
+              }
+            }
+          });
+        });
+      } else {
+        // Validate regular fields
+        section.fields.forEach(field => {
+          if (field.required) {
+            const value = formData[field.name];
+            if (!value || (typeof value === 'string' && value.trim() === '') || 
+                (typeof value === 'number' && isNaN(value))) {
+              validationErrors.push(`${field.label} is required`);
+            }
+          }
+        });
+      }
+    });
+
+    // Check for numeric field validation
+    schema.sections.forEach(section => {
+      if (section.name !== 'users') {
+        section.fields.forEach(field => {
+          if (field.format === 'currency' || field.type === 'number') {
+            const value = formData[field.name];
+            if (value && value !== '' && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) {
+              validationErrors.push(`${field.label} must be a valid positive number`);
+            }
+          }
+        });
+      } else if (userNames.length > 0) {
+        userNames.forEach(userName => {
+          section.fields.forEach(field => {
+            if (field.format === 'currency' || field.type === 'number') {
+              const value = formData.users?.[userName]?.[field.name];
+              if (value && value !== '' && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) {
+                validationErrors.push(`${userName} - ${field.label} must be a valid positive number`);
+              }
+            }
+          });
+        });
+      }
+    });
+
+    // Show validation errors if any
+    if (validationErrors.length > 0) {
+      alert(`Please fix the following errors:\n\n${validationErrors.join('\n')}`);
+      return;
+    }
+
+    // All validation passed, proceed with adding the entry
+    try {
       const newEntry = getEntryFromFormData(formData);
       
       setEntryData(prev => ({
@@ -107,6 +180,12 @@ const DataManager = ({
       // Reset form
       setFormData(emptyFormData);
       setShowAddEntry(false);
+      
+      // Optional success feedback
+      console.log(`Successfully added entry: ${key}`);
+    } catch (error) {
+      console.error('Error adding entry:', error);
+      alert('An error occurred while adding the entry. Please try again.');
     }
   };
 
@@ -149,35 +228,32 @@ const DataManager = ({
     setFormData(emptyFormData);
   };
 
-  // Convert data to CSV format
-  const convertToCSV = (data) => {
-    const rows = [];
-    rows.push(csvHeaders.join(','));
-    
-    const sortedEntries = Object.values(data).sort((a, b) => {
+  // Download CSV file
+  const downloadCSV = () => {
+    const sortedEntries = Object.values(entryData).sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
       return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
     });
     
+    const rows = [csvHeaders];
     sortedEntries.forEach(entry => {
       const row = formatCSVRow(entry);
-      rows.push(row.join(','));
+      rows.push(row);
     });
     
-    return rows.join('\n');
-  };
-
-  // Download CSV file
-  const downloadCSV = () => {
-    const rows = [csvHeaders, ...sortedKeys.map(key => formatCSVRow(entryData[key]))];
+    // Properly escape and quote CSV values
     const csvContent = rows.map(row =>
-      csvHeaders.map(header => {
-        const val = row[header];
-        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-          return `"${val.replace(/"/g, '""')}"`;
+      row.map(value => {
+        // Convert to string and handle null/undefined
+        const stringValue = value == null ? '' : String(value);
+        
+        // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
         }
-        return val ?? '';
+        
+        return stringValue;
       }).join(',')
     ).join('\n');
   
@@ -194,14 +270,25 @@ const DataManager = ({
 
   // Download CSV template
   const downloadTemplate = () => {
-    const rows = [csvHeaders, ...csvTemplate.map(formatCSVRow)];
+    const templateEntries = Object.values(csvTemplate);
+    const rows = [csvHeaders];
+    templateEntries.forEach(entry => {
+      const row = formatCSVRow(entry);
+      rows.push(row);
+    });
+    
+    // Properly escape and quote CSV values
     const csvContent = rows.map(row =>
-      csvHeaders.map(header => {
-        const val = row[header];
-        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
-          return `"${val.replace(/"/g, '""')}"`;
+      row.map(value => {
+        // Convert to string and handle null/undefined
+        const stringValue = value == null ? '' : String(value);
+        
+        // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
+        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+          return `"${stringValue.replace(/"/g, '""')}"`;
         }
-        return val ?? '';
+        
+        return stringValue;
       }).join(',')
     ).join('\n');
   
@@ -358,9 +445,6 @@ const DataManager = ({
   const renderTableCell = (entry, field) => {
     const fieldConfig = schema.sections.flatMap(s => s.fields).find(f => f.name === field);
     const value = entry[field];
-    
-    // Add this logic for performance account columns
-    const isPerformanceAccountCell = performanceAccountFields.includes(field);
 
     if (!fieldConfig) return '-';
     
@@ -577,7 +661,7 @@ const DataManager = ({
                             <td key={field.name} className={
                               [
                                 'historical-currency-cell',
-                                performanceAccountFields.includes(field.name) ? 'performance-account-cell' : ''
+                                fieldCssClasses[field.name] || ''
                               ].filter(Boolean).join(' ')
                             }>
                               {renderTableCell(entry, field.name)}

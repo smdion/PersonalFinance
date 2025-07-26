@@ -191,3 +191,12 @@ export const calculatePayrollTaxes = (grossIncome) => {
     total: socialSecurityTax + medicareTax
   };
 };
+
+// ROI Calculation Utility
+export const calculateROI = (gains, fees, balance) => {
+  const netGains = (gains || 0) - (fees || 0);
+  const totalBalance = balance || 0;
+  
+  if (totalBalance <= 0) return 0;
+  return (netGains / totalBalance) * 100;
+};
