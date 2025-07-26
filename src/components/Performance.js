@@ -3,22 +3,6 @@ import { getPerformanceData, setPerformanceData, STORAGE_KEYS, getPaycheckData }
 import { calculateROI } from '../utils/calculationHelpers';
 import DataManager from './DataManager';
 
-// Account types for dropdown
-const ACCOUNT_TYPES = [
-  'Traditional 401k',
-  'Roth 401k',
-  'Traditional IRA',
-  'Roth IRA',
-  'HSA',
-  'Regular Brokerage',
-  'ESPP',
-  'Pension',
-  'Cash/Savings',
-  'CD',
-  'Money Market',
-  'Other'
-];
-
 const Performance = () => {
   // Schema configuration for DataManager
   const schema = {
@@ -29,10 +13,10 @@ const Performance = () => {
         name: 'account',
         title: '📊 Account Information',
         fields: [
+          { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 },
           { name: 'accountName', label: 'Account Name', type: 'text' },
-          { name: 'accountType', label: 'Account Type', type: 'select', options: ACCOUNT_TYPES },
-          { name: 'employer', label: 'Employer', type: 'text' },
-          { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 }
+          { name: 'accountType', label: 'Account Type', type: 'text' },
+          { name: 'employer', label: 'Employer', type: 'text' }
         ]
       },
       {
@@ -58,10 +42,10 @@ const Performance = () => {
   // Empty form data structure
   const emptyFormData = {
     entryId: generateEntryId(),
-    accountName: '',
-    accountType: ACCOUNT_TYPES[0],
-    employer: '',
     year: new Date().getFullYear(),
+    accountName: '',
+    accountType: '',
+    employer: '',
     balance: '',
     contributions: '',
     employerMatch: '',
@@ -73,10 +57,10 @@ const Performance = () => {
   // Convert stored entry to form data
   const getFormDataFromEntry = (entry) => ({
     entryId: entry.entryId,
-    accountName: entry.accountName || '',
-    accountType: entry.accountType || ACCOUNT_TYPES[0],
-    employer: entry.employer || '',
     year: entry.year || '',
+    accountName: entry.accountName || '',
+    accountType: entry.accountType || '',
+    employer: entry.employer || '',
     balance: entry.balance || '',
     contributions: entry.contributions || '',
     employerMatch: entry.employerMatch || '',
@@ -88,10 +72,10 @@ const Performance = () => {
   // Convert form data to stored entry
   const getEntryFromFormData = (formData) => ({
     entryId: formData.entryId,
+    year: formData.year,
     accountName: formData.accountName,
     accountType: formData.accountType,
     employer: formData.employer,
-    year: formData.year,
     balance: formData.balance,
     contributions: formData.contributions,
     employerMatch: formData.employerMatch,
@@ -101,43 +85,69 @@ const Performance = () => {
   });
 
   // Parse CSV row
-  const parseCSVRow = (headers, values) => {
-    const entryId = values[0];
+  const parseCSVRow = (row) => {
+    // Validate that row is an object and has required fields
+    if (!row || typeof row !== 'object') {
+      console.warn('Invalid CSV row format:', row);
+      return null;
+    }
     
-    if (!entryId) return null;
-    
-    const gains = parseFloat(values[8]) || 0;
-    const fees = parseFloat(values[9]) || 0;
-    const balance = parseFloat(values[5]) || 0;
-    const parsedYear = parseInt(values[4]);
-    const year = !isNaN(parsedYear) ? parsedYear : '';
-    
-    return {
-      entryId: entryId,
-      accountName: values[1] || '',
-      accountType: values[2] || ACCOUNT_TYPES[0],
-      employer: values[3] || '',
-      year: year,
-      balance: balance,
-      contributions: parseFloat(values[6]) || 0,
-      employerMatch: parseFloat(values[7]) || 0,
-      gains: gains,
-      fees: fees,
-      withdrawals: parseFloat(values[10]) || 0,
-      // Calculate derived fields using utility function
-      totalContributions: (parseFloat(values[6]) || 0) + (parseFloat(values[7]) || 0),
-      netGains: gains - fees,
-      roi: balance > 0 ? calculateROI(gains, fees, balance) : 0
+    // Helper function to safely parse numeric values
+    const safeParseFloat = (value) => {
+      if (value === null || value === undefined || value === '') return 0;
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? 0 : parsed;
     };
+    
+    // Helper function to safely get string values
+    const safeGetString = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    };
+    
+    // Helper function to safely parse integer values
+    const safeParseInt = (value) => {
+      if (value === null || value === undefined || value === '') return '';
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? '' : parsed;
+    };
+    
+    try {
+      const gains = safeParseFloat(row['gains'] || row['Gains/Losses'] || row['Gains']);
+      const fees = safeParseFloat(row['fees'] || row['Fees']);
+      const balance = safeParseFloat(row['balance'] || row['Balance']);
+      const contributions = safeParseFloat(row['contributions'] || row['Contributions']);
+      const employerMatch = safeParseFloat(row['employerMatch'] || row['Employer Match']);
+      
+      return {
+        entryId: generateEntryId(), // Auto-generate Entry ID during import
+        year: safeParseInt(row['year'] || row['Year']),
+        accountName: safeGetString(row['accountName'] || row['Account Name']),
+        accountType: safeGetString(row['accountType'] || row['Account Type']),
+        employer: safeGetString(row['employer'] || row['Employer']),
+        balance: balance,
+        contributions: contributions,
+        employerMatch: employerMatch,
+        gains: gains,
+        fees: fees,
+        withdrawals: safeParseFloat(row['withdrawals'] || row['Withdrawals']),
+        // Calculate derived fields using utility function
+        totalContributions: contributions + employerMatch,
+        netGains: gains - fees,
+        roi: balance > 0 ? calculateROI(gains, fees, balance) : 0
+      };
+    } catch (error) {
+      console.error('Error parsing CSV row:', error, row);
+      return null;
+    }
   };
 
-  // Format entry for CSV
+  // Format entry for CSV (exclude entryId)
   const formatCSVRow = (entry) => [
-    entry.entryId,
+    entry.year || '',
     entry.accountName || '',
     entry.accountType || '',
     entry.employer || '',
-    entry.year || '',
     entry.balance || 0,
     entry.contributions || 0,
     entry.employerMatch || 0,
@@ -194,20 +204,20 @@ const Performance = () => {
         getFormDataFromEntry={getFormDataFromEntry}
         getEntryFromFormData={getEntryFromFormData}
         primaryKey="entryId"
-        sortField="year"
-        sortOrder="desc"
+        sortField="year" // Default sort field
+        sortOrder="desc" // Default sort order
         csvTemplate={{}} // Provide an empty object or your template if needed
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={[
-          'entryId', 'accountName', 'accountType', 'employer', 'year',
+          'year', 'accountName', 'accountType', 'employer',
           'balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'
         ]}
         fieldCssClasses={{
+          year: 'performance-account-cell',
           accountName: 'performance-account-cell',
           accountType: 'performance-account-cell',
-          employer: 'performance-account-cell',
-          year: 'performance-account-cell'
+          employer: 'performance-account-cell'
         }}
         beforeCSVImport={handleBeforeCSVImport}
       />

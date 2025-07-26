@@ -30,6 +30,8 @@ const DataManager = ({
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
   const [formData, setFormData] = useState(emptyFormData);
+  const [currentSortField, setCurrentSortField] = useState(sortField);
+  const [currentSortOrder, setCurrentSortOrder] = useState(sortOrder);
 
   // Load data from localStorage
   useEffect(() => {
@@ -335,21 +337,50 @@ const DataManager = ({
     reader.readAsText(file);
   };
 
-  // Use id as the key for sorting and accessing entryData
-  const sortedKeys = Object.keys(entryData).sort((a, b) => {
-    // Check if both keys can be converted to valid numbers
-    const aNum = Number(a);
-    const bNum = Number(b);
+  // Get all available sortable fields from schema
+  const getSortableFields = () => {
+    const fields = [{ key: primaryKey, label: schema.primaryKeyLabel }];
     
-    // If both are valid numbers, perform numeric sort
+    schema.sections.forEach(section => {
+      if (section.name !== 'users') {
+        section.fields.forEach(field => {
+          if (field.name !== primaryKey) {
+            fields.push({ key: field.name, label: field.label });
+          }
+        });
+      }
+    });
+    
+    return fields;
+  };
+
+  // Use currentSortField and currentSortOrder for sorting
+  const sortedKeys = Object.keys(entryData).sort((a, b) => {
+    const aEntry = entryData[a];
+    const bEntry = entryData[b];
+    let aVal = aEntry[currentSortField];
+    let bVal = bEntry[currentSortField];
+    
+    // Handle different data types
+    if (typeof aVal === 'string' && typeof bVal === 'string') {
+      aVal = aVal.toLowerCase();
+      bVal = bVal.toLowerCase();
+      if (currentSortOrder === 'asc') return aVal.localeCompare(bVal);
+      return bVal.localeCompare(aVal);
+    }
+    
+    // Handle numbers
+    const aNum = Number(aVal);
+    const bNum = Number(bVal);
+    
     if (!isNaN(aNum) && !isNaN(bNum)) {
-      if (sortOrder === 'asc') return aNum - bNum;
+      if (currentSortOrder === 'asc') return aNum - bNum;
       return bNum - aNum;
     }
     
-    // Fall back to string comparison for non-numeric keys
-    if (sortOrder === 'asc') return a.localeCompare(b);
-    return b.localeCompare(a);
+    // Fallback to string comparison
+    if (currentSortOrder === 'asc') return String(aVal).localeCompare(String(bVal));
+    return String(bVal).localeCompare(String(aVal));
   });
 
   const renderFormField = (field, section = null) => {
@@ -530,15 +561,53 @@ const DataManager = ({
         <div className="historical-table-container">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
             <h2>📊 {title} Overview</h2>
-            {allowAdd && !showAddEntry ? (
-              <button onClick={() => setShowAddEntry(true)} className="btn-primary">
-                ➕ Add New Entry
-              </button>
-            ) : allowAdd && (
-              <button onClick={cancelEdit} className="btn-secondary">
-                Cancel
-              </button>
-            )}
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+              {/* Sorting Controls */}
+              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>
+                  Sort by:
+                </label>
+                <select
+                  value={currentSortField}
+                  onChange={(e) => setCurrentSortField(e.target.value)}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  {getSortableFields().map(field => (
+                    <option key={field.key} value={field.key}>
+                      {field.label}
+                    </option>
+                  ))}
+                </select>
+                <select
+                  value={currentSortOrder}
+                  onChange={(e) => setCurrentSortOrder(e.target.value)}
+                  style={{
+                    padding: '6px 8px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  <option value="desc">High to Low</option>
+                  <option value="asc">Low to High</option>
+                </select>
+              </div>
+              
+              {allowAdd && !showAddEntry ? (
+                <button onClick={() => setShowAddEntry(true)} className="btn-primary">
+                  ➕ Add New Entry
+                </button>
+              ) : allowAdd && (
+                <button onClick={cancelEdit} className="btn-secondary">
+                  Cancel
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Add/Edit Entry Form */}

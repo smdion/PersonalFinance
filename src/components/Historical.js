@@ -315,8 +315,8 @@ const Historical = () => {
         getFormDataFromEntry={getFormDataFromEntry}
         getEntryFromFormData={getEntryFromFormData}
         primaryKey="year"
-        sortField="year"
-        sortOrder="desc"
+        sortField="year" // Default sort field  
+        sortOrder="desc" // Default sort order
         csvTemplate={csvTemplate}
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}

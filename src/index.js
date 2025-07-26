@@ -132,7 +132,7 @@ const Navigation = () => {
                   background: location.pathname === '/paycheck' ? 'rgba(255, 255, 255, 0.2)' : 'transparent' 
                 }}
               >
-                Paycheck Calculator
+                Paycheck
               </Link>
             </li>
             <li>
@@ -143,7 +143,7 @@ const Navigation = () => {
                   background: location.pathname === '/budget' ? 'rgba(255, 255, 255, 0.2)' : 'transparent' 
                 }}
               >
-                Budget Planner
+                Budget
               </Link>
             </li>
             <li>
@@ -154,7 +154,7 @@ const Navigation = () => {
                   background: location.pathname === '/historical' ? 'rgba(255, 255, 255, 0.2)' : 'transparent' 
                 }}
               >
-                Historical Data
+                Historical
               </Link>
             </li>
             <li>
