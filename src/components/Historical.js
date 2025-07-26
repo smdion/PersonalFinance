@@ -7,9 +7,9 @@ const USER_FIELDS = ['employer', 'salary', 'bonus'];
 
 // Define combined fields
 const COMBINED_FIELDS = [
-  'agi', 'ssaEarnings', 'effectiveTaxRate', 'taxPaid', 'netWorthPlus', 'netWorthMinus',
-  'taxFree', 'taxDeferred', 'rBrokerage', 'ltBrokerage', 'espp', 'hsa', 'cash', 'house',
-  'mortgage', 'othAsset', 'retirement', 'othLia', 'homeImprovements', 'liabilities'
+  'agi', 'ssaEarnings', 'effectiveTaxRate', 'taxPaid',
+  'taxFree', 'taxDeferred', 'brokerage', 'espp', 'hsa', 'cash', 'house',
+  'homeImprovements', 'mortgage', 'othAsset', 'othLia'
 ];
 
 const Historical = () => {
@@ -52,23 +52,18 @@ const Historical = () => {
           { name: 'agi', label: 'AGI', format: 'currency', className: 'currency' },
           { name: 'ssaEarnings', label: 'SSA Earnings', format: 'currency', className: 'currency' },
           { name: 'effectiveTaxRate', label: 'Effective Tax Rate', format: 'percentage', className: 'percentage' },
-          { name: 'taxPaid', label: 'Tax Paid', format: 'currency', className: 'currency' },
-          { name: 'netWorthPlus', label: 'Net Worth Plus', format: 'currency', className: 'currency' },
-          { name: 'netWorthMinus', label: 'Net Worth Minus', format: 'currency', className: 'currency' },
+          { name: 'taxPaid', label: 'Taxes Paid', format: 'currency', className: 'currency' },
           { name: 'taxFree', label: 'Tax Free', format: 'currency', className: 'currency' },
           { name: 'taxDeferred', label: 'Tax Deferred', format: 'currency', className: 'currency' },
-          { name: 'rBrokerage', label: 'R Brokerage', format: 'currency', className: 'currency' },
-          { name: 'ltBrokerage', label: 'LT Brokerage', format: 'currency', className: 'currency' },
+          { name: 'brokerage', label: 'Brokerage', format: 'currency', className: 'currency' },
           { name: 'espp', label: 'ESPP', format: 'currency', className: 'currency' },
           { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency' },
           { name: 'cash', label: 'Cash', format: 'currency', className: 'currency' },
           { name: 'house', label: 'House', format: 'currency', className: 'currency' },
+          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' },
           { name: 'mortgage', label: 'Mortgage', format: 'currency', className: 'currency' },
           { name: 'othAsset', label: 'Other Assets', format: 'currency', className: 'currency' },
-          { name: 'retirement', label: 'Retirement', format: 'currency', className: 'currency' },
-          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency' },
-          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' },
-          { name: 'liabilities', label: 'Liabilities', format: 'currency', className: 'currency' }
+          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency' }
         ]
       }
     ]
@@ -107,22 +102,17 @@ const Historical = () => {
       ssaEarnings: 145000,
       effectiveTaxRate: 0.185,
       taxPaid: 25900,
-      netWorthPlus: 500000,
-      netWorthMinus: 150000,
       taxFree: 200000,
       taxDeferred: 150000,
-      rBrokerage: 25000,
-      ltBrokerage: 15000,
+      brokerage: 40000,
       espp: 5000,
       hsa: 25000,
       cash: 50000,
       house: 400000,
+      homeImprovements: 20000,
       mortgage: 150000,
       othAsset: 30000,
-      retirement: 350000,
-      othLia: 0,
-      homeImprovements: 20000,
-      liabilities: 150000
+      othLia: 0
     }
   };
 
@@ -143,23 +133,18 @@ const Historical = () => {
       'AGI',
       'SSA Earnings',
       'Effective Tax Rate',
-      'Tax Paid',
-      'Net Worth Plus',
-      'Net Worth Minus',
+      'Taxes Paid',
       'Tax Free',
       'Tax Deferred',
-      'R Brokerage',
-      'LT Brokerage',
+      'Brokerage',
       'ESPP',
       'HSA',
       'Cash',
       'House',
+      'Home Improvements',
       'Mortgage',
       'Other Assets',
-      'Retirement',
-      'Other Liabilities',
-      'Home Improvements',
-      'Liabilities'
+      'Other Liabilities'
     ];
   }, [userNames]);
 
@@ -181,22 +166,17 @@ const Historical = () => {
       entry.ssaEarnings || 0,
       entry.effectiveTaxRate || 0,
       entry.taxPaid || 0,
-      entry.netWorthPlus || 0,
-      entry.netWorthMinus || 0,
       entry.taxFree || 0,
       entry.taxDeferred || 0,
-      entry.rBrokerage || 0,
-      entry.ltBrokerage || 0,
+      entry.brokerage || 0,
       entry.espp || 0,
       entry.hsa || 0,
       entry.cash || 0,
       entry.house || 0,
+      entry.homeImprovements || 0,
       entry.mortgage || 0,
       entry.othAsset || 0,
-      entry.retirement || 0,
-      entry.othLia || 0,
-      entry.homeImprovements || 0,
-      entry.liabilities || 0
+      entry.othLia || 0
     );
     return row;
   };
@@ -248,23 +228,18 @@ const Historical = () => {
         agi: safeParseFloat(row['AGI']),
         ssaEarnings: safeParseFloat(row['SSA Earnings']),
         effectiveTaxRate: safeParseFloat(row['Effective Tax Rate']),
-        taxPaid: safeParseFloat(row['Tax Paid']),
-        netWorthPlus: safeParseFloat(row['Net Worth Plus']),
-        netWorthMinus: safeParseFloat(row['Net Worth Minus']),
+        taxPaid: safeParseFloat(row['Taxes Paid'] || row['Tax Paid']), // Support both old and new naming
         taxFree: safeParseFloat(row['Tax Free']),
         taxDeferred: safeParseFloat(row['Tax Deferred']),
-        rBrokerage: safeParseFloat(row['R Brokerage']),
-        ltBrokerage: safeParseFloat(row['LT Brokerage']),
+        brokerage: safeParseFloat(row['Brokerage'] || row['R Brokerage']), // Support both old and new naming
         espp: safeParseFloat(row['ESPP']),
         hsa: safeParseFloat(row['HSA']),
         cash: safeParseFloat(row['Cash']),
         house: safeParseFloat(row['House']),
+        homeImprovements: safeParseFloat(row['Home Improvements']),
         mortgage: safeParseFloat(row['Mortgage']),
         othAsset: safeParseFloat(row['Other Assets']),
-        retirement: safeParseFloat(row['Retirement']),
-        othLia: safeParseFloat(row['Other Liabilities']),
-        homeImprovements: safeParseFloat(row['Home Improvements']),
-        liabilities: safeParseFloat(row['Liabilities'])
+        othLia: safeParseFloat(row['Other Liabilities'])
       };
     } catch (error) {
       console.error('Error parsing CSV row:', error, row);

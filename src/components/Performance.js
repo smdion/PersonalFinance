@@ -14,6 +14,7 @@ const Performance = () => {
         title: '📊 Account Information',
         fields: [
           { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 },
+          { name: 'owner', label: 'Owner', type: 'text' },
           { name: 'accountName', label: 'Account Name', type: 'text' },
           { name: 'accountType', label: 'Account Type', type: 'text' },
           { name: 'employer', label: 'Employer', type: 'text' }
@@ -43,6 +44,7 @@ const Performance = () => {
   const emptyFormData = {
     entryId: generateEntryId(),
     year: new Date().getFullYear(),
+    owner: '',
     accountName: '',
     accountType: '',
     employer: '',
@@ -58,6 +60,7 @@ const Performance = () => {
   const getFormDataFromEntry = (entry) => ({
     entryId: entry.entryId,
     year: entry.year || '',
+    owner: entry.owner || '',
     accountName: entry.accountName || '',
     accountType: entry.accountType || '',
     employer: entry.employer || '',
@@ -73,6 +76,7 @@ const Performance = () => {
   const getEntryFromFormData = (formData) => ({
     entryId: formData.entryId,
     year: formData.year,
+    owner: formData.owner,
     accountName: formData.accountName,
     accountType: formData.accountType,
     employer: formData.employer,
@@ -122,6 +126,7 @@ const Performance = () => {
       return {
         entryId: generateEntryId(), // Auto-generate Entry ID during import
         year: safeParseInt(row['year'] || row['Year']),
+        owner: safeGetString(row['owner'] || row['Owner']),
         accountName: safeGetString(row['accountName'] || row['Account Name']),
         accountType: safeGetString(row['accountType'] || row['Account Type']),
         employer: safeGetString(row['employer'] || row['Employer']),
@@ -145,6 +150,7 @@ const Performance = () => {
   // Format entry for CSV (exclude entryId)
   const formatCSVRow = (entry) => [
     entry.year || '',
+    entry.owner || '',
     entry.accountName || '',
     entry.accountType || '',
     entry.employer || '',
@@ -210,11 +216,12 @@ const Performance = () => {
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={[
-          'year', 'accountName', 'accountType', 'employer',
+          'year', 'owner', 'accountName', 'accountType', 'employer',
           'balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'
         ]}
         fieldCssClasses={{
           year: 'performance-account-cell',
+          owner: 'performance-account-cell',
           accountName: 'performance-account-cell',
           accountType: 'performance-account-cell',
           employer: 'performance-account-cell'
