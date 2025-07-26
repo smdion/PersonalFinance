@@ -82,26 +82,42 @@ export const FormProvider = ({ children }) => {
 
   // Function to sync budget categories with budget impacting contributions
   const syncBudgetCategories = useCallback(() => {
+    console.log('syncBudgetCategories called with:', {
+      yourBudgetImpacting: formData.yourBudgetImpacting,
+      spouseBudgetImpacting: formData.spouseBudgetImpacting,
+      showSpouseCalculator: formData.showSpouseCalculator
+    });
+
+    // Get paycheck data to access names
+    const { getPaycheckData } = require('../utils/localStorage');
+    const paycheckData = getPaycheckData();
+    
     let budgetCategories = getBudgetData();
+    console.log('Current budget categories:', budgetCategories);
+    
     const existingCategoryIndex = budgetCategories.findIndex(cat => cat.id === 'budget-impacting');
     
     // Create the budget impacting contributions items
     let budgetItems = [];
     
-    // Add your contributions
+    // Add your contributions with actual name
+    const yourName = paycheckData?.your?.name || 'Your';
     budgetItems = budgetItems.concat(
-      createBudgetItemsForPerson(formData.yourBudgetImpacting, 'your', 'Your')
+      createBudgetItemsForPerson(formData.yourBudgetImpacting, 'your', yourName)
     );
 
-    // Add spouse contributions if dual calculator is enabled
+    // Add spouse contributions if dual calculator is enabled with actual name
     if (formData.showSpouseCalculator) {
+      const spouseName = paycheckData?.spouse?.name || 'Spouse';
       budgetItems = budgetItems.concat(
-        createBudgetItemsForPerson(formData.spouseBudgetImpacting, 'spouse', 'Spouse')
+        createBudgetItemsForPerson(formData.spouseBudgetImpacting, 'spouse', spouseName)
       );
     }
 
-    // Only create/update the category if there are items to show
-    if (budgetItems.length > 0) {
+    console.log('Generated budget items:', budgetItems);
+
+    // Only create/update the category if there are items OR if it already exists
+    if (budgetItems.length > 0 || existingCategoryIndex >= 0) {
       const budgetImpactingCategory = {
         id: 'budget-impacting',
         name: 'Budget Impacting Contributions',
@@ -109,36 +125,98 @@ export const FormProvider = ({ children }) => {
         items: budgetItems
       };
 
-      let updatedCategories;
+      // Update or add the category
       if (existingCategoryIndex >= 0) {
-        updatedCategories = [...budgetCategories];
-        updatedCategories[existingCategoryIndex] = budgetImpactingCategory;
+        budgetCategories[existingCategoryIndex] = budgetImpactingCategory;
+        console.log('Updated existing category at index:', existingCategoryIndex);
       } else {
-        updatedCategories = [budgetImpactingCategory, ...budgetCategories];
+        budgetCategories.unshift(budgetImpactingCategory); // Add at the beginning
+        console.log('Added new category at beginning');
       }
-
-      setBudgetData(updatedCategories);
-      window.dispatchEvent(new CustomEvent('budgetDataUpdated'));
     } else if (existingCategoryIndex >= 0) {
-      const updatedCategories = budgetCategories.filter(cat => cat.id !== 'budget-impacting');
-      setBudgetData(updatedCategories);
-      window.dispatchEvent(new CustomEvent('budgetDataUpdated'));
+      // Remove the category if no items and it exists
+      budgetCategories.splice(existingCategoryIndex, 1);
+      console.log('Removed empty category');
     }
+
+    console.log('Final budget categories:', budgetCategories);
+
+    // Save updated budget categories
+    setBudgetData(budgetCategories);
+    
+    // Dispatch event to notify components
+    window.dispatchEvent(new CustomEvent('budgetDataUpdated', { detail: budgetCategories }));
+    console.log('Budget data updated and event dispatched');
   }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator, createBudgetItemsForPerson]);
 
-  // Run sync immediately on mount
-  useEffect(() => {
-    syncBudgetCategories();
-  }, []);
-
-  // Debounced sync to prevent excessive updates
+  // Run sync with a slight delay to ensure all data is loaded
   useEffect(() => {
     const timer = setTimeout(() => {
+      console.log('Initial sync on mount');
       syncBudgetCategories();
     }, 100);
-
+    
     return () => clearTimeout(timer);
-  }, [syncBudgetCategories]);
+  }, []);
+
+  // Sync when budget impacting data changes with debouncing
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      console.log('Sync triggered by data change');
+      syncBudgetCategories();
+    }, 50);
+    
+    return () => clearTimeout(timer);
+  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator]);
+
+  // Add effect to load budget impacting data from paycheck data
+  useEffect(() => {
+    const loadBudgetImpactingFromPaycheck = () => {
+      try {
+        const { getPaycheckData } = require('../utils/localStorage');
+        const paycheckData = getPaycheckData();
+        
+        if (paycheckData?.your?.budgetImpacting) {
+          const yourContributions = paycheckData.your.budgetImpacting;
+          if (typeof yourContributions === 'object') {
+            setFormDataState(prev => ({
+              ...prev,
+              yourBudgetImpacting: {
+                traditionalIraMonthly: yourContributions.traditionalIraMonthly || 0,
+                rothIraMonthly: yourContributions.rothIraMonthly || 0,
+                retirementBrokerageMonthly: yourContributions.retirementBrokerageMonthly || 0,
+                longTermSavingsMonthly: yourContributions.longTermSavingsMonthly || 0
+              }
+            }));
+          }
+        }
+        
+        if (paycheckData?.spouse?.budgetImpacting) {
+          const spouseContributions = paycheckData.spouse.budgetImpacting;
+          if (typeof spouseContributions === 'object') {
+            setFormDataState(prev => ({
+              ...prev,
+              spouseBudgetImpacting: {
+                traditionalIraMonthly: spouseContributions.traditionalIraMonthly || 0,
+                rothIraMonthly: spouseContributions.rothIraMonthly || 0,
+                retirementBrokerageMonthly: spouseContributions.retirementBrokerageMonthly || 0,
+                longTermSavingsMonthly: spouseContributions.longTermSavingsMonthly || 0
+              }
+            }));
+          }
+        }
+
+        console.log('Loaded budget impacting from paycheck data:', {
+          your: paycheckData?.your?.budgetImpacting,
+          spouse: paycheckData?.spouse?.budgetImpacting
+        });
+      } catch (error) {
+        console.error('Error loading budget impacting from paycheck data:', error);
+      }
+    };
+
+    loadBudgetImpactingFromPaycheck();
+  }, []);
 
   const value = {
     formData, 

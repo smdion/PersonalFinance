@@ -384,7 +384,12 @@
         "medical": 120
       },
       "esppDeductionPercent": 5,
-      "budgetImpacting": true,
+      "budgetImpacting": {
+        "traditionalIraMonthly": 500,
+        "rothIraMonthly": 300,
+        "retirementBrokerageMonthly": 0,
+        "longTermSavingsMonthly": 0
+      },
       "bonusMultiplier": 0.1,
       "bonusTarget": 9500,
       "payWeekType": "odd",
@@ -394,7 +399,7 @@
       "name": "Jamie Lee",
       "employer": "Bright Solutions",
       "birthday": "1990-09-22",
-      "salary": "67000",
+      "salary": "105000",
       "payPeriod": "biWeekly",
       "filingStatus": "marriedJointly",
       "w4Type": "new",
@@ -419,7 +424,12 @@
         "medical": 80
       },
       "esppDeductionPercent": 0,
-      "budgetImpacting": true,
+      "budgetImpacting": {
+        "traditionalIraMonthly": 400,
+        "rothIraMonthly": 0,
+        "retirementBrokerageMonthly": 250,
+        "longTermSavingsMonthly": 0
+      },
       "bonusMultiplier": 0.05,
       "bonusTarget": 3350,
       "payWeekType": "even",
@@ -428,8 +438,18 @@
   },
   "formData": {
     "showSpouseCalculator": true,
-    "yourBudgetImpacting": true,
-    "spouseBudgetImpacting": true,
+    "yourBudgetImpacting": {
+      "traditionalIraMonthly": 500,
+      "rothIraMonthly": 300,
+      "retirementBrokerageMonthly": 0,
+      "longTermSavingsMonthly": 0
+    },
+    "spouseBudgetImpacting": {
+      "traditionalIraMonthly": 400,
+      "rothIraMonthly": 0,
+      "retirementBrokerageMonthly": 250,
+      "longTermSavingsMonthly": 0
+    },
     "combinedMonthlyTakeHome": 9000
   },
   "historicalData": {
