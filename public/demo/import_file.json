@@ -593,6 +593,7 @@
     "entry_2021_alex401k": {
       "entryId": "entry_2021_alex401k",
       "year": 2021,
+      "owner": "Alex Johnson",
       "accountName": "Fidelity",
       "accountType": "Traditional 401k",
       "employer": "Acme Corp",
@@ -607,6 +608,7 @@
     "entry_2022_alex401k": {
       "entryId": "entry_2022_alex401k",
       "year": 2022,
+      "owner": "Alex Johnson",
       "accountName": "Fidelity",
       "accountType": "Traditional 401k",
       "employer": "Acme Corp",
@@ -623,6 +625,7 @@
     "entry_2023_alex401k": {
       "entryId": "entry_2023_alex401k",
       "year": 2023,
+      "owner": "Alex Johnson",
       "accountName": "Fidelity",
       "accountType": "Traditional 401k",
       "employer": "Acme Corp",
@@ -639,6 +642,7 @@
     "entry_2024_alex401k": {
       "entryId": "entry_2024_alex401k",
       "year": 2024,
+      "owner": "Alex Johnson",
       "accountName": "Fidelity",
       "accountType": "Traditional 401k",
       "employer": "Acme Corp",
@@ -655,6 +659,7 @@
     "entry_2025_alex401k": {
       "entryId": "entry_2025_alex401k",
       "year": 2025,
+      "owner": "Alex Johnson",
       "accountName": "Fidelity",
       "accountType": "Traditional 401k",
       "employer": "Acme Corp",
@@ -671,6 +676,7 @@
     "entry_2021_jamie401k": {
       "entryId": "entry_2021_jamie401k",
       "year": 2021,
+      "owner": "Jamie Lee",
       "accountName": "Vanguard",
       "accountType": "Traditional 401k",
       "employer": "Bright Solutions",
@@ -687,6 +693,7 @@
     "entry_2022_jamie401k": {
       "entryId": "entry_2022_jamie401k",
       "year": 2022,
+      "owner": "Jamie Lee",
       "accountName": "Vanguard",
       "accountType": "Traditional 401k",
       "employer": "Bright Solutions",
@@ -703,6 +710,7 @@
     "entry_2023_jamie401k": {
       "entryId": "entry_2023_jamie401k",
       "year": 2023,
+      "owner": "Jamie Lee",
       "accountName": "Vanguard",
       "accountType": "Traditional 401k",
       "employer": "Bright Solutions",
@@ -719,6 +727,7 @@
     "entry_2024_jamie401k": {
       "entryId": "entry_2024_jamie401k",
       "year": 2024,
+      "owner": "Jamie Lee",
       "accountName": "Vanguard",
       "accountType": "Traditional 401k",
       "employer": "Bright Solutions",
@@ -735,6 +744,7 @@
     "entry_2025_jamie401k": {
       "entryId": "entry_2025_jamie401k",
       "year": 2025,
+      "owner": "Jamie Lee",
       "accountName": "Vanguard",
       "accountType": "Traditional 401k",
       "employer": "Bright Solutions",
