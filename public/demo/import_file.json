@@ -162,37 +162,34 @@
         "Alex Johnson": {
           "employer": "Acme Corp",
           "salary": 87000,
-          "bonus": 8000,
-          "retirement": 32000,
-          "hsa": 4000,
-          "espp": 2000,
-          "cash": 12000,
-          "taxable": 7000,
-          "debt": 18000
+          "bonus": 8000
         },
         "Jamie Lee": {
           "employer": "Bright Solutions",
           "salary": 60000,
-          "bonus": 2500,
-          "retirement": 18000,
-          "hsa": 0,
-          "espp": 0,
-          "cash": 7000,
-          "taxable": 3000,
-          "debt": 9000
+          "bonus": 2500
         }
       },
-      "combined": {
-        "agi": 147000,
-        "taxable": 10000,
-        "retirement": 50000,
-        "hsa": 4000,
-        "espp": 2000,
-        "cash": 19000,
-        "debt": 27000,
-        "house": 320000,
-        "netWorth": 350000
-      }
+      "agi": 147000,
+      "ssaEarnings": 142800,
+      "effectiveTaxRate": 18.5,
+      "taxPaid": 27195,
+      "netWorthPlus": 323000,
+      "netWorthMinus": 27000,
+      "taxFree": 4000,
+      "taxDeferred": 50000,
+      "rBrokerage": 5000,
+      "ltBrokerage": 5000,
+      "espp": 2000,
+      "hsa": 4000,
+      "cash": 19000,
+      "house": 320000,
+      "mortgage": 256000,
+      "othAsset": 0,
+      "retirement": 50000,
+      "othLia": 27000,
+      "homeImprovements": 8000,
+      "liabilities": 283000
     },
     "2022": {
       "year": 2022,
@@ -200,37 +197,34 @@
         "Alex Johnson": {
           "employer": "Acme Corp",
           "salary": 90000,
-          "bonus": 9000,
-          "retirement": 37000,
-          "hsa": 4500,
-          "espp": 2500,
-          "cash": 14000,
-          "taxable": 9000,
-          "debt": 16000
+          "bonus": 9000
         },
         "Jamie Lee": {
           "employer": "Bright Solutions",
           "salary": 63000,
-          "bonus": 3000,
-          "retirement": 21000,
-          "hsa": 0,
-          "espp": 0,
-          "cash": 8000,
-          "taxable": 4000,
-          "debt": 8000
+          "bonus": 3000
         }
       },
-      "combined": {
-        "agi": 162000,
-        "taxable": 13000,
-        "retirement": 58000,
-        "hsa": 4500,
-        "espp": 2500,
-        "cash": 22000,
-        "debt": 24000,
-        "house": 340000,
-        "netWorth": 390000
-      }
+      "agi": 162000,
+      "ssaEarnings": 147000,
+      "effectiveTaxRate": 19.2,
+      "taxPaid": 31104,
+      "netWorthPlus": 366000,
+      "netWorthMinus": 24000,
+      "taxFree": 4500,
+      "taxDeferred": 58000,
+      "rBrokerage": 6500,
+      "ltBrokerage": 6500,
+      "espp": 2500,
+      "hsa": 4500,
+      "cash": 22000,
+      "house": 340000,
+      "mortgage": 245000,
+      "othAsset": 0,
+      "retirement": 58000,
+      "othLia": 24000,
+      "homeImprovements": 12000,
+      "liabilities": 269000
     },
     "2023": {
       "year": 2023,
@@ -238,37 +232,34 @@
         "Alex Johnson": {
           "employer": "Acme Corp",
           "salary": 93000,
-          "bonus": 9500,
-          "retirement": 43000,
-          "hsa": 5000,
-          "espp": 3000,
-          "cash": 16000,
-          "taxable": 11000,
-          "debt": 14000
+          "bonus": 9500
         },
         "Jamie Lee": {
           "employer": "Bright Solutions",
           "salary": 65000,
-          "bonus": 3200,
-          "retirement": 25000,
-          "hsa": 0,
-          "espp": 0,
-          "cash": 9000,
-          "taxable": 5000,
-          "debt": 7000
+          "bonus": 3200
         }
       },
-      "combined": {
-        "agi": 172700,
-        "taxable": 16000,
-        "retirement": 68000,
-        "hsa": 5000,
-        "espp": 3000,
-        "cash": 25000,
-        "debt": 21000,
-        "house": 355000,
-        "netWorth": 430000
-      }
+      "agi": 170700,
+      "ssaEarnings": 158000,
+      "effectiveTaxRate": 20.1,
+      "taxPaid": 34311,
+      "netWorthPlus": 409000,
+      "netWorthMinus": 21000,
+      "taxFree": 5000,
+      "taxDeferred": 68000,
+      "rBrokerage": 8000,
+      "ltBrokerage": 8000,
+      "espp": 3000,
+      "hsa": 5000,
+      "cash": 25000,
+      "house": 355000,
+      "mortgage": 233000,
+      "othAsset": 0,
+      "retirement": 68000,
+      "othLia": 21000,
+      "homeImprovements": 16000,
+      "liabilities": 254000
     },
     "2024": {
       "year": 2024,
@@ -276,37 +267,34 @@
         "Alex Johnson": {
           "employer": "Acme Corp",
           "salary": 95000,
-          "bonus": 10000,
-          "retirement": 50000,
-          "hsa": 5500,
-          "espp": 3500,
-          "cash": 18000,
-          "taxable": 13000,
-          "debt": 12000
+          "bonus": 10000
         },
         "Jamie Lee": {
           "employer": "Bright Solutions",
           "salary": 67000,
-          "bonus": 3350,
-          "retirement": 29000,
-          "hsa": 0,
-          "espp": 0,
-          "cash": 10000,
-          "taxable": 6000,
-          "debt": 6000
+          "bonus": 3350
         }
       },
-      "combined": {
-        "agi": 183350,
-        "taxable": 19000,
-        "retirement": 79000,
-        "hsa": 5500,
-        "espp": 3500,
-        "cash": 28000,
-        "debt": 18000,
-        "house": 370000,
-        "netWorth": 480000
-      }
+      "agi": 175350,
+      "ssaEarnings": 162000,
+      "effectiveTaxRate": 20.8,
+      "taxPaid": 36473,
+      "netWorthPlus": 462000,
+      "netWorthMinus": 18000,
+      "taxFree": 5500,
+      "taxDeferred": 79000,
+      "rBrokerage": 10000,
+      "ltBrokerage": 9000,
+      "espp": 3500,
+      "hsa": 5500,
+      "cash": 28000,
+      "house": 370000,
+      "mortgage": 220000,
+      "othAsset": 0,
+      "retirement": 79000,
+      "othLia": 18000,
+      "homeImprovements": 20000,
+      "liabilities": 238000
     },
     "2025": {
       "year": 2025,
@@ -314,37 +302,34 @@
         "Alex Johnson": {
           "employer": "Acme Corp",
           "salary": 97000,
-          "bonus": 10500,
-          "retirement": 57000,
-          "hsa": 6000,
-          "espp": 4000,
-          "cash": 20000,
-          "taxable": 15000,
-          "debt": 10000
+          "bonus": 10500
         },
         "Jamie Lee": {
           "employer": "Bright Solutions",
           "salary": 69000,
-          "bonus": 3500,
-          "retirement": 33000,
-          "hsa": 0,
-          "espp": 0,
-          "cash": 11000,
-          "taxable": 7000,
-          "debt": 5000
+          "bonus": 3500
         }
       },
-      "combined": {
-        "agi": 194000,
-        "taxable": 22000,
-        "retirement": 90000,
-        "hsa": 6000,
-        "espp": 4000,
-        "cash": 31000,
-        "debt": 15000,
-        "house": 385000,
-        "netWorth": 540000
-      }
+      "agi": 180000,
+      "ssaEarnings": 166000,
+      "effectiveTaxRate": 21.2,
+      "taxPaid": 38160,
+      "netWorthPlus": 520000,
+      "netWorthMinus": 15000,
+      "taxFree": 6000,
+      "taxDeferred": 90000,
+      "rBrokerage": 12000,
+      "ltBrokerage": 10000,
+      "espp": 4000,
+      "hsa": 6000,
+      "cash": 31000,
+      "house": 385000,
+      "mortgage": 207000,
+      "othAsset": 0,
+      "retirement": 90000,
+      "othLia": 15000,
+      "homeImprovements": 24000,
+      "liabilities": 222000
     }
   },
   "performanceData": {
@@ -360,8 +345,6 @@
       "gains": 2500,
       "fees": 50,
       "withdrawals": 0,
-      "totalContributions": 10500,
-      "netGains": 2450,
       "roi": 0.084
     },
     "entry_2022_alex401k": {
