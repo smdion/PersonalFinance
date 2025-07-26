@@ -13,10 +13,10 @@ const Performance = () => {
         name: 'account',
         title: '📊 Account Information',
         fields: [
+          { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 },
           { name: 'accountName', label: 'Account Name', type: 'text' },
           { name: 'accountType', label: 'Account Type', type: 'text' },
-          { name: 'employer', label: 'Employer', type: 'text' },
-          { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 }
+          { name: 'employer', label: 'Employer', type: 'text' }
         ]
       },
       {
@@ -42,10 +42,10 @@ const Performance = () => {
   // Empty form data structure
   const emptyFormData = {
     entryId: generateEntryId(),
+    year: new Date().getFullYear(),
     accountName: '',
     accountType: '',
     employer: '',
-    year: new Date().getFullYear(),
     balance: '',
     contributions: '',
     employerMatch: '',
@@ -57,10 +57,10 @@ const Performance = () => {
   // Convert stored entry to form data
   const getFormDataFromEntry = (entry) => ({
     entryId: entry.entryId,
+    year: entry.year || '',
     accountName: entry.accountName || '',
     accountType: entry.accountType || '',
     employer: entry.employer || '',
-    year: entry.year || '',
     balance: entry.balance || '',
     contributions: entry.contributions || '',
     employerMatch: entry.employerMatch || '',
@@ -72,10 +72,10 @@ const Performance = () => {
   // Convert form data to stored entry
   const getEntryFromFormData = (formData) => ({
     entryId: formData.entryId,
+    year: formData.year,
     accountName: formData.accountName,
     accountType: formData.accountType,
     employer: formData.employer,
-    year: formData.year,
     balance: formData.balance,
     contributions: formData.contributions,
     employerMatch: formData.employerMatch,
@@ -121,10 +121,10 @@ const Performance = () => {
       
       return {
         entryId: generateEntryId(), // Auto-generate Entry ID during import
+        year: safeParseInt(row['year'] || row['Year']),
         accountName: safeGetString(row['accountName'] || row['Account Name']),
         accountType: safeGetString(row['accountType'] || row['Account Type']),
         employer: safeGetString(row['employer'] || row['Employer']),
-        year: safeParseInt(row['year'] || row['Year']),
         balance: balance,
         contributions: contributions,
         employerMatch: employerMatch,
@@ -144,10 +144,10 @@ const Performance = () => {
 
   // Format entry for CSV (exclude entryId)
   const formatCSVRow = (entry) => [
+    entry.year || '',
     entry.accountName || '',
     entry.accountType || '',
     entry.employer || '',
-    entry.year || '',
     entry.balance || 0,
     entry.contributions || 0,
     entry.employerMatch || 0,
@@ -210,14 +210,14 @@ const Performance = () => {
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={[
-          'accountName', 'accountType', 'employer', 'year',
+          'year', 'accountName', 'accountType', 'employer',
           'balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'
         ]}
         fieldCssClasses={{
+          year: 'performance-account-cell',
           accountName: 'performance-account-cell',
           accountType: 'performance-account-cell',
-          employer: 'performance-account-cell',
-          year: 'performance-account-cell'
+          employer: 'performance-account-cell'
         }}
         beforeCSVImport={handleBeforeCSVImport}
       />
