@@ -1,79 +1,356 @@
 {
   "budgetData": [
     {
+      "id": "budget-impacting",
+      "name": "Budget Impacting Contributions",
+      "isAutoManaged": true,
+      "items": [
+        {
+          "id": "your-traditional-ira",
+          "name": "Your Traditional IRA",
+          "standard": 500,
+          "tight": 500,
+          "emergency": 500
+        },
+        {
+          "id": "your-roth-ira",
+          "name": "Your Roth IRA",
+          "standard": 300,
+          "tight": 300,
+          "emergency": 300
+        },
+        {
+          "id": "spouse-traditional-ira",
+          "name": "Spouse Traditional IRA",
+          "standard": 400,
+          "tight": 400,
+          "emergency": 400
+        },
+        {
+          "id": "spouse-retirement-brokerage",
+          "name": "Spouse Retirement Brokerage",
+          "standard": 250,
+          "tight": 250,
+          "emergency": 250
+        }
+      ]
+    },
+    {
       "id": "cat_housing",
       "name": "Housing",
       "items": [
-        { "id": "rent", "name": "Rent/Mortgage", "amounts": { "standard": 1800, "tight": 1500, "emergency": 0 } },
-        { "id": "utilities", "name": "Utilities", "amounts": { "standard": 250, "tight": 200, "emergency": 120 } },
-        { "id": "internet", "name": "Internet", "amounts": { "standard": 70, "tight": 50, "emergency": 0 } }
+        {
+          "id": "rent",
+          "name": "Rent/Mortgage",
+          "standard": 1800,
+          "tight": 1500,
+          "emergency": 0
+        },
+        {
+          "id": "utilities",
+          "name": "Utilities",
+          "standard": 250,
+          "tight": 200,
+          "emergency": 120
+        },
+        {
+          "id": "internet",
+          "name": "Internet",
+          "standard": 70,
+          "tight": 50,
+          "emergency": 0
+        },
+        {
+          "id": "insurance",
+          "name": "Home Insurance",
+          "standard": 95,
+          "tight": 95,
+          "emergency": 95
+        }
       ]
     },
     {
       "id": "cat_transportation",
       "name": "Transportation",
       "items": [
-        { "id": "car_payment", "name": "Car Payment", "amounts": { "standard": 350, "tight": 0, "emergency": 0 } },
-        { "id": "gas", "name": "Gas", "amounts": { "standard": 120, "tight": 80, "emergency": 40 } },
-        { "id": "insurance", "name": "Auto Insurance", "amounts": { "standard": 100, "tight": 80, "emergency": 60 } }
+        {
+          "id": "car_payment",
+          "name": "Car Payment",
+          "standard": 450,
+          "tight": 0,
+          "emergency": 0
+        },
+        {
+          "id": "gas",
+          "name": "Gas",
+          "standard": 180,
+          "tight": 120,
+          "emergency": 60
+        },
+        {
+          "id": "auto_insurance",
+          "name": "Auto Insurance",
+          "standard": 140,
+          "tight": 120,
+          "emergency": 100
+        },
+        {
+          "id": "maintenance",
+          "name": "Car Maintenance",
+          "standard": 75,
+          "tight": 50,
+          "emergency": 25
+        }
       ]
     },
     {
       "id": "cat_food",
       "name": "Food & Groceries",
       "items": [
-        { "id": "groceries", "name": "Groceries", "amounts": { "standard": 600, "tight": 400, "emergency": 250 } },
-        { "id": "dining", "name": "Dining Out", "amounts": { "standard": 200, "tight": 80, "emergency": 0 } }
+        {
+          "id": "groceries",
+          "name": "Groceries",
+          "standard": 800,
+          "tight": 550,
+          "emergency": 350
+        },
+        {
+          "id": "dining",
+          "name": "Dining Out",
+          "standard": 300,
+          "tight": 120,
+          "emergency": 0
+        },
+        {
+          "id": "coffee",
+          "name": "Coffee/Snacks",
+          "standard": 60,
+          "tight": 30,
+          "emergency": 0
+        }
       ]
     },
     {
       "id": "cat_health",
-      "name": "Health & Insurance",
+      "name": "Health & Medical",
       "items": [
-        { "id": "health_ins", "name": "Health Insurance", "amounts": { "standard": 350, "tight": 350, "emergency": 350 } },
-        { "id": "meds", "name": "Prescriptions/Medical", "amounts": { "standard": 40, "tight": 20, "emergency": 10 } }
+        {
+          "id": "copays",
+          "name": "Medical Copays",
+          "standard": 80,
+          "tight": 50,
+          "emergency": 30
+        },
+        {
+          "id": "prescriptions",
+          "name": "Prescriptions",
+          "standard": 45,
+          "tight": 30,
+          "emergency": 20
+        },
+        {
+          "id": "dental",
+          "name": "Dental Care",
+          "standard": 40,
+          "tight": 20,
+          "emergency": 0
+        }
       ]
     },
     {
       "id": "cat_kids",
       "name": "Childcare & Education",
       "items": [
-        { "id": "childcare", "name": "Childcare", "amounts": { "standard": 500, "tight": 300, "emergency": 0 } },
-        { "id": "school", "name": "School Supplies", "amounts": { "standard": 40, "tight": 20, "emergency": 0 } }
+        {
+          "id": "childcare",
+          "name": "Childcare",
+          "standard": 650,
+          "tight": 400,
+          "emergency": 0
+        },
+        {
+          "id": "school_supplies",
+          "name": "School Supplies",
+          "standard": 50,
+          "tight": 25,
+          "emergency": 0
+        },
+        {
+          "id": "activities",
+          "name": "Kids Activities",
+          "standard": 120,
+          "tight": 60,
+          "emergency": 0
+        }
       ]
     },
     {
       "id": "cat_utilities",
-      "name": "Subscriptions & Utilities",
+      "name": "Subscriptions & Communication",
       "items": [
-        { "id": "cell", "name": "Cell Phone", "amounts": { "standard": 90, "tight": 60, "emergency": 40 } },
-        { "id": "streaming", "name": "Streaming Services", "amounts": { "standard": 40, "tight": 20, "emergency": 0 } }
+        {
+          "id": "cell_phone",
+          "name": "Cell Phone",
+          "standard": 110,
+          "tight": 80,
+          "emergency": 50
+        },
+        {
+          "id": "streaming",
+          "name": "Streaming Services",
+          "standard": 65,
+          "tight": 35,
+          "emergency": 0
+        },
+        {
+          "id": "spotify",
+          "name": "Music Subscription",
+          "standard": 15,
+          "tight": 10,
+          "emergency": 0
+        }
       ]
     },
     {
-      "id": "cat_misc",
-      "name": "Miscellaneous",
+      "id": "cat_personal",
+      "name": "Personal Care & Clothing",
       "items": [
-        { "id": "clothing", "name": "Clothing", "amounts": { "standard": 80, "tight": 40, "emergency": 0 } },
-        { "id": "gifts", "name": "Gifts", "amounts": { "standard": 50, "tight": 20, "emergency": 0 } },
-        { "id": "personal", "name": "Personal Care", "amounts": { "standard": 60, "tight": 30, "emergency": 10 } }
+        {
+          "id": "clothing",
+          "name": "Clothing",
+          "standard": 120,
+          "tight": 60,
+          "emergency": 0
+        },
+        {
+          "id": "haircuts",
+          "name": "Haircuts/Salon",
+          "standard": 80,
+          "tight": 50,
+          "emergency": 25
+        },
+        {
+          "id": "personal_care",
+          "name": "Personal Care Items",
+          "standard": 50,
+          "tight": 30,
+          "emergency": 15
+        }
       ]
     },
     {
       "id": "cat_savings",
       "name": "Savings & Debt",
       "items": [
-        { "id": "emergency_savings", "name": "Emergency Savings", "amounts": { "standard": 400, "tight": 200, "emergency": 0 } },
-        { "id": "retirement", "name": "Retirement Savings", "amounts": { "standard": 600, "tight": 400, "emergency": 0 } },
-        { "id": "debt", "name": "Debt Payments", "amounts": { "standard": 200, "tight": 100, "emergency": 50 } }
+        {
+          "id": "emergency_fund",
+          "name": "Emergency Fund",
+          "standard": 500,
+          "tight": 250,
+          "emergency": 0
+        },
+        {
+          "id": "house_downpayment",
+          "name": "House Down Payment",
+          "standard": 400,
+          "tight": 200,
+          "emergency": 0
+        },
+        {
+          "id": "student_loans",
+          "name": "Student Loan Payment",
+          "standard": 280,
+          "tight": 280,
+          "emergency": 140
+        },
+        {
+          "id": "credit_cards",
+          "name": "Credit Card Payment",
+          "standard": 150,
+          "tight": 100,
+          "emergency": 75
+        }
       ]
     },
     {
       "id": "cat_entertainment",
       "name": "Entertainment & Recreation",
       "items": [
-        { "id": "entertainment", "name": "Entertainment", "amounts": { "standard": 120, "tight": 60, "emergency": 0 } },
-        { "id": "vacation", "name": "Vacation/Travel", "amounts": { "standard": 150, "tight": 0, "emergency": 0 } }
+        {
+          "id": "entertainment",
+          "name": "Movies/Events",
+          "standard": 100,
+          "tight": 50,
+          "emergency": 0
+        },
+        {
+          "id": "hobbies",
+          "name": "Hobbies",
+          "standard": 80,
+          "tight": 40,
+          "emergency": 0
+        },
+        {
+          "id": "vacation_fund",
+          "name": "Vacation Fund",
+          "standard": 250,
+          "tight": 100,
+          "emergency": 0
+        },
+        {
+          "id": "gym",
+          "name": "Gym Membership",
+          "standard": 45,
+          "tight": 25,
+          "emergency": 0
+        }
+      ]
+    },
+    {
+      "id": "cat_gifts",
+      "name": "Gifts & Donations",
+      "items": [
+        {
+          "id": "birthday_gifts",
+          "name": "Birthday/Holiday Gifts",
+          "standard": 100,
+          "tight": 50,
+          "emergency": 0
+        },
+        {
+          "id": "charity",
+          "name": "Charitable Donations",
+          "standard": 75,
+          "tight": 40,
+          "emergency": 0
+        }
+      ]
+    },
+    {
+      "id": "cat_misc",
+      "name": "Miscellaneous",
+      "items": [
+        {
+          "id": "pet_care",
+          "name": "Pet Care",
+          "standard": 90,
+          "tight": 60,
+          "emergency": 30
+        },
+        {
+          "id": "household_items",
+          "name": "Household Items",
+          "standard": 65,
+          "tight": 40,
+          "emergency": 20
+        },
+        {
+          "id": "unexpected",
+          "name": "Unexpected Expenses",
+          "standard": 100,
+          "tight": 50,
+          "emergency": 25
+        }
       ]
     }
   ],
