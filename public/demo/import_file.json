@@ -1,142 +1,94 @@
 {
-  "exportedAt": "2025-01-15T10:00:00.000Z",
-  "version": "1.1.0",
   "budgetData": [
     {
-      "id": "budget-impacting",
-      "name": "Budget Impacting Contributions",
-      "isAutoManaged": true,
-      "items": [
-        {
-          "id": "your-roth-ira",
-          "name": "Jordan Roth IRA",
-          "standard": 500,
-          "tight": 400,
-          "emergency": 0
-        },
-        {
-          "id": "spouse-roth-ira",
-          "name": "Taylor Roth IRA",
-          "standard": 450,
-          "tight": 350,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "housing",
+      "id": "cat_housing",
       "name": "Housing",
       "items": [
-        { "id": "mortgage", "name": "Mortgage Payment", "standard": 1580, "tight": 1580, "emergency": 1580 },
-        { "id": "propertytax", "name": "Property Tax", "standard": 420, "tight": 420, "emergency": 420 },
-        { "id": "homeins", "name": "Home Insurance", "standard": 125, "tight": 125, "emergency": 125 },
-        { "id": "hoa", "name": "HOA Dues", "standard": 85, "tight": 85, "emergency": 85 }
+        { "id": "rent", "name": "Rent/Mortgage", "amounts": { "standard": 1800, "tight": 1500, "emergency": 0 } },
+        { "id": "utilities", "name": "Utilities", "amounts": { "standard": 250, "tight": 200, "emergency": 120 } },
+        { "id": "internet", "name": "Internet", "amounts": { "standard": 70, "tight": 50, "emergency": 0 } }
       ]
     },
     {
-      "id": "utilities",
-      "name": "Utilities",
-      "items": [
-        { "id": "electric", "name": "Electricity", "standard": 135, "tight": 120, "emergency": 100 },
-        { "id": "water", "name": "Water/Sewer", "standard": 75, "tight": 70, "emergency": 65 },
-        { "id": "internet", "name": "Internet", "standard": 85, "tight": 65, "emergency": 50 },
-        { "id": "gas", "name": "Natural Gas", "standard": 90, "tight": 80, "emergency": 70 },
-        { "id": "trash", "name": "Trash/Recycling", "standard": 35, "tight": 35, "emergency": 35 }
-      ]
-    },
-    {
-      "id": "transportation",
+      "id": "cat_transportation",
       "name": "Transportation",
       "items": [
-        { "id": "car1payment", "name": "Jordan's Car Payment", "standard": 425, "tight": 425, "emergency": 0 },
-        { "id": "car2payment", "name": "Taylor's Car Payment", "standard": 380, "tight": 380, "emergency": 200 },
-        { "id": "fuel", "name": "Gasoline", "standard": 180, "tight": 150, "emergency": 120 },
-        { "id": "autoins", "name": "Auto Insurance", "standard": 145, "tight": 145, "emergency": 145 },
-        { "id": "carmaint", "name": "Car Maintenance", "standard": 150, "tight": 100, "emergency": 50 }
+        { "id": "car_payment", "name": "Car Payment", "amounts": { "standard": 350, "tight": 0, "emergency": 0 } },
+        { "id": "gas", "name": "Gas", "amounts": { "standard": 120, "tight": 80, "emergency": 40 } },
+        { "id": "insurance", "name": "Auto Insurance", "amounts": { "standard": 100, "tight": 80, "emergency": 60 } }
       ]
     },
     {
-      "id": "food",
-      "name": "Food & Dining",
+      "id": "cat_food",
+      "name": "Food & Groceries",
       "items": [
-        { "id": "groceries", "name": "Groceries", "standard": 750, "tight": 600, "emergency": 450 },
-        { "id": "dining", "name": "Restaurants", "standard": 280, "tight": 150, "emergency": 0 },
-        { "id": "coffee", "name": "Coffee/Beverages", "standard": 85, "tight": 40, "emergency": 0 },
-        { "id": "lunch", "name": "Work Lunches", "standard": 120, "tight": 60, "emergency": 0 }
+        { "id": "groceries", "name": "Groceries", "amounts": { "standard": 600, "tight": 400, "emergency": 250 } },
+        { "id": "dining", "name": "Dining Out", "amounts": { "standard": 200, "tight": 80, "emergency": 0 } }
       ]
     },
     {
-      "id": "health",
-      "name": "Health & Medical",
+      "id": "cat_health",
+      "name": "Health & Insurance",
       "items": [
-        { "id": "prescriptions", "name": "Prescriptions", "standard": 65, "tight": 50, "emergency": 40 },
-        { "id": "dental", "name": "Dental Care", "standard": 80, "tight": 60, "emergency": 30 },
-        { "id": "vision", "name": "Vision Care", "standard": 45, "tight": 30, "emergency": 15 },
-        { "id": "therapy", "name": "Therapy/Counseling", "standard": 120, "tight": 80, "emergency": 0 }
+        { "id": "health_ins", "name": "Health Insurance", "amounts": { "standard": 350, "tight": 350, "emergency": 350 } },
+        { "id": "meds", "name": "Prescriptions/Medical", "amounts": { "standard": 40, "tight": 20, "emergency": 10 } }
       ]
     },
     {
-      "id": "childcare",
-      "name": "Childcare & Kids",
+      "id": "cat_kids",
+      "name": "Childcare & Education",
       "items": [
-        { "id": "daycare", "name": "Daycare", "standard": 1200, "tight": 1000, "emergency": 0 },
-        { "id": "activities", "name": "Kids Activities", "standard": 150, "tight": 75, "emergency": 0 },
-        { "id": "clothing", "name": "Kids Clothing", "standard": 80, "tight": 50, "emergency": 20 },
-        { "id": "supplies", "name": "School Supplies", "standard": 40, "tight": 25, "emergency": 10 }
+        { "id": "childcare", "name": "Childcare", "amounts": { "standard": 500, "tight": 300, "emergency": 0 } },
+        { "id": "school", "name": "School Supplies", "amounts": { "standard": 40, "tight": 20, "emergency": 0 } }
       ]
     },
     {
-      "id": "personal",
-      "name": "Personal Care",
+      "id": "cat_utilities",
+      "name": "Subscriptions & Utilities",
       "items": [
-        { "id": "haircare", "name": "Hair Care", "standard": 110, "tight": 70, "emergency": 40 },
-        { "id": "clothing", "name": "Adult Clothing", "standard": 160, "tight": 80, "emergency": 30 },
-        { "id": "fitness", "name": "Gym/Fitness", "standard": 95, "tight": 50, "emergency": 0 },
-        { "id": "skincare", "name": "Skincare/Beauty", "standard": 85, "tight": 50, "emergency": 25 }
+        { "id": "cell", "name": "Cell Phone", "amounts": { "standard": 90, "tight": 60, "emergency": 40 } },
+        { "id": "streaming", "name": "Streaming Services", "amounts": { "standard": 40, "tight": 20, "emergency": 0 } }
       ]
     },
     {
-      "id": "entertainment",
-      "name": "Entertainment & Fun",
+      "id": "cat_misc",
+      "name": "Miscellaneous",
       "items": [
-        { "id": "streaming", "name": "Streaming Services", "standard": 75, "tight": 45, "emergency": 0 },
-        { "id": "datenight", "name": "Date Nights", "standard": 200, "tight": 100, "emergency": 0 },
-        { "id": "hobbies", "name": "Hobbies", "standard": 150, "tight": 75, "emergency": 0 },
-        { "id": "gifts", "name": "Gifts", "standard": 125, "tight": 60, "emergency": 20 }
+        { "id": "clothing", "name": "Clothing", "amounts": { "standard": 80, "tight": 40, "emergency": 0 } },
+        { "id": "gifts", "name": "Gifts", "amounts": { "standard": 50, "tight": 20, "emergency": 0 } },
+        { "id": "personal", "name": "Personal Care", "amounts": { "standard": 60, "tight": 30, "emergency": 10 } }
       ]
     },
     {
-      "id": "insurance",
-      "name": "Insurance",
-      "items": [
-        { "id": "life", "name": "Life Insurance", "standard": 95, "tight": 95, "emergency": 95 },
-        { "id": "disability", "name": "Disability Insurance", "standard": 65, "tight": 65, "emergency": 65 },
-        { "id": "umbrella", "name": "Umbrella Policy", "standard": 45, "tight": 45, "emergency": 0 }
-      ]
-    },
-    {
-      "id": "savings",
+      "id": "cat_savings",
       "name": "Savings & Debt",
       "items": [
-        { "id": "emergency", "name": "Emergency Fund", "standard": 400, "tight": 200, "emergency": 0 },
-        { "id": "vacation", "name": "Vacation Savings", "standard": 300, "tight": 150, "emergency": 0 },
-        { "id": "homerepair", "name": "Home Repair Fund", "standard": 250, "tight": 125, "emergency": 0 },
-        { "id": "creditcard", "name": "Credit Card Payment", "standard": 280, "tight": 280, "emergency": 150 }
+        { "id": "emergency_savings", "name": "Emergency Savings", "amounts": { "standard": 400, "tight": 200, "emergency": 0 } },
+        { "id": "retirement", "name": "Retirement Savings", "amounts": { "standard": 600, "tight": 400, "emergency": 0 } },
+        { "id": "debt", "name": "Debt Payments", "amounts": { "standard": 200, "tight": 100, "emergency": 50 } }
+      ]
+    },
+    {
+      "id": "cat_entertainment",
+      "name": "Entertainment & Recreation",
+      "items": [
+        { "id": "entertainment", "name": "Entertainment", "amounts": { "standard": 120, "tight": 60, "emergency": 0 } },
+        { "id": "vacation", "name": "Vacation/Travel", "amounts": { "standard": 150, "tight": 0, "emergency": 0 } }
       ]
     }
   ],
   "paycheckData": {
     "your": {
-      "name": "Jordan",
-      "employer": "TechSolutions Inc",
-      "birthday": "1987-05-14",
-      "salary": 72000,
-      "payPeriod": "biweekly",
+      "name": "Alex Johnson",
+      "employer": "Acme Corp",
+      "birthday": "1987-04-15",
+      "salary": "95000",
+      "payPeriod": "biWeekly",
       "filingStatus": "marriedJointly",
       "w4Type": "new",
       "w4Options": {
         "multipleJobs": false,
-        "qualifyingChildren": 1,
+        "qualifyingChildren": 0,
         "otherDependents": 0,
         "additionalIncome": 0,
         "extraWithholding": 0
@@ -147,33 +99,31 @@
         "isOver50": false
       },
       "medicalDeductions": {
-        "hsa": 200,
-        "employerHsa": 750,
+        "hsa": 150,
+        "employerHsa": 50,
         "fsa": 0,
-        "dental": 25,
-        "vision": 12,
-        "medical": 145,
-        "shortTermDisability": 18,
-        "longTermDisability": 15
+        "dental": 30,
+        "vision": 10,
+        "medical": 120
       },
-      "esppDeductionPercent": 0,
+      "esppDeductionPercent": 5,
       "budgetImpacting": true,
-      "bonusMultiplier": 1,
-      "bonusTarget": 3600,
-      "payWeekType": "standard",
+      "bonusMultiplier": 0.1,
+      "bonusTarget": 9500,
+      "payWeekType": "odd",
       "hsaCoverageType": "family"
     },
     "spouse": {
-      "name": "Taylor",
-      "employer": "Metro Public Schools",
-      "birthday": "1989-09-22",
-      "salary": 58000,
-      "payPeriod": "biweekly",
+      "name": "Jamie Lee",
+      "employer": "Bright Solutions",
+      "birthday": "1990-09-22",
+      "salary": "67000",
+      "payPeriod": "biWeekly",
       "filingStatus": "marriedJointly",
       "w4Type": "new",
       "w4Options": {
         "multipleJobs": false,
-        "qualifyingChildren": 1,
+        "qualifyingChildren": 0,
         "otherDependents": 0,
         "additionalIncome": 0,
         "extraWithholding": 0
@@ -186,391 +136,377 @@
       "medicalDeductions": {
         "hsa": 0,
         "employerHsa": 0,
-        "fsa": 125,
-        "dental": 18,
+        "fsa": 100,
+        "dental": 20,
         "vision": 10,
-        "medical": 85,
-        "shortTermDisability": 0,
-        "longTermDisability": 0
+        "medical": 80
       },
       "esppDeductionPercent": 0,
       "budgetImpacting": true,
-      "bonusMultiplier": 1,
-      "bonusTarget": 2300,
-      "payWeekType": "standard",
+      "bonusMultiplier": 0.05,
+      "bonusTarget": 3350,
+      "payWeekType": "even",
       "hsaCoverageType": "self"
-    },
-    "settings": {
-      "showSpouseCalculator": true
     }
   },
   "formData": {
     "showSpouseCalculator": true,
     "yourBudgetImpacting": true,
     "spouseBudgetImpacting": true,
-    "combinedMonthlyTakeHome": 8450
-  },
-  "appSettings": {
-    "theme": "light",
-    "currency": "USD"
+    "combinedMonthlyTakeHome": 9000
   },
   "historicalData": {
-    "2019": {
-      "year": 2019,
-      "users": {
-        "Jordan": {
-          "employer": "DataCorp",
-          "salary": 62000,
-          "bonus": 2500
-        },
-        "Taylor": {
-          "employer": "Metro Public Schools",
-          "salary": 52000,
-          "bonus": 1000
-        }
-      },
-      "agi": 110000,
-      "ssaEarnings": 113500,
-      "effectiveTaxRate": 0.14,
-      "taxPaid": 15400,
-      "netWorthPlus": 145000,
-      "netWorthMinus": 85000,
-      "taxFree": 18000,
-      "taxDeferred": 28000,
-      "rBrokerage": 2500,
-      "ltBrokerage": 1800,
-      "espp": 0,
-      "hsa": 4200,
-      "cash": 15000,
-      "house": 285000,
-      "mortgage": 225000,
-      "othAsset": 8500,
-      "retirement": 52500,
-      "othLia": 3200,
-      "homeImprovements": 2500,
-      "liabilities": 228200
-    },
-    "2020": {
-      "year": 2020,
-      "users": {
-        "Jordan": {
-          "employer": "DataCorp",
-          "salary": 64500,
-          "bonus": 2800
-        },
-        "Taylor": {
-          "employer": "Metro Public Schools",
-          "salary": 53500,
-          "bonus": 1200
-        }
-      },
-      "agi": 115000,
-      "ssaEarnings": 121000,
-      "effectiveTaxRate": 0.15,
-      "taxPaid": 17250,
-      "netWorthPlus": 185000,
-      "netWorthMinus": 78000,
-      "taxFree": 25000,
-      "taxDeferred": 35000,
-      "rBrokerage": 4200,
-      "ltBrokerage": 3100,
-      "espp": 0,
-      "hsa": 6800,
-      "cash": 18500,
-      "house": 295000,
-      "mortgage": 218000,
-      "othAsset": 9200,
-      "retirement": 68300,
-      "othLia": 2800,
-      "homeImprovements": 4200,
-      "liabilities": 220800
-    },
     "2021": {
       "year": 2021,
       "users": {
-        "Jordan": {
-          "employer": "TechSolutions Inc",
-          "salary": 68000,
-          "bonus": 3200
+        "Alex Johnson": {
+          "employer": "Acme Corp",
+          "salary": 87000,
+          "bonus": 8000,
+          "retirement": 32000,
+          "hsa": 4000,
+          "espp": 2000,
+          "cash": 12000,
+          "taxable": 7000,
+          "debt": 18000
         },
-        "Taylor": {
-          "employer": "Metro Public Schools",
-          "salary": 55000,
-          "bonus": 1500
+        "Jamie Lee": {
+          "employer": "Bright Solutions",
+          "salary": 60000,
+          "bonus": 2500,
+          "retirement": 18000,
+          "hsa": 0,
+          "espp": 0,
+          "cash": 7000,
+          "taxable": 3000,
+          "debt": 9000
         }
       },
-      "agi": 122000,
-      "ssaEarnings": 126700,
-      "effectiveTaxRate": 0.16,
-      "taxPaid": 19520,
-      "netWorthPlus": 235000,
-      "netWorthMinus": 72000,
-      "taxFree": 32000,
-      "taxDeferred": 42000,
-      "rBrokerage": 6800,
-      "ltBrokerage": 4900,
-      "espp": 0,
-      "hsa": 9200,
-      "cash": 22000,
-      "house": 310000,
-      "mortgage": 210000,
-      "othAsset": 10500,
-      "retirement": 88300,
-      "othLia": 2400,
-      "homeImprovements": 6500,
-      "liabilities": 212400
+      "combined": {
+        "agi": 147000,
+        "taxable": 10000,
+        "retirement": 50000,
+        "hsa": 4000,
+        "espp": 2000,
+        "cash": 19000,
+        "debt": 27000,
+        "house": 320000,
+        "netWorth": 350000
+      }
     },
     "2022": {
       "year": 2022,
       "users": {
-        "Jordan": {
-          "employer": "TechSolutions Inc",
-          "salary": 70000,
-          "bonus": 3400
+        "Alex Johnson": {
+          "employer": "Acme Corp",
+          "salary": 90000,
+          "bonus": 9000,
+          "retirement": 37000,
+          "hsa": 4500,
+          "espp": 2500,
+          "cash": 14000,
+          "taxable": 9000,
+          "debt": 16000
         },
-        "Taylor": {
-          "employer": "Metro Public Schools",
-          "salary": 56500,
-          "bonus": 1800
+        "Jamie Lee": {
+          "employer": "Bright Solutions",
+          "salary": 63000,
+          "bonus": 3000,
+          "retirement": 21000,
+          "hsa": 0,
+          "espp": 0,
+          "cash": 8000,
+          "taxable": 4000,
+          "debt": 8000
         }
       },
-      "agi": 126000,
-      "ssaEarnings": 131700,
-      "effectiveTaxRate": 0.17,
-      "taxPaid": 21420,
-      "netWorthPlus": 285000,
-      "netWorthMinus": 65000,
-      "taxFree": 38500,
-      "taxDeferred": 48000,
-      "rBrokerage": 8200,
-      "ltBrokerage": 6500,
-      "espp": 0,
-      "hsa": 11800,
-      "cash": 25500,
-      "house": 325000,
-      "mortgage": 202000,
-      "othAsset": 11200,
-      "retirement": 107300,
-      "othLia": 2000,
-      "homeImprovements": 8200,
-      "liabilities": 204000
+      "combined": {
+        "agi": 162000,
+        "taxable": 13000,
+        "retirement": 58000,
+        "hsa": 4500,
+        "espp": 2500,
+        "cash": 22000,
+        "debt": 24000,
+        "house": 340000,
+        "netWorth": 390000
+      }
     },
     "2023": {
       "year": 2023,
       "users": {
-        "Jordan": {
-          "employer": "TechSolutions Inc",
-          "salary": 72000,
-          "bonus": 3600
+        "Alex Johnson": {
+          "employer": "Acme Corp",
+          "salary": 93000,
+          "bonus": 9500,
+          "retirement": 43000,
+          "hsa": 5000,
+          "espp": 3000,
+          "cash": 16000,
+          "taxable": 11000,
+          "debt": 14000
         },
-        "Taylor": {
-          "employer": "Metro Public Schools",
-          "salary": 58000,
-          "bonus": 2300
+        "Jamie Lee": {
+          "employer": "Bright Solutions",
+          "salary": 65000,
+          "bonus": 3200,
+          "retirement": 25000,
+          "hsa": 0,
+          "espp": 0,
+          "cash": 9000,
+          "taxable": 5000,
+          "debt": 7000
         }
       },
-      "agi": 130000,
-      "ssaEarnings": 135900,
-      "effectiveTaxRate": 0.175,
-      "taxPaid": 22750,
-      "netWorthPlus": 340000,
-      "netWorthMinus": 58000,
-      "taxFree": 45000,
-      "taxDeferred": 55000,
-      "rBrokerage": 10500,
-      "ltBrokerage": 8200,
-      "espp": 0,
-      "hsa": 14500,
-      "cash": 28000,
-      "house": 340000,
-      "mortgage": 194000,
-      "othAsset": 12800,
-      "retirement": 128300,
-      "othLia": 1500,
-      "homeImprovements": 10200,
-      "liabilities": 195500
+      "combined": {
+        "agi": 172700,
+        "taxable": 16000,
+        "retirement": 68000,
+        "hsa": 5000,
+        "espp": 3000,
+        "cash": 25000,
+        "debt": 21000,
+        "house": 355000,
+        "netWorth": 430000
+      }
+    },
+    "2024": {
+      "year": 2024,
+      "users": {
+        "Alex Johnson": {
+          "employer": "Acme Corp",
+          "salary": 95000,
+          "bonus": 10000,
+          "retirement": 50000,
+          "hsa": 5500,
+          "espp": 3500,
+          "cash": 18000,
+          "taxable": 13000,
+          "debt": 12000
+        },
+        "Jamie Lee": {
+          "employer": "Bright Solutions",
+          "salary": 67000,
+          "bonus": 3350,
+          "retirement": 29000,
+          "hsa": 0,
+          "espp": 0,
+          "cash": 10000,
+          "taxable": 6000,
+          "debt": 6000
+        }
+      },
+      "combined": {
+        "agi": 183350,
+        "taxable": 19000,
+        "retirement": 79000,
+        "hsa": 5500,
+        "espp": 3500,
+        "cash": 28000,
+        "debt": 18000,
+        "house": 370000,
+        "netWorth": 480000
+      }
+    },
+    "2025": {
+      "year": 2025,
+      "users": {
+        "Alex Johnson": {
+          "employer": "Acme Corp",
+          "salary": 97000,
+          "bonus": 10500,
+          "retirement": 57000,
+          "hsa": 6000,
+          "espp": 4000,
+          "cash": 20000,
+          "taxable": 15000,
+          "debt": 10000
+        },
+        "Jamie Lee": {
+          "employer": "Bright Solutions",
+          "salary": 69000,
+          "bonus": 3500,
+          "retirement": 33000,
+          "hsa": 0,
+          "espp": 0,
+          "cash": 11000,
+          "taxable": 7000,
+          "debt": 5000
+        }
+      },
+      "combined": {
+        "agi": 194000,
+        "taxable": 22000,
+        "retirement": 90000,
+        "hsa": 6000,
+        "espp": 4000,
+        "cash": 31000,
+        "debt": 15000,
+        "house": 385000,
+        "netWorth": 540000
+      }
     }
   },
   "performanceData": {
-    "entry_2019_jordan401k": {
-      "entryId": "entry_2019_jordan401k",
-      "accountName": "Jordan 401k",
-      "accountType": "401k",
-      "employer": "DataCorp",
-      "year": 2019,
-      "startBalance": 18000,
-      "contributions": 6200,
-      "employerMatch": 3100,
-      "growth": 2100,
-      "endBalance": 29400
-    },
-    "entry_2019_taylor403b": {
-      "entryId": "entry_2019_taylor403b",
-      "accountName": "Taylor 403b",
-      "accountType": "403b",
-      "employer": "Metro Public Schools",
-      "year": 2019,
-      "startBalance": 12000,
-      "contributions": 5200,
-      "employerMatch": 2600,
-      "growth": 1700,
-      "endBalance": 21500
-    },
-    "entry_2019_jointroth": {
-      "entryId": "entry_2019_jointroth",
-      "accountName": "Joint Roth IRA",
-      "accountType": "Roth IRA",
-      "employer": "Vanguard",
-      "year": 2019,
-      "startBalance": 8000,
-      "contributions": 11000,
-      "employerMatch": 0,
-      "growth": 1600,
-      "endBalance": 20600
-    },
-    "entry_2020_jordan401k": {
-      "entryId": "entry_2020_jordan401k",
-      "accountName": "Jordan 401k",
-      "accountType": "401k",
-      "employer": "DataCorp",
-      "year": 2020,
-      "startBalance": 29400,
-      "contributions": 6450,
-      "employerMatch": 3225,
-      "growth": 3200,
-      "endBalance": 42275
-    },
-    "entry_2020_taylor403b": {
-      "entryId": "entry_2020_taylor403b",
-      "accountName": "Taylor 403b",
-      "accountType": "403b",
-      "employer": "Metro Public Schools",
-      "year": 2020,
-      "startBalance": 21500,
-      "contributions": 5350,
-      "employerMatch": 2675,
-      "growth": 2400,
-      "endBalance": 31925
-    },
-    "entry_2020_jointroth": {
-      "entryId": "entry_2020_jointroth",
-      "accountName": "Joint Roth IRA",
-      "accountType": "Roth IRA",
-      "employer": "Vanguard",
-      "year": 2020,
-      "startBalance": 20600,
-      "contributions": 12000,
-      "employerMatch": 0,
-      "growth": 2800,
-      "endBalance": 35400
-    },
-    "entry_2021_jordan401k": {
-      "entryId": "entry_2021_jordan401k",
-      "accountName": "Jordan 401k",
-      "accountType": "401k",
-      "employer": "TechSolutions Inc",
+    "entry_2021_alex401k": {
+      "entryId": "entry_2021_alex401k",
+      "accountName": "Fidelity",
+      "accountType": "Traditional 401k",
+      "employer": "Acme Corp",
       "year": 2021,
-      "startBalance": 42275,
-      "contributions": 6800,
-      "employerMatch": 3400,
-      "growth": 4200,
-      "endBalance": 56675
-    },
-    "entry_2021_taylor403b": {
-      "entryId": "entry_2021_taylor403b",
-      "accountName": "Taylor 403b",
-      "accountType": "403b",
-      "employer": "Metro Public Schools",
-      "year": 2021,
-      "startBalance": 31925,
-      "contributions": 5500,
-      "employerMatch": 2750,
-      "growth": 3100,
-      "endBalance": 43275
-    },
-    "entry_2021_jointroth": {
-      "entryId": "entry_2021_jointroth",
-      "accountName": "Joint Roth IRA",
-      "accountType": "Roth IRA",
-      "employer": "Vanguard",
-      "year": 2021,
-      "startBalance": 35400,
-      "contributions": 12000,
-      "employerMatch": 0,
-      "growth": 4200,
-      "endBalance": 51600
-    },
-    "entry_2022_jordan401k": {
-      "entryId": "entry_2022_jordan401k",
-      "accountName": "Jordan 401k",
-      "accountType": "401k",
-      "employer": "TechSolutions Inc",
-      "year": 2022,
-      "startBalance": 56675,
+      "balance": 32000,
       "contributions": 7000,
       "employerMatch": 3500,
-      "growth": -4800,
-      "endBalance": 62375
+      "gains": 2500,
+      "fees": 50,
+      "withdrawals": 0,
+      "totalContributions": 10500,
+      "netGains": 2450,
+      "roi": 0.084
     },
-    "entry_2022_taylor403b": {
-      "entryId": "entry_2022_taylor403b",
-      "accountName": "Taylor 403b",
-      "accountType": "403b",
-      "employer": "Metro Public Schools",
+    "entry_2022_alex401k": {
+      "entryId": "entry_2022_alex401k",
+      "accountName": "Fidelity",
+      "accountType": "Traditional 401k",
+      "employer": "Acme Corp",
       "year": 2022,
-      "startBalance": 43275,
-      "contributions": 5650,
-      "employerMatch": 2825,
-      "growth": -3200,
-      "endBalance": 48550
+      "balance": 37000,
+      "contributions": 7500,
+      "employerMatch": 3700,
+      "gains": 2800,
+      "fees": 55,
+      "withdrawals": 0,
+      "totalContributions": 11200,
+      "netGains": 2745,
+      "roi": 0.074
     },
-    "entry_2022_jointroth": {
-      "entryId": "entry_2022_jointroth",
-      "accountName": "Joint Roth IRA",
-      "accountType": "Roth IRA",
-      "employer": "Vanguard",
+    "entry_2023_alex401k": {
+      "entryId": "entry_2023_alex401k",
+      "accountName": "Fidelity",
+      "accountType": "Traditional 401k",
+      "employer": "Acme Corp",
+      "year": 2023,
+      "balance": 43000,
+      "contributions": 8000,
+      "employerMatch": 3900,
+      "gains": 3500,
+      "fees": 60,
+      "withdrawals": 0,
+      "totalContributions": 11900,
+      "netGains": 3440,
+      "roi": 0.088
+    },
+    "entry_2024_alex401k": {
+      "entryId": "entry_2024_alex401k",
+      "accountName": "Fidelity",
+      "accountType": "Traditional 401k",
+      "employer": "Acme Corp",
+      "year": 2024,
+      "balance": 50000,
+      "contributions": 8500,
+      "employerMatch": 4100,
+      "gains": 4000,
+      "fees": 65,
+      "withdrawals": 0,
+      "totalContributions": 12600,
+      "netGains": 3935,
+      "roi": 0.079
+    },
+    "entry_2025_alex401k": {
+      "entryId": "entry_2025_alex401k",
+      "accountName": "Fidelity",
+      "accountType": "Traditional 401k",
+      "employer": "Acme Corp",
+      "year": 2025,
+      "balance": 57000,
+      "contributions": 9000,
+      "employerMatch": 4300,
+      "gains": 4500,
+      "fees": 70,
+      "withdrawals": 0,
+      "totalContributions": 13300,
+      "netGains": 4430,
+      "roi": 0.077
+    },
+    "entry_2021_jamie401k": {
+      "entryId": "entry_2021_jamie401k",
+      "accountName": "Vanguard",
+      "accountType": "Traditional 401k",
+      "employer": "Bright Solutions",
+      "year": 2021,
+      "balance": 18000,
+      "contributions": 4000,
+      "employerMatch": 1800,
+      "gains": 1200,
+      "fees": 30,
+      "withdrawals": 0,
+      "totalContributions": 5800,
+      "netGains": 1170,
+      "roi": 0.065
+    },
+    "entry_2022_jamie401k": {
+      "entryId": "entry_2022_jamie401k",
+      "accountName": "Vanguard",
+      "accountType": "Traditional 401k",
+      "employer": "Bright Solutions",
       "year": 2022,
-      "startBalance": 51600,
-      "contributions": 12000,
-      "employerMatch": 0,
-      "growth": -5800,
-      "endBalance": 57800
+      "balance": 21000,
+      "contributions": 4200,
+      "employerMatch": 1900,
+      "gains": 1400,
+      "fees": 32,
+      "withdrawals": 0,
+      "totalContributions": 6100,
+      "netGains": 1368,
+      "roi": 0.065
     },
-    "entry_2023_jordan401k": {
-      "entryId": "entry_2023_jordan401k",
-      "accountName": "Jordan 401k",
-      "accountType": "401k",
-      "employer": "TechSolutions Inc",
+    "entry_2023_jamie401k": {
+      "entryId": "entry_2023_jamie401k",
+      "accountName": "Vanguard",
+      "accountType": "Traditional 401k",
+      "employer": "Bright Solutions",
       "year": 2023,
-      "startBalance": 62375,
-      "contributions": 7200,
-      "employerMatch": 3600,
-      "growth": 6800,
-      "endBalance": 79975
+      "balance": 25000,
+      "contributions": 4500,
+      "employerMatch": 2000,
+      "gains": 1700,
+      "fees": 35,
+      "withdrawals": 0,
+      "totalContributions": 6500,
+      "netGains": 1665,
+      "roi": 0.073
     },
-    "entry_2023_taylor403b": {
-      "entryId": "entry_2023_taylor403b",
-      "accountName": "Taylor 403b",
-      "accountType": "403b",
-      "employer": "Metro Public Schools",
-      "year": 2023,
-      "startBalance": 48550,
-      "contributions": 5800,
-      "employerMatch": 2900,
-      "growth": 4500,
-      "endBalance": 61750
+    "entry_2024_jamie401k": {
+      "entryId": "entry_2024_jamie401k",
+      "accountName": "Vanguard",
+      "accountType": "Traditional 401k",
+      "employer": "Bright Solutions",
+      "year": 2024,
+      "balance": 29000,
+      "contributions": 4700,
+      "employerMatch": 2100,
+      "gains": 1900,
+      "fees": 38,
+      "withdrawals": 0,
+      "totalContributions": 6800,
+      "netGains": 1862,
+      "roi": 0.071
     },
-    "entry_2023_jointroth": {
-      "entryId": "entry_2023_jointroth",
-      "accountName": "Joint Roth IRA",
-      "accountType": "Roth IRA",
-      "employer": "Vanguard",
-      "year": 2023,
-      "startBalance": 57800,
-      "contributions": 12000,
-      "employerMatch": 0,
-      "growth": 7200,
-      "endBalance": 77000
+    "entry_2025_jamie401k": {
+      "entryId": "entry_2025_jamie401k",
+      "accountName": "Vanguard",
+      "accountType": "Traditional 401k",
+      "employer": "Bright Solutions",
+      "year": 2025,
+      "balance": 33000,
+      "contributions": 4900,
+      "employerMatch": 2200,
+      "gains": 2100,
+      "fees": 40,
+      "withdrawals": 0,
+      "totalContributions": 7100,
+      "netGains": 2060,
+      "roi": 0.070
     }
   }
 }
