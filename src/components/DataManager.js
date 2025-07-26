@@ -24,6 +24,7 @@ const DataManager = ({
   allowEdit = true, // whether to show edit button
   allowDelete = true, // whether to show delete button
   fieldCssClasses = {}, // optional object mapping field names to CSS classes
+  beforeCSVImport // <-- add this prop
 }) => {
   const [entryData, setEntryData] = useState({});
   const [showAddEntry, setShowAddEntry] = useState(false);
@@ -294,6 +295,13 @@ const DataManager = ({
 
   // Parse CSV content using papaparse
   const parseCSV = (csvText) => {
+    // Call beforeCSVImport if provided
+    if (typeof beforeCSVImport === 'function') {
+      const proceed = beforeCSVImport();
+      if (!proceed) {
+        return []; // Abort CSV parsing
+      }
+    }
     try {
       const result = Papa.parse(csvText, {
         header: true,

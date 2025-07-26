@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getPerformanceData, setPerformanceData, STORAGE_KEYS } from '../utils/localStorage';
+import { getPerformanceData, setPerformanceData, STORAGE_KEYS, getPaycheckData } from '../utils/localStorage';
 import { calculateROI } from '../utils/calculationHelpers';
 import DataManager from './DataManager';
 
@@ -146,6 +146,35 @@ const Performance = () => {
     entry.withdrawals || 0
   ];
 
+  // Add CSV upload guard: require name fields in Paycheck for "your" and (if dual calculator mode) "spouse"
+  const [paycheckData, setPaycheckDataState] = useState(null);
+
+  useEffect(() => {
+    setPaycheckDataState(getPaycheckData());
+  }, []);
+
+  const handleBeforeCSVImport = () => {
+    const yourName = paycheckData?.your?.name?.trim();
+    const dualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+    const spouseName = paycheckData?.spouse?.name?.trim();
+
+    if (!yourName) {
+      alert(
+        "Please fill out the Name field for 'Your' in the Paycheck Calculator before importing a CSV.\n\n" +
+        "Go to the Paycheck Calculator and enter a name for yourself. This ensures your data is mapped correctly."
+      );
+      return false;
+    }
+    if (dualMode && !spouseName) {
+      alert(
+        "Please fill out the Name field for 'Spouse' in the Paycheck Calculator before importing a CSV.\n\n" +
+        "Go to the Paycheck Calculator and enter a name for your spouse. This ensures your data is mapped correctly."
+      );
+      return false;
+    }
+    return true;
+  };
+
   return (
     <div className="app-container">
       <div className="header">
@@ -180,6 +209,7 @@ const Performance = () => {
           employer: 'performance-account-cell',
           year: 'performance-account-cell'
         }}
+        beforeCSVImport={handleBeforeCSVImport}
       />
     </div>
   );

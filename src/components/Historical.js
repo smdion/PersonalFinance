@@ -126,88 +126,82 @@ const Historical = () => {
     }
   };
 
-  // CSV headers
-  const csvHeaders = [
-    'Year',
-    'Employer',
-    'Salary',
-    'Bonus',
-    'AGI',
-    'SSA Earnings',
-    'Effective Tax Rate',
-    'Tax Paid',
-    'Net Worth Plus',
-    'Net Worth Minus',
-    'Tax Free',
-    'Tax Deferred',
-    'R Brokerage',
-    'LT Brokerage',
-    'ESPP',
-    'HSA',
-    'Cash',
-    'House',
-    'Mortgage',
-    'Other Assets',
-    'Retirement',
-    'Other Liabilities',
-    'Home Improvements',
-    'Liabilities'
-  ];
-
-  // Format entry for CSV
-  const formatCSVRow = (entry) => {
-    // Handle users data properly - aggregate or use first user's data
-    const usersData = entry.users || {};
-    const userNames = Object.keys(usersData);
-    
-    // For CSV export, we'll aggregate salary/bonus and use first employer
-    // or we could flatten to include all users (would require changing CSV headers)
-    let totalSalary = 0;
-    let totalBonus = 0;
-    let firstEmployer = '';
-    
-    userNames.forEach((userName, index) => {
-      const userData = usersData[userName] || {};
-      totalSalary += userData.salary || 0;
-      totalBonus += userData.bonus || 0;
-      
-      // Use first employer or concatenate multiple employers
-      if (index === 0) {
-        firstEmployer = userData.employer || '';
-      } else if (userData.employer && userData.employer !== firstEmployer) {
-        firstEmployer += ` & ${userData.employer}`;
-      }
-    });
-
-    return {
-      Year: entry.year,
-      Employer: firstEmployer,
-      Salary: totalSalary,
-      Bonus: totalBonus,
-      AGI: entry.agi || 0,
-      'SSA Earnings': entry.ssaEarnings || 0,
-      'Effective Tax Rate': entry.effectiveTaxRate || 0,
-      'Tax Paid': entry.taxPaid || 0,
-      'Net Worth Plus': entry.netWorthPlus || 0,
-      'Net Worth Minus': entry.netWorthMinus || 0,
-      'Tax Free': entry.taxFree || 0,
-      'Tax Deferred': entry.taxDeferred || 0,
-      'R Brokerage': entry.rBrokerage || 0,
-      'LT Brokerage': entry.ltBrokerage || 0,
-      'ESPP': entry.espp || 0,
-      'HSA': entry.hsa || 0,
-      'Cash': entry.cash || 0,
-      'House': entry.house || 0,
-      'Mortgage': entry.mortgage || 0,
-      'Other Assets': entry.othAsset || 0,
-      'Retirement': entry.retirement || 0,
-      'Other Liabilities': entry.othLia || 0,
-      'Home Improvements': entry.homeImprovements || 0,
-      'Liabilities': entry.liabilities || 0
-    };
+  // Dynamically generate user-specific CSV headers
+  const getUserHeaders = (userNames) => {
+    return userNames.flatMap((user, idx) => [
+      `${user} Employer`,
+      `${user} Salary`,
+      `${user} Bonus`
+    ]);
   };
 
-  // Parse CSV row
+  // CSV headers: Year, [user columns...], [combined fields...]
+  const csvHeaders = React.useMemo(() => {
+    return [
+      'Year',
+      ...getUserHeaders(userNames),
+      'AGI',
+      'SSA Earnings',
+      'Effective Tax Rate',
+      'Tax Paid',
+      'Net Worth Plus',
+      'Net Worth Minus',
+      'Tax Free',
+      'Tax Deferred',
+      'R Brokerage',
+      'LT Brokerage',
+      'ESPP',
+      'HSA',
+      'Cash',
+      'House',
+      'Mortgage',
+      'Other Assets',
+      'Retirement',
+      'Other Liabilities',
+      'Home Improvements',
+      'Liabilities'
+    ];
+  }, [userNames]);
+
+  // Format entry for CSV: output each user's employer/salary/bonus in separate columns
+  const formatCSVRow = (entry) => {
+    const row = [];
+    row.push(entry.year);
+
+    // Output each user's employer, salary, bonus in order of userNames
+    userNames.forEach(user => {
+      const userData = entry.users?.[user] || {};
+      row.push(userData.employer || '');
+      row.push(userData.salary || 0);
+      row.push(userData.bonus || 0);
+    });
+
+    row.push(
+      entry.agi || 0,
+      entry.ssaEarnings || 0,
+      entry.effectiveTaxRate || 0,
+      entry.taxPaid || 0,
+      entry.netWorthPlus || 0,
+      entry.netWorthMinus || 0,
+      entry.taxFree || 0,
+      entry.taxDeferred || 0,
+      entry.rBrokerage || 0,
+      entry.ltBrokerage || 0,
+      entry.espp || 0,
+      entry.hsa || 0,
+      entry.cash || 0,
+      entry.house || 0,
+      entry.mortgage || 0,
+      entry.othAsset || 0,
+      entry.retirement || 0,
+      entry.othLia || 0,
+      entry.homeImprovements || 0,
+      entry.liabilities || 0
+    );
+    return row;
+  };
+
+  // Parse CSV row: map user columns back to users object
   const parseCSVRow = (row) => {
     // Validate that row is an object and has required fields
     if (!row || typeof row !== 'object') {
@@ -238,24 +232,19 @@ const Historical = () => {
     };
     
     try {
-      // Create users object with proper userName keys structure
-      // For CSV import, we'll create a single aggregated user entry since CSV format
-      // doesn't distinguish between multiple users in a single row
+      // Build users object from user columns
       const usersData = {};
-      
-      // Use the first available user name from userNames, or create a default
-      const primaryUserName = userNames.length > 0 ? userNames[0] : 'User';
-      
-      usersData[primaryUserName] = {
-        employer: safeGetString(row['Employer']),
-        salary: safeParseFloat(row['Salary']),
-        bonus: safeParseFloat(row['Bonus'])
-      };
+      userNames.forEach(user => {
+        usersData[user] = {
+          employer: safeGetString(row[`${user} Employer`]),
+          salary: safeParseFloat(row[`${user} Salary`]),
+          bonus: safeParseFloat(row[`${user} Bonus`])
+        };
+      });
       
       return {
         year: year,
         users: usersData,
-        // Store financial data directly on the entry object (not nested under 'financial')
         agi: safeParseFloat(row['AGI']),
         ssaEarnings: safeParseFloat(row['SSA Earnings']),
         effectiveTaxRate: safeParseFloat(row['Effective Tax Rate']),
@@ -283,6 +272,30 @@ const Historical = () => {
     }
   };
 
+  // Add CSV upload guard: require name fields in Paycheck for "your" and (if dual calculator mode) "spouse"
+  const handleBeforeCSVImport = () => {
+    // Check for missing names in paycheckData
+    const yourName = paycheckData?.your?.name?.trim();
+    const dualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+    const spouseName = paycheckData?.spouse?.name?.trim();
+
+    if (!yourName) {
+      alert(
+        "Please fill out the Name field for 'Your' in the Paycheck Calculator before importing a CSV.\n\n" +
+        "Go to the Paycheck Calculator and enter a name for yourself. This ensures your data is mapped correctly."
+      );
+      return false;
+    }
+    if (dualMode && !spouseName) {
+      alert(
+        "Please fill out the Name field for 'Spouse' in the Paycheck Calculator before importing a CSV.\n\n" +
+        "Go to the Paycheck Calculator and enter a name for your spouse. This ensures your data is mapped correctly."
+      );
+      return false;
+    }
+    return true;
+  };
+
   return (
     <div className="app-container">
       <div className="header">
@@ -308,6 +321,7 @@ const Historical = () => {
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={csvHeaders}
+        beforeCSVImport={handleBeforeCSVImport}
       />
     </div>
   );
