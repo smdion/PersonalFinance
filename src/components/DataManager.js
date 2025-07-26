@@ -228,22 +228,18 @@ const DataManager = ({
     setFormData(emptyFormData);
   };
 
-  // Download CSV file
-  const downloadCSV = () => {
-    const sortedEntries = Object.values(entryData).sort((a, b) => {
-      const aVal = a[sortField];
-      const bVal = b[sortField];
-      return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
-    });
-    
-    const rows = [csvHeaders];
-    sortedEntries.forEach(entry => {
-      const row = formatCSVRow(entry);
-      rows.push(row);
+  // Helper function to generate CSV content
+  const generateCSVContent = (data, headers, rowFormatter) => {
+    const rows = [headers];
+    data.forEach(entry => {
+      const row = rowFormatter(entry);
+      // Convert object to array of values if needed
+      const rowArray = Array.isArray(row) ? row : Object.values(row);
+      rows.push(rowArray);
     });
     
     // Properly escape and quote CSV values
-    const csvContent = rows.map(row =>
+    return rows.map(row =>
       row.map(value => {
         // Convert to string and handle null/undefined
         const stringValue = value == null ? '' : String(value);
@@ -256,6 +252,17 @@ const DataManager = ({
         return stringValue;
       }).join(',')
     ).join('\n');
+  };
+
+  // Download CSV file
+  const downloadCSV = () => {
+    const sortedEntries = Object.values(entryData).sort((a, b) => {
+      const aVal = a[sortField];
+      const bVal = b[sortField];
+      return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+    });
+    
+    const csvContent = generateCSVContent(sortedEntries, csvHeaders, formatCSVRow);
   
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -271,26 +278,7 @@ const DataManager = ({
   // Download CSV template
   const downloadTemplate = () => {
     const templateEntries = Object.values(csvTemplate);
-    const rows = [csvHeaders];
-    templateEntries.forEach(entry => {
-      const row = formatCSVRow(entry);
-      rows.push(row);
-    });
-    
-    // Properly escape and quote CSV values
-    const csvContent = rows.map(row =>
-      row.map(value => {
-        // Convert to string and handle null/undefined
-        const stringValue = value == null ? '' : String(value);
-        
-        // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
-        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-          return `"${stringValue.replace(/"/g, '""')}"`;
-        }
-        
-        return stringValue;
-      }).join(',')
-    ).join('\n');
+    const csvContent = generateCSVContent(templateEntries, csvHeaders, formatCSVRow);
   
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -313,7 +301,7 @@ const DataManager = ({
       let inQuotes = false, value = '', i = 0;
       while (i < line.length) {
         const char = line[i];
-        if (char === '"' && (i === 0 || line[i - 1] !== '\\')) {
+        if (char === '"' && (i === 0 || line[i + 1] === '"')) {
           inQuotes = !inQuotes;
         } else if (char === ',' && !inQuotes) {
           values.push(value.replace(/^"|"$/g, '').replace(/""/g, '"'));
@@ -350,52 +338,21 @@ const DataManager = ({
     reader.readAsText(file);
   };
 
-  // CSV Import/Export Logic
-  const handleExportCSV = () => {
-    // Use current data and schema for export
-    const rows = [csvHeaders];
-    Object.values(entryData)
-      .sort((a, b) => {
-        if (sortOrder === 'asc') return a[sortField] - b[sortField];
-        return b[sortField] - a[sortField];
-      })
-      .forEach(entry => {
-        rows.push(formatCSVRow(entry));
-      });
-    const csvContent = rows.map(row => row.join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${dataKey}-export.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const handleImportCSV = async (file) => {
-    if (!file) return;
-    const text = await file.text();
-    const lines = text.split('\n').filter(Boolean);
-    if (lines.length < 2) return;
-    const headers = lines[0].split(',');
-    const newEntries = {};
-    for (let i = 1; i < lines.length; i++) {
-      const row = lines[i].split(',');
-      const entry = parseCSVRow(headers, row);
-      if (entry && entry[primaryKey]) {
-        newEntries[entry[primaryKey]] = entry;
-      }
-    }
-    setEntryData(prev => ({ ...prev, ...newEntries }));
-  };
-
   // Use id as the key for sorting and accessing entryData
   const sortedKeys = Object.keys(entryData).sort((a, b) => {
-    // Numeric sort for id
-    if (sortOrder === 'asc') return Number(a) - Number(b);
-    return Number(b) - Number(a);
+    // Check if both keys can be converted to valid numbers
+    const aNum = Number(a);
+    const bNum = Number(b);
+    
+    // If both are valid numbers, perform numeric sort
+    if (!isNaN(aNum) && !isNaN(bNum)) {
+      if (sortOrder === 'asc') return aNum - bNum;
+      return bNum - aNum;
+    }
+    
+    // Fall back to string comparison for non-numeric keys
+    if (sortOrder === 'asc') return a.localeCompare(b);
+    return b.localeCompare(a);
   });
 
   const renderFormField = (field, section = null) => {
@@ -473,6 +430,65 @@ const DataManager = ({
     }
   };
 
+  // Extract form rendering logic into reusable function
+  const renderEntryForm = (isEditMode = false) => (
+    <div style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1' }}>
+      <h3 style={{ color: '#374151', marginBottom: '16px', textAlign: 'center' }}>
+        {isEditMode ? `Edit Entry` : 'Add New Entry'}
+      </h3>
+      
+      <div className="add-year-form">
+        {/* Primary key field */}
+        <div className="form-group">
+          <label className="form-label">{schema.primaryKeyLabel}:</label>
+          <input
+            type={schema.primaryKeyType || 'text'}
+            value={formData[primaryKey]}
+            onChange={(e) => handleInputChange(primaryKey, schema.primaryKeyType === 'number' ? parseInt(e.target.value) : e.target.value)}
+            className="add-year-input"
+            placeholder={`Enter ${schema.primaryKeyLabel.toLowerCase()}`}
+          />
+        </div>
+
+        {/* Render form sections */}
+        <div className="historical-sections">
+          {schema.sections.map(section => (
+            <div key={section.name}>
+              <h3 className="historical-section-title">{section.title}</h3>
+              
+              {section.name === 'users' && userNames.length > 0 ? (
+                userNames.map(userName => (
+                  <div key={userName} className="historical-section">
+                    <h4 className="historical-section-title">{userName}</h4>
+                    <div className="historical-fields-grid">
+                      {section.fields.map(field => renderUserFormField(userName, field.name))}
+                    </div>
+                  </div>
+                ))
+              ) : section.name !== 'users' ? (
+                <div className="historical-fields-grid">
+                  {section.fields.map(field => renderFormField(field.name, section.name))}
+                </div>
+              ) : null}
+            </div>
+          ))}
+        </div>
+
+        <div className="form-actions">
+          <button 
+            onClick={isEditMode ? saveEditedEntry : addEntry} 
+            className="btn-primary"
+          >
+            {isEditMode ? 'Save Changes' : 'Add Entry'}
+          </button>
+          <button onClick={cancelEdit} className="btn-secondary">
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
   return (
     <div>
       {/* Data Management Section */}
@@ -529,63 +545,7 @@ const DataManager = ({
           </div>
 
           {/* Add/Edit Entry Form */}
-          {showAddEntry && (
-            <div style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1' }}>
-              <h3 style={{ color: '#374151', marginBottom: '16px', textAlign: 'center' }}>
-                {editingKey ? `Edit Entry` : 'Add New Entry'}
-              </h3>
-              
-              <div className="add-year-form">
-                {/* Primary key field */}
-                <div className="form-group">
-                  <label className="form-label">{schema.primaryKeyLabel}:</label>
-                  <input
-                    type={schema.primaryKeyType || 'text'}
-                    value={formData[primaryKey]}
-                    onChange={(e) => handleInputChange(primaryKey, schema.primaryKeyType === 'number' ? parseInt(e.target.value) : e.target.value)}
-                    className="add-year-input"
-                    placeholder={`Enter ${schema.primaryKeyLabel.toLowerCase()}`}
-                  />
-                </div>
-
-                {/* Render form sections */}
-                <div className="historical-sections">
-                  {schema.sections.map(section => (
-                    <div key={section.name}>
-                      <h3 className="historical-section-title">{section.title}</h3>
-                      
-                      {section.name === 'users' && userNames.length > 0 ? (
-                        userNames.map(userName => (
-                          <div key={userName} className="historical-section">
-                            <h4 className="historical-section-title">{userName}</h4>
-                            <div className="historical-fields-grid">
-                              {section.fields.map(field => renderUserFormField(userName, field.name))}
-                            </div>
-                          </div>
-                        ))
-                      ) : section.name !== 'users' ? (
-                        <div className="historical-fields-grid">
-                          {section.fields.map(field => renderFormField(field.name, section.name))}
-                        </div>
-                      ) : null}
-                    </div>
-                  ))}
-                </div>
-
-                <div className="form-actions">
-                  <button 
-                    onClick={editingKey ? saveEditedEntry : addEntry} 
-                    className="btn-primary"
-                  >
-                    {editingKey ? 'Save Changes' : 'Add Entry'}
-                  </button>
-                  <button onClick={cancelEdit} className="btn-secondary">
-                    Cancel
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+          {showAddEntry && renderEntryForm(!!editingKey)}
 
           {/* Data Table */}
           <div className="historical-table">
@@ -712,57 +672,8 @@ const DataManager = ({
                   ➕ Add New Entry
                 </button>
               ) : (
-                <div style={{ maxWidth: '800px', margin: '0 auto', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1' }}>
-                  <h3 style={{ color: '#374151', marginBottom: '16px', textAlign: 'center' }}>
-                    Add New Entry
-                  </h3>
-                  
-                  <div className="add-year-form">
-                    {/* Primary key field */}
-                    <div className="form-group">
-                      <label className="form-label">{schema.primaryKeyLabel}:</label>
-                      <input
-                        type={schema.primaryKeyType || 'text'}
-                        value={formData[primaryKey]}
-                        onChange={(e) => handleInputChange(primaryKey, schema.primaryKeyType === 'number' ? parseInt(e.target.value) : e.target.value)}
-                        className="add-year-input"
-                        placeholder={`Enter ${schema.primaryKeyLabel.toLowerCase()}`}
-                      />
-                    </div>
-
-                    {/* Render form sections */}
-                    <div className="historical-sections">
-                      {schema.sections.map(section => (
-                        <div key={section.name}>
-                          <h3 className="historical-section-title">{section.title}</h3>
-                          
-                          {section.name === 'users' && userNames.length > 0 ? (
-                            userNames.map(userName => (
-                              <div key={userName} className="historical-section">
-                                <h4 className="historical-section-title">{userName}</h4>
-                                <div className="historical-fields-grid">
-                                  {section.fields.map(field => renderUserFormField(userName, field.name))}
-                                </div>
-                              </div>
-                            ))
-                          ) : section.name !== 'users' ? (
-                            <div className="historical-fields-grid">
-                              {section.fields.map(field => renderFormField(field.name, section.name))}
-                            </div>
-                          ) : null}
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="form-actions">
-                      <button onClick={addEntry} className="btn-primary">
-                        Add Entry
-                      </button>
-                      <button onClick={cancelEdit} className="btn-secondary">
-                        Cancel
-                      </button>
-                    </div>
-                  </div>
+                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
+                  {renderEntryForm(false)}
                 </div>
               )}
             </div>
