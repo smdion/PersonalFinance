@@ -2,10 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { getHistoricalData, setHistoricalData, getPaycheckData, STORAGE_KEYS } from '../utils/localStorage';
 import DataManager from './DataManager';
 
-// Define per-user fields
-const USER_FIELDS = ['employer', 'salary', 'bonus'];
-
-// Define combined fields
+// Define combined fields for CSV export
 const COMBINED_FIELDS = [
   'agi', 'ssaEarnings', 'effectiveTaxRate', 'taxPaid',
   'taxFree', 'taxDeferred', 'brokerage', 'espp', 'hsa', 'cash', 'house',
@@ -72,174 +69,130 @@ const Historical = () => {
   // Empty form data structure
   const emptyFormData = {
     year: currentYear,
-    users: Object.fromEntries(userNames.map(name => [name, { employer: '', salary: '', bonus: '' }])),
-    ...Object.fromEntries(COMBINED_FIELDS.map(f => [f, '']))
+    users: userNames.reduce((acc, name) => ({
+      ...acc,
+      [name]: {
+        employer: '',
+        salary: '',
+        bonus: ''
+      }
+    }), {}),
+    agi: '',
+    ssaEarnings: '',
+    effectiveTaxRate: '',
+    taxPaid: '',
+    taxFree: '',
+    taxDeferred: '',
+    brokerage: '',
+    espp: '',
+    hsa: '',
+    cash: '',
+    house: '',
+    homeImprovements: '',
+    mortgage: '',
+    othAsset: '',
+    othLia: ''
   };
 
   // Convert stored entry to form data
   const getFormDataFromEntry = (entry) => ({
-    year: entry.year,
-    users: entry.users || {},
-    ...Object.fromEntries(COMBINED_FIELDS.map(f => [f, entry[f] || '']))
+    year: entry.year || '',
+    users: entry.users || userNames.reduce((acc, name) => ({
+      ...acc,
+      [name]: {
+        employer: '',
+        salary: '',
+        bonus: ''
+      }
+    }), {}),
+    agi: entry.agi || '',
+    ssaEarnings: entry.ssaEarnings || '',
+    effectiveTaxRate: entry.effectiveTaxRate || '',
+    taxPaid: entry.taxPaid || '',
+    taxFree: entry.taxFree || '',
+    taxDeferred: entry.taxDeferred || '',
+    brokerage: entry.brokerage || '',
+    espp: entry.espp || '',
+    hsa: entry.hsa || '',
+    cash: entry.cash || '',
+    house: entry.house || '',
+    homeImprovements: entry.homeImprovements || '',
+    mortgage: entry.mortgage || '',
+    othAsset: entry.othAsset || '',
+    othLia: entry.othLia || ''
   });
 
   // Convert form data to stored entry
   const getEntryFromFormData = (formData) => ({
     year: formData.year,
-    users: { ...formData.users },
-    ...Object.fromEntries(COMBINED_FIELDS.map(f => [f, parseFloat(formData[f]) || 0]))
+    users: formData.users,
+    agi: formData.agi,
+    ssaEarnings: formData.ssaEarnings,
+    effectiveTaxRate: formData.effectiveTaxRate,
+    taxPaid: formData.taxPaid,
+    taxFree: formData.taxFree,
+    taxDeferred: formData.taxDeferred,
+    brokerage: formData.brokerage,
+    espp: formData.espp,
+    hsa: formData.hsa,
+    cash: formData.cash,
+    house: formData.house,
+    homeImprovements: formData.homeImprovements,
+    mortgage: formData.mortgage,
+    othAsset: formData.othAsset,
+    othLia: formData.othLia
   });
 
-  // CSV template data
-  const csvTemplate = {
-    [currentYear]: {
-      year: currentYear,
-      users: {
-        user1: { name: 'Person 1', employer: 'Company A', salary: 75000, bonus: 5000 },
-        user2: { name: 'Person 2', employer: 'Company B', salary: 65000, bonus: 3000 }
-      },
-      agi: 140000,
-      ssaEarnings: 145000,
-      effectiveTaxRate: 0.185,
-      taxPaid: 25900,
-      taxFree: 200000,
-      taxDeferred: 150000,
-      brokerage: 40000,
-      espp: 5000,
-      hsa: 25000,
-      cash: 50000,
-      house: 400000,
-      homeImprovements: 20000,
-      mortgage: 150000,
-      othAsset: 30000,
-      othLia: 0
-    }
-  };
-
-  // Dynamically generate user-specific CSV headers
-  const getUserHeaders = (userNames) => {
-    return userNames.flatMap((user, idx) => [
-      `${user} Employer`,
-      `${user} Salary`,
-      `${user} Bonus`
-    ]);
-  };
-
-  // CSV headers: Year, [user columns...], [combined fields...]
-  const csvHeaders = React.useMemo(() => {
-    return [
-      'Year',
-      ...getUserHeaders(userNames),
-      'AGI',
-      'SSA Earnings',
-      'Effective Tax Rate',
-      'Taxes Paid',
-      'Tax Free',
-      'Tax Deferred',
-      'Brokerage',
-      'ESPP',
-      'HSA',
-      'Cash',
-      'House',
-      'Home Improvements',
-      'Mortgage',
-      'Other Assets',
-      'Other Liabilities'
-    ];
-  }, [userNames]);
-
-  // Format entry for CSV: output each user's employer/salary/bonus in separate columns
-  const formatCSVRow = (entry) => {
-    const row = [];
-    row.push(entry.year);
-
-    // Output each user's employer, salary, bonus in order of userNames
-    userNames.forEach(user => {
-      const userData = entry.users?.[user] || {};
-      row.push(userData.employer || '');
-      row.push(userData.salary || 0);
-      row.push(userData.bonus || 0);
-    });
-
-    row.push(
-      entry.agi || 0,
-      entry.ssaEarnings || 0,
-      entry.effectiveTaxRate || 0,
-      entry.taxPaid || 0,
-      entry.taxFree || 0,
-      entry.taxDeferred || 0,
-      entry.brokerage || 0,
-      entry.espp || 0,
-      entry.hsa || 0,
-      entry.cash || 0,
-      entry.house || 0,
-      entry.homeImprovements || 0,
-      entry.mortgage || 0,
-      entry.othAsset || 0,
-      entry.othLia || 0
-    );
-    return row;
-  };
-
-  // Parse CSV row: map user columns back to users object
+  // Parse CSV row
   const parseCSVRow = (row) => {
-    // Validate that row is an object and has required fields
     if (!row || typeof row !== 'object') {
       console.warn('Invalid CSV row format:', row);
       return null;
     }
     
-    // Check for required 'Year' field with various possible key formats
-    const yearValue = row['Year'] || row['year'] || row['YEAR'] || row['YR'];
-    const year = parseInt(yearValue);
-    
-    if (!year || isNaN(year) || year < 1900 || year > 2100) {
-      console.warn('Invalid or missing year in CSV row:', yearValue, row);
-      return null;
-    }
-    
-    // Helper function to safely parse numeric values
     const safeParseFloat = (value) => {
-      if (value === null || value === undefined || value === '') return 0;
+      if (value === null || value === undefined || value === '') return '';
       const parsed = parseFloat(value);
-      return isNaN(parsed) ? 0 : parsed;
+      return isNaN(parsed) ? '' : parsed;
     };
     
-    // Helper function to safely get string values
     const safeGetString = (value) => {
       if (value === null || value === undefined) return '';
       return String(value).trim();
     };
     
+    const safeParseInt = (value) => {
+      if (value === null || value === undefined || value === '') return '';
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? '' : parsed;
+    };
+    
     try {
-      // Build users object from user columns
-      const usersData = {};
-      userNames.forEach(user => {
-        usersData[user] = {
-          employer: safeGetString(row[`${user} Employer`]),
-          salary: safeParseFloat(row[`${user} Salary`]),
-          bonus: safeParseFloat(row[`${user} Bonus`])
-        };
-      });
-      
       return {
-        year: year,
-        users: usersData,
-        agi: safeParseFloat(row['AGI']),
-        ssaEarnings: safeParseFloat(row['SSA Earnings']),
-        effectiveTaxRate: safeParseFloat(row['Effective Tax Rate']),
-        taxPaid: safeParseFloat(row['Taxes Paid'] || row['Tax Paid']), // Support both old and new naming
-        taxFree: safeParseFloat(row['Tax Free']),
-        taxDeferred: safeParseFloat(row['Tax Deferred']),
-        brokerage: safeParseFloat(row['Brokerage'] || row['R Brokerage']), // Support both old and new naming
-        espp: safeParseFloat(row['ESPP']),
-        hsa: safeParseFloat(row['HSA']),
-        cash: safeParseFloat(row['Cash']),
-        house: safeParseFloat(row['House']),
-        homeImprovements: safeParseFloat(row['Home Improvements']),
-        mortgage: safeParseFloat(row['Mortgage']),
-        othAsset: safeParseFloat(row['Other Assets']),
-        othLia: safeParseFloat(row['Other Liabilities'])
+        year: safeParseInt(row['year'] || row['Year']),
+        users: userNames.reduce((acc, name) => ({
+          ...acc,
+          [name]: {
+            employer: safeGetString(row[`${name}_employer`] || row[`${name} Employer`]),
+            salary: safeParseFloat(row[`${name}_salary`] || row[`${name} Salary`]),
+            bonus: safeParseFloat(row[`${name}_bonus`] || row[`${name} Bonus`])
+          }
+        }), {}),
+        agi: safeParseFloat(row['agi'] || row['AGI']),
+        ssaEarnings: safeParseFloat(row['ssaEarnings'] || row['SSA Earnings']),
+        effectiveTaxRate: safeParseFloat(row['effectiveTaxRate'] || row['Effective Tax Rate']),
+        taxPaid: safeParseFloat(row['taxPaid'] || row['Tax Paid']),
+        taxFree: safeParseFloat(row['taxFree'] || row['Tax Free']),
+        taxDeferred: safeParseFloat(row['taxDeferred'] || row['Tax Deferred']),
+        brokerage: safeParseFloat(row['brokerage'] || row['Brokerage']),
+        espp: safeParseFloat(row['espp'] || row['ESPP']),
+        hsa: safeParseFloat(row['hsa'] || row['HSA']),
+        cash: safeParseFloat(row['cash'] || row['Cash']),
+        house: safeParseFloat(row['house'] || row['House']),
+        homeImprovements: safeParseFloat(row['homeImprovements'] || row['Home Improvements']),
+        mortgage: safeParseFloat(row['mortgage'] || row['Mortgage']),
+        othAsset: safeParseFloat(row['othAsset'] || row['Other Assets']),
+        othLia: safeParseFloat(row['othLia'] || row['Other Liabilities'])
       };
     } catch (error) {
       console.error('Error parsing CSV row:', error, row);
@@ -247,29 +200,33 @@ const Historical = () => {
     }
   };
 
-  // Add CSV upload guard: require name fields in Paycheck for "your" and (if dual calculator mode) "spouse"
-  const handleBeforeCSVImport = () => {
-    // Check for missing names in paycheckData
-    const yourName = paycheckData?.your?.name?.trim();
-    const dualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
-    const spouseName = paycheckData?.spouse?.name?.trim();
-
-    if (!yourName) {
-      alert(
-        "Please fill out the Name field for 'Your' in the Paycheck Calculator before importing a CSV.\n\n" +
-        "Go to the Paycheck Calculator and enter a name for yourself. This ensures your data is mapped correctly."
+  // Format entry for CSV
+  const formatCSVRow = (entry) => {
+    const row = [entry.year || ''];
+    
+    // Add user fields
+    userNames.forEach(name => {
+      row.push(
+        entry.users?.[name]?.employer || '',
+        entry.users?.[name]?.salary || '',
+        entry.users?.[name]?.bonus || ''
       );
-      return false;
-    }
-    if (dualMode && !spouseName) {
-      alert(
-        "Please fill out the Name field for 'Spouse' in the Paycheck Calculator before importing a CSV.\n\n" +
-        "Go to the Paycheck Calculator and enter a name for your spouse. This ensures your data is mapped correctly."
-      );
-      return false;
-    }
-    return true;
+    });
+    
+    // Add financial fields
+    COMBINED_FIELDS.forEach(field => {
+      row.push(entry[field] || '');
+    });
+    
+    return row;
   };
+
+  // CSV headers
+  const csvHeaders = ['year'];
+  userNames.forEach(name => {
+    csvHeaders.push(`${name}_employer`, `${name}_salary`, `${name}_bonus`);
+  });
+  csvHeaders.push(...COMBINED_FIELDS);
 
   return (
     <div className="app-container">
@@ -280,7 +237,7 @@ const Historical = () => {
 
       <DataManager
         title="Historical Data"
-        subtitle="Add your first year of financial data to start tracking your progress"
+        subtitle="Add your first year's data to start tracking progress"
         dataKey={STORAGE_KEYS.HISTORICAL_DATA}
         getData={getHistoricalData}
         setData={setHistoricalData}
@@ -290,13 +247,15 @@ const Historical = () => {
         getFormDataFromEntry={getFormDataFromEntry}
         getEntryFromFormData={getEntryFromFormData}
         primaryKey="year"
-        sortField="year" // Default sort field  
-        sortOrder="desc" // Default sort order
-        csvTemplate={csvTemplate}
+        sortField="year"
+        sortOrder="desc"
+        csvTemplate={{}}
         parseCSVRow={parseCSVRow}
         formatCSVRow={formatCSVRow}
         csvHeaders={csvHeaders}
-        beforeCSVImport={handleBeforeCSVImport}
+        fieldCssClasses={{
+          year: 'historical-year-cell'
+        }}
       />
     </div>
   );
