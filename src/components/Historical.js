@@ -9,7 +9,7 @@ const USER_FIELDS = ['employer', 'salary', 'bonus'];
 const COMBINED_FIELDS = [
   'agi', 'ssaEarnings', 'effectiveTaxRate', 'taxPaid',
   'taxFree', 'taxDeferred', 'brokerage', 'espp', 'hsa', 'cash', 'house',
-  'mortgage', 'othAsset', 'retirement', 'othLia', 'homeImprovements'
+  'homeImprovements', 'mortgage', 'othAsset', 'othLia'
 ];
 
 const Historical = () => {
@@ -60,11 +60,10 @@ const Historical = () => {
           { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency' },
           { name: 'cash', label: 'Cash', format: 'currency', className: 'currency' },
           { name: 'house', label: 'House', format: 'currency', className: 'currency' },
+          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' },
           { name: 'mortgage', label: 'Mortgage', format: 'currency', className: 'currency' },
           { name: 'othAsset', label: 'Other Assets', format: 'currency', className: 'currency' },
-          { name: 'retirement', label: 'Retirement', format: 'currency', className: 'currency' },
-          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency' },
-          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' }
+          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency' }
         ]
       }
     ]
@@ -110,11 +109,10 @@ const Historical = () => {
       hsa: 25000,
       cash: 50000,
       house: 400000,
+      homeImprovements: 20000,
       mortgage: 150000,
       othAsset: 30000,
-      retirement: 350000,
-      othLia: 0,
-      homeImprovements: 20000
+      othLia: 0
     }
   };
 
@@ -143,11 +141,10 @@ const Historical = () => {
       'HSA',
       'Cash',
       'House',
+      'Home Improvements',
       'Mortgage',
       'Other Assets',
-      'Retirement',
-      'Other Liabilities',
-      'Home Improvements'
+      'Other Liabilities'
     ];
   }, [userNames]);
 
@@ -176,11 +173,10 @@ const Historical = () => {
       entry.hsa || 0,
       entry.cash || 0,
       entry.house || 0,
+      entry.homeImprovements || 0,
       entry.mortgage || 0,
       entry.othAsset || 0,
-      entry.retirement || 0,
-      entry.othLia || 0,
-      entry.homeImprovements || 0
+      entry.othLia || 0
     );
     return row;
   };
@@ -240,11 +236,10 @@ const Historical = () => {
         hsa: safeParseFloat(row['HSA']),
         cash: safeParseFloat(row['Cash']),
         house: safeParseFloat(row['House']),
+        homeImprovements: safeParseFloat(row['Home Improvements']),
         mortgage: safeParseFloat(row['Mortgage']),
         othAsset: safeParseFloat(row['Other Assets']),
-        retirement: safeParseFloat(row['Retirement']),
-        othLia: safeParseFloat(row['Other Liabilities']),
-        homeImprovements: safeParseFloat(row['Home Improvements'])
+        othLia: safeParseFloat(row['Other Liabilities'])
       };
     } catch (error) {
       console.error('Error parsing CSV row:', error, row);

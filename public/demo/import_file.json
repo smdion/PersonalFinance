@@ -458,11 +458,10 @@
       "hsa": 4000,
       "cash": 19000,
       "house": 320000,
+      "homeImprovements": 8000,
       "mortgage": 256000,
       "othAsset": 0,
-      "retirement": 50000,
-      "othLia": 27000,
-      "homeImprovements": 8000
+      "othLia": 27000
     },
     "2022": {
       "year": 2022,
@@ -489,11 +488,10 @@
       "hsa": 4500,
       "cash": 22000,
       "house": 340000,
+      "homeImprovements": 12000,
       "mortgage": 245000,
       "othAsset": 0,
-      "retirement": 58000,
-      "othLia": 24000,
-      "homeImprovements": 12000
+      "othLia": 24000
     },
     "2023": {
       "year": 2023,
@@ -520,11 +518,10 @@
       "hsa": 5000,
       "cash": 25000,
       "house": 355000,
+      "homeImprovements": 16000,
       "mortgage": 233000,
       "othAsset": 0,
-      "retirement": 68000,
-      "othLia": 21000,
-      "homeImprovements": 16000
+      "othLia": 21000
     },
     "2024": {
       "year": 2024,
@@ -551,11 +548,10 @@
       "hsa": 5500,
       "cash": 28000,
       "house": 370000,
+      "homeImprovements": 20000,
       "mortgage": 220000,
       "othAsset": 0,
-      "retirement": 79000,
-      "othLia": 18000,
-      "homeImprovements": 20000
+      "othLia": 18000
     },
     "2025": {
       "year": 2025,
@@ -582,11 +578,10 @@
       "hsa": 6000,
       "cash": 31000,
       "house": 385000,
+      "homeImprovements": 24000,
       "mortgage": 207000,
       "othAsset": 0,
-      "retirement": 90000,
-      "othLia": 15000,
-      "homeImprovements": 24000
+      "othLia": 15000
     }
   },
   "performanceData": {
