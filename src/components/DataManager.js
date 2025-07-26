@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../utils/calculationHelpers';
+import Papa from 'papaparse';
 
 const DataManager = ({
   title,
@@ -291,33 +292,21 @@ const DataManager = ({
     URL.revokeObjectURL(url);
   };
 
-  // Parse CSV content
+  // Parse CSV content using papaparse
   const parseCSV = (csvText) => {
-    const lines = csvText.trim().split('\n');
-    if (lines.length < 2) return [];
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
-    return lines.slice(1).map(line => {
-      const values = [];
-      let inQuotes = false, value = '', i = 0;
-      while (i < line.length) {
-        const char = line[i];
-        if (char === '"' && (i === 0 || line[i + 1] === '"')) {
-          inQuotes = !inQuotes;
-        } else if (char === ',' && !inQuotes) {
-          values.push(value.replace(/^"|"$/g, '').replace(/""/g, '"'));
-          value = '';
-        } else {
-          value += char;
-        }
-        i++;
-      }
-      values.push(value.replace(/^"|"$/g, '').replace(/""/g, '"'));
-      const row = {};
-      headers.forEach((header, idx) => {
-        row[header] = values[idx] ?? '';
+    try {
+      const result = Papa.parse(csvText, {
+        header: true,
+        skipEmptyLines: true
       });
-      return parseCSVRow(row);
-    });
+      if (result.errors && result.errors.length > 0) {
+        console.error('CSV parsing errors:', result.errors);
+      }
+      return result.data.map(row => parseCSVRow(row)).filter(Boolean);
+    } catch (error) {
+      console.error('Error parsing CSV:', error);
+      return [];
+    }
   };
 
   // Handle file upload
