@@ -69,47 +69,49 @@ const NetWorthDashboard = () => {
            (yearData.otherDebt || 0);
   };
 
+  // Helper to get value for a field from yearData
+  const getFieldValue = (yearData, field) => {
+    let value = 0;
+    switch (field) {
+      case 'netWorth':
+        value = calculateNetWorth(yearData);
+        break;
+      case 'totalAssets':
+        value = calculateTotalAssets(yearData);
+        break;
+      case 'totalLiabilities':
+        value = calculateTotalLiabilities(yearData);
+        break;
+      case 'agi':
+        value = yearData?.agi || 0;
+        break;
+      case 'cash':
+        value = yearData?.cash || 0;
+        break;
+      case 'retirement':
+        value = yearData?.retirement || 0;
+        break;
+      case 'house':
+        value = yearData?.house || 0;
+        break;
+      case 'mortgage':
+        value = yearData?.mortgage || 0;
+        break;
+      default:
+        // Handle any other field by directly accessing the property from yearData
+        value = yearData?.[field] || 0;
+        break;
+    }
+    return value;
+  };
+
   // Chart data generators
   const getChartData = (field) => {
     return sortedYears.map(year => {
       const yearData = historicalData[year];
-      let value = 0;
-
-      switch (field) {
-        case 'netWorth':
-          value = calculateNetWorth(yearData);
-          break;
-        case 'totalAssets':
-          value = calculateTotalAssets(yearData);
-          break;
-        case 'totalLiabilities':
-          value = calculateTotalLiabilities(yearData);
-          break;
-        case 'agi':
-          value = yearData?.agi || 0;
-          break;
-        case 'cash':
-          value = yearData?.cash || 0;
-          break;
-        case 'retirement':
-          value = yearData?.retirement || 0;
-          break;
-        case 'house':
-          value = yearData?.house || 0;
-          break;
-        case 'mortgage':
-          value = yearData?.mortgage || 0;
-          break;
-        default:
-          // Handle any other field by directly accessing the property from yearData
-          // This allows for dynamic field access for chart configurations
-          value = yearData?.[field] || 0;
-          break;
-      }
-
       return {
         year: parseInt(year),
-        value: value,
+        value: getFieldValue(yearData, field),
         label: year
       };
     });
@@ -118,43 +120,9 @@ const NetWorthDashboard = () => {
   const getSelectedYearData = (field) => {
     return selectedYears.map(year => {
       const yearData = historicalData[year];
-      let value = 0;
-
-      switch (field) {
-        case 'netWorth':
-          value = calculateNetWorth(yearData);
-          break;
-        case 'totalAssets':
-          value = calculateTotalAssets(yearData);
-          break;
-        case 'totalLiabilities':
-          value = calculateTotalLiabilities(yearData);
-          break;
-        case 'agi':
-          value = yearData?.agi || 0;
-          break;
-        case 'cash':
-          value = yearData?.cash || 0;
-          break;
-        case 'retirement':
-          value = yearData?.retirement || 0;
-          break;
-        case 'house':
-          value = yearData?.house || 0;
-          break;
-        case 'mortgage':
-          value = yearData?.mortgage || 0;
-          break;
-        default:
-          // Handle any other field by directly accessing the property from yearData
-          // This provides flexibility for additional chart types without code changes
-          value = yearData?.[field] || 0;
-          break;
-      }
-
       return {
         year: parseInt(year),
-        value: value,
+        value: getFieldValue(yearData, field),
         label: year
       };
     }).sort((a, b) => a.year - b.year);
