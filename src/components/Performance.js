@@ -3,22 +3,6 @@ import { getPerformanceData, setPerformanceData, STORAGE_KEYS, getPaycheckData }
 import { calculateROI } from '../utils/calculationHelpers';
 import DataManager from './DataManager';
 
-// Account types for dropdown
-const ACCOUNT_TYPES = [
-  'Traditional 401k',
-  'Roth 401k',
-  'Traditional IRA',
-  'Roth IRA',
-  'HSA',
-  'Regular Brokerage',
-  'ESPP',
-  'Pension',
-  'Cash/Savings',
-  'CD',
-  'Money Market',
-  'Other'
-];
-
 const Performance = () => {
   // Schema configuration for DataManager
   const schema = {
@@ -30,7 +14,7 @@ const Performance = () => {
         title: '📊 Account Information',
         fields: [
           { name: 'accountName', label: 'Account Name', type: 'text' },
-          { name: 'accountType', label: 'Account Type', type: 'select', options: ACCOUNT_TYPES },
+          { name: 'accountType', label: 'Account Type', type: 'text' },
           { name: 'employer', label: 'Employer', type: 'text' },
           { name: 'year', label: 'Year', type: 'number', min: 1900, max: 2100 }
         ]
@@ -59,7 +43,7 @@ const Performance = () => {
   const emptyFormData = {
     entryId: generateEntryId(),
     accountName: '',
-    accountType: ACCOUNT_TYPES[0],
+    accountType: '',
     employer: '',
     year: new Date().getFullYear(),
     balance: '',
@@ -74,7 +58,7 @@ const Performance = () => {
   const getFormDataFromEntry = (entry) => ({
     entryId: entry.entryId,
     accountName: entry.accountName || '',
-    accountType: entry.accountType || ACCOUNT_TYPES[0],
+    accountType: entry.accountType || '',
     employer: entry.employer || '',
     year: entry.year || '',
     balance: entry.balance || '',
@@ -115,7 +99,7 @@ const Performance = () => {
     return {
       entryId: entryId,
       accountName: values[1] || '',
-      accountType: values[2] || ACCOUNT_TYPES[0],
+      accountType: values[2] || '',
       employer: values[3] || '',
       year: year,
       balance: balance,
