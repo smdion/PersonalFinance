@@ -451,12 +451,9 @@
       "ssaEarnings": 142800,
       "effectiveTaxRate": 0.185,
       "taxPaid": 27195,
-      "netWorthPlus": 323000,
-      "netWorthMinus": 27000,
       "taxFree": 4000,
       "taxDeferred": 50000,
-      "rBrokerage": 5000,
-      "ltBrokerage": 5000,
+      "brokerage": 10000,
       "espp": 2000,
       "hsa": 4000,
       "cash": 19000,
@@ -465,8 +462,7 @@
       "othAsset": 0,
       "retirement": 50000,
       "othLia": 27000,
-      "homeImprovements": 8000,
-      "liabilities": 283000
+      "homeImprovements": 8000
     },
     "2022": {
       "year": 2022,
@@ -486,12 +482,9 @@
       "ssaEarnings": 147000,
       "effectiveTaxRate": 0.192,
       "taxPaid": 31104,
-      "netWorthPlus": 366000,
-      "netWorthMinus": 24000,
       "taxFree": 4500,
       "taxDeferred": 58000,
-      "rBrokerage": 6500,
-      "ltBrokerage": 6500,
+      "brokerage": 13000,
       "espp": 2500,
       "hsa": 4500,
       "cash": 22000,
@@ -500,8 +493,7 @@
       "othAsset": 0,
       "retirement": 58000,
       "othLia": 24000,
-      "homeImprovements": 12000,
-      "liabilities": 269000
+      "homeImprovements": 12000
     },
     "2023": {
       "year": 2023,
@@ -521,12 +513,9 @@
       "ssaEarnings": 158000,
       "effectiveTaxRate": 0.201,
       "taxPaid": 34311,
-      "netWorthPlus": 409000,
-      "netWorthMinus": 21000,
       "taxFree": 5000,
       "taxDeferred": 68000,
-      "rBrokerage": 8000,
-      "ltBrokerage": 8000,
+      "brokerage": 16000,
       "espp": 3000,
       "hsa": 5000,
       "cash": 25000,
@@ -535,8 +524,7 @@
       "othAsset": 0,
       "retirement": 68000,
       "othLia": 21000,
-      "homeImprovements": 16000,
-      "liabilities": 254000
+      "homeImprovements": 16000
     },
     "2024": {
       "year": 2024,
@@ -556,12 +544,9 @@
       "ssaEarnings": 162000,
       "effectiveTaxRate": 0.208,
       "taxPaid": 36473,
-      "netWorthPlus": 462000,
-      "netWorthMinus": 18000,
       "taxFree": 5500,
       "taxDeferred": 79000,
-      "rBrokerage": 10000,
-      "ltBrokerage": 9000,
+      "brokerage": 19000,
       "espp": 3500,
       "hsa": 5500,
       "cash": 28000,
@@ -570,8 +555,7 @@
       "othAsset": 0,
       "retirement": 79000,
       "othLia": 18000,
-      "homeImprovements": 20000,
-      "liabilities": 238000
+      "homeImprovements": 20000
     },
     "2025": {
       "year": 2025,
@@ -591,12 +575,9 @@
       "ssaEarnings": 166000,
       "effectiveTaxRate": 0.212,
       "taxPaid": 38160,
-      "netWorthPlus": 520000,
-      "netWorthMinus": 15000,
       "taxFree": 6000,
       "taxDeferred": 90000,
-      "rBrokerage": 12000,
-      "ltBrokerage": 10000,
+      "brokerage": 22000,
       "espp": 4000,
       "hsa": 6000,
       "cash": 31000,
@@ -605,8 +586,7 @@
       "othAsset": 0,
       "retirement": 90000,
       "othLia": 15000,
-      "homeImprovements": 24000,
-      "liabilities": 222000
+      "homeImprovements": 24000
     }
   },
   "performanceData": {
