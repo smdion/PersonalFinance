@@ -20,8 +20,8 @@ const Welcome = () => {
 
   const loadDemoData = async () => {
     try {
-      // Check if user has existing data
-      const { hasExistingData, importDemoDataWithExportOption } = await import('../utils/localStorage');
+      // Import the correct demo data loader
+      const { hasExistingData, exportAllDataWithTimestamp, importDemoData } = await import('../utils/localStorage');
       
       if (hasExistingData()) {
         const shouldExport = window.confirm(
@@ -30,7 +30,6 @@ const Welcome = () => {
         );
         
         if (shouldExport) {
-          const { exportAllDataWithTimestamp } = await import('../utils/localStorage');
           const exportResult = exportAllDataWithTimestamp();
           if (exportResult.success) {
             alert('Your data has been exported successfully! Now loading demo data...');
@@ -40,7 +39,7 @@ const Welcome = () => {
         }
       }
       
-      const result = await importDemoDataWithExportOption();
+      const result = await importDemoData();
       
       if (result.success) {
         if (window.confirm('Demo data loaded successfully! The page will refresh to show the demo data. You can explore all features with realistic financial data.')) {
@@ -135,6 +134,34 @@ const Welcome = () => {
       <div className="header">
         <h1>Personal Finance Calculator Suite</h1>
         <p>Comprehensive tools to plan, track, and visualize your financial future</p>
+        <div style={{ marginTop: 10, textAlign: 'center' }}>
+          <a
+            href="https://github.com/smdion/PersonalFinance"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: '6px',
+              color: '#24292f',
+              textDecoration: 'none',
+              fontWeight: 500,
+              fontSize: '1rem'
+            }}
+            title="GitHub - Support & Source Code"
+          >
+            <svg height="20" width="20" viewBox="0 0 16 16" fill="currentColor" style={{ verticalAlign: 'middle' }}>
+              <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
+                0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52
+                -.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2
+                -3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.01.08-2.12 0 0 .67-.21 2.2.82.64
+                -.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.11.16 1.92.08
+                2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01
+                1.93-.01 2.19 0 .21.15.46.55.38A8.013 8.013 0 0 0 16 8c0-4.42-3.58-8-8-8z"/>
+            </svg>
+            <span>GitHub Support</span>
+          </a>
+        </div>
       </div>
 
       <div className="welcome-content">
