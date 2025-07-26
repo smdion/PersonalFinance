@@ -9,1102 +9,568 @@
       "items": [
         {
           "id": "your-roth-ira",
-          "name": "Your Roth IRA",
+          "name": "Jordan Roth IRA",
           "standard": 500,
-          "tight": 500,
-          "emergency": 500
+          "tight": 400,
+          "emergency": 0
         },
         {
           "id": "spouse-roth-ira",
-          "name": "Spouse Roth IRA",
-          "standard": 500,
-          "tight": 500,
-          "emergency": 500
-        }
-      ]
-    },
-    {
-      "id": 1753404148542,
-      "name": "Food",
-      "items": [
-        {
-          "id": 1753404195982,
-          "name": "Groceries",
-          "standard": 400,
-          "tight": 300,
-          "emergency": 200
-        },
-        {
-          "id": 1753404199986,
-          "name": "Restaurants",
-          "standard": 150,
-          "tight": 75,
+          "name": "Taylor Roth IRA",
+          "standard": 450,
+          "tight": 350,
           "emergency": 0
         }
       ]
     },
     {
-      "id": 1753404158299,
+      "id": "housing",
       "name": "Housing",
       "items": [
-        {
-          "id": 1753404290562,
-          "name": "Rent/Mortgage",
-          "standard": 1800,
-          "tight": 1800,
-          "emergency": 1800
-        },
-        {
-          "id": 1753404294285,
-          "name": "Property Taxes",
-          "standard": 300,
-          "tight": 300,
-          "emergency": 300
-        }
+        { "id": "mortgage", "name": "Mortgage Payment", "standard": 1580, "tight": 1580, "emergency": 1580 },
+        { "id": "propertytax", "name": "Property Tax", "standard": 420, "tight": 420, "emergency": 420 },
+        { "id": "homeins", "name": "Home Insurance", "standard": 125, "tight": 125, "emergency": 125 },
+        { "id": "hoa", "name": "HOA Dues", "standard": 85, "tight": 85, "emergency": 85 }
+      ]
+    },
+    {
+      "id": "utilities",
+      "name": "Utilities",
+      "items": [
+        { "id": "electric", "name": "Electricity", "standard": 135, "tight": 120, "emergency": 100 },
+        { "id": "water", "name": "Water/Sewer", "standard": 75, "tight": 70, "emergency": 65 },
+        { "id": "internet", "name": "Internet", "standard": 85, "tight": 65, "emergency": 50 },
+        { "id": "gas", "name": "Natural Gas", "standard": 90, "tight": 80, "emergency": 70 },
+        { "id": "trash", "name": "Trash/Recycling", "standard": 35, "tight": 35, "emergency": 35 }
+      ]
+    },
+    {
+      "id": "transportation",
+      "name": "Transportation",
+      "items": [
+        { "id": "car1payment", "name": "Jordan's Car Payment", "standard": 425, "tight": 425, "emergency": 0 },
+        { "id": "car2payment", "name": "Taylor's Car Payment", "standard": 380, "tight": 380, "emergency": 200 },
+        { "id": "fuel", "name": "Gasoline", "standard": 180, "tight": 150, "emergency": 120 },
+        { "id": "autoins", "name": "Auto Insurance", "standard": 145, "tight": 145, "emergency": 145 },
+        { "id": "carmaint", "name": "Car Maintenance", "standard": 150, "tight": 100, "emergency": 50 }
+      ]
+    },
+    {
+      "id": "food",
+      "name": "Food & Dining",
+      "items": [
+        { "id": "groceries", "name": "Groceries", "standard": 750, "tight": 600, "emergency": 450 },
+        { "id": "dining", "name": "Restaurants", "standard": 280, "tight": 150, "emergency": 0 },
+        { "id": "coffee", "name": "Coffee/Beverages", "standard": 85, "tight": 40, "emergency": 0 },
+        { "id": "lunch", "name": "Work Lunches", "standard": 120, "tight": 60, "emergency": 0 }
+      ]
+    },
+    {
+      "id": "health",
+      "name": "Health & Medical",
+      "items": [
+        { "id": "prescriptions", "name": "Prescriptions", "standard": 65, "tight": 50, "emergency": 40 },
+        { "id": "dental", "name": "Dental Care", "standard": 80, "tight": 60, "emergency": 30 },
+        { "id": "vision", "name": "Vision Care", "standard": 45, "tight": 30, "emergency": 15 },
+        { "id": "therapy", "name": "Therapy/Counseling", "standard": 120, "tight": 80, "emergency": 0 }
+      ]
+    },
+    {
+      "id": "childcare",
+      "name": "Childcare & Kids",
+      "items": [
+        { "id": "daycare", "name": "Daycare", "standard": 1200, "tight": 1000, "emergency": 0 },
+        { "id": "activities", "name": "Kids Activities", "standard": 150, "tight": 75, "emergency": 0 },
+        { "id": "clothing", "name": "Kids Clothing", "standard": 80, "tight": 50, "emergency": 20 },
+        { "id": "supplies", "name": "School Supplies", "standard": 40, "tight": 25, "emergency": 10 }
+      ]
+    },
+    {
+      "id": "personal",
+      "name": "Personal Care",
+      "items": [
+        { "id": "haircare", "name": "Hair Care", "standard": 110, "tight": 70, "emergency": 40 },
+        { "id": "clothing", "name": "Adult Clothing", "standard": 160, "tight": 80, "emergency": 30 },
+        { "id": "fitness", "name": "Gym/Fitness", "standard": 95, "tight": 50, "emergency": 0 },
+        { "id": "skincare", "name": "Skincare/Beauty", "standard": 85, "tight": 50, "emergency": 25 }
+      ]
+    },
+    {
+      "id": "entertainment",
+      "name": "Entertainment & Fun",
+      "items": [
+        { "id": "streaming", "name": "Streaming Services", "standard": 75, "tight": 45, "emergency": 0 },
+        { "id": "datenight", "name": "Date Nights", "standard": 200, "tight": 100, "emergency": 0 },
+        { "id": "hobbies", "name": "Hobbies", "standard": 150, "tight": 75, "emergency": 0 },
+        { "id": "gifts", "name": "Gifts", "standard": 125, "tight": 60, "emergency": 20 }
+      ]
+    },
+    {
+      "id": "insurance",
+      "name": "Insurance",
+      "items": [
+        { "id": "life", "name": "Life Insurance", "standard": 95, "tight": 95, "emergency": 95 },
+        { "id": "disability", "name": "Disability Insurance", "standard": 65, "tight": 65, "emergency": 65 },
+        { "id": "umbrella", "name": "Umbrella Policy", "standard": 45, "tight": 45, "emergency": 0 }
+      ]
+    },
+    {
+      "id": "savings",
+      "name": "Savings & Debt",
+      "items": [
+        { "id": "emergency", "name": "Emergency Fund", "standard": 400, "tight": 200, "emergency": 0 },
+        { "id": "vacation", "name": "Vacation Savings", "standard": 300, "tight": 150, "emergency": 0 },
+        { "id": "homerepair", "name": "Home Repair Fund", "standard": 250, "tight": 125, "emergency": 0 },
+        { "id": "creditcard", "name": "Credit Card Payment", "standard": 280, "tight": 280, "emergency": 150 }
       ]
     }
   ],
   "paycheckData": {
     "your": {
       "name": "Jordan",
-      "employer": "TechCorp",
-      "birthday": "1990-05-15",
-      "salary": "85000",
-      "payPeriod": "biWeekly",
+      "employer": "TechSolutions Inc",
+      "birthday": "1987-05-14",
+      "salary": 72000,
+      "payPeriod": "biweekly",
       "filingStatus": "marriedJointly",
       "w4Type": "new",
       "w4Options": {
-        "allowances": 1,
-        "qualifyingChildren": 0,
+        "multipleJobs": false,
+        "qualifyingChildren": 1,
         "otherDependents": 0,
         "additionalIncome": 0,
-        "extraWithholding": 0,
-        "multipleJobs": true
+        "extraWithholding": 0
       },
       "retirementOptions": {
-        "traditional401kPercent": 0,
-        "roth401kPercent": 8,
+        "traditional401kPercent": 8,
+        "roth401kPercent": 2,
         "isOver50": false
       },
       "medicalDeductions": {
-        "dental": 15,
-        "medical": 75,
-        "vision": 8,
-        "shortTermDisability": 25,
-        "longTermDisability": 18,
-        "hsa": 150,
-        "employerHsa": 500
+        "hsa": 200,
+        "employerHsa": 750,
+        "fsa": 0,
+        "dental": 25,
+        "vision": 12,
+        "medical": 145,
+        "shortTermDisability": 18,
+        "longTermDisability": 15
       },
       "esppDeductionPercent": 0,
-      "budgetImpacting": {
-        "traditionalIraMonthly": 0,
-        "rothIraMonthly": 500,
-        "retirementBrokerageMonthly": 0,
-        "longtermSavingsMonthly": 0
-      },
-      "bonusMultiplier": 100,
-      "bonusTarget": 10,
-      "hsaCoverageType": "self",
-      "payWeekType": "even",
-      "netTakeHomePaycheck": 2145.83
+      "budgetImpacting": true,
+      "bonusMultiplier": 1,
+      "bonusTarget": 3600,
+      "payWeekType": "standard",
+      "hsaCoverageType": "family"
     },
     "spouse": {
-      "name": "Alex",
-      "employer": "FinanceInc",
-      "birthday": "1988-11-22",
-      "salary": "72000",
-      "payPeriod": "biWeekly",
+      "name": "Taylor",
+      "employer": "Metro Public Schools",
+      "birthday": "1989-09-22",
+      "salary": 58000,
+      "payPeriod": "biweekly",
       "filingStatus": "marriedJointly",
       "w4Type": "new",
       "w4Options": {
-        "allowances": 1,
-        "qualifyingChildren": 0,
+        "multipleJobs": false,
+        "qualifyingChildren": 1,
         "otherDependents": 0,
         "additionalIncome": 0,
-        "extraWithholding": 0,
-        "multipleJobs": true
+        "extraWithholding": 0
       },
       "retirementOptions": {
-        "traditional401kPercent": 12,
-        "roth401kPercent": 0,
+        "traditional401kPercent": 6,
+        "roth401kPercent": 4,
         "isOver50": false
       },
       "medicalDeductions": {
-        "dental": 12,
-        "medical": 60,
-        "vision": 6,
+        "hsa": 0,
+        "employerHsa": 0,
+        "fsa": 125,
+        "dental": 18,
+        "vision": 10,
+        "medical": 85,
         "shortTermDisability": 0,
-        "longTermDisability": 0,
-        "hsa": 125,
-        "employerHsa": 300
+        "longTermDisability": 0
       },
-      "esppDeductionPercent": 5,
-      "budgetImpacting": {
-        "traditionalIraMonthly": 0,
-        "rothIraMonthly": 500,
-        "retirementBrokerageMonthly": 0,
-        "longtermSavingsMonthly": 0
-      },
-      "bonusMultiplier": 100,
-      "bonusTarget": 8,
-      "hsaCoverageType": "self",
-      "payWeekType": "odd",
-      "netTakeHomePaycheck": 1856.45
+      "esppDeductionPercent": 0,
+      "budgetImpacting": true,
+      "bonusMultiplier": 1,
+      "bonusTarget": 2300,
+      "payWeekType": "standard",
+      "hsaCoverageType": "self"
     },
     "settings": {
       "showSpouseCalculator": true
     }
   },
   "formData": {
-    "combinedMonthlyTakeHome": 8004.56,
-    "combinedTakeHomePerPayPeriod": 4002.28,
-    "biWeeklyType": "even",
-    "yourBudgetImpacting": {
-      "traditionalIraMonthly": 0,
-      "rothIraMonthly": 500,
-      "retirementBrokerageMonthly": 0,
-      "longtermSavingsMonthly": 0
-    },
-    "spouseBudgetImpacting": {
-      "traditionalIraMonthly": 0,
-      "rothIraMonthly": 500,
-      "retirementBrokerageMonthly": 0,
-      "longtermSavingsMonthly": 0
-    },
-    "showSpouseCalculator": true
+    "showSpouseCalculator": true,
+    "yourBudgetImpacting": true,
+    "spouseBudgetImpacting": true,
+    "combinedMonthlyTakeHome": 8450
   },
-  "appSettings": {},
+  "appSettings": {
+    "theme": "light",
+    "currency": "USD"
+  },
   "historicalData": {
-    "2015": {
-      "year": 2015,
-      "users": {
-        "Jordan": {
-          "employer": "StartupXYZ",
-          "salary": 45000,
-          "bonus": 0
-        },
-        "Alex": {
-          "employer": "LocalBank",
-          "salary": 38000,
-          "bonus": 0
-        }
-      },
-      "agi": 75000,
-      "ssaEarnings": 78000,
-      "effectiveTaxRate": 0.12,
-      "taxPaid": 9000,
-      "netWorthPlus": 15000,
-      "netWorthMinus": 25000,
-      "taxFree": 5000,
-      "taxDeferred": 8000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
-      "espp": 0,
-      "hsa": 2000,
-      "cash": 12000,
-      "house": 0,
-      "mortgage": 0,
-      "othAsset": 8000,
-      "retirement": 13000,
-      "othLia": 35000,
-      "homeImprovements": 0,
-      "liabilities": 35000
-    },
-    "2016": {
-      "year": 2016,
-      "users": {
-        "Jordan": {
-          "employer": "TechCorp",
-          "salary": 52000,
-          "bonus": 0
-        },
-        "Alex": {
-          "employer": "LocalBank",
-          "salary": 42000,
-          "bonus": 0
-        }
-      },
-      "agi": 89000,
-      "ssaEarnings": 92000,
-      "effectiveTaxRate": 0.13,
-      "taxPaid": 11570,
-      "netWorthPlus": 45000,
-      "netWorthMinus": 25000,
-      "taxFree": 12000,
-      "taxDeferred": 18000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
-      "espp": 0,
-      "hsa": 3500,
-      "cash": 25000,
-      "house": 0,
-      "mortgage": 0,
-      "othAsset": 11500,
-      "retirement": 30000,
-      "othLia": 0,
-      "homeImprovements": 0,
-      "liabilities": 25000
-    },
-    "2017": {
-      "year": 2017,
-      "users": {
-        "Jordan": {
-          "employer": "TechCorp",
-          "salary": 58000,
-          "bonus": 0
-        },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 48000,
-          "bonus": 0
-        }
-      },
-      "agi": 98000,
-      "ssaEarnings": 105000,
-      "effectiveTaxRate": 0.14,
-      "taxPaid": 13720,
-      "netWorthPlus": 85000,
-      "netWorthMinus": 15000,
-      "taxFree": 25000,
-      "taxDeferred": 35000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
-      "espp": 0,
-      "hsa": 5000,
-      "cash": 20000,
-      "house": 0,
-      "mortgage": 0,
-      "othAsset": 15000,
-      "retirement": 60000,
-      "othLia": 0,
-      "homeImprovements": 0,
-      "liabilities": 15000
-    },
-    "2018": {
-      "year": 2018,
-      "users": {
-        "Jordan": {
-          "employer": "TechCorp",
-          "salary": 62000,
-          "bonus": 0
-        },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 52000,
-          "bonus": 0
-        }
-      },
-      "agi": 108000,
-      "ssaEarnings": 112000,
-      "effectiveTaxRate": 0.15,
-      "taxPaid": 16200,
-      "netWorthPlus": 135000,
-      "netWorthMinus": 185000,
-      "taxFree": 40000,
-      "taxDeferred": 45000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
-      "espp": 0,
-      "hsa": 7000,
-      "cash": 18000,
-      "house": 275000,
-      "mortgage": 220000,
-      "othAsset": 25000,
-      "retirement": 85000,
-      "othLia": 0,
-      "homeImprovements": 0,
-      "liabilities": 220000
-    },
     "2019": {
       "year": 2019,
       "users": {
         "Jordan": {
-          "employer": "TechCorp",
-          "salary": 68000,
-          "bonus": 0
+          "employer": "DataCorp",
+          "salary": 62000,
+          "bonus": 2500
         },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 56000,
-          "bonus": 0
+        "Taylor": {
+          "employer": "Metro Public Schools",
+          "salary": 52000,
+          "bonus": 1000
         }
       },
-      "agi": 118000,
-      "ssaEarnings": 122000,
-      "effectiveTaxRate": 0.16,
-      "taxPaid": 18880,
-      "netWorthPlus": 195000,
-      "netWorthMinus": 210000,
-      "taxFree": 65000,
-      "taxDeferred": 60000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
+      "agi": 110000,
+      "ssaEarnings": 113500,
+      "effectiveTaxRate": 0.14,
+      "taxPaid": 15400,
+      "netWorthPlus": 145000,
+      "netWorthMinus": 85000,
+      "taxFree": 18000,
+      "taxDeferred": 28000,
+      "rBrokerage": 2500,
+      "ltBrokerage": 1800,
       "espp": 0,
-      "hsa": 10000,
-      "cash": 25000,
+      "hsa": 4200,
+      "cash": 15000,
       "house": 285000,
-      "mortgage": 210000,
-      "othAsset": 35000,
-      "retirement": 125000,
-      "othLia": 0,
-      "homeImprovements": 5000,
-      "liabilities": 210000
+      "mortgage": 225000,
+      "othAsset": 8500,
+      "retirement": 52500,
+      "othLia": 3200,
+      "homeImprovements": 2500,
+      "liabilities": 228200
     },
     "2020": {
       "year": 2020,
       "users": {
         "Jordan": {
-          "employer": "TechCorp",
-          "salary": 72000,
-          "bonus": 2000
+          "employer": "DataCorp",
+          "salary": 64500,
+          "bonus": 2800
         },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 58000,
-          "bonus": 0
+        "Taylor": {
+          "employer": "Metro Public Schools",
+          "salary": 53500,
+          "bonus": 1200
         }
       },
-      "agi": 125000,
-      "ssaEarnings": 128000,
-      "effectiveTaxRate": 0.17,
-      "taxPaid": 21250,
-      "netWorthPlus": 285000,
-      "netWorthMinus": 195000,
-      "taxFree": 95000,
-      "taxDeferred": 75000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
+      "agi": 115000,
+      "ssaEarnings": 121000,
+      "effectiveTaxRate": 0.15,
+      "taxPaid": 17250,
+      "netWorthPlus": 185000,
+      "netWorthMinus": 78000,
+      "taxFree": 25000,
+      "taxDeferred": 35000,
+      "rBrokerage": 4200,
+      "ltBrokerage": 3100,
       "espp": 0,
-      "hsa": 15000,
-      "cash": 35000,
-      "house": 310000,
-      "mortgage": 195000,
-      "othAsset": 40000,
-      "retirement": 170000,
-      "othLia": 0,
-      "homeImprovements": 10000,
-      "liabilities": 195000
+      "hsa": 6800,
+      "cash": 18500,
+      "house": 295000,
+      "mortgage": 218000,
+      "othAsset": 9200,
+      "retirement": 68300,
+      "othLia": 2800,
+      "homeImprovements": 4200,
+      "liabilities": 220800
     },
     "2021": {
       "year": 2021,
       "users": {
         "Jordan": {
-          "employer": "TechCorp",
-          "salary": 78000,
-          "bonus": 3000
+          "employer": "TechSolutions Inc",
+          "salary": 68000,
+          "bonus": 3200
         },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 62000,
-          "bonus": 2500
+        "Taylor": {
+          "employer": "Metro Public Schools",
+          "salary": 55000,
+          "bonus": 1500
         }
       },
-      "agi": 138000,
-      "ssaEarnings": 142000,
-      "effectiveTaxRate": 0.18,
-      "taxPaid": 24840,
-      "netWorthPlus": 395000,
-      "netWorthMinus": 180000,
-      "taxFree": 135000,
-      "taxDeferred": 95000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
+      "agi": 122000,
+      "ssaEarnings": 126700,
+      "effectiveTaxRate": 0.16,
+      "taxPaid": 19520,
+      "netWorthPlus": 235000,
+      "netWorthMinus": 72000,
+      "taxFree": 32000,
+      "taxDeferred": 42000,
+      "rBrokerage": 6800,
+      "ltBrokerage": 4900,
       "espp": 0,
-      "hsa": 20000,
-      "cash": 45000,
-      "house": 355000,
-      "mortgage": 180000,
-      "othAsset": 50000,
-      "retirement": 230000,
-      "othLia": 0,
-      "homeImprovements": 15000,
-      "liabilities": 180000
+      "hsa": 9200,
+      "cash": 22000,
+      "house": 310000,
+      "mortgage": 210000,
+      "othAsset": 10500,
+      "retirement": 88300,
+      "othLia": 2400,
+      "homeImprovements": 6500,
+      "liabilities": 212400
     },
     "2022": {
       "year": 2022,
       "users": {
         "Jordan": {
-          "employer": "TechCorp",
-          "salary": 82000,
-          "bonus": 0
+          "employer": "TechSolutions Inc",
+          "salary": 70000,
+          "bonus": 3400
         },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 66000,
-          "bonus": 3500
+        "Taylor": {
+          "employer": "Metro Public Schools",
+          "salary": 56500,
+          "bonus": 1800
         }
       },
-      "agi": 145000,
-      "ssaEarnings": 148000,
-      "effectiveTaxRate": 0.19,
-      "taxPaid": 27550,
-      "netWorthPlus": 475000,
-      "netWorthMinus": 165000,
-      "taxFree": 165000,
-      "taxDeferred": 115000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
+      "agi": 126000,
+      "ssaEarnings": 131700,
+      "effectiveTaxRate": 0.17,
+      "taxPaid": 21420,
+      "netWorthPlus": 285000,
+      "netWorthMinus": 65000,
+      "taxFree": 38500,
+      "taxDeferred": 48000,
+      "rBrokerage": 8200,
+      "ltBrokerage": 6500,
       "espp": 0,
-      "hsa": 25000,
-      "cash": 50000,
-      "house": 385000,
-      "mortgage": 165000,
-      "othAsset": 55000,
-      "retirement": 280000,
-      "othLia": 0,
-      "homeImprovements": 20000,
-      "liabilities": 165000
+      "hsa": 11800,
+      "cash": 25500,
+      "house": 325000,
+      "mortgage": 202000,
+      "othAsset": 11200,
+      "retirement": 107300,
+      "othLia": 2000,
+      "homeImprovements": 8200,
+      "liabilities": 204000
     },
     "2023": {
       "year": 2023,
       "users": {
         "Jordan": {
-          "employer": "TechCorp",
-          "salary": 85000,
-          "bonus": 0
-        },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 70000,
-          "bonus": 4000
-        }
-      },
-      "agi": 152000,
-      "ssaEarnings": 155000,
-      "effectiveTaxRate": 0.20,
-      "taxPaid": 30400,
-      "netWorthPlus": 575000,
-      "netWorthMinus": 150000,
-      "taxFree": 205000,
-      "taxDeferred": 140000,
-      "rBrokerage": 0,
-      "ltBrokerage": 0,
-      "espp": 0,
-      "hsa": 30000,
-      "cash": 55000,
-      "house": 415000,
-      "mortgage": 150000,
-      "othAsset": 60000,
-      "retirement": 345000,
-      "othLia": 0,
-      "homeImprovements": 25000,
-      "liabilities": 150000
-    },
-    "2024": {
-      "year": 2024,
-      "users": {
-        "Jordan": {
-          "employer": "TechCorp",
-          "salary": 85000,
-          "bonus": 5000
-        },
-        "Alex": {
-          "employer": "FinanceInc",
+          "employer": "TechSolutions Inc",
           "salary": 72000,
-          "bonus": 4500
-        }
-      },
-      "agi": 158500,
-      "ssaEarnings": 0,
-      "effectiveTaxRate": 0.21,
-      "taxPaid": 33285,
-      "netWorthPlus": 685000,
-      "netWorthMinus": 135000,
-      "taxFree": 255000,
-      "taxDeferred": 165000,
-      "rBrokerage": 5000,
-      "ltBrokerage": 3000,
-      "espp": 0,
-      "hsa": 35000,
-      "cash": 60000,
-      "house": 445000,
-      "mortgage": 135000,
-      "othAsset": 65000,
-      "retirement": 420000,
-      "othLia": 0,
-      "homeImprovements": 30000,
-      "liabilities": 135000
-    },
-    "2025": {
-      "year": 2025,
-      "users": {
-        "Jordan": {
-          "employer": "TechCorp",
-          "salary": 85000,
-          "bonus": 2500
+          "bonus": 3600
         },
-        "Alex": {
-          "employer": "FinanceInc",
-          "salary": 72000,
-          "bonus": 5000
+        "Taylor": {
+          "employer": "Metro Public Schools",
+          "salary": 58000,
+          "bonus": 2300
         }
       },
-      "agi": 162500,
-      "ssaEarnings": 0,
-      "effectiveTaxRate": 0,
-      "taxPaid": 0,
-      "netWorthPlus": 795000,
-      "netWorthMinus": 120000,
-      "taxFree": 305000,
-      "taxDeferred": 190000,
-      "rBrokerage": 8000,
-      "ltBrokerage": 5000,
-      "espp": 2500,
-      "hsa": 40000,
-      "cash": 65000,
-      "house": 475000,
-      "mortgage": 120000,
-      "othAsset": 70000,
-      "retirement": 495000,
-      "othLia": 0,
-      "homeImprovements": 0,
-      "liabilities": 120000
+      "agi": 130000,
+      "ssaEarnings": 135900,
+      "effectiveTaxRate": 0.175,
+      "taxPaid": 22750,
+      "netWorthPlus": 340000,
+      "netWorthMinus": 58000,
+      "taxFree": 45000,
+      "taxDeferred": 55000,
+      "rBrokerage": 10500,
+      "ltBrokerage": 8200,
+      "espp": 0,
+      "hsa": 14500,
+      "cash": 28000,
+      "house": 340000,
+      "mortgage": 194000,
+      "othAsset": 12800,
+      "retirement": 128300,
+      "othLia": 1500,
+      "homeImprovements": 10200,
+      "liabilities": 195500
     }
   },
-  "performanceData": [
-    {
-      "id": "jordan-401k-techcorp",
-      "accountName": "Jordan 401k - TechCorp",
+  "performanceData": {
+    "entry_2019_jordan401k": {
+      "entryId": "entry_2019_jordan401k",
+      "accountName": "Jordan 401k",
       "accountType": "401k",
-      "entries": {
-        "2015": {
-          "year": 2015,
-          "date": "2015-12-31",
-          "balance": 8000,
-          "contributions": 2700,
-          "gainLoss": 300,
-          "notes": "First year contributions"
-        },
-        "2016": {
-          "year": 2016,
-          "date": "2016-12-31",
-          "balance": 15000,
-          "contributions": 3120,
-          "gainLoss": 3880,
-          "notes": "Increased contributions"
-        },
-        "2017": {
-          "year": 2017,
-          "date": "2017-12-31",
-          "balance": 24000,
-          "contributions": 3480,
-          "gainLoss": 5520,
-          "notes": "Strong market performance"
-        },
-        "2018": {
-          "year": 2018,
-          "date": "2018-12-31",
-          "balance": 31000,
-          "contributions": 3720,
-          "gainLoss": 3280,
-          "notes": "Market volatility"
-        },
-        "2019": {
-          "year": 2019,
-          "date": "2019-12-31",
-          "balance": 41000,
-          "contributions": 4080,
-          "gainLoss": 5920,
-          "notes": "Recovery year"
-        },
-        "2020": {
-          "year": 2020,
-          "date": "2020-12-31",
-          "balance": 52000,
-          "contributions": 4320,
-          "gainLoss": 6680,
-          "notes": "Pandemic year growth"
-        },
-        "2021": {
-          "year": 2021,
-          "date": "2021-12-31",
-          "balance": 68000,
-          "contributions": 4680,
-          "gainLoss": 11320,
-          "notes": "Exceptional market returns"
-        },
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 75000,
-          "contributions": 4920,
-          "gainLoss": 2080,
-          "notes": "Market correction year"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 92000,
-          "contributions": 5100,
-          "gainLoss": 11900,
-          "notes": "Strong recovery"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 115000,
-          "contributions": 5100,
-          "gainLoss": 17900,
-          "notes": "Record performance"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 140000,
-          "contributions": 6800,
-          "gainLoss": 18200,
-          "notes": "Projected growth"
-        }
-      }
+      "employer": "DataCorp",
+      "year": 2019,
+      "startBalance": 18000,
+      "contributions": 6200,
+      "employerMatch": 3100,
+      "growth": 2100,
+      "endBalance": 29400
     },
-    {
-      "id": "alex-401k-financeinc",
-      "accountName": "Alex 401k - FinanceInc",
+    "entry_2019_taylor403b": {
+      "entryId": "entry_2019_taylor403b",
+      "accountName": "Taylor 403b",
+      "accountType": "403b",
+      "employer": "Metro Public Schools",
+      "year": 2019,
+      "startBalance": 12000,
+      "contributions": 5200,
+      "employerMatch": 2600,
+      "growth": 1700,
+      "endBalance": 21500
+    },
+    "entry_2019_jointroth": {
+      "entryId": "entry_2019_jointroth",
+      "accountName": "Joint Roth IRA",
+      "accountType": "Roth IRA",
+      "employer": "Vanguard",
+      "year": 2019,
+      "startBalance": 8000,
+      "contributions": 11000,
+      "employerMatch": 0,
+      "growth": 1600,
+      "endBalance": 20600
+    },
+    "entry_2020_jordan401k": {
+      "entryId": "entry_2020_jordan401k",
+      "accountName": "Jordan 401k",
       "accountType": "401k",
-      "entries": {
-        "2015": {
-          "year": 2015,
-          "date": "2015-12-31",
-          "balance": 5000,
-          "contributions": 2280,
-          "gainLoss": 220,
-          "notes": "Starting 401k"
-        },
-        "2016": {
-          "year": 2016,
-          "date": "2016-12-31",
-          "balance": 10000,
-          "contributions": 2520,
-          "gainLoss": 2480,
-          "notes": "Good growth year"
-        },
-        "2017": {
-          "year": 2017,
-          "date": "2017-12-31",
-          "balance": 17000,
-          "contributions": 2880,
-          "gainLoss": 4120,
-          "notes": "Strong performance"
-        },
-        "2018": {
-          "year": 2018,
-          "date": "2018-12-31",
-          "balance": 23000,
-          "contributions": 3120,
-          "gainLoss": 2880,
-          "notes": "Steady growth"
-        },
-        "2019": {
-          "year": 2019,
-          "date": "2019-12-31",
-          "balance": 32000,
-          "contributions": 3360,
-          "gainLoss": 5640,
-          "notes": "Excellent returns"
-        },
-        "2020": {
-          "year": 2020,
-          "date": "2020-12-31",
-          "balance": 42000,
-          "contributions": 3480,
-          "gainLoss": 6520,
-          "notes": "Pandemic growth"
-        },
-        "2021": {
-          "year": 2021,
-          "date": "2021-12-31",
-          "balance": 55000,
-          "contributions": 3720,
-          "gainLoss": 9280,
-          "notes": "Market surge"
-        },
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 61000,
-          "contributions": 3960,
-          "gainLoss": 2040,
-          "notes": "Correction year"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 75000,
-          "contributions": 4200,
-          "gainLoss": 9800,
-          "notes": "Recovery year"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 92000,
-          "contributions": 4320,
-          "gainLoss": 12680,
-          "notes": "Strong finish"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 115000,
-          "contributions": 8640,
-          "gainLoss": 14360,
-          "notes": "Projected with increased contributions"
-        }
-      }
+      "employer": "DataCorp",
+      "year": 2020,
+      "startBalance": 29400,
+      "contributions": 6450,
+      "employerMatch": 3225,
+      "growth": 3200,
+      "endBalance": 42275
     },
-    {
-      "id": "jordan-roth-ira",
-      "accountName": "Jordan Roth IRA - Vanguard",
+    "entry_2020_taylor403b": {
+      "entryId": "entry_2020_taylor403b",
+      "accountName": "Taylor 403b",
+      "accountType": "403b",
+      "employer": "Metro Public Schools",
+      "year": 2020,
+      "startBalance": 21500,
+      "contributions": 5350,
+      "employerMatch": 2675,
+      "growth": 2400,
+      "endBalance": 31925
+    },
+    "entry_2020_jointroth": {
+      "entryId": "entry_2020_jointroth",
+      "accountName": "Joint Roth IRA",
       "accountType": "Roth IRA",
-      "entries": {
-        "2015": {
-          "year": 2015,
-          "date": "2015-12-31",
-          "balance": 2500,
-          "contributions": 2500,
-          "gainLoss": 0,
-          "notes": "Initial contribution"
-        },
-        "2016": {
-          "year": 2016,
-          "date": "2016-12-31",
-          "balance": 6000,
-          "contributions": 3000,
-          "gainLoss": 500,
-          "notes": "First full year"
-        },
-        "2017": {
-          "year": 2017,
-          "date": "2017-12-31",
-          "balance": 11000,
-          "contributions": 3500,
-          "gainLoss": 1500,
-          "notes": "Growing steadily"
-        },
-        "2018": {
-          "year": 2018,
-          "date": "2018-12-31",
-          "balance": 16500,
-          "contributions": 4000,
-          "gainLoss": 1500,
-          "notes": "Market volatility"
-        },
-        "2019": {
-          "year": 2019,
-          "date": "2019-12-31",
-          "balance": 24000,
-          "contributions": 4500,
-          "gainLoss": 3000,
-          "notes": "Strong recovery"
-        },
-        "2020": {
-          "year": 2020,
-          "date": "2020-12-31",
-          "balance": 32000,
-          "contributions": 5000,
-          "gainLoss": 3000,
-          "notes": "Pandemic year growth"
-        },
-        "2021": {
-          "year": 2021,
-          "date": "2021-12-31",
-          "balance": 43000,
-          "contributions": 5500,
-          "gainLoss": 5500,
-          "notes": "Exceptional year"
-        },
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 48000,
-          "contributions": 6000,
-          "gainLoss": -1000,
-          "notes": "Market correction"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 58000,
-          "contributions": 6500,
-          "gainLoss": 3500,
-          "notes": "Recovery year"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 72000,
-          "contributions": 7000,
-          "gainLoss": 7000,
-          "notes": "Strong performance"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 82000,
-          "contributions": 6000,
-          "gainLoss": 4000,
-          "notes": "Projected growth"
-        }
-      }
+      "employer": "Vanguard",
+      "year": 2020,
+      "startBalance": 20600,
+      "contributions": 12000,
+      "employerMatch": 0,
+      "growth": 2800,
+      "endBalance": 35400
     },
-    {
-      "id": "alex-roth-ira",
-      "accountName": "Alex Roth IRA - Fidelity",
+    "entry_2021_jordan401k": {
+      "entryId": "entry_2021_jordan401k",
+      "accountName": "Jordan 401k",
+      "accountType": "401k",
+      "employer": "TechSolutions Inc",
+      "year": 2021,
+      "startBalance": 42275,
+      "contributions": 6800,
+      "employerMatch": 3400,
+      "growth": 4200,
+      "endBalance": 56675
+    },
+    "entry_2021_taylor403b": {
+      "entryId": "entry_2021_taylor403b",
+      "accountName": "Taylor 403b",
+      "accountType": "403b",
+      "employer": "Metro Public Schools",
+      "year": 2021,
+      "startBalance": 31925,
+      "contributions": 5500,
+      "employerMatch": 2750,
+      "growth": 3100,
+      "endBalance": 43275
+    },
+    "entry_2021_jointroth": {
+      "entryId": "entry_2021_jointroth",
+      "accountName": "Joint Roth IRA",
       "accountType": "Roth IRA",
-      "entries": {
-        "2015": {
-          "year": 2015,
-          "date": "2015-12-31",
-          "balance": 2000,
-          "contributions": 2000,
-          "gainLoss": 0,
-          "notes": "Initial contribution"
-        },
-        "2016": {
-          "year": 2016,
-          "date": "2016-12-31",
-          "balance": 5200,
-          "contributions": 2500,
-          "gainLoss": 700,
-          "notes": "First full year"
-        },
-        "2017": {
-          "year": 2017,
-          "date": "2017-12-31",
-          "balance": 9500,
-          "contributions": 3000,
-          "gainLoss": 1300,
-          "notes": "Building momentum"
-        },
-        "2018": {
-          "year": 2018,
-          "date": "2018-12-31",
-          "balance": 14000,
-          "contributions": 3500,
-          "gainLoss": 1000,
-          "notes": "Steady progress"
-        },
-        "2019": {
-          "year": 2019,
-          "date": "2019-12-31",
-          "balance": 20500,
-          "contributions": 4000,
-          "gainLoss": 2500,
-          "notes": "Good growth year"
-        },
-        "2020": {
-          "year": 2020,
-          "date": "2020-12-31",
-          "balance": 27000,
-          "contributions": 4500,
-          "gainLoss": 2000,
-          "notes": "Pandemic year"
-        },
-        "2021": {
-          "year": 2021,
-          "date": "2021-12-31",
-          "balance": 36500,
-          "contributions": 5000,
-          "gainLoss": 4500,
-          "notes": "Market surge"
-        },
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 40000,
-          "contributions": 5500,
-          "gainLoss": -2000,
-          "notes": "Correction impact"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 48500,
-          "contributions": 6000,
-          "gainLoss": 2500,
-          "notes": "Recovery underway"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 60000,
-          "contributions": 6500,
-          "gainLoss": 5000,
-          "notes": "Strong finish"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 68000,
-          "contributions": 6000,
-          "gainLoss": 2000,
-          "notes": "Projected steady growth"
-        }
-      }
+      "employer": "Vanguard",
+      "year": 2021,
+      "startBalance": 35400,
+      "contributions": 12000,
+      "employerMatch": 0,
+      "growth": 4200,
+      "endBalance": 51600
     },
-    {
-      "id": "joint-hsa",
-      "accountName": "Joint HSA - HealthSavings",
-      "accountType": "HSA",
-      "entries": {
-        "2015": {
-          "year": 2015,
-          "date": "2015-12-31",
-          "balance": 2000,
-          "contributions": 2000,
-          "gainLoss": 0,
-          "notes": "Started HSA"
-        },
-        "2016": {
-          "year": 2016,
-          "date": "2016-12-31",
-          "balance": 5500,
-          "contributions": 3300,
-          "gainLoss": 200,
-          "notes": "Full year contributions"
-        },
-        "2017": {
-          "year": 2017,
-          "date": "2017-12-31",
-          "balance": 8800,
-          "contributions": 3400,
-          "gainLoss": -100,
-          "notes": "Minimal market exposure"
-        },
-        "2018": {
-          "year": 2018,
-          "date": "2018-12-31",
-          "balance": 12500,
-          "contributions": 3500,
-          "gainLoss": 200,
-          "notes": "Conservative growth"
-        },
-        "2019": {
-          "year": 2019,
-          "date": "2019-12-31",
-          "balance": 16800,
-          "contributions": 3600,
-          "gainLoss": 700,
-          "notes": "Increased investment allocation"
-        },
-        "2020": {
-          "year": 2020,
-          "date": "2020-12-31",
-          "balance": 21200,
-          "contributions": 3700,
-          "gainLoss": 700,
-          "notes": "Pandemic year"
-        },
-        "2021": {
-          "year": 2021,
-          "date": "2021-12-31",
-          "balance": 26500,
-          "contributions": 3800,
-          "gainLoss": 1500,
-          "notes": "Strong investment returns"
-        },
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 30800,
-          "contributions": 3900,
-          "gainLoss": 400,
-          "notes": "Market correction impact"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 36200,
-          "contributions": 4000,
-          "gainLoss": 1400,
-          "notes": "Recovery year"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 42500,
-          "contributions": 4100,
-          "gainLoss": 2200,
-          "notes": "Strong growth"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 48000,
-          "contributions": 4200,
-          "gainLoss": 1300,
-          "notes": "Projected conservative growth"
-        }
-      }
+    "entry_2022_jordan401k": {
+      "entryId": "entry_2022_jordan401k",
+      "accountName": "Jordan 401k",
+      "accountType": "401k",
+      "employer": "TechSolutions Inc",
+      "year": 2022,
+      "startBalance": 56675,
+      "contributions": 7000,
+      "employerMatch": 3500,
+      "growth": -4800,
+      "endBalance": 62375
     },
-    {
-      "id": "joint-brokerage",
-      "accountName": "Joint Brokerage - Schwab",
-      "accountType": "Taxable Brokerage",
-      "entries": {
-        "2022": {
-          "year": 2022,
-          "date": "2022-12-31",
-          "balance": 4800,
-          "contributions": 5000,
-          "gainLoss": -200,
-          "notes": "Started taxable investing"
-        },
-        "2023": {
-          "year": 2023,
-          "date": "2023-12-31",
-          "balance": 8200,
-          "contributions": 2000,
-          "gainLoss": 1400,
-          "notes": "Recovery year"
-        },
-        "2024": {
-          "year": 2024,
-          "date": "2024-12-31",
-          "balance": 13000,
-          "contributions": 3000,
-          "gainLoss": 1800,
-          "notes": "Strong performance"
-        },
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 18000,
-          "contributions": 3500,
-          "gainLoss": 1500,
-          "notes": "Projected steady growth"
-        }
-      }
+    "entry_2022_taylor403b": {
+      "entryId": "entry_2022_taylor403b",
+      "accountName": "Taylor 403b",
+      "accountType": "403b",
+      "employer": "Metro Public Schools",
+      "year": 2022,
+      "startBalance": 43275,
+      "contributions": 5650,
+      "employerMatch": 2825,
+      "growth": -3200,
+      "endBalance": 48550
     },
-    {
-      "id": "jordan-espp",
-      "accountName": "Jordan ESPP - TechCorp",
-      "accountType": "ESPP",
-      "entries": {
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 2500,
-          "contributions": 2125,
-          "gainLoss": 375,
-          "notes": "Started ESPP participation"
-        }
-      }
+    "entry_2022_jointroth": {
+      "entryId": "entry_2022_jointroth",
+      "accountName": "Joint Roth IRA",
+      "accountType": "Roth IRA",
+      "employer": "Vanguard",
+      "year": 2022,
+      "startBalance": 51600,
+      "contributions": 12000,
+      "employerMatch": 0,
+      "growth": -5800,
+      "endBalance": 57800
     },
-    {
-      "id": "alex-espp",
-      "accountName": "Alex ESPP - FinanceInc",
-      "accountType": "ESPP",
-      "entries": {
-        "2025": {
-          "year": 2025,
-          "date": "2025-12-31",
-          "balance": 1800,
-          "contributions": 1800,
-          "gainLoss": 0,
-          "notes": "Started ESPP participation"
-        }
-      }
+    "entry_2023_jordan401k": {
+      "entryId": "entry_2023_jordan401k",
+      "accountName": "Jordan 401k",
+      "accountType": "401k",
+      "employer": "TechSolutions Inc",
+      "year": 2023,
+      "startBalance": 62375,
+      "contributions": 7200,
+      "employerMatch": 3600,
+      "growth": 6800,
+      "endBalance": 79975
+    },
+    "entry_2023_taylor403b": {
+      "entryId": "entry_2023_taylor403b",
+      "accountName": "Taylor 403b",
+      "accountType": "403b",
+      "employer": "Metro Public Schools",
+      "year": 2023,
+      "startBalance": 48550,
+      "contributions": 5800,
+      "employerMatch": 2900,
+      "growth": 4500,
+      "endBalance": 61750
+    },
+    "entry_2023_jointroth": {
+      "entryId": "entry_2023_jointroth",
+      "accountName": "Joint Roth IRA",
+      "accountType": "Roth IRA",
+      "employer": "Vanguard",
+      "year": 2023,
+      "startBalance": 57800,
+      "contributions": 12000,
+      "employerMatch": 0,
+      "growth": 7200,
+      "endBalance": 77000
     }
-  ]
+  }
 }

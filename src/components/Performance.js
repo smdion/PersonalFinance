@@ -31,7 +31,7 @@ const Performance = () => {
           { name: 'accountName', label: 'Account Name', type: 'text' },
           { name: 'accountType', label: 'Account Type', type: 'select', options: ACCOUNT_TYPES },
           { name: 'employer', label: 'Employer', type: 'text' },
-          { name: 'entryDate', label: 'Entry Date', type: 'date' }
+          { name: 'year', label: 'Year', type: 'number' }
         ]
       },
       {
@@ -60,7 +60,7 @@ const Performance = () => {
     accountName: '',
     accountType: ACCOUNT_TYPES[0],
     employer: '',
-    entryDate: new Date().toISOString().split('T')[0],
+    year: new Date().getFullYear(),
     balance: '',
     contributions: '',
     employerMatch: '',
@@ -75,7 +75,7 @@ const Performance = () => {
     accountName: entry.accountName || '',
     accountType: entry.accountType || ACCOUNT_TYPES[0],
     employer: entry.employer || '',
-    entryDate: entry.entryDate || '',
+    year: entry.year || '',
     balance: entry.balance || '',
     contributions: entry.contributions || '',
     employerMatch: entry.employerMatch || '',
@@ -90,7 +90,7 @@ const Performance = () => {
     accountName: formData.accountName,
     accountType: formData.accountType,
     employer: formData.employer,
-    entryDate: formData.entryDate,
+    year: formData.year,
     balance: parseFloat(formData.balance) || 0,
     contributions: parseFloat(formData.contributions) || 0,
     employerMatch: parseFloat(formData.employerMatch) || 0,
@@ -111,7 +111,7 @@ const Performance = () => {
       accountName: 'Company 401k',
       accountType: 'Traditional 401k',
       employer: 'Tech Corp',
-      entryDate: '2024-01-01',
+      year: 2024,
       balance: 50000,
       contributions: 8000,
       employerMatch: 4000,
@@ -126,7 +126,7 @@ const Performance = () => {
 
   // CSV headers
   const csvHeaders = [
-    'entryId', 'accountName', 'accountType', 'employer', 'entryDate',
+    'entryId', 'accountName', 'accountType', 'employer', 'year',
     'balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'
   ];
 
@@ -136,7 +136,7 @@ const Performance = () => {
     entry.accountName || '',
     entry.accountType || '',
     entry.employer || '',
-    entry.entryDate || '',
+    entry.year || '',
     entry.balance || 0,
     entry.contributions || 0,
     entry.employerMatch || 0,
@@ -156,7 +156,7 @@ const Performance = () => {
       accountName: values[1] || '',
       accountType: values[2] || ACCOUNT_TYPES[0],
       employer: values[3] || '',
-      entryDate: values[4] || '',
+      year: parseInt(values[4]) || '',
       balance: parseFloat(values[5]) || 0,
       contributions: parseFloat(values[6]) || 0,
       employerMatch: parseFloat(values[7]) || 0,

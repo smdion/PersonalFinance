@@ -3291,8 +3291,11 @@ body {
   z-index: 1;
 }
 
-.historical-text-cell {
+.historical-text-cell,
+.performance-account-cell {
   color: #374151;
+  font-family: inherit;
+  font-size: 0.85rem;
   font-weight: 500;
   text-align: left;
   padding-left: 12px;
@@ -4333,6 +4336,21 @@ body {
   .data-manager-form-actions {
     flex-direction: column;
   }
+}
+
+/* ...existing code... */
+
+/* Add this for performance account columns */
+.performance-account-cell {
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  padding-left: 12px;
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 100px;
 }
 
 /* ...existing code... */

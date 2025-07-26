@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { formatCurrency } from '../utils/calculationHelpers';
 
+// Define at top-level so it's available everywhere
+const performanceAccountFields = ['accountName', 'accountType', 'employer', 'year'];
+
 const DataManager = ({
   title,
   subtitle,
@@ -12,8 +15,8 @@ const DataManager = ({
   emptyFormData, // initial form data structure
   getFormDataFromEntry, // function to convert stored entry to form data
   getEntryFromFormData, // function to convert form data to stored entry
-  primaryKey = 'year', // primary key field name
-  sortField = 'year', // field to sort by
+  primaryKey = 'id', // changed from 'year' to 'id'
+  sortField = 'id',   // changed from 'year' to 'id'
   sortOrder = 'desc', // 'asc' or 'desc'
   csvTemplate, // CSV template data
   parseCSVRow, // function to parse CSV row
@@ -167,101 +170,145 @@ const DataManager = ({
 
   // Download CSV file
   const downloadCSV = () => {
-    const csvContent = convertToCSV(entryData);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const rows = [csvHeaders, ...sortedKeys.map(key => formatCSVRow(entryData[key]))];
+    const csvContent = rows.map(row =>
+      csvHeaders.map(header => {
+        const val = row[header];
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+          return `"${val.replace(/"/g, '""')}"`;
+        }
+        return val ?? '';
+      }).join(',')
+    ).join('\n');
+  
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${dataKey}_${new Date().toISOString().split('T')[0]}.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, '_').toLowerCase()}_data.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Download CSV template
   const downloadTemplate = () => {
-    const csvContent = convertToCSV(csvTemplate);
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const rows = [csvHeaders, ...csvTemplate.map(formatCSVRow)];
+    const csvContent = rows.map(row =>
+      csvHeaders.map(header => {
+        const val = row[header];
+        if (typeof val === 'string' && (val.includes(',') || val.includes('"'))) {
+          return `"${val.replace(/"/g, '""')}"`;
+        }
+        return val ?? '';
+      }).join(',')
+    ).join('\n');
+  
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    
-    if (link.download !== undefined) {
-      const url = URL.createObjectURL(blob);
-      link.setAttribute('href', url);
-      link.setAttribute('download', `${dataKey}_template.csv`);
-      link.style.visibility = 'hidden';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    }
+    link.href = url;
+    link.download = `${title.replace(/\s+/g, '_').toLowerCase()}_template.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
   };
 
   // Parse CSV content
   const parseCSV = (csvText) => {
     const lines = csvText.trim().split('\n');
-    const headers = lines[0].split(',').map(h => h.trim());
-    
-    // Validate headers
-    const hasValidHeaders = csvHeaders.every(header => headers.includes(header));
-    
-    if (!hasValidHeaders) {
-      throw new Error('Invalid CSV format. Please use the provided template.');
-    }
-
-    const data = {};
-    
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      const entry = parseCSVRow(headers, values);
-      
-      if (entry && entry[primaryKey]) {
-        data[entry[primaryKey]] = entry;
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    return lines.slice(1).map(line => {
+      const values = [];
+      let inQuotes = false, value = '', i = 0;
+      while (i < line.length) {
+        const char = line[i];
+        if (char === '"' && (i === 0 || line[i - 1] !== '\\')) {
+          inQuotes = !inQuotes;
+        } else if (char === ',' && !inQuotes) {
+          values.push(value.replace(/^"|"$/g, '').replace(/""/g, '"'));
+          value = '';
+        } else {
+          value += char;
+        }
+        i++;
       }
-    }
-    
-    return data;
+      values.push(value.replace(/^"|"$/g, '').replace(/""/g, '"'));
+      const row = {};
+      headers.forEach((header, idx) => {
+        row[header] = values[idx] ?? '';
+      });
+      return parseCSVRow(row);
+    });
   };
 
   // Handle file upload
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = (e) => {
-      try {
-        const csvText = e.target.result;
-        const importedData = parseCSV(csvText);
-        
-        if (Object.keys(importedData).length === 0) {
-          alert('No valid data found in the CSV file.');
-          return;
-        }
-
-        const confirmMessage = `This will replace your current data with ${Object.keys(importedData).length} entries of imported data. Continue?`;
-        
-        if (window.confirm(confirmMessage)) {
-          setEntryData(importedData);
-          alert(`Successfully imported ${Object.keys(importedData).length} entries.`);
-        }
-      } catch (error) {
-        alert(`Error importing CSV: ${error.message}`);
-      }
+      const csvText = e.target.result;
+      const parsed = parseCSV(csvText);
+      const newData = {};
+      parsed.forEach(entry => {
+        const key = entry[primaryKey];
+        if (key) newData[key] = entry;
+      });
+      setEntryData(newData);
     };
-    
     reader.readAsText(file);
-    event.target.value = '';
   };
 
+  // CSV Import/Export Logic
+  const handleExportCSV = () => {
+    // Use current data and schema for export
+    const rows = [csvHeaders];
+    Object.values(entryData)
+      .sort((a, b) => {
+        if (sortOrder === 'asc') return a[sortField] - b[sortField];
+        return b[sortField] - a[sortField];
+      })
+      .forEach(entry => {
+        rows.push(formatCSVRow(entry));
+      });
+    const csvContent = rows.map(row => row.join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${dataKey}-export.csv`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  const handleImportCSV = async (file) => {
+    if (!file) return;
+    const text = await file.text();
+    const lines = text.split('\n').filter(Boolean);
+    if (lines.length < 2) return;
+    const headers = lines[0].split(',');
+    const newEntries = {};
+    for (let i = 1; i < lines.length; i++) {
+      const row = lines[i].split(',');
+      const entry = parseCSVRow(headers, row);
+      if (entry && entry[primaryKey]) {
+        newEntries[entry[primaryKey]] = entry;
+      }
+    }
+    setEntryData(prev => ({ ...prev, ...newEntries }));
+  };
+
+  // Use id as the key for sorting and accessing entryData
   const sortedKeys = Object.keys(entryData).sort((a, b) => {
-    const aVal = entryData[a][sortField];
-    const bVal = entryData[b][sortField];
-    return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
+    // Numeric sort for id
+    if (sortOrder === 'asc') return Number(a) - Number(b);
+    return Number(b) - Number(a);
   });
 
   const renderFormField = (field, section = null) => {
@@ -312,6 +359,9 @@ const DataManager = ({
     const fieldConfig = schema.sections.flatMap(s => s.fields).find(f => f.name === field);
     const value = entry[field];
     
+    // Add this logic for performance account columns
+    const isPerformanceAccountCell = performanceAccountFields.includes(field);
+
     if (!fieldConfig) return '-';
     
     if (fieldConfig.format === 'currency') {
@@ -458,7 +508,12 @@ const DataManager = ({
             <table>
               <thead>
                 <tr>
-                  <th className="year-column">{schema.primaryKeyLabel}</th>
+                  {/* Always show 'Year' if entry has a year field, otherwise fallback to primary key */}
+                  <th className="year-column">
+                    {Object.values(entryData).some(e => e && e.year !== undefined)
+                      ? 'Year'
+                      : schema.primaryKeyLabel}
+                  </th>
                   {userNames.length > 0 && schema.sections.find(s => s.name === 'users') && 
                     userNames.map(name => (
                       <th key={name} className="user-section" colSpan={schema.sections.find(s => s.name === 'users').fields.length}>
@@ -467,7 +522,10 @@ const DataManager = ({
                     ))
                   }
                   {schema.sections.filter(s => s.name !== 'users').map(section => (
-                    <th key={section.name} className="combined-section" colSpan={section.fields.length}>
+                    <th key={section.name} className="combined-section" colSpan={
+                      // Exclude 'year' field from colSpan if it's already rendered as the first column
+                      section.fields.filter(f => f.name !== 'year').length
+                    }>
                       {section.title}
                     </th>
                   ))}
@@ -483,9 +541,11 @@ const DataManager = ({
                     ))
                   }
                   {schema.sections.filter(s => s.name !== 'users').map(section =>
-                    section.fields.map(field => (
-                      <th key={field.name}>{field.label}</th>
-                    ))
+                    section.fields
+                      .filter(field => field.name !== 'year') // Exclude 'year' from sub-header
+                      .map(field => (
+                        <th key={field.name}>{field.label}</th>
+                      ))
                   )}
                   {(allowEdit || allowDelete) && <th></th>}
                 </tr>
@@ -495,7 +555,12 @@ const DataManager = ({
                   const entry = entryData[key];
                   return (
                     <tr key={key} className="historical-data-row">
-                      <td className="historical-year-cell">{entry[primaryKey]}</td>
+                      {/* Always show year if present, otherwise fallback to primary key */}
+                      {entry && entry.year !== undefined ? (
+                        <td className="historical-year-cell">{entry.year}</td>
+                      ) : (
+                        <td className="historical-year-cell">{entry[primaryKey]}</td>
+                      )}
                       {userNames.length > 0 && schema.sections.find(s => s.name === 'users') &&
                         userNames.map(userName => (
                           schema.sections.find(s => s.name === 'users').fields.map(field => (
@@ -506,11 +571,18 @@ const DataManager = ({
                         ))
                       }
                       {schema.sections.filter(s => s.name !== 'users').map(section =>
-                        section.fields.map(field => (
-                          <td key={field.name} className="historical-currency-cell">
-                            {renderTableCell(entry, field.name)}
-                          </td>
-                        ))
+                        section.fields
+                          .filter(field => field.name !== 'year') // Exclude 'year' from section fields
+                          .map(field => (
+                            <td key={field.name} className={
+                              [
+                                'historical-currency-cell',
+                                performanceAccountFields.includes(field.name) ? 'performance-account-cell' : ''
+                              ].filter(Boolean).join(' ')
+                            }>
+                              {renderTableCell(entry, field.name)}
+                            </td>
+                          ))
                       )}
                       {(allowEdit || allowDelete) && (
                         <td className="historical-actions-cell">

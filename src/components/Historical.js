@@ -128,91 +128,95 @@ const Historical = () => {
 
   // CSV headers
   const csvHeaders = [
-    'year',
-    'user1_name', 'user1_employer', 'user1_salary', 'user1_bonus',
-    'user2_name', 'user2_employer', 'user2_salary', 'user2_bonus',
-    'agi', 'ssaEarnings', 'effectiveTaxRate', 'taxPaid',
-    'netWorthPlus', 'netWorthMinus', 'taxFree', 'taxDeferred',
-    'rBrokerage', 'ltBrokerage', 'espp', 'hsa', 'cash',
-    'house', 'mortgage', 'othAsset', 'retirement', 'othLia',
-    'homeImprovements', 'liabilities'
+    'Year',
+    'Employer',
+    'Salary',
+    'Bonus',
+    'AGI',
+    'SSA Earnings',
+    'Effective Tax Rate',
+    'Tax Paid',
+    'Net Worth Plus',
+    'Net Worth Minus',
+    'Tax Free',
+    'Tax Deferred',
+    'R Brokerage',
+    'LT Brokerage',
+    'ESPP',
+    'HSA',
+    'Cash',
+    'House',
+    'Mortgage',
+    'Other Assets',
+    'Retirement',
+    'Other Liabilities',
+    'Home Improvements',
+    'Liabilities'
   ];
 
   // Format entry for CSV
-  const formatCSVRow = (yearEntry) => [
-    yearEntry.year,
-    yearEntry.users?.user1?.name || '',
-    yearEntry.users?.user1?.employer || '',
-    yearEntry.users?.user1?.salary || 0,
-    yearEntry.users?.user1?.bonus || 0,
-    yearEntry.users?.user2?.name || '',
-    yearEntry.users?.user2?.employer || '',
-    yearEntry.users?.user2?.salary || 0,
-    yearEntry.users?.user2?.bonus || 0,
-    yearEntry.agi || 0,
-    yearEntry.ssaEarnings || 0,
-    yearEntry.effectiveTaxRate || 0,
-    yearEntry.taxPaid || 0,
-    yearEntry.netWorthPlus || 0,
-    yearEntry.netWorthMinus || 0,
-    yearEntry.taxFree || 0,
-    yearEntry.taxDeferred || 0,
-    yearEntry.rBrokerage || 0,
-    yearEntry.ltBrokerage || 0,
-    yearEntry.espp || 0,
-    yearEntry.hsa || 0,
-    yearEntry.cash || 0,
-    yearEntry.house || 0,
-    yearEntry.mortgage || 0,
-    yearEntry.othAsset || 0,
-    yearEntry.retirement || 0,
-    yearEntry.othLia || 0,
-    yearEntry.homeImprovements || 0,
-    yearEntry.liabilities || 0
-  ];
+  const formatCSVRow = (entry) => ({
+    Year: entry.year,
+    Employer: entry.users?.employer || '',
+    Salary: entry.users?.salary || 0,
+    Bonus: entry.users?.bonus || 0,
+    AGI: entry.financial?.agi || 0,
+    'SSA Earnings': entry.financial?.ssaEarnings || 0,
+    'Effective Tax Rate': entry.financial?.effectiveTaxRate || 0,
+    'Tax Paid': entry.financial?.taxPaid || 0,
+    'Net Worth Plus': entry.financial?.netWorthPlus || 0,
+    'Net Worth Minus': entry.financial?.netWorthMinus || 0,
+    'Tax Free': entry.financial?.taxFree || 0,
+    'Tax Deferred': entry.financial?.taxDeferred || 0,
+    'R Brokerage': entry.financial?.rBrokerage || 0,
+    'LT Brokerage': entry.financial?.ltBrokerage || 0,
+    'ESPP': entry.financial?.espp || 0,
+    'HSA': entry.financial?.hsa || 0,
+    'Cash': entry.financial?.cash || 0,
+    'House': entry.financial?.house || 0,
+    'Mortgage': entry.financial?.mortgage || 0,
+    'Other Assets': entry.financial?.othAsset || 0,
+    'Retirement': entry.financial?.retirement || 0,
+    'Other Liabilities': entry.financial?.othLia || 0,
+    'Home Improvements': entry.financial?.homeImprovements || 0,
+    'Liabilities': entry.financial?.liabilities || 0
+  });
 
   // Parse CSV row
-  const parseCSVRow = (headers, values) => {
-    const year = parseInt(values[0]);
+  const parseCSVRow = (row) => {
+    const year = parseInt(row['Year']);
     
     if (!year || year < 1900 || year > 2100) return null;
     
     return {
       year: year,
       users: {
-        user1: {
-          name: values[1] || '',
-          employer: values[2] || '',
-          salary: parseFloat(values[3]) || 0,
-          bonus: parseFloat(values[4]) || 0
-        },
-        user2: {
-          name: values[5] || '',
-          employer: values[6] || '',
-          salary: parseFloat(values[7]) || 0,
-          bonus: parseFloat(values[8]) || 0
-        }
+        employer: row['Employer'] || '',
+        salary: parseFloat(row['Salary']) || 0,
+        bonus: parseFloat(row['Bonus']) || 0
       },
-      agi: parseFloat(values[9]) || 0,
-      ssaEarnings: parseFloat(values[10]) || 0,
-      effectiveTaxRate: parseFloat(values[11]) || 0,
-      taxPaid: parseFloat(values[12]) || 0,
-      netWorthPlus: parseFloat(values[13]) || 0,
-      netWorthMinus: parseFloat(values[14]) || 0,
-      taxFree: parseFloat(values[15]) || 0,
-      taxDeferred: parseFloat(values[16]) || 0,
-      rBrokerage: parseFloat(values[17]) || 0,
-      ltBrokerage: parseFloat(values[18]) || 0,
-      espp: parseFloat(values[19]) || 0,
-      hsa: parseFloat(values[20]) || 0,
-      cash: parseFloat(values[21]) || 0,
-      house: parseFloat(values[22]) || 0,
-      mortgage: parseFloat(values[23]) || 0,
-      othAsset: parseFloat(values[24]) || 0,
-      retirement: parseFloat(values[25]) || 0,
-      othLia: parseFloat(values[26]) || 0,
-      homeImprovements: parseFloat(values[27]) || 0,
-      liabilities: parseFloat(values[28]) || 0
+      financial: {
+        agi: parseFloat(row['AGI']) || 0,
+        ssaEarnings: parseFloat(row['SSA Earnings']) || 0,
+        effectiveTaxRate: parseFloat(row['Effective Tax Rate']) || 0,
+        taxPaid: parseFloat(row['Tax Paid']) || 0,
+        netWorthPlus: parseFloat(row['Net Worth Plus']) || 0,
+        netWorthMinus: parseFloat(row['Net Worth Minus']) || 0,
+        taxFree: parseFloat(row['Tax Free']) || 0,
+        taxDeferred: parseFloat(row['Tax Deferred']) || 0,
+        rBrokerage: parseFloat(row['R Brokerage']) || 0,
+        ltBrokerage: parseFloat(row['LT Brokerage']) || 0,
+        espp: parseFloat(row['ESPP']) || 0,
+        hsa: parseFloat(row['HSA']) || 0,
+        cash: parseFloat(row['Cash']) || 0,
+        house: parseFloat(row['House']) || 0,
+        mortgage: parseFloat(row['Mortgage']) || 0,
+        othAsset: parseFloat(row['Other Assets']) || 0,
+        retirement: parseFloat(row['Retirement']) || 0,
+        othLia: parseFloat(row['Other Liabilities']) || 0,
+        homeImprovements: parseFloat(row['Home Improvements']) || 0,
+        liabilities: parseFloat(row['Liabilities']) || 0
+      }
     };
   };
 
