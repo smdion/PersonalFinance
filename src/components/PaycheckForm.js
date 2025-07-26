@@ -74,13 +74,10 @@ const PaycheckForm = ({
   }, [globalSectionControl]);
 
   const toggleSection = (section) => {
-    setExpandedSections(prev => {
-      const newState = {
-        ...prev,
-        [section]: !prev[section]
-      };
-      return newState;
-    });
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section]
+    }));
   };
 
   // Auto-calculate whenever any input changes
@@ -129,21 +126,12 @@ const PaycheckForm = ({
     }
   };
 
+  // Consolidated medical deduction handler
   const handleMedicalDeductionChange = (field, value) => {
-    // Remove currency formatting and non-numeric characters except decimal point
     const rawValue = value.replace(/[$,]/g, '');
     setMedicalDeductions(prev => ({
       ...prev,
       [field]: parseFloat(rawValue) || 0
-    }));
-  };
-
-  const handleEmployerHsaChange = (value) => {
-    // Remove currency formatting and non-numeric characters except decimal point
-    const rawValue = value.replace(/[$,]/g, '');
-    setMedicalDeductions(prev => ({
-      ...prev,
-      employerHsa: parseFloat(rawValue) || 0
     }));
   };
 
@@ -235,22 +223,18 @@ const PaycheckForm = ({
     }
   };
 
-  // Automatically update age-related checkboxes
+  // Consolidated age-related effects
   useEffect(() => {
     const age = calculateAge(birthday);
-    if (age >= 50) {
-      setRetirementOptions((prev) => ({ ...prev, isOver50: true }));
-      setIsIraOver50(true);
-    } else {
-      setRetirementOptions((prev) => ({ ...prev, isOver50: false }));
-      setIsIraOver50(false);
-    }
-    if (age >= 55) {
-      setIsHsaOver55(true);
-    } else {
-      setIsHsaOver55(false);
-    }
-  }, [birthday]);
+    
+    // Update retirement age flags
+    const isOver50 = age >= 50;
+    setRetirementOptions((prev) => ({ ...prev, isOver50 }));
+    setIsIraOver50(isOver50);
+    
+    // Update HSA age flag
+    setIsHsaOver55(age >= 55);
+  }, [birthday, setRetirementOptions]);
 
   const calculateBonusAfterTax = () => {
     const bonus = getEffectiveBonus();
@@ -280,7 +264,7 @@ const PaycheckForm = ({
     return (budgetImpacting.traditionalIraMonthly || 0) + 
            (budgetImpacting.rothIraMonthly || 0) + 
            (budgetImpacting.retirementBrokerageMonthly || 0) + 
-           (budgetImpacting.longtermSavingsMonthly || 0);
+           (budgetImpacting.longTermSavingsMonthly || 0);
   };
 
   return (
@@ -619,7 +603,7 @@ const PaycheckForm = ({
                         id={`employerHsa-${personName}`}
                         className="form-input"
                         value={formatDeductionDisplay(medicalDeductions.employerHsa || 0)}
-                        onChange={(e) => handleEmployerHsaChange(e.target.value)}
+                        onChange={(e) => handleMedicalDeductionChange('employerHsa', e.target.value)}
                         placeholder="$0.00"
                       />
                     </div>
@@ -772,15 +756,15 @@ const PaycheckForm = ({
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor={`longtermSavingsMonthly-${personName}`} className="form-label">
+                  <label htmlFor={`longTermSavingsMonthly-${personName}`} className="form-label">
                     Long-Term Savings (Monthly):
                   </label>
                   <input
                     type="text"
-                    id={`longtermSavingsMonthly-${personName}`}
+                    id={`longTermSavingsMonthly-${personName}`}
                     className="form-input"
-                    value={formatCurrency(budgetImpacting.longtermSavingsMonthly || 0)}
-                    onChange={(e) => handleBudgetImpactingChange('longtermSavingsMonthly', e.target.value)}
+                    value={formatCurrency(budgetImpacting.longTermSavingsMonthly || 0)}
+                    onChange={(e) => handleBudgetImpactingChange('longTermSavingsMonthly', e.target.value)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -1053,7 +1037,7 @@ const PaycheckForm = ({
               </button>
             </div>
 
-            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longtermSavingsMonthly > 0) && (
+            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
               <>
                 <div className="results-divider"></div>
                 
@@ -1102,7 +1086,7 @@ const PaycheckForm = ({
                 )}
 
                 {/* Budget Contributions */}
-                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longtermSavingsMonthly > 0) && (
+                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
                   <div className="results-section">
                     <h4 className="results-section-title">
                       📊 {showMonthlyView ? 'Monthly' : 'Per Paycheck'} Contributions
@@ -1141,13 +1125,13 @@ const PaycheckForm = ({
                           </span>
                         </div>
                       )}
-                      {budgetImpacting.longtermSavingsMonthly > 0 && (
+                      {budgetImpacting.longTermSavingsMonthly > 0 && (
                         <div className="results-item">
                           <span className="results-item-label">Long-Term Savings</span>
                           <span className="results-item-value">
                             {showMonthlyView 
-                              ? formatCurrency(budgetImpacting.longtermSavingsMonthly)
-                              : formatCurrency(budgetImpacting.longtermSavingsMonthly / 2)
+                              ? formatCurrency(budgetImpacting.longTermSavingsMonthly)
+                              : formatCurrency(budgetImpacting.longTermSavingsMonthly / 2)
                             }
                           </span>
                         </div>

@@ -82,18 +82,23 @@ export const setHistoricalData = (data) => {
 };
 
 export const getPerformanceData = () => {
-  return getFromStorage(STORAGE_KEYS.PERFORMANCE_DATA, []);
+  try {
+    const data = localStorage.getItem(STORAGE_KEYS.PERFORMANCE_DATA);
+    return data ? JSON.parse(data) : [];
+  } catch (error) {
+    console.error('Error loading performance data:', error);
+    return [];
+  }
 };
 
 export const setPerformanceData = (data) => {
-  return setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, data);
-};
-
-// Clear all app data
-export const clearAllData = () => {
-  Object.values(STORAGE_KEYS).forEach(key => {
-    removeFromStorage(key);
-  });
+  try {
+    localStorage.setItem(STORAGE_KEYS.PERFORMANCE_DATA, JSON.stringify(data));
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving performance data:', error);
+    return { success: false, message: error.message };
+  }
 };
 
 // Export all app data to JSON
@@ -116,45 +121,63 @@ export const exportAllData = () => {
 // Import data from JSON (validation included)
 export const importAllData = (importData) => {
   try {
+    let importedSections = [];
+    let errors = [];
+
     if (!importData || typeof importData !== 'object') {
       throw new Error('Invalid import data format');
-    }
-    
-    // Validate required structure
-    const requiredKeys = ['budgetData', 'paycheckData', 'formData', 'historicalData', 'performanceData'];
-    const hasRequiredKeys = requiredKeys.some(key => importData[key] !== undefined);
-    
-    if (!hasRequiredKeys) {
-      throw new Error('Import data missing required sections');
     }
     
     // Import each section if it exists
     if (importData.budgetData !== undefined) {
       setBudgetData(importData.budgetData);
+      importedSections.push('Budget Data');
     }
     
     if (importData.paycheckData !== undefined) {
       setPaycheckData(importData.paycheckData);
+      importedSections.push('Paycheck Data');
     }
     
     if (importData.formData !== undefined) {
       setFormData(importData.formData);
+      importedSections.push('Form Data');
     }
     
     if (importData.appSettings !== undefined) {
       setAppSettings(importData.appSettings);
+      importedSections.push('App Settings');
     }
     
     if (importData.historicalData !== undefined) {
       setHistoricalData(importData.historicalData);
+      importedSections.push('Historical Data');
     }
     
     if (importData.performanceData !== undefined) {
-      setPerformanceData(importData.performanceData);
+      const result = setPerformanceData(importData.performanceData);
+      if (result.success) {
+        importedSections.push('Performance Data');
+      } else {
+        errors.push('Performance Data: ' + result.message);
+      }
     }
+
+    // Trigger events to notify components
+    setTimeout(() => {
+      dispatchGlobalEvent('budgetDataUpdated');
+      dispatchGlobalEvent('paycheckDataUpdated');
+      dispatchGlobalEvent('historicalDataUpdated');
+      dispatchGlobalEvent('performanceDataUpdated');
+    }, 100);
     
-    return { success: true, message: 'Data imported successfully' };
+    return { 
+      success: true, 
+      message: `Successfully imported: ${importedSections.join(', ')}` + 
+               (errors.length > 0 ? `\n\nErrors: ${errors.join(', ')}` : '')
+    };
   } catch (error) {
+    console.error('Error importing data:', error);
     return { success: false, message: error.message };
   }
 };
@@ -268,32 +291,6 @@ export const dispatchGlobalEvent = (eventName, data = null) => {
   window.dispatchEvent(new CustomEvent(eventName, { detail: data }));
 };
 
-// Import demo data from public directory
-export const importDemoData = async () => {
-  try {
-    const response = await fetch('/demo/import_file.json');
-    if (!response.ok) {
-      throw new Error('Failed to load demo data');
-    }
-    
-    const demoData = await response.json();
-    const result = importAllData(demoData);
-    
-    if (result.success) {
-      // Dispatch events to notify all components
-      dispatchGlobalEvent('paycheckDataUpdated');
-      dispatchGlobalEvent('budgetDataUpdated');
-      dispatchGlobalEvent('historicalDataUpdated');
-      return { success: true, message: 'Demo data loaded successfully!' };
-    } else {
-      return { success: false, message: result.message };
-    }
-  } catch (error) {
-    console.error('Error loading demo data:', error);
-    return { success: false, message: 'Failed to load demo data. Please try again.' };
-  }
-};
-
 // Enhanced export function with consistent timestamp format
 export const exportAllDataWithTimestamp = () => {
   const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
@@ -316,23 +313,19 @@ export const hasExistingData = () => {
     const performanceData = getPerformanceData();
     
     // Check if any meaningful data exists
-    const hasBudgets = budgetData && budgetData.length > 0;
-    const hasPaycheckInfo = paycheckData && (
-      (paycheckData.your && paycheckData.your.salary) ||
-      (paycheckData.spouse && paycheckData.spouse.salary)
-    );
-    const hasHistorical = historicalData && Object.keys(historicalData).length > 0;
-    const hasPerformance = performanceData && performanceData.length > 0;
-    
-    return hasBudgets || hasPaycheckInfo || hasHistorical || hasPerformance;
+    return (budgetData && budgetData.length > 0) ||
+           (paycheckData && ((paycheckData.your && paycheckData.your.salary) || 
+                            (paycheckData.spouse && paycheckData.spouse.salary))) ||
+           (historicalData && Object.keys(historicalData).length > 0) ||
+           (performanceData && performanceData.length > 0);
   } catch (error) {
     console.error('Error checking existing data:', error);
     return false;
   }
 };
 
-// Enhanced import demo data function with export option
-export const importDemoDataWithExportOption = async () => {
+// Consolidated demo data import function with export option
+export const importDemoData = async () => {
   try {
     // Check if user has existing data and offer export
     if (hasExistingData()) {
@@ -364,6 +357,7 @@ export const importDemoDataWithExportOption = async () => {
       dispatchGlobalEvent('paycheckDataUpdated');
       dispatchGlobalEvent('budgetDataUpdated');
       dispatchGlobalEvent('historicalDataUpdated');
+      dispatchGlobalEvent('performanceDataUpdated');
       return { success: true, message: 'Demo data loaded successfully!' };
     } else {
       return { success: false, message: result.message };

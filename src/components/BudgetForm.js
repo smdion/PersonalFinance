@@ -21,6 +21,42 @@ const BudgetForm = () => {
   
   // Add state for paycheck data
   const [paycheckData, setPaycheckData] = useState(null);
+
+  // Add data migration function to handle old budget data format
+  const migrateBudgetData = (data) => {
+    if (!Array.isArray(data)) return data;
+    
+    return data.map(category => {
+      if (!category.items) return category;
+      
+      const migratedItems = category.items.map(item => {
+        // Check if item uses old format with nested amounts
+        if (item.amounts && typeof item.amounts === 'object') {
+          return {
+            ...item,
+            standard: item.amounts.standard || 0,
+            tight: item.amounts.tight || 0,
+            emergency: item.amounts.emergency || 0,
+            // Remove the old amounts object
+            amounts: undefined
+          };
+        }
+        
+        // Item is already in new format or needs default values
+        return {
+          ...item,
+          standard: item.standard || 0,
+          tight: item.tight || 0,
+          emergency: item.emergency || 0
+        };
+      });
+      
+      return {
+        ...category,
+        items: migratedItems
+      };
+    });
+  };
   
   // Load budget data from localStorage on mount and listen for updates
   useEffect(() => {
@@ -28,8 +64,16 @@ const BudgetForm = () => {
       try {
         const savedData = getBudgetData();
         if (savedData && savedData.length > 0) {
-          setBudgetCategories(savedData);
-          console.log('Budget data loaded:', savedData); // Debug log
+          // Migrate data to ensure compatibility
+          const migratedData = migrateBudgetData(savedData);
+          setBudgetCategories(migratedData);
+          
+          // Save migrated data back to localStorage if migration occurred
+          if (JSON.stringify(migratedData) !== JSON.stringify(savedData)) {
+            setBudgetData(migratedData);
+          }
+          
+          console.log('Budget data loaded and migrated:', migratedData); // Debug log
         } else {
           // Initialize with empty budget categories instead of hardcoded defaults
           setBudgetCategories(EMPTY_BUDGET_CATEGORIES);

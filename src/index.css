@@ -599,6 +599,16 @@ body {
   grid-template-columns: repeat(auto-fit, minmax(500px, 1fr));
   gap: 30px;
   margin-bottom: 30px;
+  justify-content: center;
+}
+
+/* When there's only one calculator, limit its width and center it */
+.calculators-grid:has(.calculator-card:only-child) {
+  grid-template-columns: minmax(500px, 550px);
+  justify-content: center;
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .calculator-card {
@@ -1898,6 +1908,11 @@ body {
   .calculators-grid {
     grid-template-columns: 1fr;
     gap: 20px;
+  }
+  
+  .calculators-grid:has(.calculator-card:only-child) {
+    grid-template-columns: 1fr;
+    max-width: none;
   }
   
   .calculator-card {
@@ -3276,8 +3291,11 @@ body {
   z-index: 1;
 }
 
-.historical-text-cell {
+.historical-text-cell,
+.performance-account-cell {
   color: #374151;
+  font-family: inherit;
+  font-size: 0.85rem;
   font-weight: 500;
   text-align: left;
   padding-left: 12px;
@@ -4164,6 +4182,175 @@ body {
     font-size: 0.75rem;
     padding: 6px 10px;
   }
+}
+
+/* ...existing code... */
+
+/* ===================================================================
+   DATA MANAGER STYLES
+   ================================================================ */
+.data-manager-container {
+  width: 100%;
+}
+
+.data-manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.data-manager-title {
+  color: #0891b2;
+  font-size: 1.6rem;
+  font-weight: 700;
+  margin: 0;
+}
+
+.data-manager-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.data-manager-form {
+  background: #f8fafc;
+  border: 2px dashed #cbd5e1;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 20px;
+}
+
+.data-manager-form-title {
+  color: #374151;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 16px;
+  text-align: center;
+}
+
+.data-manager-form-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.data-manager-section {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e2e8f0;
+}
+
+.data-manager-section-title {
+  color: #0891b2;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  border-bottom: 1px solid #cbd5e1;
+  padding-bottom: 8px;
+}
+
+.data-manager-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px;
+}
+
+.data-manager-field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.data-manager-field-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 4px;
+}
+
+.data-manager-field-input {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.data-manager-field-input:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.1);
+}
+
+.data-manager-field-input.currency {
+  text-align: right;
+}
+
+.data-manager-field-input.percentage {
+  text-align: center;
+}
+
+.data-manager-field-select {
+  padding: 8px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: white;
+  cursor: pointer;
+}
+
+.data-manager-field-select:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.1);
+}
+
+.data-manager-form-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  margin-top: 20px;
+  flex-wrap: wrap;
+}
+
+/* Responsive design for data manager */
+@media (max-width: 768px) {
+  .data-manager-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .data-manager-actions {
+    justify-content: center;
+  }
+  
+  .data-manager-fields-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .data-manager-form-actions {
+    flex-direction: column;
+  }
+}
+
+/* ...existing code... */
+
+/* Add this for performance account columns */
+.performance-account-cell {
+  color: #374151;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  text-align: left;
+  padding-left: 12px;
+  white-space: normal;
+  word-wrap: break-word;
+  min-width: 100px;
 }
 
 /* ...existing code... */

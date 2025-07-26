@@ -25,10 +25,6 @@ A comprehensive web-based financial planning application that helps you calculat
 2. Select "🎯 Load Demo Data"
 3. Confirm to replace current data with demo data
 
-#### Method 3: Manual Import
-1. Download the demo file from `/public/demo/import_file.json`
-2. Use Settings → Import Data to load the file
-
 ### After Loading Demo Data
 - Explore the **Paycheck Calculator** to see dual income setup
 - Check the **Budget Planner** to see a comprehensive household budget
