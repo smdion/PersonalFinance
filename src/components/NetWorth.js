@@ -36,7 +36,8 @@ const NetWorth = () => {
     netWorth: true,
     investments: true,
     assets: true,
-    income: false
+    income: false,
+    growth: true // Add missing growth section state
   });
 
   // Load historical data
@@ -229,21 +230,44 @@ const NetWorth = () => {
     };
   }, [processedData]);
 
-  // Chart options
+  // Chart options with improved responsiveness
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
       },
       title: {
         display: false
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#374151',
+        borderWidth: 1
       }
     },
     scales: {
+      x: {
+        grid: {
+          color: 'rgba(156, 163, 175, 0.2)'
+        }
+      },
       y: {
         beginAtZero: true,
+        grid: {
+          color: 'rgba(156, 163, 175, 0.2)'
+        },
         ticks: {
           callback: function(value) {
             return new Intl.NumberFormat('en-US', {
@@ -261,16 +285,95 @@ const NetWorth = () => {
   const growthChartOptions = {
     responsive: true,
     maintainAspectRatio: false,
+    interaction: {
+      intersect: false,
+      mode: 'index'
+    },
     plugins: {
       legend: {
         position: 'top',
+        labels: {
+          usePointStyle: true,
+          padding: 20
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#374151',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${context.parsed.y.toFixed(1)}%`;
+          }
+        }
       }
     },
     scales: {
+      x: {
+        grid: {
+          color: 'rgba(156, 163, 175, 0.2)'
+        }
+      },
       y: {
+        grid: {
+          color: 'rgba(156, 163, 175, 0.2)'
+        },
         ticks: {
           callback: function(value) {
             return value.toFixed(1) + '%';
+          }
+        }
+      }
+    }
+  };
+
+  const doughnutOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'right',
+        labels: {
+          usePointStyle: true,
+          padding: 15,
+          generateLabels: function(chart) {
+            const data = chart.data;
+            if (data.labels.length && data.datasets.length) {
+              return data.labels.map((label, i) => {
+                const dataset = data.datasets[0];
+                const value = dataset.data[i];
+                const total = dataset.data.reduce((sum, val) => sum + val, 0);
+                const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+                
+                return {
+                  text: `${label}: ${formatCurrency(value)} (${percentage}%)`,
+                  fillStyle: dataset.backgroundColor[i],
+                  strokeStyle: dataset.borderColor || '#ffffff',
+                  lineWidth: dataset.borderWidth || 0,
+                  hidden: isNaN(value) || value === 0,
+                  index: i
+                };
+              }).filter(item => !item.hidden);
+            }
+            return [];
+          }
+        }
+      },
+      tooltip: {
+        backgroundColor: 'rgba(0, 0, 0, 0.8)',
+        titleColor: '#ffffff',
+        bodyColor: '#ffffff',
+        borderColor: '#374151',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            const label = context.label || '';
+            const value = context.parsed || 0;
+            const total = context.dataset.data.reduce((sum, val) => sum + val, 0);
+            const percentage = total > 0 ? ((value / total) * 100).toFixed(1) : '0.0';
+            return `${label}: ${formatCurrency(value)} (${percentage}%)`;
           }
         }
       }
@@ -479,15 +582,7 @@ const NetWorth = () => {
                   <div className="chart-container pie-chart">
                     <Doughnut 
                       data={latestInvestmentAllocation} 
-                      options={{
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                          legend: {
-                            position: 'right',
-                          }
-                        }
-                      }}
+                      options={doughnutOptions}
                     />
                   </div>
                 )}
