@@ -327,7 +327,7 @@ export const processNetWorthData = (historicalData, performanceData, paycheckDat
     
     // Calculate portfolio value (investments)
     const portfolio = taxFree + taxDeferred + brokerage + espp + hsa;
-    const retirement = taxFree + taxDeferred; // Retirement accounts only
+    const retirement = taxFree + taxDeferred;
     
     // Calculate house value based on selected mode
     const houseValue = calculateHouseValue(year, historicalEntry, netWorthMode, historicalData);
