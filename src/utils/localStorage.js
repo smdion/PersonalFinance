@@ -399,10 +399,10 @@ export const exportAllData = () => {
 const isUserDataEmpty = (userData) => {
   if (!userData || typeof userData !== 'object') return true;
   
-  // Check if all values are empty, null, undefined, or zero
+  // Check if all values are empty, null, undefined
+  // NOTE: We do NOT consider 0 as empty since it can be valid financial data
   return Object.values(userData).every(value => {
     if (value === null || value === undefined || value === '') return true;
-    if (typeof value === 'number' && value === 0) return true;
     if (typeof value === 'string' && value.trim() === '') return true;
     return false;
   });
@@ -448,6 +448,14 @@ export const importAllData = (importData) => {
       throw new Error('Invalid import data format');
     }
     
+    // Clear any existing name mappings and localStorage to prevent conflicts
+    setNameMapping({});
+    localStorage.removeItem(NAME_MAPPING_KEY);
+    
+    // Clear the in-memory cache
+    nameMapping = {};
+    nameMappingLoaded = false;
+    
     // Import each section if it exists
     if (importData.budgetData !== undefined) {
       setBudgetData(importData.budgetData);
@@ -491,13 +499,15 @@ export const importAllData = (importData) => {
       const cleanedPerformanceData = cleanEmptyUserData(performanceDataToImport);
       
       const result = setPerformanceData(cleanedPerformanceData);
-      if (result.success) {
+      if (result) {
         importedSections.push('Performance Data');
       } else {
-        errors.push('Performance Data: ' + result.message);
+        errors.push('Performance Data: Failed to save');
       }
     }
 
+    // Import completed successfully
+    
     // Trigger events to notify components
     setTimeout(() => {
       dispatchGlobalEvent('budgetDataUpdated');
@@ -660,15 +670,45 @@ export const dispatchGlobalEvent = (eventName, data = null) => {
 };
 
 // Enhanced export function with consistent timestamp format
+import { generateDataFilename } from './calculationHelpers';
+
+// Export all data with descriptive timestamp filename
 export const exportAllDataWithTimestamp = () => {
-  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-  const exportData = exportAllData();
-  const filename = `personal-finance-data-${timestamp}.json`;
-  
-  if (downloadJsonFile(exportData, filename)) {
-    return { success: true, message: 'Data exported successfully!' };
-  } else {
-    return { success: false, message: 'Failed to export data.' };
+  try {
+    const allData = {
+      budgetData: getBudgetData(),
+      paycheckData: getPaycheckData(),
+      formData: getFormData(),
+      historicalData: getHistoricalData(),
+      performanceData: getPerformanceData()
+    };
+
+    // Get user names from paycheck data for filename
+    const paycheckData = getPaycheckData();
+    const userNames = [];
+    if (paycheckData?.your?.name?.trim()) {
+      userNames.push(paycheckData.your.name.trim());
+    }
+    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
+      userNames.push(paycheckData.spouse.name.trim());
+    }
+
+    const dataStr = JSON.stringify(allData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = generateDataFilename('all_data', userNames, 'json');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    return { success: false, message: error.message };
   }
 };
 

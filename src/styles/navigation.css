@@ -335,15 +335,15 @@
   .nav-container {
     padding: 0 2rem;
     display: flex;
-    justify-content: space-between;
     align-items: center;
+    gap: 1rem;
   }
   
-  /* Show desktop navigation items - remove flex: 1 */
+  /* Show desktop navigation items */
   .nav-items-desktop {
     display: flex;
+    flex: 1;
     justify-content: center;
-    /* Remove flex: 1 and margin to prevent taking too much space */
     gap: 0.5rem;
   }
   
@@ -352,17 +352,10 @@
     display: none;
   }
   
-  /* Settings menu positioned at absolute far right */
+  /* Settings menu positioned at far right */
   .nav-controls {
     justify-content: flex-end;
     flex-shrink: 0;
-    flex-grow: 0;
-    margin-left: auto;
-  }
-  
-  /* Ensure settings menu doesn't have any margin */
-  .settings-menu {
-    margin-left: 0;
   }
 }
 

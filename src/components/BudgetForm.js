@@ -2,7 +2,7 @@ import React, { useContext, useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FormContext } from '../context/FormContext';
 import { getBudgetData, setBudgetData, getPaycheckData } from '../utils/localStorage';
-import { calculateExtraPaycheckIncome } from '../utils/calculationHelpers';
+import { calculateExtraPaycheckIncome, generateDataFilename } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
 
 // Define empty budget categories constant
@@ -425,6 +425,35 @@ const BudgetForm = () => {
     }
   };
 
+  // Add budget export function if needed
+  const exportBudgetData = () => {
+    try {
+      const dataStr = JSON.stringify(budgetCategories, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      // Get user names from paycheck data
+      const userNames = [];
+      if (paycheckData?.your?.name?.trim()) {
+        userNames.push(paycheckData.your.name.trim());
+      }
+      if (paycheckData?.spouse?.name?.trim() && formData.showSpouseCalculator) {
+        userNames.push(paycheckData.spouse.name.trim());
+      }
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = generateDataFilename('budget', userNames, 'json');
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error exporting budget data:', error);
+      alert('Failed to export budget data.');
+    }
+  };
+
   return (
     <>
       <Navigation />
@@ -663,8 +692,9 @@ const BudgetForm = () => {
                                       <button
                                         onClick={() => deleteItem(category.id, item.id)}
                                         className="btn-danger item-delete"
+                                        title="Delete this budget item"
                                       >
-                                        🗑️
+                                        🗑️ Delete
                                       </button>
                                     )}
                                   </div>

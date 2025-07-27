@@ -424,6 +424,59 @@
   line-height: 1.5;
 }
 
+/* Budget Item Delete Button Enhancement */
+.item-delete {
+  background: #fee2e2 !important;
+  border: 2px solid #dc2626 !important;
+  color: #dc2626 !important;
+  padding: 8px 12px !important;
+  border-radius: 8px !important;
+  font-size: 1rem !important;
+  font-weight: 600 !important;
+  min-width: 44px !important;
+  min-height: 44px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s ease !important;
+  cursor: pointer !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1) !important;
+}
+
+.item-delete:hover {
+  background: #dc2626 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2) !important;
+}
+
+.item-delete:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1) !important;
+}
+
+/* Category Delete Button Enhancement */
+.btn-danger {
+  background: #fee2e2 !important;
+  border: 2px solid #dc2626 !important;
+  color: #dc2626 !important;
+  font-weight: 600 !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1) !important;
+}
+
+.btn-danger:hover {
+  background: #dc2626 !important;
+  color: white !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 8px rgba(220, 38, 38, 0.2) !important;
+}
+
+.btn-danger:active {
+  transform: translateY(0) !important;
+  box-shadow: 0 2px 4px rgba(220, 38, 38, 0.1) !important;
+}
+
 /* ===================================================================
    RESPONSIVE BUDGET ADJUSTMENTS
    ================================================================ */

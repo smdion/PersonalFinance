@@ -48,10 +48,33 @@
   border-bottom: none;
 }
 
+/* Main header with sticky positioning */
+.main-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+  margin-bottom: 0;
+}
+
+.main-header th {
+  padding: 10px 12px;
+  border-bottom: 1px solid #d1d5db; /* Reduced border width */
+  font-weight: 600;
+  text-align: left;
+  background: #f8fafc;
+  line-height: 1.5;
+  margin-bottom: 0;
+}
+
 /* Table Header Styles */
 .year-column {
   min-width: 80px;
   text-align: center;
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: #f8fafc;
 }
 
 .user-section {
@@ -59,6 +82,8 @@
   color: white;
   text-align: center;
   font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid #d1d5db;
 }
 
 .combined-section {
@@ -66,19 +91,78 @@
   color: white;
   text-align: center;
   font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 2px solid #d1d5db;
 }
 
 .actions-column {
   min-width: 120px;
   text-align: center;
+  padding: 10px 12px;
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  background: #f8fafc;
+}
+
+/* Sub-header row - needs to stick below main header */
+.sub-header {
+  position: sticky;
+  top: 43px; /* Adjusted for reduced border width */
+  z-index: 9;
+  background: #f8fafc;
+  border: 1px solid #d1d5db; /* Add full border around sub-header */
+  border-top: 1px solid #d1d5db; /* Ensure top border is visible */
+  margin-top: -1px; /* Just overlap the main header border */
 }
 
 .sub-header th {
-  background: #e2e8f0;
+  background: #f8fafc;
   font-size: 0.85rem;
   font-weight: 500;
   color: #475569;
   padding: 8px 12px;
+  border-bottom: 1px solid #e5e7eb;
+  border-left: 1px solid #e5e7eb; /* Add left border for separation */
+  border-right: 1px solid #e5e7eb; /* Add right border for separation */
+  position: relative;
+  line-height: 1.2;
+}
+
+/* Compact view adjustment */
+.compact-view .sub-header {
+  top: 29px; /* Adjusted for compact mode with reduced border */
+  margin-top: -1px; /* Just overlap the border in compact mode */
+  border: 1px solid #d1d5db; /* Maintain border in compact view */
+}
+
+/* Year column in sub-header needs special positioning */
+.sub-header .year-column-sub {
+  position: sticky;
+  left: 0;
+  z-index: 11;
+  background: #f8fafc;
+}
+
+/* Actions column in sub-header needs special positioning */
+.sub-header .actions-column-sub {
+  position: sticky;
+  right: 0;
+  z-index: 11;
+  background: #f8fafc;
+}
+
+/* Resizable header styling */
+.resizable-header {
+  padding: 10px 12px;
+  border-bottom: 2px solid #d1d5db;
+  font-weight: 600;
+  text-align: left;
+  background: #f8fafc;
+}
+
+/* Compact view for resizable headers */
+.compact-view .resizable-header {
+  padding: 6px 8px;
 }
 
 /* Cell Styles */
