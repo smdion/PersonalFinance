@@ -46,6 +46,7 @@ const NetWorth = () => {
   const [isInitialized, setIsInitialized] = useState(false); // Prevent saving during initial load
   const [showScoreInfo, setShowScoreInfo] = useState({}); // State for showing score info panels
   const [isCompactTable, setIsCompactTable] = useState(false); // Toggle for compact table view
+  const [showFloatingControls, setShowFloatingControls] = useState(false); // Show floating controls on scroll
 
   // Toggle score info visibility
   const toggleScoreInfo = (scoreType, year) => {
@@ -55,6 +56,23 @@ const NetWorth = () => {
       [key]: !prev[key]
     }));
   };
+
+  // Handle scroll to show/hide floating controls
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollPosition = window.scrollY;
+      const controlsElement = document.querySelector('.networth-controls-redesigned');
+      
+      if (controlsElement) {
+        const controlsBottom = controlsElement.offsetTop + controlsElement.offsetHeight;
+        // Show floating controls when user scrolls past the original controls
+        setShowFloatingControls(scrollPosition > controlsBottom + 50);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   // Helper functions to determine benchmark performance levels
   const getMoneyGuyPerformance = (score) => {
@@ -1003,6 +1021,99 @@ const NetWorth = () => {
           <h1>📊 Net Worth Dashboard</h1>
           <p>Track your financial progress over time</p>
         </div>
+
+        {/* Floating Controls (shown when scrolling) */}
+        {showFloatingControls && (
+          <div className="networth-floating-controls">
+            <div className="networth-floating-controls-content">
+              {/* Essential Controls */}
+              <div className="networth-floating-control-group">
+                <span className="networth-floating-label">Value Mode:</span>
+                <div className="networth-floating-buttons">
+                  <button
+                    className={`btn networth-floating-button ${netWorthMode === 'market' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setNetWorthMode('market')}
+                    title="Use market value for house"
+                  >
+                    Market
+                  </button>
+                  <button
+                    className={`btn networth-floating-button ${netWorthMode === 'costBasis' ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setNetWorthMode('costBasis')}
+                    title="Use cost basis for house"
+                  >
+                    Cost
+                  </button>
+                </div>
+              </div>
+
+              <div className="networth-floating-control-group">
+                <span className="networth-floating-label">Chart Order:</span>
+                <div className="networth-floating-buttons">
+                  <button
+                    className={`btn networth-floating-button ${!useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setUseReverseChronological(false)}
+                    title="Show oldest data first"
+                  >
+                    Old→New
+                  </button>
+                  <button
+                    className={`btn networth-floating-button ${useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                    onClick={() => setUseReverseChronological(true)}
+                    title="Show newest data first"
+                  >
+                    New→Old
+                  </button>
+                </div>
+              </div>
+
+              {/* Year Selection */}
+              <div className="networth-floating-control-group">
+                <span className="networth-floating-label">Years:</span>
+                <div className="networth-floating-year-controls">
+                  <button 
+                    className="btn btn-secondary networth-floating-year-btn" 
+                    onClick={selectAllYears}
+                    title="Select all years"
+                  >
+                    All
+                  </button>
+                  <button 
+                    className="btn btn-secondary networth-floating-year-btn" 
+                    onClick={selectNoneYears}
+                    title="Clear selection"
+                  >
+                    None
+                  </button>
+                  <div className="networth-floating-year-checkboxes">
+                    {availableYears.map(year => (
+                      <label key={year} className={`networth-floating-year-checkbox ${selectedYears.includes(year) ? 'selected' : ''}`} title={`Toggle ${year}`}>
+                        <input
+                          type="checkbox"
+                          checked={selectedYears.includes(year)}
+                          onChange={() => toggleYear(year)}
+                        />
+                        {year}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              {/* Income Average Toggle */}
+              <div className="networth-floating-control-group">
+                <label className="networth-floating-toggle" title="Use 3-year income average for Money Guy Score">
+                  <input
+                    type="checkbox"
+                    checked={useThreeYearIncomeAverage}
+                    onChange={(e) => setUseThreeYearIncomeAverage(e.target.checked)}
+                  />
+                  <span className="networth-floating-toggle-label">3-Year Avg</span>
+                </label>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Controls Section */}
         <div className="networth-controls-redesigned">
