@@ -12,6 +12,7 @@ import {
   Legend,
   Filler,
 } from 'chart.js';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
@@ -36,6 +37,13 @@ const NetWorth = () => {
   const [selectedYears, setSelectedYears] = useState([]);
   const [netWorthMode, setNetWorthMode] = useState('market'); // 'market' or 'costBasis'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'charts', 'analysis', 'scores'
+  const [showAllYearsInChart, setShowAllYearsInChart] = useState(false); // Override for net worth chart
+  const [showAllYearsInPortfolioChart, setShowAllYearsInPortfolioChart] = useState(false); // Override for portfolio chart
+  const [showAllYearsInNetWorthBreakdownChart, setShowAllYearsInNetWorthBreakdownChart] = useState(false); // Override for net worth breakdown chart
+  const [showAllYearsInMoneyGuyChart, setShowAllYearsInMoneyGuyChart] = useState(false); // Override for money guy chart
+  const [useThreeYearIncomeAverage, setUseThreeYearIncomeAverage] = useState(false); // Toggle for 3-year income averaging in Money Guy scores
+  const [useReverseChronological, setUseReverseChronological] = useState(false); // Global toggle for chronological order (default: oldest first)
+  const [isInitialized, setIsInitialized] = useState(false); // Prevent saving during initial load
 
   // Load data from localStorage
   useEffect(() => {
@@ -52,17 +60,33 @@ const NetWorth = () => {
       // Load saved settings
       setNetWorthMode(savedSettings.netWorthMode);
       setActiveTab(savedSettings.activeTab);
+      setShowAllYearsInChart(savedSettings.showAllYearsInChart || false);
+      setShowAllYearsInPortfolioChart(savedSettings.showAllYearsInPortfolioChart || false);
+      setShowAllYearsInNetWorthBreakdownChart(savedSettings.showAllYearsInNetWorthBreakdownChart || false);
+      setShowAllYearsInMoneyGuyChart(savedSettings.showAllYearsInMoneyGuyChart || false);
+      setUseThreeYearIncomeAverage(savedSettings.useThreeYearIncomeAverage || false);
+      setUseReverseChronological(savedSettings.useReverseChronological !== undefined ? savedSettings.useReverseChronological : false);
       
-      const availableYears = Object.keys(historical).map(year => parseInt(year)).sort();
+      const availableYears = Object.values(historical)
+        .map(entry => entry.year)
+        .filter(year => year && !isNaN(year) && year > 0)
+        .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
+        .sort();
       
       // Use saved selected years if they exist and are valid, otherwise auto-select all
       if (savedSettings.selectedYears.length > 0) {
         // Filter saved years to only include available years
         const validSavedYears = savedSettings.selectedYears.filter(year => availableYears.includes(year));
-        setSelectedYears(validSavedYears.length > 0 ? validSavedYears : availableYears);
+        const finalSelectedYears = validSavedYears.length > 0 ? validSavedYears : availableYears;
+        setSelectedYears(finalSelectedYears);
       } else {
         setSelectedYears(availableYears);
       }
+      
+      // Mark initialization as complete after all state is set
+      setTimeout(() => {
+        setIsInitialized(true);
+      }, 100);
     };
 
     loadData();
@@ -71,7 +95,11 @@ const NetWorth = () => {
     const handleHistoricalUpdate = () => {
       const historical = getHistoricalData();
       setHistoricalData(historical);
-      const availableYears = Object.keys(historical).map(year => parseInt(year)).sort();
+      const availableYears = Object.values(historical)
+        .map(entry => entry.year)
+        .filter(year => year && !isNaN(year) && year > 0)
+        .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
+        .sort();
       
       // When historical data updates, preserve existing selections if they're still valid
       setSelectedYears(currentSelectedYears => {
@@ -99,15 +127,25 @@ const NetWorth = () => {
     };
   }, []);
 
-  // Save settings to localStorage whenever they change
+  // Save settings to localStorage whenever they change (but only after initialization)
   useEffect(() => {
+    if (!isInitialized) {
+      return;
+    }
+    
     const settings = {
       selectedYears,
       netWorthMode,
-      activeTab
+      activeTab,
+      showAllYearsInChart,
+      showAllYearsInPortfolioChart,
+      showAllYearsInNetWorthBreakdownChart,
+      showAllYearsInMoneyGuyChart,
+      useThreeYearIncomeAverage,
+      useReverseChronological
     };
     setNetWorthSettings(settings);
-  }, [selectedYears, netWorthMode, activeTab]);
+  }, [selectedYears, netWorthMode, activeTab, showAllYearsInChart, showAllYearsInPortfolioChart, showAllYearsInNetWorthBreakdownChart, showAllYearsInMoneyGuyChart, useThreeYearIncomeAverage, useReverseChronological, isInitialized]);
 
   // Calculate house value based on mode
   const calculateHouseValue = (year, historicalEntry) => {
@@ -162,14 +200,43 @@ const NetWorth = () => {
     return ages.reduce((a, b) => a + b, 0) / ages.length;
   };
 
+  // Helper: Calculate 3-year average income for a given year
+  const getThreeYearAverageIncome = (targetYear) => {
+    const years = Object.values(historicalData)
+      .map(entry => entry.year)
+      .filter(year => year && !isNaN(year) && year > 0)
+      .sort();
+    
+    // Get the 3 years including and before target year
+    const relevantYears = years.filter(year => year <= targetYear).slice(-3);
+    
+    if (relevantYears.length === 0) return 0;
+    
+    let totalIncome = 0;
+    let validYears = 0;
+    
+    for (const year of relevantYears) {
+      const yearData = Object.values(historicalData).find(entry => entry.year === year);
+      if (yearData && yearData.agi) {
+        totalIncome += yearData.agi;
+        validYears++;
+      }
+    }
+    
+    return validYears > 0 ? totalIncome / validYears : 0;
+  };
+
   // Helper: Calculate cumulative lifetime earnings up to a given year
   const getCumulativeEarnings = (targetYear) => {
     let cumulative = 0;
-    const years = Object.keys(historicalData).map(y => parseInt(y)).sort();
+    const years = Object.values(historicalData)
+      .map(entry => entry.year)
+      .filter(year => year && !isNaN(year) && year > 0)
+      .sort();
     
     for (const year of years) {
       if (year > targetYear) break;
-      const yearData = historicalData[year];
+      const yearData = Object.values(historicalData).find(entry => entry.year === year);
       if (yearData && yearData.agi) {
         cumulative += yearData.agi;
       }
@@ -180,10 +247,13 @@ const NetWorth = () => {
 
   // Process and calculate net worth data
   const processedData = useMemo(() => {
-    const years = Object.keys(historicalData).map(year => parseInt(year)).sort();
+    const years = Object.values(historicalData)
+      .map(entry => entry.year)
+      .filter(year => year && !isNaN(year) && year > 0)
+      .sort();
     
     return years.map(year => {
-      const historicalEntry = historicalData[year];
+      const historicalEntry = Object.values(historicalData).find(entry => entry.year === year);
       const performanceEntry = performanceData[year];
       
       if (!historicalEntry) return null;
@@ -209,6 +279,9 @@ const NetWorth = () => {
       // Get AGI directly from historical data
       const agi = historicalEntry.agi || 0;
       
+      // Calculate income for Money Guy Score (either current year or 3-year average)
+      const incomeForScore = useThreeYearIncomeAverage ? getThreeYearAverageIncome(year) : agi;
+      
       // Liabilities
       const mortgage = historicalEntry.mortgage || 0;
       const otherLiabilities = historicalEntry.othLia || 0;
@@ -223,9 +296,9 @@ const NetWorth = () => {
       let moneyGuyScore = null;
       let averageAccumulator = null;
       
-      if (averageAge !== null && agi > 0) {
+      if (averageAge !== null && incomeForScore > 0) {
         const yearsUntil40 = Math.abs(averageAge - 40);
-        averageAccumulator = (averageAge * agi) / (10 + yearsUntil40);
+        averageAccumulator = (averageAge * incomeForScore) / (10 + yearsUntil40);
         if (averageAccumulator > 0) {
           moneyGuyScore = netWorth / averageAccumulator;
         }
@@ -234,6 +307,19 @@ const NetWorth = () => {
       // Calculate Wealth Score (Net Worth / Cumulative Lifetime Earnings as percentage)
       const cumulativeEarnings = getCumulativeEarnings(year);
       const wealthScore = cumulativeEarnings > 0 ? (netWorth / cumulativeEarnings) * 100 : null;
+      
+      // Calculate contribution rates from performance data
+      const yearPerformanceEntries = Object.values(performanceData).filter(entry => entry.year === year);
+      const totalContributions = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.contributions || 0), 0);
+      const totalEmployerMatch = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.employerMatch || 0), 0);
+      
+      // Calculate contribution rates as percentage of AGI
+      const contributionRateWithMatch = agi > 0 ? ((totalContributions + totalEmployerMatch) / agi) * 100 : 0;
+      const contributionRateWithoutMatch = agi > 0 ? (totalContributions / agi) * 100 : 0;
+      
+      // Determine which rate to display based on AGI threshold
+      const shouldShowWithMatch = agi < 200000;
+      const displayedContributionRate = shouldShowWithMatch ? contributionRateWithMatch : contributionRateWithoutMatch;
       
       return {
         year,
@@ -259,24 +345,56 @@ const NetWorth = () => {
         averageAccumulator,
         moneyGuyScore,
         cumulativeEarnings,
-        wealthScore
+        wealthScore,
+        // Contribution rates
+        totalContributions,
+        totalEmployerMatch,
+        contributionRateWithMatch,
+        contributionRateWithoutMatch,
+        shouldShowWithMatch,
+        displayedContributionRate
       };
     }).filter(Boolean);
-  }, [historicalData, performanceData, paycheckData, netWorthMode]);
+  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
     return processedData.filter(data => selectedYears.includes(data.year));
   }, [processedData, selectedYears]);
 
+  // Data for the main net worth chart (respects the "show all years" override)
+  const chartFilteredData = useMemo(() => {
+    return showAllYearsInChart ? processedData : filteredData;
+  }, [processedData, filteredData, showAllYearsInChart]);
+
+  // Data for the portfolio tax location chart (respects the "show all years" override)
+  const portfolioChartFilteredData = useMemo(() => {
+    return showAllYearsInPortfolioChart ? processedData : filteredData;
+  }, [processedData, filteredData, showAllYearsInPortfolioChart]);
+
+  // Data for the net worth breakdown chart (respects the "show all years" override)
+  const netWorthBreakdownChartFilteredData = useMemo(() => {
+    return showAllYearsInNetWorthBreakdownChart ? processedData : filteredData;
+  }, [processedData, filteredData, showAllYearsInNetWorthBreakdownChart]);
+
+  // Data for the money guy chart (respects the "show all years" override)
+  const moneyGuyChartFilteredData = useMemo(() => {
+    return showAllYearsInMoneyGuyChart ? processedData : filteredData;
+  }, [processedData, filteredData, showAllYearsInMoneyGuyChart]);
+
   // Chart data for net worth over time
   const chartData = useMemo(() => {
-    const years = filteredData.map(d => d.year);
-    const netWorthData = filteredData.map(d => d.netWorth);
-    const portfolioData = filteredData.map(d => d.portfolio);
-    const houseData = filteredData.map(d => d.houseValue);
-    const cashData = filteredData.map(d => d.cash);
-    const liabilityData = filteredData.map(d => d.totalLiabilities); // Show as positive values
+    // Sort data based on global chronological toggle
+    const sortedData = useReverseChronological ? 
+      [...chartFilteredData].sort((a, b) => b.year - a.year) :
+      [...chartFilteredData].sort((a, b) => a.year - b.year);
+      
+    const years = sortedData.map(d => d.year);
+    const netWorthData = sortedData.map(d => d.netWorth);
+    const portfolioData = sortedData.map(d => d.portfolio);
+    const houseData = sortedData.map(d => d.houseValue);
+    const cashData = sortedData.map(d => d.cash);
+    const liabilityData = sortedData.map(d => d.totalLiabilities); // Show as positive values
 
     return {
       labels: years,
@@ -300,7 +418,7 @@ const NetWorth = () => {
           fill: false
         },
         {
-          label: 'House Value',
+          label: 'House',
           data: houseData,
           borderColor: 'rgb(168, 85, 247)',
           backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -328,13 +446,16 @@ const NetWorth = () => {
         }
       ]
     };
-  }, [filteredData]);
+  }, [chartFilteredData, useReverseChronological]);
 
   // Portfolio Tax Location Chart Data - restructured for year-by-year comparison
   const portfolioTaxLocationData = useMemo(() => {
     // Create data structure where each year's composition is compared
-    const years = filteredData.map(d => d.year);
-    const categories = ['Tax-Free (Roth)', 'Tax-Deferred (401k/IRA)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
+    const sortedData = useReverseChronological ? 
+      [...portfolioChartFilteredData].sort((a, b) => b.year - a.year) :
+      [...portfolioChartFilteredData].sort((a, b) => a.year - b.year);
+    const years = sortedData.map(d => d.year);
+    const categories = ['Tax-Free (Roth)', 'Tax-Deferred (Trad)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
     const colors = [
       'rgba(34, 197, 94, 0.8)',
       'rgba(59, 130, 246, 0.8)', 
@@ -345,7 +466,7 @@ const NetWorth = () => {
 
     // Create datasets for each category showing all years
     const datasets = categories.map((category, categoryIndex) => {
-      const data = filteredData.map(d => {
+      const data = sortedData.map(d => {
         const total = d.portfolio;
         if (total <= 0) return 0;
         
@@ -372,33 +493,39 @@ const NetWorth = () => {
       labels: years,
       datasets: datasets
     };
-  }, [filteredData]);
+  }, [portfolioChartFilteredData, useReverseChronological]);
 
   // Net Worth Location Chart Data - restructured for year-by-year comparison
   const netWorthLocationData = useMemo(() => {
     // Create data structure where each year's composition is compared
-    const years = filteredData.map(d => d.year);
-    const categories = ['Portfolio', 'House Value', 'Cash', 'Other Assets', 'Liabilities'];
+    const sortedData = useReverseChronological ? 
+      [...netWorthBreakdownChartFilteredData].sort((a, b) => b.year - a.year) :
+      [...netWorthBreakdownChartFilteredData].sort((a, b) => a.year - b.year);
+    const years = sortedData.map(d => d.year);
+    const categories = ['Portfolio', 'House Equity', 'Cash', 'Other Assets'];
     const colors = [
       'rgba(59, 130, 246, 0.8)',
       'rgba(168, 85, 247, 0.8)',
       'rgba(251, 146, 60, 0.8)',
-      'rgba(34, 197, 94, 0.8)',
-      'rgba(239, 68, 68, 0.8)'
+      'rgba(34, 197, 94, 0.8)'
     ];
 
     // Create datasets for each category showing all years
     const datasets = categories.map((category, categoryIndex) => {
-      const data = filteredData.map(d => {
-        const total = d.netWorth;
-        if (total <= 0) return 0;
+      const data = sortedData.map(d => {
+        // Calculate house equity (house value - mortgage)
+        const houseEquity = Math.max(0, d.houseValue - (d.mortgage || 0));
+        
+        // Total of all positive components for percentage calculation (no liabilities)
+        const totalAssets = d.portfolio + houseEquity + d.cash + d.otherAssets;
+        
+        if (totalAssets <= 0) return 0;
         
         switch (categoryIndex) {
-          case 0: return (d.portfolio / total) * 100;
-          case 1: return (d.houseValue / total) * 100;
-          case 2: return (d.cash / total) * 100;
-          case 3: return (d.otherAssets / total) * 100;
-          case 4: return -(d.totalLiabilities / total) * 100; // Negative to show as reduction
+          case 0: return (d.portfolio / totalAssets) * 100;
+          case 1: return (houseEquity / totalAssets) * 100;
+          case 2: return (d.cash / totalAssets) * 100;
+          case 3: return (d.otherAssets / totalAssets) * 100;
           default: return 0;
         }
       });
@@ -416,21 +543,26 @@ const NetWorth = () => {
       labels: years,
       datasets: datasets
     };
-  }, [filteredData]);
+  }, [netWorthBreakdownChartFilteredData, useReverseChronological]);
 
   // Money Guy Score Comparison Chart Data
   const moneyGuyComparisonData = useMemo(() => {
-    const years = filteredData.map(d => d.year);
+    // Sort data based on global chronological toggle
+    const sortedData = useReverseChronological ? 
+      [...moneyGuyChartFilteredData].sort((a, b) => b.year - a.year) :
+      [...moneyGuyChartFilteredData].sort((a, b) => a.year - b.year);
+    
+    const years = sortedData.map(d => d.year);
     
     // Calculate Average Accumulator values for each year
-    const averageAccumulatorData = filteredData.map(d => d.averageAccumulator || 0);
+    const averageAccumulatorData = sortedData.map(d => d.averageAccumulator || 0);
     
     // Calculate Prodigious Accumulator (2x Average Accumulator)
-    const prodigiousAccumulatorData = filteredData.map(d => (d.averageAccumulator || 0) * 2);
+    const prodigiousAccumulatorData = sortedData.map(d => (d.averageAccumulator || 0) * 2);
     
     // Net Worth and Portfolio data
-    const netWorthData = filteredData.map(d => d.netWorth);
-    const portfolioData = filteredData.map(d => d.portfolio);
+    const netWorthData = sortedData.map(d => d.netWorth);
+    const portfolioData = sortedData.map(d => d.portfolio);
 
     return {
       labels: years,
@@ -445,7 +577,7 @@ const NetWorth = () => {
           fill: false
         },
         {
-          label: 'Prodigious Accumulator (2x Average)',
+          label: 'Prodigious Accumulator',
           data: prodigiousAccumulatorData,
           borderColor: 'rgb(168, 85, 247)',
           backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -473,7 +605,7 @@ const NetWorth = () => {
         }
       ]
     };
-  }, [filteredData]);
+  }, [moneyGuyChartFilteredData, useReverseChronological]);
 
   // Chart options for main net worth chart
   const chartOptions = {
@@ -596,11 +728,53 @@ const NetWorth = () => {
             return context.dataset.label + ': ' + context.parsed.y.toFixed(1) + '%';
           }
         }
+      },
+      datalabels: {
+        display: function(context) {
+          // Safely get the actual data value for this segment
+          const actualValue = context?.dataset?.data?.[context?.dataIndex] || 0;
+          // Show labels for values >= 3% to see more labels
+          return actualValue >= 3;
+        },
+        color: 'white',
+        font: function(context) {
+          // Safely access chart data
+          const numBars = context?.chart?.data?.labels?.length || 1;
+          const segmentValue = context?.dataset?.data?.[context?.dataIndex] || 0;
+          
+          // Base font size scales inversely with number of bars
+          let baseFontSize = Math.max(8, Math.min(16, 20 - numBars));
+          
+          // Adjust font size based on segment size
+          if (segmentValue >= 20) {
+            baseFontSize = Math.min(baseFontSize + 2, 16);
+          } else if (segmentValue >= 10) {
+            baseFontSize = Math.min(baseFontSize + 1, 14);
+          } else if (segmentValue < 5) {
+            baseFontSize = Math.max(baseFontSize - 1, 8);
+          }
+          
+          return {
+            size: baseFontSize,
+            weight: 'bold'
+          };
+        },
+        formatter: function(value, context) {
+          // Safely get the raw data value
+          const actualValue = context?.dataset?.data?.[context?.dataIndex] || value || 0;
+          if (actualValue < 0.1) return ''; // Don't show very small values
+          return actualValue.toFixed(1) + '%';
+        },
+        anchor: 'center',
+        align: 'center',
+        textStrokeColor: 'rgba(0, 0, 0, 0.3)',
+        textStrokeWidth: 1
       }
     },
     scales: {
       y: {
         beginAtZero: true,
+        max: 100,
         stacked: true,
         grid: {
           color: 'rgba(148, 163, 184, 0.15)',
@@ -723,7 +897,11 @@ const NetWorth = () => {
   };
 
   // Get available years for selection
-  const availableYears = Object.keys(historicalData).map(year => parseInt(year)).sort();
+  const availableYears = Object.values(historicalData)
+    .map(entry => entry.year)
+    .filter(year => year && !isNaN(year) && year > 0)
+    .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
+    .sort();
 
   // Toggle year selection
   const toggleYear = (year) => {
@@ -821,6 +999,32 @@ const NetWorth = () => {
               {selectedYears.length}/{availableYears.length} selected
             </div>
           </div>
+
+          {/* Chronological Order Toggle */}
+          <div className="networth-control-card">
+            <div className="networth-control-header">
+              <span className="networth-control-label">Chart Order:</span>
+              <div className="networth-mode-buttons">
+                <button
+                  className={`btn networth-mode-button ${useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setUseReverseChronological(true)}
+                >
+                  Newest First
+                </button>
+                <button
+                  className={`btn networth-mode-button ${!useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                  onClick={() => setUseReverseChronological(false)}
+                >
+                  Oldest First
+                </button>
+              </div>
+            </div>
+            <div className="networth-control-description">
+              {useReverseChronological 
+                ? 'Show newest data first in charts and scores (reverse chronological)' 
+                : 'Show oldest data first in charts and scores (chronological)'}
+            </div>
+          </div>
         </div>
 
         {/* Tab Navigation */}
@@ -892,9 +1096,23 @@ const NetWorth = () => {
 
                 {/* Net Worth Chart */}
                 <div className="networth-chart-container">
-                  <h3 className="networth-chart-title">
-                    📈 Net Worth Over Time ({netWorthMode === 'market' ? 'Market Value' : 'Cost Basis'})
-                  </h3>
+                  <div className="networth-chart-header">
+                    <h3 className="networth-chart-title">
+                      📈 Net Worth Over Time ({netWorthMode === 'market' ? 'Market Value' : 'Cost Basis'})
+                    </h3>
+                    <div className="networth-chart-controls">
+                      <label className="networth-chart-toggle">
+                        <input
+                          type="checkbox"
+                          checked={showAllYearsInChart}
+                          onChange={(e) => setShowAllYearsInChart(e.target.checked)}
+                        />
+                        <span className="networth-chart-toggle-label">
+                          Show All Years {showAllYearsInChart && `(${processedData.length} total)`}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="networth-chart-wrapper">
                     <Line data={chartData} options={chartOptions} />
                   </div>
@@ -907,21 +1125,57 @@ const NetWorth = () => {
               <div className="networth-breakdown-grid">
                 {/* Portfolio Tax Location Chart */}
                 <div className="networth-chart-container">
-                  <h3 className="networth-chart-title">
-                    🏛️ Portfolio Tax Location Breakdown (%)
-                  </h3>
+                  <div className="networth-chart-header">
+                    <h3 className="networth-chart-title">
+                      🏛️ Portfolio Tax Location Breakdown (%)
+                    </h3>
+                    <div className="networth-chart-controls">
+                      <label className="networth-chart-toggle">
+                        <input
+                          type="checkbox"
+                          checked={showAllYearsInPortfolioChart}
+                          onChange={(e) => setShowAllYearsInPortfolioChart(e.target.checked)}
+                        />
+                        <span className="networth-chart-toggle-label">
+                          Show All Years {showAllYearsInPortfolioChart && `(${processedData.length} total)`}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="networth-chart-wrapper medium">
-                    <Bar data={portfolioTaxLocationData} options={percentageBarOptions} />
+                    <Bar 
+                      data={portfolioTaxLocationData} 
+                      options={percentageBarOptions}
+                      plugins={[ChartDataLabels]}
+                    />
                   </div>
                 </div>
 
                 {/* Net Worth Location Chart */}
                 <div className="networth-chart-container">
-                  <h3 className="networth-chart-title">
-                    🏠 Net Worth Component Breakdown (%)
-                  </h3>
+                  <div className="networth-chart-header">
+                    <h3 className="networth-chart-title">
+                      🏠 Asset Allocation Breakdown (%)
+                    </h3>
+                    <div className="networth-chart-controls">
+                      <label className="networth-chart-toggle">
+                        <input
+                          type="checkbox"
+                          checked={showAllYearsInNetWorthBreakdownChart}
+                          onChange={(e) => setShowAllYearsInNetWorthBreakdownChart(e.target.checked)}
+                        />
+                        <span className="networth-chart-toggle-label">
+                          Show All Years {showAllYearsInNetWorthBreakdownChart && `(${processedData.length} total)`}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="networth-chart-wrapper medium">
-                    <Bar data={netWorthLocationData} options={percentageBarOptions} />
+                    <Bar 
+                      data={netWorthLocationData} 
+                      options={percentageBarOptions}
+                      plugins={[ChartDataLabels]}
+                    />
                   </div>
                 </div>
               </div>
@@ -932,9 +1186,23 @@ const NetWorth = () => {
               <div>
                 {/* Money Guy Score Comparison Chart */}
                 <div className="networth-chart-container">
-                  <h3 className="networth-chart-title">
-                    ⚖️ Money Guy Score Analysis - Average vs Prodigious Accumulator
-                  </h3>
+                  <div className="networth-chart-header">
+                    <h3 className="networth-chart-title">
+                      ⚖️ Money Guy Score Analysis - Average vs Prodigious Accumulator
+                    </h3>
+                    <div className="networth-chart-controls">
+                      <label className="networth-chart-toggle">
+                        <input
+                          type="checkbox"
+                          checked={showAllYearsInMoneyGuyChart}
+                          onChange={(e) => setShowAllYearsInMoneyGuyChart(e.target.checked)}
+                        />
+                        <span className="networth-chart-toggle-label">
+                          Show All Years {showAllYearsInMoneyGuyChart && `(${processedData.length} total)`}
+                        </span>
+                      </label>
+                    </div>
+                  </div>
                   <div className="networth-chart-wrapper">
                     <Line data={moneyGuyComparisonData} options={moneyGuyChartOptions} />
                   </div>
@@ -943,9 +1211,48 @@ const NetWorth = () => {
                 {/* Custom Scores Section */}
                 {filteredData.length > 0 && (
                   <div className="networth-scores">
-                    <h2 className="networth-scores-title">🎯 Financial Scores by Year</h2>
+                    {/* Explanatory text for contribution rate logic */}
+                    <div style={{ 
+                      background: '#f8fafc', 
+                      border: '1px solid #e2e8f0', 
+                      borderRadius: '8px', 
+                      padding: '16px', 
+                      marginBottom: '24px',
+                      fontSize: '0.875rem',
+                      color: '#475569'
+                    }}>
+                      <div style={{ fontWeight: '600', marginBottom: '8px', color: '#334155' }}>
+                        📊 About Contribution Rates
+                      </div>
+                      <p style={{ margin: '0 0 8px 0' }}>
+                        Contribution rates show your total retirement savings as a percentage of AGI (Adjusted Gross Income).
+                      </p>
+                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
+                        <li><strong>AGI under $200,000:</strong> Shows rate including employer match (total retirement benefit)</li>
+                        <li><strong>AGI $200,000+:</strong> Shows personal contributions only (high earners typically max out employer match)</li>
+                      </ul>
+                    </div>
+
+                    <div className="networth-scores-header">
+                      <h2 className="networth-scores-title">🎯 Financial Scores by Year</h2>
+                      <div className="networth-scores-controls">
+                        <label className="networth-chart-toggle">
+                          <input
+                            type="checkbox"
+                            checked={useThreeYearIncomeAverage}
+                            onChange={(e) => setUseThreeYearIncomeAverage(e.target.checked)}
+                          />
+                          <span className="networth-chart-toggle-label">
+                            Use 3-Year Income Average
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                     <div className="networth-scores-grid">
-                      {filteredData.map(data => (
+                      {(useReverseChronological ? 
+                        [...filteredData].sort((a, b) => b.year - a.year) :
+                        [...filteredData].sort((a, b) => a.year - b.year)
+                      ).map(data => (
                         <div key={data.year} className="networth-score-card">
                           <h3 className="networth-score-year">
                             {data.year}
@@ -982,6 +1289,22 @@ const NetWorth = () => {
                               Net Worth ÷ Cumulative Earnings
                             </div>
                           </div>
+
+                          {/* Contribution Rate Score */}
+                          <div className="networth-score-item contribution">
+                            <div className="networth-score-label contribution">
+                              Contribution Rate
+                            </div>
+                            <div className="networth-score-value contribution">
+                              {data.displayedContributionRate > 0 ? `${data.displayedContributionRate.toFixed(1)}%` : 'N/A'}
+                            </div>
+                            <div className="networth-score-details contribution">
+                              {data.shouldShowWithMatch ? 
+                                `Employee: ${formatCurrency(data.totalContributions)} + Employer: ${formatCurrency(data.totalEmployerMatch)}` :
+                                `Employee: ${formatCurrency(data.totalContributions)} (match not included)`
+                              }
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -994,7 +1317,7 @@ const NetWorth = () => {
             {activeTab === 'details' && (
               <div>
                 {/* Year-over-Year Comparison Table */}
-                {filteredData.length > 1 && (
+                {filteredData.length >= 2 ? (
                   <div className="networth-table-container">
                     <h2 className="networth-table-title">📋 Year-over-Year Comparison</h2>
                     <div className="networth-table-wrapper">
@@ -1005,7 +1328,7 @@ const NetWorth = () => {
                               <th className="sticky">
                                 Metric
                               </th>
-                              {filteredData.map(data => (
+                              {[...filteredData].reverse().map(data => (
                                 <th key={data.year} className="year-header">
                                   {data.year}
                                 </th>
@@ -1032,9 +1355,17 @@ const NetWorth = () => {
                           <td className="metric-label">
                             {metric.label}
                           </td>
-                          {filteredData.map((data, dataIdx) => {
+                          {[...filteredData].reverse().map((data, dataIdx) => {
                             const currentValue = data[metric.key];
-                            const previousData = dataIdx > 0 ? filteredData[dataIdx - 1] : null;
+                            // Find the actual chronologically previous year in the dataset (handles non-consecutive years)
+                            const availableYears = filteredData
+                              .map(d => d.year)
+                              .filter(year => !isNaN(year) && year > 0)
+                              .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
+                              .sort((a, b) => a - b);
+                            const currentYearIndex = availableYears.indexOf(data.year);
+                            const previousYear = currentYearIndex > 0 ? availableYears[currentYearIndex - 1] : null;
+                            const previousData = previousYear ? filteredData.find(d => d.year === previousYear) : null;
                             const previousValue = previousData ? previousData[metric.key] : null;
                             
                             let dollarChange = null;
@@ -1084,9 +1415,9 @@ const NetWorth = () => {
                                     </div>
                                   </div>
                                 )}
-                                {dollarChange === null && dataIdx > 0 && (
+                                {dollarChange === null && previousData === null && (
                                   <div className="networth-table-no-data">
-                                    No data
+                                    No previous year
                                   </div>
                                 )}
                               </td>
@@ -1098,6 +1429,16 @@ const NetWorth = () => {
                           </tbody>
                         </table>
                       </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="networth-table-container">
+                    <h2 className="networth-table-title">📋 Year-over-Year Comparison</h2>
+                    <div className="networth-empty-state">
+                      <div className="empty-state-icon">📊</div>
+                      <h3>Select 2 or More Years</h3>
+                      <p>Year-over-year comparison requires at least 2 years of data to show changes and trends.</p>
+                      <p>Currently selected: <strong>{filteredData.length} year{filteredData.length !== 1 ? 's' : ''}</strong></p>
                     </div>
                   </div>
                 )}

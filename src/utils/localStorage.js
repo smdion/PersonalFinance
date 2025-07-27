@@ -843,7 +843,13 @@ export const getNetWorthSettings = () => {
   return getFromStorage(STORAGE_KEYS.NETWORTH_SETTINGS, {
     selectedYears: [],
     netWorthMode: 'market',
-    activeTab: 'overview'
+    activeTab: 'overview',
+    showAllYearsInChart: false,
+    showAllYearsInPortfolioChart: false,
+    showAllYearsInNetWorthBreakdownChart: false,
+    showAllYearsInMoneyGuyChart: false,
+    useThreeYearIncomeAverage: false,
+    useReverseChronological: false
   });
 };
 

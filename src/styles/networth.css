@@ -7,7 +7,7 @@
 .networth-controls {
   margin-bottom: 24px;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 16px;
 }
 
@@ -220,6 +220,52 @@
   border-radius: 2px;
 }
 
+/* Chart Header with Controls */
+.networth-chart-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 20px;
+  gap: 20px;
+}
+
+.networth-chart-controls {
+  flex-shrink: 0;
+}
+
+.networth-chart-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  transition: all 0.2s ease;
+  user-select: none;
+}
+
+.networth-chart-toggle:hover {
+  color: #475569;
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.networth-chart-toggle input[type="checkbox"] {
+  margin: 0;
+  transform: scale(0.9);
+  accent-color: #3b82f6;
+}
+
+.networth-chart-toggle-label {
+  font-weight: 500;
+  white-space: nowrap;
+}
+
 /* Summary Cards */
 .networth-summary {
   margin-bottom: 32px;
@@ -317,12 +363,24 @@
   margin-bottom: 32px;
 }
 
-.networth-scores-title {
+.networth-scores-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  gap: 20px;
+}
+
+.networth-scores-title {
+  margin: 0;
   color: #1e293b;
   font-size: 1.3rem;
   font-weight: 700;
   letter-spacing: -0.025em;
+}
+
+.networth-scores-controls {
+  flex-shrink: 0;
 }
 
 .networth-scores-grid {
@@ -408,6 +466,20 @@
   opacity: 0.7;
 }
 
+.networth-score-item.contribution {
+  background: linear-gradient(135deg, #fefce8 0%, #fef3c7 100%);
+  border-color: #f59e0b;
+}
+
+.networth-score-item.contribution::before {
+  content: '📊';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
 .networth-score-label {
   font-size: 0.85rem;
   font-weight: 600;
@@ -422,6 +494,10 @@
 
 .networth-score-label.wealth {
   color: #15803d;
+}
+
+.networth-score-label.contribution {
+  color: #d97706;
 }
 
 .networth-score-value {
@@ -439,6 +515,10 @@
   color: #14532d;
 }
 
+.networth-score-value.contribution {
+  color: #92400e;
+}
+
 .networth-score-details {
   font-size: 0.75rem;
   font-weight: 500;
@@ -451,6 +531,10 @@
 
 .networth-score-details.wealth {
   color: #15803d;
+}
+
+.networth-score-details.contribution {
+  color: #d97706;
 }
 
 .networth-score-warning {
@@ -583,6 +667,28 @@
   border: 1px solid #e5e7eb;
 }
 
+.networth-empty-state .empty-state-icon {
+  font-size: 3rem;
+  margin-bottom: 16px;
+  opacity: 0.7;
+}
+
+.networth-empty-state h3 {
+  color: #374151;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+}
+
+.networth-empty-state p {
+  margin-bottom: 8px;
+  line-height: 1.5;
+}
+
+.networth-empty-state p:last-child {
+  margin-bottom: 0;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .networth-controls {
@@ -627,6 +733,23 @@
   
   .networth-chart-wrapper.medium {
     height: 300px;
+  }
+  
+  .networth-chart-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .networth-chart-title {
+    text-align: center;
+    margin-bottom: 0;
+  }
+  
+  .networth-scores-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
   }
 }
 
