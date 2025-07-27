@@ -660,15 +660,45 @@ export const dispatchGlobalEvent = (eventName, data = null) => {
 };
 
 // Enhanced export function with consistent timestamp format
+import { generateDataFilename } from './calculationHelpers';
+
+// Export all data with descriptive timestamp filename
 export const exportAllDataWithTimestamp = () => {
-  const timestamp = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-  const exportData = exportAllData();
-  const filename = `personal-finance-data-${timestamp}.json`;
-  
-  if (downloadJsonFile(exportData, filename)) {
-    return { success: true, message: 'Data exported successfully!' };
-  } else {
-    return { success: false, message: 'Failed to export data.' };
+  try {
+    const allData = {
+      budgetData: getBudgetData(),
+      paycheckData: getPaycheckData(),
+      formData: getFormData(),
+      historicalData: getHistoricalData(),
+      performanceData: getPerformanceData()
+    };
+
+    // Get user names from paycheck data for filename
+    const paycheckData = getPaycheckData();
+    const userNames = [];
+    if (paycheckData?.your?.name?.trim()) {
+      userNames.push(paycheckData.your.name.trim());
+    }
+    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
+      userNames.push(paycheckData.spouse.name.trim());
+    }
+
+    const dataStr = JSON.stringify(allData, null, 2);
+    const dataBlob = new Blob([dataStr], { type: 'application/json' });
+    const url = URL.createObjectURL(dataBlob);
+    
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = generateDataFilename('all_data', userNames, 'json');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error exporting data:', error);
+    return { success: false, message: error.message };
   }
 };
 

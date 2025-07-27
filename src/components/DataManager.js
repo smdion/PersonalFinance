@@ -6,7 +6,7 @@ import {
   dispatchGlobalEvent,
   getCurrentUserName
 } from '../utils/localStorage';
-import { formatCurrency } from '../utils/calculationHelpers';
+import { formatCurrency, generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
 
 const DataManager = ({
@@ -815,11 +815,18 @@ const DataManager = ({
     
     const csvContent = generateCSVContent(sortedEntries, getEffectiveCSVHeaders(), formatCSVRow);
   
+    // Determine data type from title
+    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
+                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
+    
+    // Get user names for filename
+    const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];
+    
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${title.replace(/\s+/g, '_').toLowerCase()}_data.csv`;
+    link.download = generateDataFilename(dataType, filenameUserNames, 'csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -835,11 +842,18 @@ const DataManager = ({
       formatCSVRow
     );
 
+    // Determine data type from title
+    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
+                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
+    
+    // Get user names for filename
+    const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];
+    
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${title.replace(/\s+/g, '_').toLowerCase()}_template.csv`;
+    link.download = generateDataFilename(`${dataType}_template`, filenameUserNames, 'csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);

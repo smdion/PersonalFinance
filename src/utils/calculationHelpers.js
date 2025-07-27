@@ -200,3 +200,39 @@ export const calculateROI = (gains, fees, balance) => {
   if (totalBalance <= 0) return 0;
   return (netGains / totalBalance) * 100;
 };
+
+// Generate descriptive filename with date and user names
+export const generateDescriptiveFilename = (baseType, userNames = [], fileExtension = 'csv') => {
+  const now = new Date();
+  const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD format
+  const timeStr = now.toTimeString().split(' ')[0].replace(/:/g, ''); // HHMMSS format
+  
+  // Create user part of filename
+  let userPart = '';
+  if (userNames && userNames.length > 0) {
+    // Clean user names for filename (remove spaces, special chars)
+    const cleanNames = userNames
+      .filter(name => name && name.trim())
+      .map(name => name.trim().replace(/[^a-zA-Z0-9]/g, ''));
+    
+    if (cleanNames.length > 0) {
+      userPart = `_${cleanNames.join('_')}`;
+    }
+  }
+  
+  return `${baseType}${userPart}_${dateStr}_${timeStr}.${fileExtension}`;
+};
+
+// Generate filename specifically for different data types
+export const generateDataFilename = (dataType, userNames = [], fileExtension = 'csv') => {
+  const typeMap = {
+    'historical': 'Historical_Financial_Data',
+    'performance': 'Account_Performance_Data',
+    'budget': 'Budget_Categories_Data',
+    'paycheck': 'Paycheck_Calculator_Data',
+    'all_data': 'Complete_Financial_Data'
+  };
+  
+  const baseType = typeMap[dataType.toLowerCase()] || dataType;
+  return generateDescriptiveFilename(baseType, userNames, fileExtension);
+};
