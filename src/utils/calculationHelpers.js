@@ -425,7 +425,7 @@ export const generateMainNetWorthChartData = (filteredData) => {
         fill: false
       },
       {
-        label: 'House Value',
+        label: 'House',
         data: houseData,
         borderColor: 'rgb(168, 85, 247)',
         backgroundColor: 'rgba(168, 85, 247, 0.1)',
@@ -458,7 +458,7 @@ export const generateMainNetWorthChartData = (filteredData) => {
 // Generate portfolio tax location chart data
 export const generatePortfolioTaxLocationData = (filteredData) => {
   const years = filteredData.map(d => d.year);
-  const categories = ['Tax-Free (Roth)', 'Tax-Deferred (401k/IRA)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
+  const categories = ['Tax-Free (Roth)', 'Tax-Deferred (Trad)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
   const colors = [
     'rgba(34, 197, 94, 0.8)',
     'rgba(59, 130, 246, 0.8)', 
@@ -566,7 +566,7 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
         fill: false
       },
       {
-        label: 'Prodigious Accumulator (2x Average)',
+        label: 'Prodigious Accumulator',
         data: prodigiousAccumulatorData,
         borderColor: 'rgb(168, 85, 247)',
         backgroundColor: 'rgba(168, 85, 247, 0.1)',
