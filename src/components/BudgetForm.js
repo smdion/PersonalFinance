@@ -620,18 +620,6 @@ const BudgetForm = () => {
                                 </span>
                               </span>
                             </div>
-                            
-                            {/* Budget Mode Labels */}
-                            <div className="budget-mode-labels">
-                              {budgetModes.map(mode => (
-                                <div 
-                                  key={mode.key} 
-                                  className={`budget-mode-label ${activeBudgetMode === mode.key ? 'active' : ''}`}
-                                >
-                                  {mode.icon} {mode.name.split(' ')[0]}
-                                </div>
-                              ))}
-                            </div>
                           </div>
 
                           {/* Budget Items */}

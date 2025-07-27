@@ -1,6 +1,6 @@
 # Personal Finance Calculator Suite
 
-A comprehensive, privacy-first financial planning platform that helps you plan, track, and visualize your financial future. Built with React, this suite provides integrated tools for paycheck calculation, budget planning, investment tracking, and wealth visualization—all while keeping your data completely private in your browser.
+A comprehensive financial planning platform that helps you calculate paychecks, plan budgets, track historical data, monitor investment performance, and visualize your net worth progress - all while keeping your data completely private in your browser.
 
 ## 🎯 Overview
 
@@ -12,50 +12,111 @@ The Personal Finance Calculator Suite is designed to be your complete financial 
 - **Integrated Experience**: Data flows seamlessly between all tools
 - **2025 Tax Accuracy**: Uses the latest tax brackets and withholding tables
 
-## 🚀 Features
+## 🚀 Key Features
 
 ### 💰 Paycheck Calculator
-- **2025 Tax Tables**: Federal and state tax calculations with current brackets
-- **Dual Income Support**: Calculate for both spouses simultaneously
-- **Comprehensive Deductions**: 401k (traditional/Roth), HSA, FSA, ESPP
-- **Bonus Calculations**: Annual bonus projections with tax implications
-- **Bi-weekly Pay Options**: Odd/even week scheduling for extra paycheck planning
-- **Budget Auto-Sync**: Automatically updates budget planner with calculated income
+- **2025 Tax Accuracy**: Uses current federal tax brackets, withholding tables, and contribution limits
+- **Dual Income Support**: Complete household planning with separate calculators for partners
+- **Comprehensive Deductions**: 401k (Traditional & Roth), HSA, medical insurance, ESPP, and more
+- **Advanced W-4 Support**: Both 2020+ and pre-2020 W-4 forms with multiple jobs handling
+- **Bonus Planning**: Calculate expected bonuses with tax implications and 401k interactions
+- **Budget Integration**: Automatically syncs take-home pay with budget planner
 
 ### 📊 Budget Planner
-- **Three Budget Modes**: Standard, Tight, and Emergency budgets
-- **Drag & Drop Categories**: Organize and prioritize spending categories
-- **Auto-Managed Items**: Syncs with paycheck calculator for IRA/investment contributions
-- **Extra Paycheck Planning**: Automatically calculates extra income for bi-weekly earners
-- **Visual Analytics**: See spending percentages and remaining income at a glance
+- **Auto-Sync Income**: Seamlessly integrates with paycheck calculator results
+- **Three Budget Modes**: Standard, Tight, and Emergency budget scenarios
+- **Drag & Drop Interface**: Easily reorder categories and customize your budget layout
+- **Smart Categories**: Auto-managed categories for retirement contributions from paycheck data
+- **Extra Paycheck Planning**: Calculates and plans for bi-weekly extra paycheck months
+- **Real-time Calculations**: Live updates of remaining income and budget percentages
 
 ### 📈 Historical Data Tracker
-- **Multi-User Support**: Track data for multiple household members
-- **20+ Financial Metrics**: AGI, effective tax rate, assets, liabilities, and more
-- **Year-over-Year Tracking**: Build a comprehensive financial history
-- **CSV Import/Export**: Bulk data management with template downloads
-- **Employer History**: Track career progression and salary growth
+- **Year-over-Year Tracking**: Monitor financial progress with 20+ metrics per year
+- **Dual User Support**: Track data for both partners with automatic name mapping
+- **Tax Information**: AGI, effective tax rates, SSA earnings, and tax paid tracking
+- **Investment Tracking**: Tax-free, tax-deferred, brokerage, ESPP, HSA, and cash positions
+- **Assets & Liabilities**: Home values, improvements, mortgage, and other financial positions
+- **CSV Import/Export**: Easy data management with template downloads and bulk imports
 
-### 💹 Performance Tracker
-- **Account Types**: 401k, IRA, HSA, brokerage, ESPP, and more
-- **Performance Metrics**: Balance, contributions, gains/losses, ROI calculations
-- **Multi-Year Tracking**: See account growth over time
-- **Employer Matching**: Track employer contributions separately
-- **Fee Tracking**: Monitor investment fees and their impact
+### 📊 Account Performance Tracker
+- **Individual Account Monitoring**: Track 401k, IRA, HSA, and brokerage accounts separately
+- **Performance Analytics**: Balance, contributions, employer match, gains/losses, and fees
+- **Return Calculations**: Detailed performance metrics and growth analysis
+- **Joint Account Support**: Handle both individual and joint investment accounts
+- **Historical Performance**: Multi-year tracking to analyze investment trends
 
-### 📊 Net Worth Dashboard
-- **Interactive Charts**: Visualize wealth growth with multiple chart types
-- **Asset Breakdown**: Pie charts showing asset allocation
-- **Growth Analysis**: Calculate CAGR and year-over-year growth rates
-- **Trend Comparison**: Compare selected years or view full timeline
-- **Liability Tracking**: Monitor debt reduction progress
+### 💎 Net Worth Dashboard
+- **Interactive Visualizations**: Charts and graphs showing financial progress over time
+- **Year-over-Year Comparisons**: Compare multiple years to track wealth growth
+- **Asset Allocation Analysis**: Breakdown of investment types and allocations
+- **Growth Trend Analysis**: Identify patterns and forecast future growth
+- **Comprehensive Metrics**: Complete financial picture with all tracked data points
 
-### 💾 Data Management
-- **JSON Export/Import**: Full backup and restore capabilities
-- **CSV Support**: Import/export individual tool data via CSV
-- **Demo Data**: Instantly explore with realistic sample data
-- **Local Storage**: All data persists locally between sessions
-- **Reset Options**: Clear data for individual tools or everything
+## 🛠️ Additional Features
+
+### Data Management
+- **CSV Import/Export**: Full data portability with downloadable templates
+- **Demo Data**: Realistic 10-year financial dataset to explore all features
+- **Local Storage**: All data stays in your browser - complete privacy guaranteed
+- **Data Migration**: Automatic handling of name changes and data consistency
+- **Backup & Restore**: Export all data for safekeeping and easy restoration
+
+### User Experience
+- **Responsive Design**: Works perfectly on desktop, tablet, and mobile devices
+- **Drag & Drop**: Intuitive interfaces for budget category management
+- **Real-time Updates**: Instant calculations and automatic data synchronization
+- **Section Management**: Expand/collapse all sections across the application
+- **Global Reset**: Clean slate functionality with confirmation safeguards
+
+### Advanced Calculations
+- **Accurate Tax Withholding**: Uses IRS Publication 15-T percentage method tables
+- **Multiple Jobs Support**: Higher withholding rates for complex employment situations
+- **HSA Family Coverage**: Smart handling of family vs. individual HSA contribution limits
+- **Bi-weekly Calendar Logic**: Accurate extra paycheck calculations for odd/even weeks
+- **Catch-up Contributions**: Automatic age-based catch-up contribution calculations
+
+## 🎯 Getting Started
+
+### Option 1: Try Demo Data (Recommended)
+Experience all features immediately with realistic sample data:
+- Dual income household (Alex: $97k, Jamie: $69k)
+- Complete budget with 12 categories and 35+ items
+- 5 years of historical data (2021-2025)
+- Investment account tracking and performance data
+- Net worth progression from $74k to $675k
+
+### Option 2: Start Fresh
+1. **Calculate Paychecks**: Enter your salary, deductions, and tax information
+2. **Plan Budget**: Use auto-synced income to allocate expenses and savings
+3. **Track Performance**: Add investment accounts and monitor returns
+4. **Record History**: Build your financial timeline year-over-year
+5. **Visualize Progress**: Use the dashboard to see your wealth growth
+
+## 💡 Use Cases
+
+- **New Graduates**: Start tracking finances from day one with accurate calculations
+- **Career Changes**: Model salary changes and their impact on your budget
+- **Retirement Planning**: Track 401k, IRA, and other retirement account growth
+- **Home Buyers**: Monitor down payment savings and mortgage planning
+- **Families**: Complete dual-income household financial planning
+- **Investors**: Track portfolio performance across multiple account types
+
+## 🔒 Privacy & Security
+
+- **Local Data Storage**: All information stays in your browser
+- **No Server Communication**: No data is ever sent to external servers
+- **Export Control**: You own and control all your financial data
+- **Open Source**: Transparent code you can review and modify
+
+## 🚧 Coming Soon
+
+- **Retirement Planning**: 401k optimization, IRA strategies, withdrawal planning
+- **Advanced Savings**: Goal tracking, automated savings recommendations  
+- **Mortgage Tools**: Refinancing calculator, extra payment analysis
+- **Enhanced Visualizations**: Interactive charts, trend analysis, forecasting
+- **Portfolio Analytics**: Asset allocation, risk analysis, rebalancing
+- **API Integration**: Bank connections, real-time data sync
+- **Mobile App**: iOS and Android applications with offline sync
 
 ## 🏁 Getting Started
 
