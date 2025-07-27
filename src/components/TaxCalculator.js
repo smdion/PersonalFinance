@@ -1,9 +1,10 @@
-import React, { useState, useCallback, useContext, useEffect } from 'react';
+import React, { useState, useCallback, useContext, useEffect, useRef } from 'react';
 import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
 import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData } from '../utils/localStorage';
+import Navigation from './Navigation';
 
 const TaxCalculator = () => {
   const { updateFormData, updateBudgetImpacting } = useContext(FormContext);
@@ -139,6 +140,12 @@ const TaxCalculator = () => {
   // Add HSA coverage state for both calculators
   const [hsaCoverageType, setHsaCoverageType] = useState('self');
   const [spouseHsaCoverageType, setSpouseHsaCoverageType] = useState('self');
+
+  // Add ref to prevent saving during initial load
+  const isInitialLoadRef = useRef(true);
+  const hasLoadedDataRef = useRef(false); // Add flag to prevent repeated loads
+
+  const [formData, setFormData] = useState({}); // Keep empty initially
 
   // Handle HSA coverage changes with synchronization
   const handleHsaCoverageChange = (type, isSpouse = false) => {
@@ -285,59 +292,113 @@ const TaxCalculator = () => {
     }
   }, [spouseSalary, spousePayPeriod, spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions, spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBonusMultiplier, results, updateFormData, updateBudgetImpacting, budgetImpacting, spouseBudgetImpacting, spouseHsaCoverageType]);
 
-  // Load saved paycheck data on mount
+  // Load saved paycheck data on mount and on import
   useEffect(() => {
-    const savedData = getPaycheckData();
-    if (savedData && Object.keys(savedData).length > 0) {
-      // Load your data
-      if (savedData.your) {
-        setName(savedData.your.name || '');
-        setEmployer(savedData.your.employer || '');
-        setBirthday(savedData.your.birthday || '');
-        setSalary(savedData.your.salary || '');
-        setPayPeriod(savedData.your.payPeriod || 'biWeekly');
-        setFilingStatus(savedData.your.filingStatus || 'single');
-        setW4Type(savedData.your.w4Type || 'new');
-        setW4Options(savedData.your.w4Options || emptyDefaults.your.w4Options);
-        setRetirementOptions(savedData.your.retirementOptions || emptyDefaults.your.retirementOptions);
-        setMedicalDeductions(savedData.your.medicalDeductions || emptyDefaults.your.medicalDeductions);
-        setEsppDeductionPercent(savedData.your.esppDeductionPercent || 0);
-        setBudgetImpacting(savedData.your.budgetImpacting || emptyDefaults.your.budgetImpacting);
-        setBonusMultiplier(savedData.your.bonusMultiplier || 0);
-        setBonusTarget(savedData.your.bonusTarget || 0);
-        setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
-        setPayWeekType(savedData.your.payWeekType || 'even');
-      }
-      
-      // Load spouse data
-      if (savedData.spouse) {
-        setSpouseName(savedData.spouse.name || '');
-        setSpouseEmployer(savedData.spouse.employer || '');
-        setSpouseBirthday(savedData.spouse.birthday || '');
-        setSpouseSalary(savedData.spouse.salary || '');
-        setSpousePayPeriod(savedData.spouse.payPeriod || 'biWeekly');
-        setSpouseFilingStatus(savedData.spouse.filingStatus || 'single');
-        setSpouseW4Type(savedData.spouse.w4Type || 'new');
-        setSpouseW4Options(savedData.spouse.w4Options || emptyDefaults.spouse.w4Options);
-        setSpouseRetirementOptions(savedData.spouse.retirementOptions || emptyDefaults.spouse.retirementOptions);
-        setSpouseMedicalDeductions(savedData.spouse.medicalDeductions || emptyDefaults.spouse.medicalDeductions);
-        setSpouseEsppDeductionPercent(savedData.spouse.esppDeductionPercent || 0);
-        setSpouseBudgetImpacting(savedData.spouse.budgetImpacting || emptyDefaults.spouse.budgetImpacting);
-        setSpouseBonusMultiplier(savedData.spouse.bonusMultiplier || 0);
-        setSpouseBonusTarget(savedData.spouse.bonusTarget || 0);
-        setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
-        setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
-      }
-      
-      // Load settings
-      if (savedData.settings) {
-        setShowSpouseCalculator(savedData.settings.showSpouseCalculator ?? true);
-      }
+    // Only load once unless there's a specific data update event
+    if (hasLoadedDataRef.current) {
+      return;
     }
-  }, []);
 
-  // Save paycheck data whenever state changes
+    const loadPaycheckData = () => {
+      const savedData = getPaycheckData();
+      
+      if (savedData && Object.keys(savedData).length > 0) {
+        // Load your data
+        if (savedData.your) {
+          setName(savedData.your.name || '');
+          setEmployer(savedData.your.employer || '');
+          setBirthday(savedData.your.birthday || '');
+          setSalary(savedData.your.salary || '');
+          setPayPeriod(savedData.your.payPeriod || 'biWeekly');
+          setFilingStatus(savedData.your.filingStatus || 'single');
+          setW4Type(savedData.your.w4Type || 'new');
+          setW4Options(savedData.your.w4Options || emptyDefaults.your.w4Options);
+          setRetirementOptions(savedData.your.retirementOptions || emptyDefaults.your.retirementOptions);
+          setMedicalDeductions(savedData.your.medicalDeductions || emptyDefaults.your.medicalDeductions);
+          setEsppDeductionPercent(savedData.your.esppDeductionPercent || 0);
+          setBudgetImpacting(savedData.your.budgetImpacting || emptyDefaults.your.budgetImpacting);
+          setBonusMultiplier(savedData.your.bonusMultiplier || 0);
+          setBonusTarget(savedData.your.bonusTarget || 0);
+          setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
+          setPayWeekType(savedData.your.payWeekType || 'even');
+        }
+        
+        // Load spouse data
+        if (savedData.spouse) {
+          setSpouseName(savedData.spouse.name || '');
+          setSpouseEmployer(savedData.spouse.employer || '');
+          setSpouseBirthday(savedData.spouse.birthday || '');
+          setSpouseSalary(savedData.spouse.salary || '');
+          setSpousePayPeriod(savedData.spouse.payPeriod || 'biWeekly');
+          setSpouseFilingStatus(savedData.spouse.filingStatus || 'single');
+          setSpouseW4Type(savedData.spouse.w4Type || 'new');
+          setSpouseW4Options(savedData.spouse.w4Options || emptyDefaults.spouse.w4Options);
+          setSpouseRetirementOptions(savedData.spouse.retirementOptions || emptyDefaults.spouse.retirementOptions);
+          setSpouseMedicalDeductions(savedData.spouse.medicalDeductions || emptyDefaults.spouse.medicalDeductions);
+          setSpouseEsppDeductionPercent(savedData.spouse.esppDeductionPercent || 0);
+          setSpouseBudgetImpacting(savedData.spouse.budgetImpacting || emptyDefaults.spouse.budgetImpacting);
+          setSpouseBonusMultiplier(savedData.spouse.bonusMultiplier || 0);
+          setSpouseBonusTarget(savedData.spouse.bonusTarget || 0);
+          setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
+          setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
+        }
+        
+        // Load settings
+        if (savedData.settings) {
+          setShowSpouseCalculator(savedData.settings.showSpouseCalculator ?? true);
+        }
+      }
+      
+      hasLoadedDataRef.current = true; // Mark as loaded
+    };
+
+    // Load initially
+    loadPaycheckData();
+
+    // Listen for paycheck data updates (for demo/imported data)
+    const handlePaycheckDataUpdate = (event) => {
+      hasLoadedDataRef.current = false; // Reset flag to allow reload
+      setTimeout(() => {
+        loadPaycheckData();
+      }, 50);
+    };
+
+    window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+
+    return () => {
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+    };
+  }, []); // REMOVE ALL DEPENDENCIES to prevent re-running
+
+  // Remove the auto-calculation useEffect that's causing the infinite loop
+  // The calculations are already handled by explicit calls in the individual calculation functions
+
+  // Save paycheck data whenever state changes - Enhanced name change handling
   useEffect(() => {
+    // Don't save during initial load to prevent triggering events prematurely
+    if (isInitialLoadRef.current) {
+      isInitialLoadRef.current = false;
+      return;
+    }
+
+    // Check for name changes and handle mapping with better logging
+    const savedData = getPaycheckData();
+    const { updateNameMapping } = require('../utils/localStorage');
+    
+    // Check if "your" name changed
+    const oldYourName = savedData?.your?.name?.trim();
+    const newYourName = name.trim();
+    if (oldYourName && newYourName && oldYourName !== newYourName) {
+      updateNameMapping(oldYourName, newYourName);
+    }
+    
+    // Check if spouse name changed
+    const oldSpouseName = savedData?.spouse?.name?.trim();
+    const newSpouseName = spouseName.trim();
+    if (oldSpouseName && newSpouseName && oldSpouseName !== newSpouseName) {
+      updateNameMapping(oldSpouseName, newSpouseName);
+    }
+
     const dataToSave = {
       your: {
         name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
@@ -361,8 +422,10 @@ const TaxCalculator = () => {
     
     setPaycheckData(dataToSave);
     
-    // Dispatch event to notify other components with consistent event name
-    window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: dataToSave }));
+    // Dispatch event to notify other components with delay to ensure save is complete
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: dataToSave }));
+    }, 100);
   }, [
     name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
     retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
@@ -370,8 +433,8 @@ const TaxCalculator = () => {
     spouseName, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
     spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions,
     spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBudgetImpacting,
-    spouseBonusMultiplier, spouseBonusTarget, spouseHsaCoverageType, spousePayWeekType,
-    results, spouseResults
+    spouseBonusMultiplier, spouseBonusTarget, spouseHsaCoverageType, spousePayWeekType
+    // REMOVED results and spouseResults from dependencies to prevent infinite loop
   ]);
 
   // ...existing code...
@@ -389,49 +452,59 @@ const TaxCalculator = () => {
     };
 
     const handleResetAll = () => {
-      // Reset to empty defaults
-      Object.entries(emptyDefaults.your).forEach(([key, value]) => {
-        switch(key) {
-          case 'name': setName(value); break;
-          case 'employer': setEmployer(value); break;
-          case 'birthday': setBirthday(value); break;
-          case 'salary': setSalary(value); break;
-          case 'payPeriod': setPayPeriod(value); break;
-          case 'filingStatus': setFilingStatus(value); break;
-          case 'w4Type': setW4Type(value); break;
-          case 'w4Options': setW4Options(value); break;
-          case 'retirementOptions': setRetirementOptions(value); break;
-          case 'medicalDeductions': setMedicalDeductions(value); break;
-          case 'esppDeductionPercent': setEsppDeductionPercent(value); break;
-          case 'budgetImpacting': setBudgetImpacting(value); break;
-          case 'bonusMultiplier': setBonusMultiplier(value); break;
-          case 'bonusTarget': setBonusTarget(value); break;
-        }
-      });
-      
-      Object.entries(emptyDefaults.spouse).forEach(([key, value]) => {
-        switch(key) {
-          case 'name': setSpouseName(value); break;
-          case 'employer': setSpouseEmployer(value); break;
-          case 'birthday': setSpouseBirthday(value); break;
-          case 'salary': setSpouseSalary(value); break;
-          case 'payPeriod': setSpousePayPeriod(value); break;
-          case 'filingStatus': setSpouseFilingStatus(value); break;
-          case 'w4Type': setSpouseW4Type(value); break;
-          case 'w4Options': setSpouseW4Options(value); break;
-          case 'retirementOptions': setSpouseRetirementOptions(value); break;
-          case 'medicalDeductions': setSpouseMedicalDeductions(value); break;
-          case 'esppDeductionPercent': setSpouseEsppDeductionPercent(value); break;
-          case 'budgetImpacting': setSpouseBudgetImpacting(value); break;
-          case 'bonusMultiplier': setSpouseBonusMultiplier(value); break;
-          case 'bonusTarget': setSpouseBonusTarget(value); break;
-        }
-      });
-      
-      setHsaCoverageType('self');
-      setSpouseHsaCoverageType('self');
-      setResults(null);
-      setSpouseResults(null);
+      // Reset to empty defaults and clear localStorage
+      try {
+        // Clear paycheck data from localStorage
+        setPaycheckData({});
+        
+        // Reset all state variables to empty defaults
+        Object.entries(emptyDefaults.your).forEach(([key, value]) => {
+          switch(key) {
+            case 'name': setName(value); break;
+            case 'employer': setEmployer(value); break;
+            case 'birthday': setBirthday(value); break;
+            case 'salary': setSalary(value); break;
+            case 'payPeriod': setPayPeriod(value); break;
+            case 'filingStatus': setFilingStatus(value); break;
+            case 'w4Type': setW4Type(value); break;
+            case 'w4Options': setW4Options(value); break;
+            case 'retirementOptions': setRetirementOptions(value); break;
+            case 'medicalDeductions': setMedicalDeductions(value); break;
+            case 'esppDeductionPercent': setEsppDeductionPercent(value); break;
+            case 'budgetImpacting': setBudgetImpacting(value); break;
+            case 'bonusMultiplier': setBonusMultiplier(value); break;
+            case 'bonusTarget': setBonusTarget(value); break;
+          }
+        });
+        
+        Object.entries(emptyDefaults.spouse).forEach(([key, value]) => {
+          switch(key) {
+            case 'name': setSpouseName(value); break;
+            case 'employer': setSpouseEmployer(value); break;
+            case 'birthday': setSpouseBirthday(value); break;
+            case 'salary': setSpouseSalary(value); break;
+            case 'payPeriod': setSpousePayPeriod(value); break;
+            case 'filingStatus': setSpouseFilingStatus(value); break;
+            case 'w4Type': setSpouseW4Type(value); break;
+            case 'w4Options': setSpouseW4Options(value); break;
+            case 'retirementOptions': setSpouseRetirementOptions(value); break;
+            case 'medicalDeductions': setSpouseMedicalDeductions(value); break;
+            case 'esppDeductionPercent': setSpouseEsppDeductionPercent(value); break;
+            case 'budgetImpacting': setSpouseBudgetImpacting(value); break;
+            case 'bonusMultiplier': setSpouseBonusMultiplier(value); break;
+            case 'bonusTarget': setSpouseBonusTarget(value); break;
+          }
+        });
+        
+        setHsaCoverageType('self');
+        setSpouseHsaCoverageType('self');
+        setResults(null);
+        setSpouseResults(null);
+        setShowSpouseCalculator(true);
+        
+      } catch (error) {
+        console.error('Error resetting paycheck calculator data:', error);
+      }
     };
 
     window.addEventListener('expandAllSections', handleExpandAll);
@@ -443,7 +516,7 @@ const TaxCalculator = () => {
       window.removeEventListener('collapseAllSections', handleCollapseAll);
       window.removeEventListener('resetAllData', handleResetAll);
     };
-  }, [emptyDefaults]);
+  }, [emptyDefaults, setPaycheckData]);
 
   // Remove click outside handler for settings menu
 
@@ -532,8 +605,8 @@ const TaxCalculator = () => {
   // Add enhanced demo data loading function for settings menu
   const loadDemoDataWithExport = async () => {
     try {
-      const { importDemoDataWithExportOption } = await import('../utils/localStorage');
-      const result = await importDemoDataWithExportOption();
+      const { importDemoData } = await import('../utils/localStorage');
+      const result = await importDemoData();
       
       if (result.success) {
         if (window.confirm('Demo data loaded successfully! The page will refresh to show the demo data. You can explore all features with realistic financial data.')) {
@@ -549,109 +622,110 @@ const TaxCalculator = () => {
   };
 
   return (
-    <div className="app-container">
-      {/* Remove Floating Settings Button */}
+    <>
+      <Navigation />
+      <div className="app-container">
+        <div className="header">
+          <h1>💼 {showSpouseCalculator ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
+          <p>Calculate Your Net Pay With Precision And Plan Your Financial Future</p>
+          
+          {/* Add toggle for spouse calculator directly in header */}
+          <div className="header-controls">
+            <label className="header-toggle">
+              <input
+                type="checkbox"
+                className="modern-checkbox"
+                checked={showSpouseCalculator}
+                onChange={(e) => setShowSpouseCalculator(e.target.checked)}
+              />
+              <span>Dual Calculator Mode</span>
+            </label>
+          </div>
+        </div>
 
-      <div className="header">
-        <h1>💼 {showSpouseCalculator ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
-        <p>Calculate Your Net Pay With Precision And Plan Your Financial Future</p>
-        
-        {/* Add toggle for spouse calculator directly in header */}
-        <div className="header-controls">
-          <label className="header-toggle">
-            <input
-              type="checkbox"
-              className="modern-checkbox"
-              checked={showSpouseCalculator}
-              onChange={(e) => setShowSpouseCalculator(e.target.checked)}
+        <div className="calculators-grid">
+          <PaycheckForm 
+            personName="Your"
+            name={name}
+            setName={setName}
+            employer={employer}
+            setEmployer={setEmployer}
+            birthday={birthday}
+            setBirthday={setBirthday}
+            salary={salary}
+            setSalary={setSalary}
+            payPeriod={payPeriod}
+            setPayPeriod={setPayPeriod}
+            filingStatus={filingStatus}
+            setFilingStatus={setFilingStatus}
+            w4Type={w4Type}
+            setW4Type={setW4Type}
+            w4Options={w4Options}
+            setW4Options={setW4Options}
+            retirementOptions={retirementOptions}
+            setRetirementOptions={setRetirementOptions}
+            medicalDeductions={medicalDeductions}
+            setMedicalDeductions={setMedicalDeductions}
+            esppDeductionPercent={esppDeductionPercent}
+            setEsppDeductionPercent={setEsppDeductionPercent}
+            budgetImpacting={budgetImpacting}
+            setBudgetImpacting={setBudgetImpacting}
+            bonusMultiplier={bonusMultiplier}
+            setBonusMultiplier={setBonusMultiplier}
+            bonusTarget={bonusTarget}
+            setBonusTarget={setBonusTarget}
+            payWeekType={payWeekType}
+            setPayWeekType={setPayWeekType}
+            hsaCoverageType={hsaCoverageType}
+            setHsaCoverageType={(type) => handleHsaCoverageChange(type, false)}
+            globalSectionControl={globalSectionControl}
+            onCalculate={handleCalculate}
+            results={results}
+          />
+          
+          {showSpouseCalculator && (
+            <PaycheckForm 
+              personName="Spouse"
+              name={spouseName}
+              setName={setSpouseName}
+              employer={spouseEmployer}
+              setEmployer={setSpouseEmployer}
+              birthday={spouseBirthday}
+              setBirthday={setSpouseBirthday}
+              salary={spouseSalary}
+              setSalary={setSpouseSalary}
+              payPeriod={spousePayPeriod}
+              setPayPeriod={setSpousePayPeriod}
+              filingStatus={spouseFilingStatus}
+              setFilingStatus={setSpouseFilingStatus}
+              w4Type={spouseW4Type}
+              setW4Type={setSpouseW4Type}
+              w4Options={spouseW4Options}
+              setW4Options={setSpouseW4Options}
+              retirementOptions={spouseRetirementOptions}
+              setRetirementOptions={setSpouseRetirementOptions}
+              medicalDeductions={spouseMedicalDeductions}
+              setMedicalDeductions={setSpouseMedicalDeductions}
+              esppDeductionPercent={spouseEsppDeductionPercent}
+              setEsppDeductionPercent={setSpouseEsppDeductionPercent}
+              budgetImpacting={spouseBudgetImpacting}
+              setBudgetImpacting={setSpouseBudgetImpacting}
+              bonusMultiplier={spouseBonusMultiplier}
+              setBonusMultiplier={setSpouseBonusMultiplier}
+              bonusTarget={spouseBonusTarget}
+              setBonusTarget={setSpouseBonusTarget}
+              payWeekType={spousePayWeekType}
+              setPayWeekType={setSpousePayWeekType}
+              hsaCoverageType={spouseHsaCoverageType}
+              setHsaCoverageType={(type) => handleHsaCoverageChange(type, true)}
+              globalSectionControl={globalSectionControl}
+              onCalculate={handleSpouseCalculate}
+              results={spouseResults}
             />
-            <span>Dual Calculator Mode</span>
-          </label>
+          )}
         </div>
       </div>
-
-      <div className="calculators-grid">
-        <PaycheckForm 
-          personName="Your"
-          name={name}
-          setName={setName}
-          employer={employer}
-          setEmployer={setEmployer}
-          birthday={birthday}
-          setBirthday={setBirthday}
-          salary={salary}
-          setSalary={setSalary}
-          payPeriod={payPeriod}
-          setPayPeriod={setPayPeriod}
-          filingStatus={filingStatus}
-          setFilingStatus={setFilingStatus}
-          w4Type={w4Type}
-          setW4Type={setW4Type}
-          w4Options={w4Options}
-          setW4Options={setW4Options}
-          retirementOptions={retirementOptions}
-          setRetirementOptions={setRetirementOptions}
-          medicalDeductions={medicalDeductions}
-          setMedicalDeductions={setMedicalDeductions}
-          esppDeductionPercent={esppDeductionPercent}
-          setEsppDeductionPercent={setEsppDeductionPercent}
-          budgetImpacting={budgetImpacting}
-          setBudgetImpacting={setBudgetImpacting}
-          bonusMultiplier={bonusMultiplier}
-          setBonusMultiplier={setBonusMultiplier}
-          bonusTarget={bonusTarget}
-          setBonusTarget={setBonusTarget}
-          payWeekType={payWeekType}
-          setPayWeekType={setPayWeekType}
-          hsaCoverageType={hsaCoverageType}
-          setHsaCoverageType={(type) => handleHsaCoverageChange(type, false)}
-          globalSectionControl={globalSectionControl}
-          onCalculate={handleCalculate}
-          results={results}
-        />
-        
-        {showSpouseCalculator && (
-          <PaycheckForm 
-            personName="Spouse"
-            name={spouseName}
-            setName={setSpouseName}
-            employer={spouseEmployer}
-            setEmployer={setSpouseEmployer}
-            birthday={spouseBirthday}
-            setBirthday={setSpouseBirthday}
-            salary={spouseSalary}
-            setSalary={setSpouseSalary}
-            payPeriod={spousePayPeriod}
-            setPayPeriod={setSpousePayPeriod}
-            filingStatus={spouseFilingStatus}
-            setFilingStatus={setSpouseFilingStatus}
-            w4Type={spouseW4Type}
-            setW4Type={setSpouseW4Type}
-            w4Options={spouseW4Options}
-            setW4Options={setSpouseW4Options}
-            retirementOptions={spouseRetirementOptions}
-            setRetirementOptions={setSpouseRetirementOptions}
-            medicalDeductions={spouseMedicalDeductions}
-            setMedicalDeductions={setSpouseMedicalDeductions}
-            esppDeductionPercent={spouseEsppDeductionPercent}
-            setEsppDeductionPercent={setSpouseEsppDeductionPercent}
-            budgetImpacting={spouseBudgetImpacting}
-            setBudgetImpacting={setSpouseBudgetImpacting}
-            bonusMultiplier={spouseBonusMultiplier}
-            setBonusMultiplier={setSpouseBonusMultiplier}
-            bonusTarget={spouseBonusTarget}
-            setBonusTarget={setSpouseBonusTarget}
-            payWeekType={spousePayWeekType}
-            setPayWeekType={setSpousePayWeekType}
-            hsaCoverageType={spouseHsaCoverageType}
-            setHsaCoverageType={(type) => handleHsaCoverageChange(type, true)}
-            globalSectionControl={globalSectionControl}
-            onCalculate={handleSpouseCalculate}
-            results={spouseResults}
-          />
-        )}
-      </div>
-    </div>
+    </>
   );
 };
 

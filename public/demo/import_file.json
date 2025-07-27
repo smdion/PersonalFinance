@@ -7,28 +7,28 @@
       "items": [
         {
           "id": "your-traditional-ira",
-          "name": "Your Traditional IRA",
+          "name": "Alex Johnson Traditional IRA",
           "standard": 500,
           "tight": 500,
           "emergency": 500
         },
         {
           "id": "your-roth-ira",
-          "name": "Your Roth IRA",
+          "name": "Alex Johnson Roth IRA",
           "standard": 300,
           "tight": 300,
           "emergency": 300
         },
         {
           "id": "spouse-traditional-ira",
-          "name": "Spouse Traditional IRA",
+          "name": "Jamie Lee Traditional IRA",
           "standard": 400,
           "tight": 400,
           "emergency": 400
         },
         {
           "id": "spouse-retirement-brokerage",
-          "name": "Spouse Retirement Brokerage",
+          "name": "Jamie Lee Retirement Brokerage",
           "standard": 250,
           "tight": 250,
           "emergency": 250
@@ -453,7 +453,8 @@
     "combinedMonthlyTakeHome": 9000
   },
   "historicalData": {
-    "2021": {
+    "hist_2021_demo": {
+      "entryId": "hist_2021_demo",
       "year": 2021,
       "users": {
         "Alex Johnson": {
@@ -483,7 +484,8 @@
       "othAsset": 0,
       "othLia": 27000
     },
-    "2022": {
+    "hist_2022_demo": {
+      "entryId": "hist_2022_demo",
       "year": 2022,
       "users": {
         "Alex Johnson": {
@@ -513,7 +515,8 @@
       "othAsset": 0,
       "othLia": 24000
     },
-    "2023": {
+    "hist_2023_demo": {
+      "entryId": "hist_2023_demo",
       "year": 2023,
       "users": {
         "Alex Johnson": {
@@ -543,7 +546,8 @@
       "othAsset": 0,
       "othLia": 21000
     },
-    "2024": {
+    "hist_2024_demo": {
+      "entryId": "hist_2024_demo",
       "year": 2024,
       "users": {
         "Alex Johnson": {
@@ -573,7 +577,8 @@
       "othAsset": 0,
       "othLia": 18000
     },
-    "2025": {
+    "hist_2025_demo": {
+      "entryId": "hist_2025_demo",
       "year": 2025,
       "users": {
         "Alex Johnson": {
@@ -608,170 +613,308 @@
     "entry_2021_alex401k": {
       "entryId": "entry_2021_alex401k",
       "year": 2021,
-      "owner": "Alex Johnson",
-      "accountName": "Fidelity",
-      "accountType": "Traditional 401k",
-      "employer": "Acme Corp",
+      "users": {
+        "Alex Johnson": {
+          "accountName": "Fidelity",
+          "accountType": "Traditional 401k",
+          "employer": "Acme Corp"
+        }
+      },
       "balance": 32000,
       "contributions": 7000,
       "employerMatch": 3500,
       "gains": 2500,
       "fees": 50,
-      "withdrawals": 0,
-      "roi": 0.084
+      "withdrawals": 0
     },
     "entry_2022_alex401k": {
       "entryId": "entry_2022_alex401k",
       "year": 2022,
-      "owner": "Alex Johnson",
-      "accountName": "Fidelity",
-      "accountType": "Traditional 401k",
-      "employer": "Acme Corp",
+      "users": {
+        "Alex Johnson": {
+          "accountName": "Fidelity",
+          "accountType": "Traditional 401k",
+          "employer": "Acme Corp"
+        }
+      },
       "balance": 37000,
       "contributions": 7500,
       "employerMatch": 3700,
       "gains": 2800,
       "fees": 55,
-      "withdrawals": 0,
-      "totalContributions": 11200,
-      "netGains": 2745,
-      "roi": 0.074
+      "withdrawals": 0
     },
     "entry_2023_alex401k": {
       "entryId": "entry_2023_alex401k",
       "year": 2023,
-      "owner": "Alex Johnson",
-      "accountName": "Fidelity",
-      "accountType": "Traditional 401k",
-      "employer": "Acme Corp",
+      "users": {
+        "Alex Johnson": {
+          "accountName": "Fidelity",
+          "accountType": "Traditional 401k",
+          "employer": "Acme Corp"
+        }
+      },
       "balance": 43000,
       "contributions": 8000,
       "employerMatch": 3900,
       "gains": 3500,
       "fees": 60,
-      "withdrawals": 0,
-      "totalContributions": 11900,
-      "netGains": 3440,
-      "roi": 0.088
+      "withdrawals": 0
     },
     "entry_2024_alex401k": {
       "entryId": "entry_2024_alex401k",
       "year": 2024,
-      "owner": "Alex Johnson",
-      "accountName": "Fidelity",
-      "accountType": "Traditional 401k",
-      "employer": "Acme Corp",
+      "users": {
+        "Alex Johnson": {
+          "accountName": "Fidelity",
+          "accountType": "Traditional 401k",
+          "employer": "Acme Corp"
+        }
+      },
       "balance": 50000,
       "contributions": 8500,
       "employerMatch": 4100,
       "gains": 4000,
       "fees": 65,
-      "withdrawals": 0,
-      "totalContributions": 12600,
-      "netGains": 3935,
-      "roi": 0.079
+      "withdrawals": 0
     },
     "entry_2025_alex401k": {
       "entryId": "entry_2025_alex401k",
       "year": 2025,
-      "owner": "Alex Johnson",
-      "accountName": "Fidelity",
-      "accountType": "Traditional 401k",
-      "employer": "Acme Corp",
+      "users": {
+        "Alex Johnson": {
+          "accountName": "Fidelity",
+          "accountType": "Traditional 401k",
+          "employer": "Acme Corp"
+        }
+      },
       "balance": 57000,
       "contributions": 9000,
       "employerMatch": 4300,
       "gains": 4500,
       "fees": 70,
-      "withdrawals": 0,
-      "totalContributions": 13300,
-      "netGains": 4430,
-      "roi": 0.077
+      "withdrawals": 0
     },
     "entry_2021_jamie401k": {
       "entryId": "entry_2021_jamie401k",
       "year": 2021,
-      "owner": "Jamie Lee",
-      "accountName": "Vanguard",
-      "accountType": "Traditional 401k",
-      "employer": "Bright Solutions",
+      "users": {
+        "Jamie Lee": {
+          "accountName": "Vanguard",
+          "accountType": "Traditional 401k",
+          "employer": "Bright Solutions"
+        }
+      },
       "balance": 18000,
       "contributions": 4000,
       "employerMatch": 1800,
       "gains": 1200,
       "fees": 30,
-      "withdrawals": 0,
-      "totalContributions": 5800,
-      "netGains": 1170,
-      "roi": 0.065
+      "withdrawals": 0
     },
     "entry_2022_jamie401k": {
       "entryId": "entry_2022_jamie401k",
       "year": 2022,
-      "owner": "Jamie Lee",
-      "accountName": "Vanguard",
-      "accountType": "Traditional 401k",
-      "employer": "Bright Solutions",
+      "users": {
+        "Jamie Lee": {
+          "accountName": "Vanguard",
+          "accountType": "Traditional 401k",
+          "employer": "Bright Solutions"
+        }
+      },
       "balance": 21000,
       "contributions": 4200,
       "employerMatch": 1900,
       "gains": 1400,
       "fees": 32,
-      "withdrawals": 0,
-      "totalContributions": 6100,
-      "netGains": 1368,
-      "roi": 0.065
+      "withdrawals": 0
     },
     "entry_2023_jamie401k": {
       "entryId": "entry_2023_jamie401k",
       "year": 2023,
-      "owner": "Jamie Lee",
-      "accountName": "Vanguard",
-      "accountType": "Traditional 401k",
-      "employer": "Bright Solutions",
+      "users": {
+        "Jamie Lee": {
+          "accountName": "Vanguard",
+          "accountType": "Traditional 401k",
+          "employer": "Bright Solutions"
+        }
+      },
       "balance": 25000,
       "contributions": 4500,
       "employerMatch": 2000,
       "gains": 1700,
       "fees": 35,
-      "withdrawals": 0,
-      "totalContributions": 6500,
-      "netGains": 1665,
-      "roi": 0.073
+      "withdrawals": 0
     },
     "entry_2024_jamie401k": {
       "entryId": "entry_2024_jamie401k",
       "year": 2024,
-      "owner": "Jamie Lee",
-      "accountName": "Vanguard",
-      "accountType": "Traditional 401k",
-      "employer": "Bright Solutions",
+      "users": {
+        "Jamie Lee": {
+          "accountName": "Vanguard",
+          "accountType": "Traditional 401k",
+          "employer": "Bright Solutions"
+        }
+      },
       "balance": 29000,
       "contributions": 4700,
       "employerMatch": 2100,
       "gains": 1900,
       "fees": 38,
-      "withdrawals": 0,
-      "totalContributions": 6800,
-      "netGains": 1862,
-      "roi": 0.071
+      "withdrawals": 0
     },
     "entry_2025_jamie401k": {
       "entryId": "entry_2025_jamie401k",
       "year": 2025,
-      "owner": "Jamie Lee",
-      "accountName": "Vanguard",
-      "accountType": "Traditional 401k",
-      "employer": "Bright Solutions",
+      "users": {
+        "Jamie Lee": {
+          "accountName": "Vanguard",
+          "accountType": "Traditional 401k",
+          "employer": "Bright Solutions"
+        }
+      },
       "balance": 33000,
       "contributions": 4900,
       "employerMatch": 2200,
       "gains": 2100,
       "fees": 40,
-      "withdrawals": 0,
-      "totalContributions": 7100,
-      "netGains": 2060,
-      "roi": 0.070
+      "withdrawals": 0
+    },
+    "entry_2021_joint_brokerage": {
+      "entryId": "entry_2021_joint_brokerage",
+      "year": 2021,
+      "users": {
+        "Joint": {
+          "accountName": "Schwab",
+          "accountType": "Joint Brokerage",
+          "employer": "N/A"
+        }
+      },
+      "balance": 15000,
+      "contributions": 3000,
+      "employerMatch": 0,
+      "gains": 1500,
+      "fees": 25,
+      "withdrawals": 0
+    },
+    "entry_2022_joint_brokerage": {
+      "entryId": "entry_2022_joint_brokerage",
+      "year": 2022,
+      "users": {
+        "Joint": {
+          "accountName": "Schwab",
+          "accountType": "Joint Brokerage",
+          "employer": "N/A"
+        }
+      },
+      "balance": 18500,
+      "contributions": 3200,
+      "employerMatch": 0,
+      "gains": 1700,
+      "fees": 30,
+      "withdrawals": 0
+    },
+    "entry_2023_joint_brokerage": {
+      "entryId": "entry_2023_joint_brokerage",
+      "year": 2023,
+      "users": {
+        "Joint": {
+          "accountName": "Schwab",
+          "accountType": "Joint Brokerage",
+          "employer": "N/A"
+        }
+      },
+      "balance": 22500,
+      "contributions": 3500,
+      "employerMatch": 0,
+      "gains": 2000,
+      "fees": 35,
+      "withdrawals": 0
+    },
+    "entry_2024_joint_brokerage": {
+      "entryId": "entry_2024_joint_brokerage",
+      "year": 2024,
+      "users": {
+        "Joint": {
+          "accountName": "Schwab",
+          "accountType": "Joint Brokerage",
+          "employer": "N/A"
+        }
+      },
+      "balance": 26800,
+      "contributions": 3800,
+      "employerMatch": 0,
+      "gains": 2300,
+      "fees": 40,
+      "withdrawals": 0
+    },
+    "entry_2025_joint_brokerage": {
+      "entryId": "entry_2025_joint_brokerage",
+      "year": 2025,
+      "users": {
+        "Joint": {
+          "accountName": "Schwab",
+          "accountType": "Joint Brokerage",
+          "employer": "N/A"
+        }
+      },
+      "balance": 31200,
+      "contributions": 4000,
+      "employerMatch": 0,
+      "gains": 2600,
+      "fees": 45,
+      "withdrawals": 0
+    },
+    "entry_2023_joint_savings": {
+      "entryId": "entry_2023_joint_savings",
+      "year": 2023,
+      "users": {
+        "Joint": {
+          "accountName": "Marcus",
+          "accountType": "High Yield Savings",
+          "employer": "N/A"
+        }
+      },
+      "balance": 12000,
+      "contributions": 6000,
+      "employerMatch": 0,
+      "gains": 500,
+      "fees": 0,
+      "withdrawals": 0
+    },
+    "entry_2024_joint_savings": {
+      "entryId": "entry_2024_joint_savings",
+      "year": 2024,
+      "users": {
+        "Joint": {
+          "accountName": "Marcus",
+          "accountType": "High Yield Savings",
+          "employer": "N/A"
+        }
+      },
+      "balance": 18500,
+      "contributions": 6000,
+      "employerMatch": 0,
+      "gains": 800,
+      "fees": 0,
+      "withdrawals": 0
+    },
+    "entry_2025_joint_savings": {
+      "entryId": "entry_2025_joint_savings",
+      "year": 2025,
+      "users": {
+        "Joint": {
+          "accountName": "Marcus",
+          "accountType": "High Yield Savings",
+          "employer": "N/A"
+        }
+      },
+      "balance": 25200,
+      "contributions": 6000,
+      "employerMatch": 0,
+      "gains": 1100,
+      "fees": 0,
+      "withdrawals": 0
     }
   }
 }
