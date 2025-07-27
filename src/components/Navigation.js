@@ -140,6 +140,22 @@ const Navigation = () => {
     setShowSettingsMenu(false);
   };
 
+  const cleanupObsoleteData = async () => {
+    try {
+      const { cleanupObsoleteFields } = await import('../utils/localStorage');
+      const result = cleanupObsoleteFields();
+      
+      if (result.success) {
+        alert(`Data cleanup completed: ${result.message}`);
+      } else {
+        alert(`Cleanup failed: ${result.message}`);
+      }
+    } catch (error) {
+      alert('Failed to cleanup data. Please try again.');
+    }
+    setShowSettingsMenu(false);
+  };
+
   return (
     <nav className="navigation">
       <div className="nav-container">
@@ -226,6 +242,9 @@ const Navigation = () => {
                     🎯 Load Demo Data
                   </button>
                   <div className="settings-menu-divider"></div>
+                  <button onClick={cleanupObsoleteData} className="settings-menu-item">
+                    🧹 Cleanup Old Data Fields
+                  </button>
                   <button onClick={exportAllData} className="settings-menu-item">
                     📤 Export All Data
                   </button>

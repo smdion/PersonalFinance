@@ -6,7 +6,8 @@ export const STORAGE_KEYS = {
   FORM_DATA: 'formData',
   APP_SETTINGS: 'appSettings',
   HISTORICAL_DATA: 'historicalData',
-  PERFORMANCE_DATA: 'performanceData'
+  PERFORMANCE_DATA: 'performanceData',
+  NETWORTH_SETTINGS: 'networthSettings'
 };
 
 // Generic localStorage utilities
@@ -636,6 +637,7 @@ export const clearAllAppData = () => {
       'appSettings',
       'historicalData',
       'performanceData',
+      'networthSettings',
       'nameMapping',
       'hasSeenBetaWelcome' // Also clear beta welcome flag
     ];
@@ -785,4 +787,66 @@ export const resetAllAppData = () => {
     console.error('Error resetting all app data:', error);
     return { success: false, message: 'Error occurred while resetting data.' };
   }
+};
+
+// Add this function to clean up obsolete fields from historical data
+export const cleanupObsoleteFields = () => {
+  try {
+    const historicalData = getHistoricalData();
+    const obsoleteFields = ['ltbrokerage', 'rbrokerage', 'networthminus', 'networthplus'];
+    let hasChanges = false;
+    
+    const cleanedData = {};
+    
+    Object.entries(historicalData).forEach(([key, entry]) => {
+      const cleanedEntry = { ...entry };
+      
+      // Remove obsolete fields from the main entry
+      obsoleteFields.forEach(field => {
+        if (cleanedEntry.hasOwnProperty(field)) {
+          delete cleanedEntry[field];
+          hasChanges = true;
+        }
+      });
+      
+      // Also clean obsolete fields from user data if they exist
+      if (cleanedEntry.users && typeof cleanedEntry.users === 'object') {
+        Object.keys(cleanedEntry.users).forEach(userName => {
+          obsoleteFields.forEach(field => {
+            if (cleanedEntry.users[userName].hasOwnProperty(field)) {
+              delete cleanedEntry.users[userName][field];
+              hasChanges = true;
+            }
+          });
+        });
+      }
+      
+      cleanedData[key] = cleanedEntry;
+    });
+    
+    if (hasChanges) {
+      setHistoricalData(cleanedData);
+      console.log('Cleaned up obsolete fields from historical data:', obsoleteFields);
+      return { success: true, message: `Removed obsolete fields: ${obsoleteFields.join(', ')}` };
+    } else {
+      console.log('No obsolete fields found in historical data');
+      return { success: true, message: 'No obsolete fields found' };
+    }
+  } catch (error) {
+    console.error('Error cleaning up obsolete fields:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+// Net Worth settings utilities
+export const getNetWorthSettings = () => {
+  return getFromStorage(STORAGE_KEYS.NETWORTH_SETTINGS, {
+    selectedYears: [],
+    netWorthMode: 'market',
+    activeTab: 'overview'
+  });
+};
+
+export const setNetWorthSettings = (settings) => {
+  return setToStorage(STORAGE_KEYS.NETWORTH_SETTINGS, settings);
 };

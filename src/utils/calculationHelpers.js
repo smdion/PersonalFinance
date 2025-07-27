@@ -236,3 +236,363 @@ export const generateDataFilename = (dataType, userNames = [], fileExtension = '
   const baseType = typeMap[dataType.toLowerCase()] || dataType;
   return generateDescriptiveFilename(baseType, userNames, fileExtension);
 };
+
+// Net Worth Dashboard Calculation Functions
+
+// Calculate house value based on mode (market value vs cost basis)
+export const calculateHouseValue = (year, historicalEntry, netWorthMode, historicalData) => {
+  if (netWorthMode === 'market') {
+    // Use online estimated value from historical data
+    return historicalEntry.house || 0;
+  } else {
+    // Cost basis: $315k purchase price + cumulative home improvements
+    const purchasePrice = 315000;
+    const purchaseYear = 2018;
+    
+    if (year < purchaseYear) return 0;
+    
+    // Calculate cumulative home improvements from purchase year to current year
+    let cumulativeImprovements = 0;
+    for (let y = purchaseYear; y <= year; y++) {
+      const yearData = historicalData[y];
+      if (yearData && yearData.homeImprovements) {
+        cumulativeImprovements += yearData.homeImprovements;
+      }
+    }
+    
+    return purchasePrice + cumulativeImprovements;
+  }
+};
+
+// Calculate average age for a given year using paycheck birthdays
+export const getAverageAgeForYear = (year, paycheckData) => {
+  if (!paycheckData) return null;
+  
+  const birthdays = [];
+  if (paycheckData.your?.birthday) birthdays.push(paycheckData.your.birthday);
+  if (paycheckData.spouse?.birthday) birthdays.push(paycheckData.spouse.birthday);
+  
+  if (birthdays.length === 0) return null;
+  
+  const ages = birthdays.map(birthday => {
+    const dob = new Date(birthday);
+    const refDate = new Date(year, 11, 31); // End of year
+    
+    let age = refDate.getFullYear() - dob.getFullYear();
+    if (
+      refDate.getMonth() < dob.getMonth() ||
+      (refDate.getMonth() === dob.getMonth() && refDate.getDate() < dob.getDate())
+    ) {
+      age--;
+    }
+    return age;
+  }).filter(a => a !== null);
+  
+  if (ages.length === 0) return null;
+  return ages.reduce((a, b) => a + b, 0) / ages.length;
+};
+
+// Calculate cumulative lifetime earnings up to a given year
+export const getCumulativeEarnings = (targetYear, historicalData) => {
+  let cumulative = 0;
+  const years = Object.keys(historicalData).map(y => parseInt(y)).sort();
+  
+  for (const year of years) {
+    if (year > targetYear) break;
+    const yearData = historicalData[year];
+    if (yearData && yearData.agi) {
+      cumulative += yearData.agi;
+    }
+  }
+  
+  return cumulative;
+};
+
+// Process net worth data with all calculations
+export const processNetWorthData = (historicalData, performanceData, paycheckData, netWorthMode) => {
+  const years = Object.keys(historicalData).map(year => parseInt(year)).sort();
+  
+  return years.map(year => {
+    const historicalEntry = historicalData[year];
+    const performanceEntry = performanceData[year];
+    
+    if (!historicalEntry) return null;
+    
+    // Calculate investment components
+    const taxFree = historicalEntry.taxFree || 0;
+    const taxDeferred = historicalEntry.taxDeferred || 0;
+    const brokerage = historicalEntry.brokerage || 0;
+    const espp = historicalEntry.espp || 0;
+    const hsa = historicalEntry.hsa || 0;
+    
+    // Calculate portfolio value (investments)
+    const portfolio = taxFree + taxDeferred + brokerage + espp + hsa;
+    const retirement = taxFree + taxDeferred; // Retirement accounts only
+    
+    // Calculate house value based on selected mode
+    const houseValue = calculateHouseValue(year, historicalEntry, netWorthMode, historicalData);
+    
+    // Cash and other assets
+    const cash = historicalEntry.cash || 0;
+    const otherAssets = historicalEntry.othAssets || 0;
+    
+    // Get AGI directly from historical data
+    const agi = historicalEntry.agi || 0;
+    
+    // Liabilities
+    const mortgage = historicalEntry.mortgage || 0;
+    const otherLiabilities = historicalEntry.othLia || 0;
+    const totalLiabilities = mortgage + otherLiabilities;
+    
+    // Calculate net worth
+    const totalAssets = portfolio + houseValue + cash + otherAssets;
+    const netWorth = totalAssets - totalLiabilities;
+    
+    // Calculate Money Guy Score
+    const averageAge = getAverageAgeForYear(year, paycheckData);
+    let moneyGuyScore = null;
+    let averageAccumulator = null;
+    
+    if (averageAge !== null && agi > 0) {
+      const yearsUntil40 = Math.abs(averageAge - 40);
+      averageAccumulator = (averageAge * agi) / (10 + yearsUntil40);
+      if (averageAccumulator > 0) {
+        moneyGuyScore = netWorth / averageAccumulator;
+      }
+    }
+    
+    // Calculate Wealth Score (Net Worth / Cumulative Lifetime Earnings as percentage)
+    const cumulativeEarnings = getCumulativeEarnings(year, historicalData);
+    const wealthScore = cumulativeEarnings > 0 ? (netWorth / cumulativeEarnings) * 100 : null;
+    
+    return {
+      year,
+      agi,
+      netWorth,
+      houseValue,
+      hsa,
+      cash,
+      espp,
+      retirement,
+      portfolio,
+      taxFree,
+      taxDeferred,
+      brokerage,
+      otherAssets,
+      totalAssets,
+      mortgage,
+      otherLiabilities,
+      totalLiabilities,
+      homeImprovements: historicalEntry.homeImprovements || 0,
+      // Custom scores
+      averageAge,
+      averageAccumulator,
+      moneyGuyScore,
+      cumulativeEarnings,
+      wealthScore
+    };
+  }).filter(Boolean);
+};
+
+// Generate chart data for main net worth chart
+export const generateMainNetWorthChartData = (filteredData) => {
+  const years = filteredData.map(d => d.year);
+  const netWorthData = filteredData.map(d => d.netWorth);
+  const portfolioData = filteredData.map(d => d.portfolio);
+  const houseData = filteredData.map(d => d.houseValue);
+  const cashData = filteredData.map(d => d.cash);
+  const liabilityData = filteredData.map(d => d.totalLiabilities); // Show as positive values
+
+  return {
+    labels: years,
+    datasets: [
+      {
+        label: 'Net Worth',
+        data: netWorthData,
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderWidth: 3,
+        tension: 0.1,
+        fill: true
+      },
+      {
+        label: 'Portfolio',
+        data: portfolioData,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'House Value',
+        data: houseData,
+        borderColor: 'rgb(168, 85, 247)',
+        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'Cash',
+        data: cashData,
+        borderColor: 'rgb(251, 146, 60)',
+        backgroundColor: 'rgba(251, 146, 60, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'Liabilities',
+        data: liabilityData,
+        borderColor: 'rgb(239, 68, 68)',
+        backgroundColor: 'rgba(239, 68, 68, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      }
+    ]
+  };
+};
+
+// Generate portfolio tax location chart data
+export const generatePortfolioTaxLocationData = (filteredData) => {
+  const years = filteredData.map(d => d.year);
+  const categories = ['Tax-Free (Roth)', 'Tax-Deferred (401k/IRA)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
+  const colors = [
+    'rgba(34, 197, 94, 0.8)',
+    'rgba(59, 130, 246, 0.8)', 
+    'rgba(168, 85, 247, 0.8)',
+    'rgba(251, 146, 60, 0.8)',
+    'rgba(239, 68, 68, 0.8)'
+  ];
+
+  const datasets = categories.map((category, categoryIndex) => {
+    const data = filteredData.map(d => {
+      const total = d.portfolio;
+      if (total <= 0) return 0;
+      
+      switch (categoryIndex) {
+        case 0: return (d.taxFree / total) * 100;
+        case 1: return (d.taxDeferred / total) * 100;
+        case 2: return (d.brokerage / total) * 100;
+        case 3: return (d.hsa / total) * 100;
+        case 4: return (d.espp / total) * 100;
+        default: return 0;
+      }
+    });
+
+    return {
+      label: category,
+      data: data,
+      backgroundColor: colors[categoryIndex],
+      borderColor: colors[categoryIndex].replace('0.8', '1'),
+      borderWidth: 1
+    };
+  });
+
+  return {
+    labels: years,
+    datasets: datasets
+  };
+};
+
+// Generate net worth location chart data
+export const generateNetWorthLocationData = (filteredData) => {
+  const years = filteredData.map(d => d.year);
+  const categories = ['Portfolio', 'House Value', 'Cash', 'Other Assets', 'Liabilities'];
+  const colors = [
+    'rgba(59, 130, 246, 0.8)',
+    'rgba(168, 85, 247, 0.8)',
+    'rgba(251, 146, 60, 0.8)',
+    'rgba(34, 197, 94, 0.8)',
+    'rgba(239, 68, 68, 0.8)'
+  ];
+
+  const datasets = categories.map((category, categoryIndex) => {
+    const data = filteredData.map(d => {
+      const total = d.netWorth;
+      if (total <= 0) return 0;
+      
+      switch (categoryIndex) {
+        case 0: return (d.portfolio / total) * 100;
+        case 1: return (d.houseValue / total) * 100;
+        case 2: return (d.cash / total) * 100;
+        case 3: return (d.otherAssets / total) * 100;
+        case 4: return -(d.totalLiabilities / total) * 100; // Negative to show as reduction
+        default: return 0;
+      }
+    });
+
+    return {
+      label: category,
+      data: data,
+      backgroundColor: colors[categoryIndex],
+      borderColor: colors[categoryIndex].replace('0.8', '1'),
+      borderWidth: 1
+    };
+  });
+
+  return {
+    labels: years,
+    datasets: datasets
+  };
+};
+
+// Generate Money Guy Score comparison chart data
+export const generateMoneyGuyComparisonData = (filteredData) => {
+  const years = filteredData.map(d => d.year);
+  
+  // Calculate Average Accumulator values for each year
+  const averageAccumulatorData = filteredData.map(d => d.averageAccumulator || 0);
+  
+  // Calculate Prodigious Accumulator (2x Average Accumulator)
+  const prodigiousAccumulatorData = filteredData.map(d => (d.averageAccumulator || 0) * 2);
+  
+  // Net Worth and Portfolio data
+  const netWorthData = filteredData.map(d => d.netWorth);
+  const portfolioData = filteredData.map(d => d.portfolio);
+
+  return {
+    labels: years,
+    datasets: [
+      {
+        label: 'Average Accumulator',
+        data: averageAccumulatorData,
+        borderColor: 'rgb(34, 197, 94)',
+        backgroundColor: 'rgba(34, 197, 94, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'Prodigious Accumulator (2x Average)',
+        data: prodigiousAccumulatorData,
+        borderColor: 'rgb(168, 85, 247)',
+        backgroundColor: 'rgba(168, 85, 247, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'Net Worth',
+        data: netWorthData,
+        borderColor: 'rgb(59, 130, 246)',
+        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+        borderWidth: 3,
+        tension: 0.1,
+        fill: false
+      },
+      {
+        label: 'Portfolio',
+        data: portfolioData,
+        borderColor: 'rgb(251, 146, 60)',
+        backgroundColor: 'rgba(251, 146, 60, 0.1)',
+        borderWidth: 2,
+        tension: 0.1,
+        fill: false
+      }
+    ]
+  };
+};
+
