@@ -1,0 +1,371 @@
+/* ===================================================================
+   BUTTON COMPONENTS
+   ================================================================ */
+.btn-primary {
+  background: linear-gradient(135deg, #67b3c1 0%, #4d9db8 100%);
+  color: white;
+  border: none;
+  border-radius: 12px;
+  padding: 12px 24px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(103, 179, 193, 0.25);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(103, 179, 193, 0.35);
+}
+
+.btn-primary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: 0 4px 12px rgba(103, 179, 193, 0.15);
+}
+
+.btn-secondary {
+  background: white;
+  color: #67b3c1;
+  border: 2px solid #67b3c1;
+  border-radius: 12px;
+  padding: 10px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #67b3c1;
+  color: white;
+  transform: translateY(-1px);
+}
+
+.btn-secondary:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-danger {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-danger:hover {
+  background: #b91c1c;
+  transform: translateY(-1px);
+}
+
+/* ===================================================================
+   ICON BUTTONS
+   ================================================================ */
+.data-btn-icon {
+  background: transparent;
+  border: none;
+  padding: 6px 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+}
+
+.data-btn-icon:hover {
+  background: #f3f4f6;
+  transform: translateY(-1px);
+}
+
+.data-btn-icon.edit:hover {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.data-btn-icon.delete:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+/* ===================================================================
+   SPECIALIZED BUTTONS
+   ================================================================ */
+.item-delete {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  padding: 4px 6px;
+  font-size: 0.7rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+}
+
+.item-delete:hover {
+  background: #b91c1c;
+}
+
+.collapse-toggle {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.collapse-toggle:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+/* ===================================================================
+   BUDGET MODE SELECTORS
+   ================================================================ */
+.budget-mode-selectors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.budget-mode-selector {
+  padding: 8px 16px;
+  border: 2px solid;
+  border-radius: 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.budget-mode-selector:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.budget-mode-selector.active {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===================================================================
+   IMPORT/EXPORT BUTTONS
+   ================================================================ */
+.import-export-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.import-export-btn {
+  padding: 10px 16px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  border: 2px solid;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+  overflow: hidden;
+}
+
+.import-export-btn.export {
+  background: #0891b2;
+  color: white;
+  border-color: #0891b2;
+}
+
+.import-export-btn.export:hover {
+  background: #0e7490;
+  border-color: #0e7490;
+  transform: translateY(-1px);
+}
+
+.import-export-btn.export:disabled {
+  background: #94a3b8;
+  border-color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.import-export-btn.import {
+  background: white;
+  color: #0891b2;
+  border-color: #0891b2;
+}
+
+.import-export-btn.import:hover {
+  background: #0891b2;
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* ===================================================================
+   RESULTS TOGGLE BUTTON
+   ================================================================ */
+.results-toggle-container {
+  display: flex;
+  justify-content: center;
+  margin: 12px 0;
+}
+
+.results-toggle-button {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.results-toggle-button:hover {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+/* ===================================================================
+   QUICK START BUTTONS
+   ================================================================ */
+.quick-start-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.quick-start-button {
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition: all 0.3s ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 2px solid;
+}
+
+.quick-start-button.primary {
+  background: linear-gradient(135deg, #67b3c1 0%, #4d9db8 100%);
+  color: white;
+  border-color: #67b3c1;
+}
+
+.quick-start-button.primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(103, 179, 193, 0.35);
+  text-decoration: none;
+}
+
+.quick-start-button.secondary {
+  background: white;
+  color: #67b3c1;
+  border-color: #67b3c1;
+}
+
+.quick-start-button.secondary:hover {
+  background: #67b3c1;
+  color: white;
+  transform: translateY(-1px);
+  text-decoration: none;
+}
+
+.quick-start-button.demo {
+  background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%);
+  color: white;
+  border-color: #7c3aed;
+}
+
+.quick-start-button.demo:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(124, 58, 237, 0.35);
+  text-decoration: none;
+}
+
+/* ===================================================================
+   CATEGORY ACTIONS
+   ================================================================ */
+.category-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-start;
+  flex-wrap: wrap;
+}
+
+.category-actions .btn-secondary,
+.category-actions .btn-danger {
+  font-size: 0.85rem;
+  padding: 8px 16px;
+}
+
+/* ===================================================================
+   RESPONSIVE BUTTON ADJUSTMENTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .budget-mode-selectors {
+    justify-content: center;
+  }
+  
+  .budget-mode-selector {
+    font-size: 0.8rem;
+    padding: 6px 12px;
+  }
+  
+  .import-export-actions {
+    justify-content: center;
+  }
+  
+  .import-export-btn {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+  
+  .quick-start-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .quick-start-button {
+    width: 100%;
+    max-width: 300px;
+    justify-content: center;
+  }
+  
+  .category-actions {
+    justify-content: center;
+  }
+}

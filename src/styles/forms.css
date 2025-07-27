@@ -1,0 +1,601 @@
+/* ===================================================================
+   FORM COMPONENTS
+   ================================================================ */
+.form-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.form-grid-2 {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.form-grid-3 {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.4;
+}
+
+.form-input {
+  padding: 14px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  background: white;
+  color: #374151;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-input:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-select {
+  padding: 14px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: #374151;
+  font-weight: 500;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.form-select:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 4px rgba(8, 145, 178, 0.1), 0 2px 8px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.form-hint {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 6px;
+  line-height: 1.4;
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+/* ===================================================================
+   CHECKBOX & FORM CONTROLS
+   ================================================================ */
+.checkbox-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  padding: 12px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.3s ease;
+}
+
+.checkbox-wrapper:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+}
+
+.modern-checkbox {
+  width: 22px;
+  height: 22px;
+  cursor: pointer;
+  accent-color: #0891b2;
+  transform: scale(1.1);
+}
+
+/* ===================================================================
+   PAYCHECK FORM SPECIFIC STYLES
+   ================================================================ */
+.section-header {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px 12px 0 0;
+  padding: 20px;
+  margin-bottom: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  user-select: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+}
+
+.section-header::after {
+  content: '';
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 0;
+  height: 0;
+  border-left: 6px solid #cbd5e1;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  transition: all 0.3s ease;
+}
+
+.section-header:hover::after {
+  border-left-color: #0891b2;
+}
+
+.section-header.collapsed::after {
+  transform: translateY(-50%) rotate(-90deg);
+}
+
+.section-header:hover {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-color: #cbd5e1;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.section-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  gap: 16px;
+}
+
+.section-title-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.section-title h3 {
+  color: #1e293b;
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-subtitle {
+  font-size: 0.9rem;
+  color: #64748b;
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+.section-title-right {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.section-badge {
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(8, 145, 178, 0.25);
+  flex-shrink: 0;
+}
+
+.section-toggle {
+  color: #cbd5e1;
+  transition: all 0.3s ease;
+  line-height: 1;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  font-size: 1.2rem;
+  font-weight: 400;
+}
+
+.section-toggle:hover {
+  color: #0891b2;
+  transform: scale(1.1);
+}
+
+.section-toggle.expanded {
+  color: #059669;
+  transform: rotate(90deg);
+}
+
+.section-toggle.expanded:hover {
+  transform: rotate(90deg) scale(1.1);
+}
+
+.section-content {
+  background: white;
+  border: 1px solid #e2e8f0;
+  border-top: none;
+  border-radius: 0 0 12px 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  transition: all 0.3s ease;
+}
+
+.section-header.collapsed {
+  border-radius: 12px;
+  margin-bottom: 24px;
+}
+
+.data-field-group {
+  margin-bottom: 16px;
+}
+
+.data-field-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 6px;
+}
+
+.data-field-input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease;
+}
+
+.data-field-input:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 2px rgba(8, 145, 178, 0.1);
+}
+
+.data-fields-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 16px;
+}
+
+.data-sections {
+  display: grid;
+  gap: 24px;
+}
+
+.data-section {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 20px;
+}
+
+.data-section-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+/* ===================================================================
+   CALCULATION HINTS & MEDICAL DEDUCTIONS
+   ================================================================ */
+.calculation-hint {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-left: 4px solid #0891b2;
+  border-radius: 12px;
+  padding: 16px;
+  margin-top: 16px;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.08);
+}
+
+.calculation-hint div {
+  margin-bottom: 6px;
+}
+
+.calculation-hint div:last-child {
+  margin-bottom: 0;
+}
+
+.calculation-hint strong {
+  color: #0891b2;
+  font-weight: 700;
+}
+
+.medical-deduction-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.medical-deduction-item {
+  display: flex;
+  flex-direction: column;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 16px;
+  transition: all 0.3s ease;
+}
+
+.medical-deduction-item:hover {
+  background: #f1f5f9;
+  border-color: #cbd5e1;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.medical-deduction-item label {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 8px;
+}
+
+.medical-deduction-item input {
+  padding: 12px 14px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.medical-deduction-item input:focus {
+  outline: none;
+  border-color: #0891b2;
+  box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.1);
+  transform: translateY(-1px);
+}
+
+.hsa-toggle-buttons {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.hsa-toggle-button {
+  padding: 16px 20px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+}
+
+.hsa-toggle-button:hover {
+  border-color: #0891b2;
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.15);
+}
+
+.hsa-toggle-button.active {
+  border-color: #0891b2;
+  background: linear-gradient(135deg, #0891b2 0%, #0e7490 100%);
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(8, 145, 178, 0.25);
+}
+
+.hsa-toggle-button.active::before {
+  content: '✓';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 1.2rem;
+  font-weight: bold;
+}
+
+/* ===================================================================
+   ADD ENTRY FORMS
+   ================================================================ */
+.add-entry-form {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.add-entry-form h3 {
+  color: #374151;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.add-entry-input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  margin-bottom: 16px;
+  transition: border-color 0.3s ease;
+}
+
+.add-entry-input:focus {
+  outline: none;
+  border-color: #0891b2;
+}
+
+/* ===================================================================
+   FILE INPUT STYLING
+   ================================================================ */
+.file-input-hidden {
+  display: none;
+}
+
+/* ===================================================================
+   CURRENCY & PERCENTAGE INPUT STYLING
+   ================================================================ */
+.currency::before {
+  content: '$';
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.currency input {
+  padding-left: 24px;
+}
+
+.percentage::after {
+  content: '%';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6b7280;
+  pointer-events: none;
+}
+
+.percentage input {
+  padding-right: 24px;
+}
+
+/* ===================================================================
+   RESPONSIVE FORM ADJUSTMENTS
+   ================================================================ */
+@media (max-width: 768px) {
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+  }
+  
+  .data-fields-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .medical-deduction-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .hsa-toggle-buttons {
+    grid-template-columns: 1fr;
+  }
+  
+  .section-header {
+    padding: 16px;
+  }
+  
+  .section-title h3 {
+    font-size: 1.1rem;
+  }
+  
+  .form-input,
+  .form-select {
+    padding: 12px 16px;
+  }
+}
+
+/* ===================================================================
+   MISSING PAYCHECK FORM STYLES
+   ================================================================ */
+
+/* Format display helpers */
+.salary-display {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+.percentage-display {
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+}
+
+/* Form input states */
+.form-input:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+.form-select:disabled {
+  background-color: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* Enhanced section content spacing */
+.section-content .form-grid {
+  margin-top: 0;
+}
+
+.section-content .form-group:last-child {
+  margin-bottom: 0;
+}
+
+/* Per paycheck display styling */
+.per-paycheck-hint {
+  font-size: 0.85rem;
+  color: #6b7280;
+  font-style: italic;
+  margin-top: 4px;
+}
+
+/* Validation states */
+.form-input.error {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+}
+
+.form-input.success {
+  border-color: #059669;
+  box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+/* Auto-calculated field styling */
+.form-input.auto-calculated {
+  background: #f0f9ff;
+  border-color: #0891b2;
+}
+
+/* Dependent field styling */
+.form-group.dependent {
+  opacity: 0.7;
+  transition: opacity 0.3s ease;
+}
+
+.form-group.dependent.active {
+  opacity: 1;
+}

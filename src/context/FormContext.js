@@ -52,8 +52,29 @@ export const FormProvider = ({ children }) => {
   }, []);
 
   const resetFormData = useCallback(() => {
-    setFormDataState(initialFormData);
-  }, []);
+    try {
+      // Reset to initial empty state
+      setFormDataState(initialFormData);
+      
+      // Clear from localStorage
+      setFormData({});
+    } catch (error) {
+      console.error('Error resetting form context data:', error);
+    }
+  }, [initialFormData]);
+
+  // Add global reset listener
+  useEffect(() => {
+    const handleResetAll = () => {
+      resetFormData();
+    };
+
+    window.addEventListener('resetAllData', handleResetAll);
+    
+    return () => {
+      window.removeEventListener('resetAllData', handleResetAll);
+    };
+  }, [resetFormData]);
 
   // Helper function to create budget items for a person
   const createBudgetItemsForPerson = useCallback((personData, personPrefix, personLabel) => {
@@ -82,77 +103,62 @@ export const FormProvider = ({ children }) => {
 
   // Function to sync budget categories with budget impacting contributions
   const syncBudgetCategories = useCallback(() => {
-    console.log('syncBudgetCategories called with:', {
-      yourBudgetImpacting: formData.yourBudgetImpacting,
-      spouseBudgetImpacting: formData.spouseBudgetImpacting,
-      showSpouseCalculator: formData.showSpouseCalculator
-    });
-
-    // Get paycheck data to access names
+    // Get paycheck data to access current names
     const { getPaycheckData } = require('../utils/localStorage');
     const paycheckData = getPaycheckData();
     
     let budgetCategories = getBudgetData();
-    console.log('Current budget categories:', budgetCategories);
     
     const existingCategoryIndex = budgetCategories.findIndex(cat => cat.id === 'budget-impacting');
     
-    // Create the budget impacting contributions items
+    // Create the budget impacting contributions items with CURRENT names
     let budgetItems = [];
     
-    // Add your contributions with actual name
-    const yourName = paycheckData?.your?.name || 'Your';
+    // Add your contributions with actual current name
+    const yourName = paycheckData?.your?.name?.trim() || 'Your';
     budgetItems = budgetItems.concat(
       createBudgetItemsForPerson(formData.yourBudgetImpacting, 'your', yourName)
     );
 
-    // Add spouse contributions if dual calculator is enabled with actual name
+    // Add spouse contributions ONLY if dual calculator is enabled with actual current name
     if (formData.showSpouseCalculator) {
-      const spouseName = paycheckData?.spouse?.name || 'Spouse';
+      const spouseName = paycheckData?.spouse?.name?.trim() || 'Spouse';
       budgetItems = budgetItems.concat(
         createBudgetItemsForPerson(formData.spouseBudgetImpacting, 'spouse', spouseName)
       );
     }
 
-    console.log('Generated budget items:', budgetItems);
-
-    // Only create/update the category if there are items OR if it already exists
+    // Always update the category if there are items OR if it already exists
     if (budgetItems.length > 0 || existingCategoryIndex >= 0) {
-      const budgetImpactingCategory = {
+      const budgetCategory = {
         id: 'budget-impacting',
         name: 'Budget Impacting Contributions',
         isAutoManaged: true,
         items: budgetItems
       };
 
-      // Update or add the category
       if (existingCategoryIndex >= 0) {
-        budgetCategories[existingCategoryIndex] = budgetImpactingCategory;
-        console.log('Updated existing category at index:', existingCategoryIndex);
+        budgetCategories[existingCategoryIndex] = budgetCategory;
       } else {
-        budgetCategories.unshift(budgetImpactingCategory); // Add at the beginning
-        console.log('Added new category at beginning');
+        budgetCategories = [budgetCategory, ...budgetCategories];
       }
-    } else if (existingCategoryIndex >= 0) {
-      // Remove the category if no items and it exists
-      budgetCategories.splice(existingCategoryIndex, 1);
-      console.log('Removed empty category');
+    } else {
+      // Remove the category if no items
+      if (existingCategoryIndex >= 0) {
+        budgetCategories = budgetCategories.filter(cat => cat.id !== 'budget-impacting');
+      }
     }
-
-    console.log('Final budget categories:', budgetCategories);
 
     // Save updated budget categories
     setBudgetData(budgetCategories);
     
     // Dispatch event to notify components
     window.dispatchEvent(new CustomEvent('budgetDataUpdated', { detail: budgetCategories }));
-    console.log('Budget data updated and event dispatched');
   }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator, createBudgetItemsForPerson]);
 
   // Run sync with a slight delay to ensure all data is loaded
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('Initial sync on mount');
       syncBudgetCategories();
     }, 100);
     
@@ -162,7 +168,6 @@ export const FormProvider = ({ children }) => {
   // Sync when budget impacting data changes with debouncing
   useEffect(() => {
     const timer = setTimeout(() => {
-      console.log('Sync triggered by data change');
       syncBudgetCategories();
     }, 50);
     
@@ -205,18 +210,38 @@ export const FormProvider = ({ children }) => {
             }));
           }
         }
-
-        console.log('Loaded budget impacting from paycheck data:', {
-          your: paycheckData?.your?.budgetImpacting,
-          spouse: paycheckData?.spouse?.budgetImpacting
-        });
       } catch (error) {
-        console.error('Error loading budget impacting from paycheck data:', error);
+        // Silent error handling in production
       }
     };
 
     loadBudgetImpactingFromPaycheck();
   }, []);
+
+  // Add effect to listen for paycheck data updates and re-sync names
+  useEffect(() => {
+    const handlePaycheckDataUpdate = () => {
+      // Small delay to ensure paycheck data is saved
+      setTimeout(() => {
+        syncBudgetCategories();
+      }, 100);
+    };
+
+    // Also listen for name mapping updates to re-sync budget categories
+    const handleNameMappingUpdate = () => {
+      setTimeout(() => {
+        syncBudgetCategories();
+      }, 100);
+    };
+
+    window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+    window.addEventListener('nameMappingUpdated', handleNameMappingUpdate);
+    
+    return () => {
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+      window.removeEventListener('nameMappingUpdated', handleNameMappingUpdate);
+    };
+  }, [syncBudgetCategories]);
 
   const value = {
     formData, 

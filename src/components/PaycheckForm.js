@@ -175,9 +175,6 @@ const PaycheckForm = ({
             <span className="section-badge">{badge}</span>
           )}
         </div>
-        <span className={`section-toggle ${expandedSections[section] ? 'expanded' : ''}`}>
-          +
-        </span>
       </div>
     );
   };

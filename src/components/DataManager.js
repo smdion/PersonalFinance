@@ -1,43 +1,586 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { 
+  getPaycheckData, 
+  updateNameMapping, 
+  migrateDataForNameChange,
+  dispatchGlobalEvent,
+  getCurrentUserName
+} from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
 
 const DataManager = ({
   title,
   subtitle,
-  dataKey, // localStorage key
-  getData, // function to get data from localStorage
-  setData, // function to set data to localStorage
-  schema, // data schema configuration
-  userNames = [], // for user-specific fields
-  emptyFormData, // initial form data structure
-  getFormDataFromEntry, // function to convert stored entry to form data
-  getEntryFromFormData, // function to convert form data to stored entry
-  primaryKey = 'id', // changed from 'year' to 'id'
-  sortField = 'id',   // changed from 'year' to 'id'
-  sortOrder = 'desc', // 'asc' or 'desc'
-  csvTemplate, // CSV template data
-  parseCSVRow, // function to parse CSV row
-  formatCSVRow, // function to format entry for CSV
-  csvHeaders, // CSV headers array
-  allowAdd = true, // whether to show add button
-  allowEdit = true, // whether to show edit button
-  allowDelete = true, // whether to show delete button
-  fieldCssClasses = {}, // optional object mapping field names to CSS classes
-  beforeCSVImport // <-- add this prop
+  dataKey,
+  getData,
+  setData,
+  schema,
+  userNames: initialUserNames = [],
+  usePaycheckUsers = false, // New prop to enable paycheck user filtering
+  primaryKey = 'entryId',
+  sortField = 'year',
+  sortOrder = 'desc',
+  csvHeaders,
+  allowAdd = true,
+  allowEdit = true,
+  allowDelete = true,
+  fieldCssClasses = {},
+  beforeCSVImport,
+  customFormatCSVRow,
+  customParseCSVRow
 }) => {
+  // Initialize all state variables first
   const [entryData, setEntryData] = useState({});
+  const [paycheckData, setPaycheckDataState] = useState(null);
+  const [userNames, setUserNames] = useState(initialUserNames);
   const [showAddEntry, setShowAddEntry] = useState(false);
   const [editingKey, setEditingKey] = useState(null);
-  const [formData, setFormData] = useState(emptyFormData);
+  const [formData, setFormData] = useState({});
   const [currentSortField, setCurrentSortField] = useState(sortField);
   const [currentSortOrder, setCurrentSortOrder] = useState(sortOrder);
+  const [userFilters, setUserFilters] = useState({});
+  const [yearFilters, setYearFilters] = useState({});
+  const [combinedSectionFilters, setCombinedSectionFilters] = useState({});
+  const [showFilters, setShowFilters] = useState(false);
+  const [editingCell, setEditingCell] = useState(null);
+  const [editingCellValue, setEditingCellValue] = useState('');
+  const [newlyAddedKey, setNewlyAddedKey] = useState(null);
+  // Remove forceReloadTrigger state completely
 
-  // Load data from localStorage
+  // Initialize refs
+  const lastUserNamesRef = useRef('');
+  const hasLoadedInitialData = useRef(false);
+  const lastPaycheckDataRef = useRef(null);
+
+  // Load paycheck data if usePaycheckUsers is enabled
   useEffect(() => {
-    const savedData = getData();
-    setEntryData(savedData);
-  }, [getData]);
+    if (usePaycheckUsers) {
+      const data = getPaycheckData();
+      setPaycheckDataState(data);
+      lastPaycheckDataRef.current = data;
+    }
+  }, [usePaycheckUsers]);
+
+  // Listen for paycheckDataUpdated and handle name changes
+  useEffect(() => {
+    if (!usePaycheckUsers) return;
+
+    const handlePaycheckDataUpdated = (event) => {
+      const newPaycheckData = event.detail || getPaycheckData();
+      
+      // Check for name changes and migrate data
+      if (lastPaycheckDataRef.current && Object.keys(entryData).length > 0) {
+        let hasNameChanges = false;
+        let migratedData = { ...entryData };
+        
+        // Check your name change
+        const oldYourName = lastPaycheckDataRef.current.your?.name;
+        const newYourName = newPaycheckData.your?.name;
+        if (oldYourName && newYourName && oldYourName !== newYourName) {
+          updateNameMapping(oldYourName, newYourName);
+          migratedData = migrateDataForNameChange(migratedData, oldYourName, newYourName);
+          hasNameChanges = true;
+        }
+        
+        // Check spouse name change
+        const oldSpouseName = lastPaycheckDataRef.current.spouse?.name;
+        const newSpouseName = newPaycheckData.spouse?.name;
+        if (oldSpouseName && newSpouseName && oldSpouseName !== newSpouseName) {
+          updateNameMapping(oldSpouseName, newSpouseName);
+          migratedData = migrateDataForNameChange(migratedData, oldSpouseName, newSpouseName);
+          hasNameChanges = true;
+        }
+        
+        if (hasNameChanges) {
+          setData(migratedData);
+        }
+      }
+      
+      // Update the paycheck data reference
+      setPaycheckDataState(newPaycheckData);
+      lastPaycheckDataRef.current = newPaycheckData;
+    };
+
+    // Register the event listener
+    window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
+    
+    return () => {
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
+    };
+  }, [usePaycheckUsers, entryData, setData, dataKey]);
+
+  // Update user names based on paycheck data when usePaycheckUsers is enabled
+  useEffect(() => {
+    if (usePaycheckUsers && paycheckData) {
+      const names = [];
+      if (paycheckData.your?.name?.trim()) {
+        names.push(paycheckData.your.name.trim());
+      }
+      // Only add spouse if dual calculator is enabled AND spouse name exists
+      if ((paycheckData.settings?.showSpouseCalculator ?? true) && paycheckData.spouse?.name?.trim()) {
+        names.push(paycheckData.spouse.name.trim());
+      }
+      
+      // Only update if names actually changed
+      const newNamesString = names.join(',');
+      const currentNamesString = userNames.join(',');
+      
+      if (newNamesString !== currentNamesString) {
+        if (names.length > 0) {
+          setUserNames(names);
+        } else {
+          // Fallback to default if no names are available
+          setUserNames(['User1']);
+        }
+      }
+    } else if (!usePaycheckUsers) {
+      // Only update if different from initialUserNames
+      const currentNamesString = userNames.join(',');
+      const initialNamesString = initialUserNames.join(',');
+      
+      if (currentNamesString !== initialNamesString) {
+        setUserNames(initialUserNames);
+      }
+    }
+  }, [usePaycheckUsers, paycheckData, initialUserNames]); // Remove userNames from dependencies
+
+  // Initialize combined-section filters when schema changes
+  useEffect(() => {
+    // Get all combined-section fields (sections that are not 'users' or 'basic')
+    const combinedSections = schema.sections.filter(
+      s => s.name !== 'users' && s.name !== 'basic'
+    );
+    const initialFilters = {};
+    combinedSections.forEach(section => {
+      section.fields.forEach(field => {
+        initialFilters[field.name] = true;
+      });
+    });
+    setCombinedSectionFilters(initialFilters);
+  }, [schema.sections]);
+
+  // Toggle combined-section filter
+  const toggleCombinedSectionFilter = (fieldName) => {
+    setCombinedSectionFilters(prev => ({
+      ...prev,
+      [fieldName]: !prev[fieldName]
+    }));
+  };
+
+  // Select/deselect all combined-section fields
+  const selectAllCombinedSectionFields = () => {
+    const newFilters = { ...combinedSectionFilters };
+    Object.keys(newFilters).forEach(key => { newFilters[key] = true; });
+    setCombinedSectionFilters(newFilters);
+  };
+  const deselectAllCombinedSectionFields = () => {
+    const newFilters = { ...combinedSectionFilters };
+    Object.keys(newFilters).forEach(key => { newFilters[key] = false; });
+    setCombinedSectionFilters(newFilters);
+  };
+
+  // Generate unique ID for entries
+  const generateEntryId = () => {
+    const prefix = title.toLowerCase().includes('performance') ? 'entry' : 'hist';
+    return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  // Generic empty form data structure - built from schema
+  const generateEmptyFormData = useCallback(() => {
+    const currentYear = new Date().getFullYear();
+    const baseData = {
+      [primaryKey]: primaryKey === 'entryId' ? generateEntryId() : '',
+      year: currentYear
+    };
+
+    // Add user fields if userNames provided
+    if (userNames.length > 0) {
+      // For accounts that can be owned by both users, we need special handling
+      const userSection = schema.sections.find(s => s.name === 'users');
+      if (userSection && userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name))) {
+        // This is likely a performance/account schema - use "Joint" option
+        baseData.users = {
+          'Joint': {}
+        };
+      } else {
+        // Regular user-specific data
+        baseData.users = userNames.reduce((acc, name) => ({
+          ...acc,
+          [name]: {}
+        }), {});
+      }
+    }
+
+    // Add fields from schema
+    schema.sections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.name !== 'year' && field.name !== primaryKey) {
+          if (section.name === 'users' && userNames.length > 0) {
+            if (baseData.users['Joint']) {
+              baseData.users['Joint'][field.name] = '';
+            } else {
+              userNames.forEach(userName => {
+                if (!baseData.users[userName]) baseData.users[userName] = {};
+                baseData.users[userName][field.name] = '';
+              });
+            }
+          } else {
+            baseData[field.name] = '';
+          }
+        }
+      });
+    });
+
+    return baseData;
+  }, [primaryKey, userNames, schema.sections, title]);
+
+  // Enhanced CSV upload guard that handles paycheck validation
+  const handleEnhancedBeforeCSVImport = () => {
+    if (usePaycheckUsers && paycheckData) {
+      const yourName = paycheckData?.your?.name?.trim();
+      const dualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+      const spouseName = paycheckData?.spouse?.name?.trim();
+
+      if (!yourName) {
+        alert(
+          "Please fill out the Name field for 'Your' in the Paycheck Calculator before importing a CSV.\n\n" +
+          "Go to the Paycheck Calculator and enter a name for yourself. This ensures your data is mapped correctly."
+        );
+        return false;
+      }
+      if (dualMode && !spouseName) {
+        alert(
+          "Please fill out the Name field for 'Spouse' in the Paycheck Calculator before importing a CSV.\n\n" +
+          "Go to the Paycheck Calculator and enter a name for your spouse. This ensures your data is mapped correctly."
+        );
+        return false;
+      }
+    }
+    
+    // Call custom beforeCSVImport if provided
+    if (typeof beforeCSVImport === 'function') {
+      return beforeCSVImport();
+    }
+    
+    return true;
+  };
+
+  // Enhanced CSV headers generation
+  const getEffectiveCSVHeaders = (forceIncludeJoint = false) => {
+    if (usePaycheckUsers && userNames.length > 0) {
+      const headers = ['year'];
+      const userSection = schema.sections.find(s => s.name === 'users');
+      if (userSection) {
+        // Determine if this schema supports joint accounts
+        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+        // Always include all userNames and Joint (if supported) for both export and template
+        let ownerOptions = [...userNames];
+        if (supportsJoint) ownerOptions.push('Joint');
+        ownerOptions.forEach(ownerName => {
+          userSection.fields.forEach(field => {
+            headers.push(`${ownerName}-${field.name}`);
+          });
+        });
+      }
+      // Add other fields (excluding year and users)
+      schema.sections.forEach(section => {
+        if (section.name !== 'users') {
+          section.fields.forEach(field => {
+            if (field.name !== 'year') {
+              headers.push(field.name);
+            }
+          });
+        }
+      });
+      return headers;
+    }
+    return csvHeaders || [];
+  };
+
+  // Enhanced field CSS classes generation
+  const getEffectiveFieldCssClasses = () => {
+    if (usePaycheckUsers && userNames.length > 0) {
+      const classes = { ...fieldCssClasses };
+      
+      // Check if we have any "Joint" data
+      const hasJointData = Object.values(entryData).some(entry => 
+        entry.users && entry.users['Joint']
+      );
+      
+      // Add user-specific field classes using actual user names plus "Joint" if needed
+      const accountOwnerOptions = hasJointData 
+        ? [...userNames, 'Joint']
+        : userNames;
+        
+      accountOwnerOptions.forEach(ownerName => {
+        const userSection = schema.sections.find(s => s.name === 'users');
+        if (userSection) {
+          userSection.fields.forEach(field => {
+            classes[`${ownerName}-${field.name}`] = 'data-text-cell user-data-cell';
+          });
+        }
+      });
+      
+      return classes;
+    }
+    
+    return fieldCssClasses;
+  };
+
+  // Convert stored entry to form data - generic version
+  const getFormDataFromEntry = (entry) => {
+    const formData = {
+      [primaryKey]: entry[primaryKey] || (primaryKey === 'entryId' ? generateEntryId() : ''),
+      year: entry.year || ''
+    };
+
+    // Handle user fields - including "Joint" option
+    if (userNames.length > 0) {
+      // Check if this entry has "Joint" data
+      if (entry.users && entry.users['Joint']) {
+        formData.users = { 'Joint': entry.users['Joint'] };
+      } else {
+        formData.users = userNames.reduce((acc, name) => ({
+          ...acc,
+          [name]: entry.users?.[name] || {}
+        }), {});
+      }
+    }
+
+    // Handle other schema fields
+    schema.sections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.name !== 'year' && field.name !== primaryKey) {
+          if (section.name === 'users') {
+            // Already handled above
+          } else {
+            formData[field.name] = entry[field.name] || '';
+          }
+        }
+      });
+    });
+
+    return formData;
+  };
+
+  // Convert form data to stored entry - generic version
+  const getEntryFromFormData = (formData) => {
+    const entry = {
+      [primaryKey]: formData[primaryKey],
+      year: formData.year
+    };
+
+    // Handle user fields
+    if (userNames.length > 0 && formData.users) {
+      entry.users = formData.users;
+    }
+
+    // Handle other schema fields
+    schema.sections.forEach(section => {
+      section.fields.forEach(field => {
+        if (field.name !== 'year' && field.name !== primaryKey && section.name !== 'users') {
+          entry[field.name] = formData[field.name];
+        }
+      });
+    });
+
+    return entry;
+  };
+
+  // Generic CSV parsing with safe type conversion
+  const parseCSVRow = (row) => {
+    if (customParseCSVRow) {
+      return customParseCSVRow(row, generateEntryId, userNames);
+    }
+
+    if (!row || typeof row !== 'object') {
+      return null;
+    }
+    
+    const safeParseFloat = (value) => {
+      if (value === null || value === undefined || value === '') return '';
+      const parsed = parseFloat(value);
+      return isNaN(parsed) ? '' : parsed;
+    };
+    
+    const safeGetString = (value) => {
+      if (value === null || value === undefined) return '';
+      return String(value).trim();
+    };
+    
+    const safeParseInt = (value) => {
+      if (value === null || value === undefined || value === '') return '';
+      const parsed = parseInt(value);
+      return isNaN(parsed) ? '' : parsed;
+    };
+    
+    // Helper function to check if user data is empty/meaningless
+    const isUserDataEmpty = (userData) => {
+      if (!userData || typeof userData !== 'object') return true;
+      
+      // Check if all values are empty, null, undefined, or zero
+      return Object.values(userData).every(value => {
+        if (value === null || value === undefined || value === '') return true;
+        if (typeof value === 'number' && value === 0) return true;
+        if (typeof value === 'string' && value.trim() === '') return true;
+        return false;
+      });
+    };
+    
+    try {
+      const entry = {
+        [primaryKey]: generateEntryId(),
+        year: safeParseInt(row['year'] || row['Year'])
+      };
+
+      // Handle user fields - always parse all user columns (including Joint if schema supports it)
+      const userSection = schema.sections.find(s => s.name === 'users');
+      if (usePaycheckUsers && userSection && userNames.length > 0) {
+        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+        let ownerOptions = [...userNames];
+        if (supportsJoint) ownerOptions.push('Joint');
+        entry.users = {};
+        ownerOptions.forEach(ownerName => {
+          const userData = {};
+          userSection.fields.forEach(field => {
+            // Accept both dash and underscore for compatibility
+            const dashKey = `${ownerName}-${field.name}`;
+            const underscoreKey = `${ownerName}_${field.name}`;
+            const value = row[dashKey] ?? row[underscoreKey] ?? '';
+            if (field.format === 'currency' || field.type === 'number') {
+              userData[field.name] = safeParseFloat(value);
+            } else {
+              userData[field.name] = safeGetString(value);
+            }
+          });
+          
+          // Only add user data if it's not empty
+          if (!isUserDataEmpty(userData)) {
+            entry.users[ownerName] = userData;
+          }
+        });
+      }
+
+      // Handle other schema fields
+      schema.sections.forEach(section => {
+        if (section.name !== 'users') {
+          section.fields.forEach(field => {
+            if (field.name !== 'year') {
+              const value = row[field.name] || row[field.label];
+              if (field.format === 'currency' || field.type === 'number') {
+                entry[field.name] = safeParseFloat(value);
+              } else {
+                entry[field.name] = safeGetString(value);
+              }
+            }
+          });
+        }
+      });
+
+      return entry;
+    } catch (error) {
+      return null;
+    }
+  };
+
+  // Generic CSV formatting
+  const formatCSVRow = (entry) => {
+    // Always output all user columns (including Joint if schema supports it)
+    const row = [entry.year || ''];
+    const userSection = schema.sections.find(s => s.name === 'users');
+    if (usePaycheckUsers && userSection && userNames.length > 0) {
+      const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+      let ownerOptions = [...userNames];
+      if (supportsJoint) ownerOptions.push('Joint');
+      ownerOptions.forEach(ownerName => {
+        userSection.fields.forEach(field => {
+          row.push(entry.users?.[ownerName]?.[field.name] ?? '');
+        });
+      });
+    }
+    // Add other fields (excluding year and users)
+    schema.sections.forEach(section => {
+      if (section.name !== 'users') {
+        section.fields.forEach(field => {
+          if (field.name !== 'year') {
+            row.push(entry[field.name] || '');
+          }
+        });
+      }
+    });
+    return row;
+  };
+
+  // Load data from localStorage - Enhanced for consistency
+  useEffect(() => {
+    const currentUserNamesString = userNames.join(',');
+    
+    // Only load data if:
+    // 1. We haven't loaded initial data yet, OR
+    // 2. The user names have actually changed
+    if (!hasLoadedInitialData.current || currentUserNamesString !== lastUserNamesRef.current) {
+      const loadData = () => {
+        try {
+          const savedData = getData();
+
+          // Helper function to check if user data is empty/meaningless
+          const isUserDataEmpty = (userData) => {
+            if (!userData || typeof userData !== 'object') return true;
+            
+            // Check if all values are empty, null, undefined, or zero
+            return Object.values(userData).every(value => {
+              if (value === null || value === undefined || value === '') return true;
+              if (typeof value === 'number' && value === 0) return true;
+              if (typeof value === 'string' && value.trim() === '') return true;
+              return false;
+            });
+          };
+
+          let processedData = savedData;
+          
+          // Always apply name mapping if we're in usePaycheckUsers mode and have data
+          if (usePaycheckUsers && Object.keys(savedData).length > 0) {
+            processedData = {};
+            
+            Object.entries(savedData).forEach(([key, entry]) => {
+              if (entry.users && typeof entry.users === 'object') {
+                const mappedUsers = {};
+                
+                Object.entries(entry.users).forEach(([userName, userData]) => {
+                  // Apply name mapping
+                  const mappedName = getCurrentUserName(userName);
+                  
+                  // Only add user data if it's not empty
+                  if (!isUserDataEmpty(userData)) {
+                    // Ensure we preserve the full name including spaces
+                    mappedUsers[mappedName] = {
+                      ...userData,
+                      // Update the name field in the user data if it exists
+                      ...(userData.name !== undefined && { name: mappedName })
+                    };
+                  }
+                });
+                
+                processedData[key] = { ...entry, users: mappedUsers };
+              } else {
+                // Keep non-user data as-is
+                processedData[key] = entry;
+              }
+            });
+          }
+
+          setEntryData(processedData);
+          hasLoadedInitialData.current = true;
+          lastUserNamesRef.current = currentUserNamesString;
+        } catch (error) {
+          setEntryData({});
+        }
+      };
+
+      loadData();
+    }
+  }, [usePaycheckUsers, userNames, getData, setData, dataKey]);
 
   // Save data to localStorage
   useEffect(() => {
@@ -50,18 +593,19 @@ const DataManager = ({
   useEffect(() => {
     const handleResetAll = () => {
       setEntryData({});
-      setFormData(emptyFormData);
+      setFormData({});
       setShowAddEntry(false);
       setEditingKey(null);
+      // Reset tracking refs
+      hasLoadedInitialData.current = false;
+      lastUserNamesRef.current = '';
     };
 
     const handleExpandAll = () => {
-      // Trigger expand all sections if DataManager is used in components with sections
       window.dispatchEvent(new CustomEvent('expandAllSections'));
     };
 
     const handleCollapseAll = () => {
-      // Trigger collapse all sections if DataManager is used in components with sections
       window.dispatchEvent(new CustomEvent('collapseAllSections'));
     };
 
@@ -74,7 +618,7 @@ const DataManager = ({
       window.removeEventListener('expandAllSections', handleExpandAll);
       window.removeEventListener('collapseAllSections', handleCollapseAll);
     };
-  }, [emptyFormData]);
+  }, []);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -84,136 +628,128 @@ const DataManager = ({
   };
 
   const handleUserFieldChange = (userName, field, value) => {
+    if (field === 'name') {
+      // Handle name changes with data migration
+      const oldName = userName;
+      const newName = value.trim();
+      
+      if (oldName !== newName && newName) {
+        // Update name mapping and migrate data
+        const { updateNameMapping } = require('../utils/localStorage');
+        updateNameMapping(oldName, newName);
+        
+        // Update the current form data to reflect the new name
+        setFormData(prev => {
+          const newFormData = { ...prev };
+          
+          // Update the user field with the new name
+          Object.keys(newFormData).forEach(key => {
+            if (newFormData[key] && typeof newFormData[key] === 'object' && newFormData[key][oldName]) {
+              newFormData[key][newName] = { ...newFormData[key][oldName], name: newName };
+              delete newFormData[key][oldName];
+            }
+          });
+          
+          return newFormData;
+        });
+        
+        // Force a refresh of entry data to show updated names
+        setTimeout(() => {
+          const updatedData = getData();
+          setEntryData(updatedData);
+        }, 100);
+      }
+    }
+    
     setFormData(prev => ({
       ...prev,
-      users: {
-        ...prev.users,
-        [userName]: {
-          ...prev.users[userName],
-          [field]: value
-        }
+      [userName]: {
+        ...prev[userName],
+        [field]: value
       }
     }));
   };
 
-  const addEntry = () => {
-    const key = formData[primaryKey];
-    
-    // Primary key validation
-    if (!key) {
-      alert(`Please enter a valid ${schema.primaryKeyLabel.toLowerCase()}.`);
-      return;
+  // Helper to start editing a cell
+  const startEditCell = (rowKey, section, field, userName) => {
+    if (!allowEdit) return;
+    let value;
+    if (section === 'users' && userName) {
+      value = entryData[rowKey]?.users?.[userName]?.[field] ?? '';
+    } else {
+      value = entryData[rowKey]?.[field] ?? '';
     }
-    
-    if (entryData[key]) {
-      alert(`An entry with ${schema.primaryKeyLabel.toLowerCase()} "${key}" already exists.`);
-      return;
-    }
+    setEditingCell({ rowKey, section, field, userName });
+    setEditingCellValue(value);
+  };
 
-    // Validate required fields based on schema
-    const validationErrors = [];
-    
-    // Check each section for required fields
-    schema.sections.forEach(section => {
-      if (section.name === 'users' && userNames.length > 0) {
-        // Validate user-specific fields
-        userNames.forEach(userName => {
-          section.fields.forEach(field => {
-            if (field.required) {
-              const value = formData.users?.[userName]?.[field.name];
-              if (!value || (typeof value === 'string' && value.trim() === '')) {
-                validationErrors.push(`${userName} - ${field.label} is required`);
-              }
+  // Helper to save cell edit
+  const saveEditCell = () => {
+    if (!editingCell) return;
+    const { rowKey, section, field, userName } = editingCell;
+    setEntryData(prev => {
+      const updated = { ...prev };
+      if (!updated[rowKey]) return prev;
+      if (section === 'users' && userName) {
+        updated[rowKey] = {
+          ...updated[rowKey],
+          users: {
+            ...updated[rowKey].users,
+            [userName]: {
+              ...updated[rowKey].users?.[userName],
+              [field]: editingCellValue
             }
-          });
-        });
+          }
+        };
       } else {
-        // Validate regular fields
-        section.fields.forEach(field => {
-          if (field.required) {
-            const value = formData[field.name];
-            if (!value || (typeof value === 'string' && value.trim() === '') || 
-                (typeof value === 'number' && isNaN(value))) {
-              validationErrors.push(`${field.label} is required`);
-            }
-          }
-        });
+        updated[rowKey] = {
+          ...updated[rowKey],
+          [field]: editingCellValue
+        };
       }
+      return updated;
     });
+    setEditingCell(null);
+    setEditingCellValue('');
+  };
 
-    // Check for numeric field validation
-    schema.sections.forEach(section => {
-      if (section.name !== 'users') {
-        section.fields.forEach(field => {
-          if (field.format === 'currency' || field.type === 'number') {
-            const value = formData[field.name];
-            if (value && value !== '' && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) {
-              validationErrors.push(`${field.label} must be a valid positive number`);
-            }
-          }
-        });
-      } else if (userNames.length > 0) {
-        userNames.forEach(userName => {
-          section.fields.forEach(field => {
-            if (field.format === 'currency' || field.type === 'number') {
-              const value = formData.users?.[userName]?.[field.name];
-              if (value && value !== '' && (isNaN(parseFloat(value)) || parseFloat(value) < 0)) {
-                validationErrors.push(`${userName} - ${field.label} must be a valid positive number`);
-              }
-            }
-          });
-        });
-      }
-    });
+  // Cancel cell edit
+  const cancelEditCell = () => {
+    setEditingCell(null);
+    setEditingCellValue('');
+  };
 
-    // Show validation errors if any
-    if (validationErrors.length > 0) {
-      alert(`Please fix the following errors:\n\n${validationErrors.join('\n')}`);
-      return;
-    }
-
-    // All validation passed, proceed with adding the entry
-    try {
-      const newEntry = getEntryFromFormData(formData);
-      
-      setEntryData(prev => ({
-        ...prev,
-        [key]: newEntry
-      }));
-      
-      // Reset form
-      setFormData(emptyFormData);
-      setShowAddEntry(false);
-      
-      // Optional success feedback
-      console.log(`Successfully added entry: ${key}`);
-    } catch (error) {
-      console.error('Error adding entry:', error);
-      alert('An error occurred while adding the entry. Please try again.');
+  // Handle Enter/Escape in cell input
+  const handleCellInputKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      saveEditCell();
+    } else if (e.key === 'Escape') {
+      cancelEditCell();
     }
   };
 
-  const editEntry = (key) => {
-    const data = entryData[key];
-    const formDataFromEntry = getFormDataFromEntry(data);
-    setFormData(formDataFromEntry);
-    setEditingKey(key);
-    setShowAddEntry(true);
-  };
+  const addEntry = () => {
+    if (!allowAdd) return;
+    // Always generate a new unique key
+    const newEntry = generateEmptyFormData();
+    const key = newEntry[primaryKey] || `${primaryKey}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-  const saveEditedEntry = () => {
-    if (editingKey) {
-      const updatedEntry = getEntryFromFormData(formData);
-      
-      setEntryData(prev => ({
-        ...prev,
-        [editingKey]: updatedEntry
-      }));
-      
-      setEditingKey(null);
-      setShowAddEntry(false);
-      setFormData(emptyFormData);
-    }
+    let uniqueKey = key;
+    setEntryData(prev => {
+      // If key already exists, generate a new one
+      while (prev[uniqueKey]) {
+        uniqueKey = `${primaryKey}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        newEntry[primaryKey] = uniqueKey;
+      }
+      return { [uniqueKey]: newEntry, ...prev };
+    });
+
+    setNewlyAddedKey(uniqueKey);
+
+    // Start editing the primary key cell of the new entry
+    setTimeout(() => {
+      startEditCell(uniqueKey, 'combined', primaryKey);
+    }, 100);
   };
 
   const deleteEntry = (key) => {
@@ -226,39 +762,50 @@ const DataManager = ({
     }
   };
 
-  const cancelEdit = () => {
-    setEditingKey(null);
-    setShowAddEntry(false);
-    setFormData(emptyFormData);
+  // Add reset functionality
+  const resetAllData = () => {
+    if (window.confirm('Are you sure you want to reset all data in this section? This cannot be undone.')) {
+      try {
+        // Clear the data using the setData function
+        setData({});
+        
+        // Reset local state
+        setEntryData({});
+        setShowAddEntry(false);
+        setEditingKey(null);
+        setFormData({});
+        
+        // Dispatch update event
+        setTimeout(() => {
+          window.dispatchEvent(new CustomEvent(`${dataKey}Updated`, { detail: {} }));
+        }, 50);
+        
+        alert('Data has been reset successfully.');
+      } catch (error) {
+        alert('Failed to reset data. Please try again.');
+      }
+    }
   };
 
-  // Helper function to generate CSV content
   const generateCSVContent = (data, headers, rowFormatter) => {
     const rows = [headers];
     data.forEach(entry => {
       const row = rowFormatter(entry);
-      // Convert object to array of values if needed
       const rowArray = Array.isArray(row) ? row : Object.values(row);
       rows.push(rowArray);
     });
     
-    // Properly escape and quote CSV values
     return rows.map(row =>
       row.map(value => {
-        // Convert to string and handle null/undefined
         const stringValue = value == null ? '' : String(value);
-        
-        // If value contains comma, quote, or newline, wrap in quotes and escape internal quotes
         if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
           return `"${stringValue.replace(/"/g, '""')}"`;
         }
-        
         return stringValue;
       }).join(',')
     ).join('\n');
   };
 
-  // Download CSV file
   const downloadCSV = () => {
     const sortedEntries = Object.values(entryData).sort((a, b) => {
       const aVal = a[sortField];
@@ -266,7 +813,7 @@ const DataManager = ({
       return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
     });
     
-    const csvContent = generateCSVContent(sortedEntries, csvHeaders, formatCSVRow);
+    const csvContent = generateCSVContent(sortedEntries, getEffectiveCSVHeaders(), formatCSVRow);
   
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
@@ -279,11 +826,15 @@ const DataManager = ({
     URL.revokeObjectURL(url);
   };
 
-  // Download CSV template
   const downloadTemplate = () => {
-    const templateEntries = Object.values(csvTemplate);
-    const csvContent = generateCSVContent(templateEntries, csvHeaders, formatCSVRow);
-  
+    // Always include Joint columns in template if schema supports it
+    const templateEntries = [generateEmptyFormData()];
+    const csvContent = generateCSVContent(
+      templateEntries,
+      getEffectiveCSVHeaders(true), // forceIncludeJoint = true
+      formatCSVRow
+    );
+
     const blob = new Blob([csvContent], { type: 'text/csv' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -295,13 +846,11 @@ const DataManager = ({
     URL.revokeObjectURL(url);
   };
 
-  // Parse CSV content using papaparse
   const parseCSV = (csvText) => {
-    // Call beforeCSVImport if provided
-    if (typeof beforeCSVImport === 'function') {
-      const proceed = beforeCSVImport();
+    if (typeof handleEnhancedBeforeCSVImport === 'function') {
+      const proceed = handleEnhancedBeforeCSVImport();
       if (!proceed) {
-        return []; // Abort CSV parsing
+        return [];
       }
     }
     try {
@@ -309,17 +858,12 @@ const DataManager = ({
         header: true,
         skipEmptyLines: true
       });
-      if (result.errors && result.errors.length > 0) {
-        console.error('CSV parsing errors:', result.errors);
-      }
       return result.data.map(row => parseCSVRow(row)).filter(Boolean);
     } catch (error) {
-      console.error('Error parsing CSV:', error);
       return [];
     }
   };
 
-  // Handle file upload
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -337,7 +881,6 @@ const DataManager = ({
     reader.readAsText(file);
   };
 
-  // Get all available sortable fields from schema
   const getSortableFields = () => {
     const fields = [{ key: primaryKey, label: schema.primaryKeyLabel }];
     
@@ -354,34 +897,254 @@ const DataManager = ({
     return fields;
   };
 
-  // Use currentSortField and currentSortOrder for sorting
-  const sortedKeys = Object.keys(entryData).sort((a, b) => {
-    const aEntry = entryData[a];
-    const bEntry = entryData[b];
-    let aVal = aEntry[currentSortField];
-    let bVal = bEntry[currentSortField];
+  // Initialize user filters when userNames change
+  useEffect(() => {
+    if (usePaycheckUsers && userNames.length > 0) {
+      // Get all users that actually exist in the data, applying name mapping
+      const allUsersInData = new Set();
+      Object.values(entryData).forEach(entry => {
+        if (entry.users && typeof entry.users === 'object') {
+          Object.keys(entry.users).forEach(user => {
+            // Apply name mapping to get current name
+            const mappedName = getCurrentUserName(user);
+            allUsersInData.add(mappedName);
+          });
+        }
+      });
+
+      const hasJointData = allUsersInData.has('Joint');
+      
+      // Initialize filters to show only users that are currently enabled in paycheck calculator
+      const initialFilters = {};
+      
+      // Check if dual calculator mode is enabled
+      const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+      
+      // Always include the first user if they exist in data
+      if (userNames[0] && allUsersInData.has(userNames[0])) {
+        initialFilters[userNames[0]] = true;
+      }
+      
+      // Only include spouse and Joint if dual mode is enabled
+      if (isDualMode) {
+        if (userNames[1] && allUsersInData.has(userNames[1])) {
+          initialFilters[userNames[1]] = true;
+        }
+        
+        if (hasJointData) {
+          initialFilters['Joint'] = true;
+        }
+      }
+      
+      // Include any other users found in data that aren't in userNames (legacy data)
+      allUsersInData.forEach(user => {
+        if (!userNames.includes(user) && user !== 'Joint') {
+          // Only show legacy users if they're not spouse-related or if dual mode is enabled
+          initialFilters[user] = true;
+        }
+      });
+      
+      setUserFilters(initialFilters);
+    }
+  }, [usePaycheckUsers, userNames, entryData, paycheckData]);
+
+  // Get all years present in the data
+  const getAvailableYears = () => {
+    const years = Object.values(entryData)
+      .map(entry => entry.year)
+      .filter(year => year !== undefined && year !== null)
+      .map(year => Number(year))
+      .filter(year => !isNaN(year));
+    // Unique and sorted descending
+    return Array.from(new Set(years)).sort((a, b) => b - a);
+  };
+
+  // Initialize year filters when data changes
+  useEffect(() => {
+    const years = getAvailableYears();
+    if (years.length > 0) {
+      const initial = {};
+      years.forEach(y => { initial[y] = true; });
+      setYearFilters(initial);
+    }
+  }, [entryData]);
+
+  // Toggle year filter
+  const toggleYearFilter = (year) => {
+    setYearFilters(prev => ({
+      ...prev,
+      [year]: !prev[year]
+    }));
+  };
+
+  // Select all years
+  const selectAllYears = () => {
+    const years = getAvailableYears();
+    const newFilters = {};
+    years.forEach(y => { newFilters[y] = true; });
+    setYearFilters(newFilters);
+  };
+
+  // Deselect all years
+  const deselectAllYears = () => {
+    const years = getAvailableYears();
+    const newFilters = {};
+    years.forEach(y => { newFilters[y] = false; });
+    setYearFilters(newFilters);
+  };
+
+  // Filter entries based on active user filters and year filters - ENHANCED
+  const getFilteredEntryData = () => {
+    let filtered = entryData;
     
-    // Handle different data types
-    if (typeof aVal === 'string' && typeof bVal === 'string') {
-      aVal = aVal.toLowerCase();
-      bVal = bVal.toLowerCase();
-      if (currentSortOrder === 'asc') return aVal.localeCompare(bVal);
-      return bVal.localeCompare(aVal);
+    // User filter - only apply if we have user filters and usePaycheckUsers is enabled
+    if (usePaycheckUsers && Object.keys(userFilters).length > 0) {
+      filtered = Object.fromEntries(
+        Object.entries(filtered).filter(([key, entry]) => {
+          if (entry.users && typeof entry.users === 'object') {
+            // Check if ANY of the entry's users (after name mapping) are actively selected in the filter
+            const entryUsers = Object.keys(entry.users);
+            const shouldInclude = entryUsers.some(ownerName => {
+              // Apply name mapping to get current name
+              const mappedName = getCurrentUserName(ownerName);
+              // User must exist in filter AND be set to true
+              return userFilters.hasOwnProperty(mappedName) && userFilters[mappedName] === true;
+            });
+            
+            return shouldInclude;
+          }
+          // Include entries without users object by default (fallback)
+          return true;
+        })
+      );
     }
     
-    // Handle numbers
-    const aNum = Number(aVal);
-    const bNum = Number(bVal);
-    
-    if (!isNaN(aNum) && !isNaN(bNum)) {
-      if (currentSortOrder === 'asc') return aNum - bNum;
-      return bNum - aNum;
+    // Year filter
+    if (Object.keys(yearFilters).length > 0) {
+      filtered = Object.fromEntries(
+        Object.entries(filtered).filter(([key, entry]) => {
+          return yearFilters[entry.year] === true;
+        })
+      );
     }
     
-    // Fallback to string comparison
-    if (currentSortOrder === 'asc') return String(aVal).localeCompare(String(bVal));
-    return String(bVal).localeCompare(String(aVal));
-  });
+    return filtered;
+  };
+
+  // Get available filter options
+  const getAvailableFilterOptions = () => {
+    const allUsersInData = new Set();
+    
+    // Collect all users that actually exist in the data, applying name mapping
+    Object.values(entryData).forEach(entry => {
+      if (entry.users && typeof entry.users === 'object') {
+        Object.keys(entry.users).forEach(user => {
+          // Apply name mapping to get current name
+          const mappedName = getCurrentUserName(user);
+          allUsersInData.add(mappedName);
+        });
+      }
+    });
+    
+    // Create options array based on current paycheck calculator settings
+    const options = [];
+    
+    // Check if dual calculator mode is enabled
+    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+    
+    // Always add first user if they exist in the data
+    if (userNames[0] && allUsersInData.has(userNames[0])) {
+      options.push(userNames[0]);
+    }
+    
+    // Only add spouse-related options if dual mode is enabled
+    if (isDualMode) {
+      // Add second user (spouse) if they exist in the data
+      if (userNames[1] && allUsersInData.has(userNames[1])) {
+        options.push(userNames[1]);
+      }
+      
+      // Add Joint if it exists in any entry
+      if (allUsersInData.has('Joint')) {
+        options.push('Joint');
+      }
+    }
+    
+    // Add any other users found in data that aren't already included (legacy data)
+    allUsersInData.forEach(user => {
+      if (!options.includes(user)) {
+        options.push(user);
+      }
+    });
+    
+    return options;
+  };
+
+  // Toggle user filter
+  const toggleUserFilter = (userName) => {
+    setUserFilters(prev => ({
+      ...prev,
+      [userName]: !prev[userName]
+    }));
+  };
+
+  // Select all users
+  const selectAllUsers = () => {
+    const allOptions = getAvailableFilterOptions();
+    const newFilters = {};
+    allOptions.forEach(option => {
+      newFilters[option] = true;
+    });
+    setUserFilters(newFilters);
+  };
+
+  // Deselect all users
+  const deselectAllUsers = () => {
+    const newFilters = {};
+    Object.keys(userFilters).forEach(key => {
+      newFilters[key] = false;
+    });
+    setUserFilters(newFilters);
+  };
+
+  // Use filtered data for sorting
+  const filteredEntryData = getFilteredEntryData();
+  // Always put the newly added key at the top if it exists
+  const sortedKeys = React.useMemo(() => {
+    const keys = Object.keys(filteredEntryData);
+    if (newlyAddedKey && keys.includes(newlyAddedKey)) {
+      return [newlyAddedKey, ...keys.filter(k => k !== newlyAddedKey)];
+    }
+    // Default sort
+    return keys.sort((a, b) => {
+      const aEntry = filteredEntryData[a];
+      const bEntry = filteredEntryData[b];
+      let aVal = aEntry[currentSortField];
+      let bVal = bEntry[currentSortField];
+      if (typeof aVal === 'string' && typeof bVal === 'string') {
+        aVal = aVal.toLowerCase();
+        bVal = bVal.toLowerCase();
+        if (currentSortOrder === 'asc') return aVal.localeCompare(bVal);
+        return bVal.localeCompare(aVal);
+      }
+      const aNum = Number(aVal);
+      const bNum = Number(bVal);
+      if (!isNaN(aNum) && !isNaN(bNum)) {
+        if (currentSortOrder === 'asc') return aNum - bNum;
+        return bNum - aNum;
+      }
+      if (currentSortOrder === 'asc') return String(aVal).localeCompare(String(bVal));
+      return String(bVal).localeCompare(String(aVal));
+    });
+  }, [filteredEntryData, currentSortField, currentSortOrder, newlyAddedKey]);
+
+  // When editing is finished, remove highlight after a short delay
+  useEffect(() => {
+    if (editingCell === null && newlyAddedKey) {
+      const timeout = setTimeout(() => setNewlyAddedKey(null), 1800);
+      return () => clearTimeout(timeout);
+    }
+  }, [editingCell, newlyAddedKey]);
 
   const renderFormField = (field, section = null) => {
     const fieldConfig = schema.sections.find(s => s.fields.some(f => f.name === field))?.fields.find(f => f.name === field) ||
@@ -390,15 +1153,15 @@ const DataManager = ({
     if (!fieldConfig) return null;
 
     return (
-      <div key={field} className="historical-field-group">
-        <label className="historical-field-label">
+      <div key={field} className="data-field-group">
+        <label className="data-field-label">
           {fieldConfig.label}:
         </label>
         <input
           type={fieldConfig.type || 'text'}
           value={formData[field] || ''}
           onChange={(e) => handleInputChange(field, e.target.value)}
-          className={`historical-field-input ${fieldConfig.className || ''}`}
+          className={`data-field-input ${fieldConfig.className || ''}`}
           placeholder={fieldConfig.placeholder || `Enter ${fieldConfig.label.toLowerCase()}`}
         />
       </div>
@@ -412,336 +1175,554 @@ const DataManager = ({
     if (!fieldConfig) return null;
 
     return (
-      <div key={field} className="historical-field-group">
-        <label className="historical-field-label">
+      <div key={field} className="data-field-group">
+        <label className="data-field-label">
           {fieldConfig.label}:
         </label>
         <input
           type={fieldConfig.type || 'text'}
           value={formData.users?.[userName]?.[field] || ''}
           onChange={(e) => handleUserFieldChange(userName, field, e.target.value)}
-          className={`historical-field-input ${fieldConfig.className || ''}`}
+          className={`data-field-input ${fieldConfig.className || ''}`}
           placeholder={fieldConfig.placeholder || `Enter ${fieldConfig.label.toLowerCase()}`}
         />
       </div>
     );
   };
 
-  const renderTableCell = (entry, field) => {
+  const renderTableCell = (entry, field, rowKey) => {
     const fieldConfig = schema.sections.flatMap(s => s.fields).find(f => f.name === field);
     const value = entry[field];
 
-    if (!fieldConfig) return '-';
-    
-    if (fieldConfig.format === 'currency') {
-      return formatCurrency(value || 0);
-    } else if (fieldConfig.format === 'percentage') {
-      return `${((value || 0) * 100).toFixed(2)}%`;
-    } else {
-      return value || '-';
+    if (
+      allowEdit &&
+      editingCell &&
+      editingCell.rowKey === rowKey &&
+      editingCell.section === 'combined' &&
+      editingCell.field === field
+    ) {
+      return (
+        <input
+          type={fieldConfig?.type || 'text'}
+          value={editingCellValue}
+          autoFocus
+          onChange={e => setEditingCellValue(e.target.value)}
+          onBlur={saveEditCell}
+          onKeyDown={handleCellInputKeyDown}
+          className="data-table-inline-input"
+        />
+      );
     }
+
+    let displayValue;
+    if (!fieldConfig) displayValue = value || '';
+    else if (fieldConfig.format === 'currency') {
+      displayValue = new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(value || 0);
+    } else if (fieldConfig.className === 'percentage' || field === 'effectiveTaxRate') {
+      const percentValue = (value || 0) * 100;
+      displayValue = `${percentValue.toFixed(1)}%`;
+    } else {
+      displayValue = value || '';
+    }
+
+    return (
+      <span
+        onClick={() => startEditCell(rowKey, 'combined', field)}
+        style={allowEdit ? { cursor: 'pointer' } : undefined}
+        title={allowEdit ? 'Click to edit' : undefined}
+      >
+        {displayValue}
+      </span>
+    );
   };
 
-  const renderUserTableCell = (entry, userName, field) => {
+  // Spreadsheet-like cell rendering for user fields
+  const renderUserTableCell = (entry, userName, field, rowKey) => {
     const userSection = schema.sections.find(s => s.name === 'users');
     const fieldConfig = userSection?.fields.find(f => f.name === field);
-    const value = entry.users?.[userName]?.[field];
-    
-    if (!fieldConfig) return '-';
-    
-    if (fieldConfig.format === 'currency') {
-      return formatCurrency(value || 0);
-    } else if (fieldConfig.format === 'percentage') {
-      return `${((value || 0) * 100).toFixed(2)}%`;
-    } else {
-      return value || '-';
+    // Fix: Only access entry.users[userName] if it exists
+    const value = entry.users && entry.users[userName] ? entry.users[userName][field] : undefined;
+
+    // Spreadsheet-like: if this cell is being edited, show input
+    if (
+      allowEdit &&
+      editingCell &&
+      editingCell.rowKey === rowKey &&
+      editingCell.section === 'users' &&
+      editingCell.field === field &&
+      editingCell.userName === userName
+    ) {
+      return (
+        <input
+          type={fieldConfig?.type || 'text'}
+          value={editingCellValue}
+          autoFocus
+          onChange={e => setEditingCellValue(e.target.value)}
+          onBlur={saveEditCell}
+          onKeyDown={handleCellInputKeyDown}
+          className="data-table-inline-input"
+        />
+      );
     }
+
+    // Otherwise, show value and make cell clickable
+    let displayValue;
+    if (!fieldConfig) displayValue = value || '-';
+    else if (fieldConfig.format === 'currency') displayValue = formatCurrency(value || 0);
+    else if (fieldConfig.format === 'percentage') displayValue = `${((value || 0) * 100).toFixed(2)}%`;
+    else displayValue = value || '-';
+
+    return (
+      <span
+        onClick={() => startEditCell(rowKey, 'users', field, userName)}
+        style={allowEdit ? { cursor: 'pointer' } : undefined}
+        title={allowEdit ? 'Click to edit' : undefined}
+      >
+        {displayValue}
+      </span>
+    );
   };
 
-  // Extract form rendering logic into reusable function
-  const renderEntryForm = (isEditMode = false) => (
-    <div style={{ marginBottom: '20px', padding: '20px', background: '#f8fafc', borderRadius: '12px', border: '2px dashed #cbd5e1' }}>
-      <h3 style={{ color: '#374151', marginBottom: '16px', textAlign: 'center' }}>
-        {isEditMode ? `Edit Entry` : 'Add New Entry'}
-      </h3>
-      
-      <div className="add-year-form">
-        {/* Primary key field */}
-        <div className="form-group">
-          <label className="form-label">{schema.primaryKeyLabel}:</label>
+  // Helper to render the import/export section
+  const renderImportExportSection = () => (
+    <div
+      className={
+        "import-export-section" +
+        (Object.keys(entryData).length > 0 ? " compact" : "")
+      }
+    >
+      <div className="import-export-header">
+        <h3 className="import-export-title">📊 Data Management</h3>
+        <p className="import-export-subtitle">
+          Import and export your {title.toLowerCase()} using CSV files
+        </p>
+      </div>
+      <div className="import-export-actions">
+        <button
+          onClick={downloadCSV}
+          className="import-export-btn export"
+          disabled={Object.keys(entryData).length === 0}
+        >
+          📥 Download CSV
+        </button>
+        <button
+          onClick={downloadTemplate}
+          className="import-export-btn export"
+        >
+          📋 Download Template
+        </button>
+        <label className="import-export-btn import">
+          📤 Upload CSV
           <input
-            type={schema.primaryKeyType || 'text'}
-            value={formData[primaryKey]}
-            onChange={(e) => handleInputChange(primaryKey, schema.primaryKeyType === 'number' ? parseInt(e.target.value) : e.target.value)}
-            className="add-year-input"
-            placeholder={`Enter ${schema.primaryKeyLabel.toLowerCase()}`}
+            type="file"
+            accept=".csv"
+            onChange={handleFileUpload}
+            className="file-input-hidden"
           />
-        </div>
-
-        {/* Render form sections */}
-        <div className="historical-sections">
-          {schema.sections.map(section => (
-            <div key={section.name}>
-              <h3 className="historical-section-title">{section.title}</h3>
-              
-              {section.name === 'users' && userNames.length > 0 ? (
-                userNames.map(userName => (
-                  <div key={userName} className="historical-section">
-                    <h4 className="historical-section-title">{userName}</h4>
-                    <div className="historical-fields-grid">
-                      {section.fields.map(field => renderUserFormField(userName, field.name))}
-                    </div>
-                  </div>
-                ))
-              ) : section.name !== 'users' ? (
-                <div className="historical-fields-grid">
-                  {section.fields.map(field => renderFormField(field.name, section.name))}
-                </div>
-              ) : null}
-            </div>
-          ))}
-        </div>
-
-        <div className="form-actions">
-          <button 
-            onClick={isEditMode ? saveEditedEntry : addEntry} 
-            className="btn-primary"
-          >
-            {isEditMode ? 'Save Changes' : 'Add Entry'}
-          </button>
-          <button onClick={cancelEdit} className="btn-secondary">
-            Cancel
-          </button>
-        </div>
+        </label>
+        <button
+          onClick={resetAllData}
+          className="import-export-btn danger"
+          style={{
+            backgroundColor: '#dc2626',
+            borderColor: '#dc2626',
+            color: 'white'
+          }}
+        >
+          🗑️ Reset Data
+        </button>
       </div>
     </div>
   );
 
   return (
     <div>
-      {/* Data Management Section */}
-      <div className="import-export-section" style={{ marginBottom: '20px' }}>
-        <div className="import-export-header">
-          <h3 className="import-export-title">📊 Data Management</h3>
-          <p className="import-export-subtitle">
-            Import and export your {title.toLowerCase()} using CSV files
-          </p>
+      {/* Render import/export section at the top only if there is no data */}
+      {Object.keys(entryData).length === 0 && (
+        <div style={{ marginBottom: '32px' }}>
+          {renderImportExportSection()}
         </div>
-        
-        <div className="import-export-actions">
-          <button
-            onClick={downloadCSV}
-            className="import-export-btn export"
-            disabled={Object.keys(entryData).length === 0}
-          >
-            📥 Download CSV
-          </button>
-          
-          <button
-            onClick={downloadTemplate}
-            className="import-export-btn export"
-          >
-            📋 Download Template
-          </button>
-          
-          <label className="import-export-btn import">
-            📤 Upload CSV
-            <input
-              type="file"
-              accept=".csv"
-              onChange={handleFileUpload}
-              className="file-input-hidden"
-            />
-          </label>
-        </div>
-      </div>
+      )}
 
-      {/* Data Table */}
-      {sortedKeys.length > 0 ? (
-        <div className="historical-table-container">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-            <h2>📊 {title} Overview</h2>
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-              {/* Sorting Controls */}
-              <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-                <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151' }}>
-                  Sort by:
-                </label>
-                <select
-                  value={currentSortField}
-                  onChange={(e) => setCurrentSortField(e.target.value)}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {getSortableFields().map(field => (
-                    <option key={field.key} value={field.key}>
-                      {field.label}
-                    </option>
+      {/* User & Year & Combined-section Filter Section */}
+      {usePaycheckUsers && userNames.length > 0 && Object.keys(entryData).length > 0 && (
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 8 }}>
+            <button
+              className="filter-toggle-btn"
+              onClick={() => setShowFilters(v => !v)}
+              style={{
+                fontSize: '0.9rem',
+                padding: '4px 12px',
+                borderRadius: '6px',
+                border: '1px solid #e2e8f0',
+                background: '#f8fafc',
+                color: '#0891b2',
+                cursor: 'pointer'
+              }}
+              aria-expanded={showFilters}
+              aria-controls="filter-section-compact"
+            >
+              {showFilters ? 'Hide Filters ▲' : 'Show Filters ▼'}
+            </button>
+            <span className="filter-section-summary">
+              Showing {Object.keys(getFilteredEntryData()).length} of {Object.keys(entryData).length} entries
+            </span>
+          </div>
+          {showFilters && (
+            <div className="filter-section-compact" id="filter-section-compact">
+              {/* Account Owner Filter */}
+              <div className="user-filter-section compact filter-fixed-width">
+                <div className="user-filter-header">
+                  <h3 className="user-filter-title">
+                    👥 Filter by Account Owner
+                  </h3>
+                  <div className="user-filter-actions">
+                    <button onClick={selectAllUsers} className="user-filter-btn">
+                      Select All
+                    </button>
+                    <button onClick={deselectAllUsers} className="user-filter-btn">
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                <div className="user-filter-buttons">
+                  {getAvailableFilterOptions().map(option => (
+                    <button
+                      key={option}
+                      onClick={() => toggleUserFilter(option)}
+                      className={`user-filter-btn ${userFilters[option] ? 'active' : ''}`}
+                    >
+                      {option === 'Joint' ? '👫' : '👤'} {option}
+                    </button>
                   ))}
-                </select>
-                <select
-                  value={currentSortOrder}
-                  onChange={(e) => setCurrentSortOrder(e.target.value)}
-                  style={{
-                    padding: '6px 8px',
-                    borderRadius: '6px',
-                    border: '1px solid #d1d5db',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  <option value="desc">High to Low</option>
-                  <option value="asc">Low to High</option>
-                </select>
+                </div>
               </div>
-              
-              {allowAdd && !showAddEntry ? (
-                <button onClick={() => setShowAddEntry(true)} className="btn-primary">
-                  ➕ Add New Entry
-                </button>
-              ) : allowAdd && (
-                <button onClick={cancelEdit} className="btn-secondary">
-                  Cancel
-                </button>
-              )}
+              {/* Year Filter */}
+              <div className="user-filter-section compact filter-fixed-width">
+                <div className="user-filter-header">
+                  <h3 className="user-filter-title">
+                    📅 Filter by Year
+                  </h3>
+                  <div className="user-filter-actions">
+                    <button onClick={selectAllYears} className="user-filter-btn">
+                      Select All
+                    </button>
+                    <button onClick={deselectAllYears} className="user-filter-btn">
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                <div className="user-filter-buttons">
+                  {getAvailableYears().map(year => (
+                    <button
+                      key={year}
+                      onClick={() => toggleYearFilter(year)}
+                      className={`user-filter-btn ${yearFilters[year] ? 'active' : ''}`}
+                    >
+                      {year}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              {/* Combined-section Filter */}
+              <div className="user-filter-section compact filter-fixed-width">
+                <div className="user-filter-header">
+                  <h3 className="user-filter-title">
+                    🧮 Filter by Data Fields
+                  </h3>
+                  <div className="user-filter-actions">
+                    <button onClick={selectAllCombinedSectionFields} className="user-filter-btn">
+                      Select All
+                    </button>
+                    <button onClick={deselectAllCombinedSectionFields} className="user-filter-btn">
+                      Clear All
+                    </button>
+                  </div>
+                </div>
+                <div className="user-filter-buttons" style={{ flexWrap: 'wrap', maxWidth: 400 }}>
+                  {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
+                    section.fields.filter(f => f.name !== 'year').map(field => (
+                      <button
+                        key={field.name}
+                        onClick={() => toggleCombinedSectionFilter(field.name)}
+                        className={`user-filter-btn ${combinedSectionFilters[field.name] ? 'active' : ''}`}
+                        title={section.title}
+                      >
+                        {field.label}
+                      </button>
+                    ))
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      
+      {sortedKeys.length > 0 ? (
+        <>
+          <div className="data-table-container" style={{ marginBottom: '20px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
+              <h2>📊 {title} Overview</h2>
+              <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                  <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap' }}>
+                    Sort by:
+                  </label>
+                  <select
+                    value={currentSortField}
+                    onChange={(e) => setCurrentSortField(e.target.value)}
+                    style={{
+                      padding: '6px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '0.9rem',
+                      minWidth: '120px'
+                    }}
+                  >
+                    {getSortableFields().map(field => (
+                      <option key={field.key} value={field.key}>
+                        {field.label}
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    value={currentSortOrder}
+                    onChange={(e) => setCurrentSortOrder(e.target.value)}
+                    style={{
+                      padding: '6px 8px',
+                      borderRadius: '6px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '0.9rem',
+                      minWidth: '100px'
+                    }}
+                  >
+                    <option value="desc">High to Low</option>
+                    <option value="asc">Low to High</option>
+                  </select>
+                </div>
+                
+                {allowAdd && (
+                  <button onClick={addEntry} className="btn-primary">
+                    ➕ Add New Entry
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <div className="data-table">
+              <table>
+                <thead>
+                  <tr>
+                    <th className="year-column">
+                      Year
+                    </th>
+                    {/* Dynamic header generation for account owners */}
+                    {(() => {
+                      const userSection = schema.sections.find(s => s.name === 'users');
+                      if (!userSection || !usePaycheckUsers || Object.keys(userFilters).length === 0) {
+                        return null;
+                      }
+
+                      // Get all available filter options (users that actually exist in data)
+                      const availableUsers = getAvailableFilterOptions();
+                      
+                      // Only show headers for users that are actively selected in the filter
+                      const activeUsers = availableUsers.filter(name => 
+                        userFilters[name] === true && name !== 'Joint'
+                      );
+                      const showJoint = userFilters['Joint'] === true;
+                      
+                      const headers = [];
+                      
+                      // Add headers for active individual users
+                      activeUsers.forEach(name => {
+                        headers.push(
+                          <th key={name} className="user-section" colSpan={userSection.fields.length}>
+                            {name}
+                          </th>
+                        );
+                      });
+                      
+                      // Add Joint header if Joint is active
+                      if (showJoint) {
+                        headers.push(
+                          <th key="joint" className="user-section" colSpan={userSection.fields.length}>
+                            Joint
+                          </th>
+                        );
+                      }
+                      
+                      return headers;
+                    })()}
+                    {/* Only show combined-section columns that are enabled in combinedSectionFilters */}
+                    {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section => {
+                      const visibleFields = section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]);
+                      if (visibleFields.length === 0) return null;
+                      return (
+                        <th key={section.name} className="combined-section" colSpan={visibleFields.length}>
+                          {section.title}
+                        </th>
+                      );
+                    })}
+                    {(allowEdit || allowDelete) && <th className="actions-column">Actions</th>}
+                  </tr>
+                  <tr className="sub-header">
+                    <th className="year-column-sub"></th>
+                    {/* Dynamic sub-header generation */}
+                    {(() => {
+                      const userSection = schema.sections.find(s => s.name === 'users');
+                      if (!userSection || !usePaycheckUsers || Object.keys(userFilters).length === 0) {
+                        return null;
+                      }
+
+                      // Get all available filter options (users that actually exist in data)
+                      const availableUsers = getAvailableFilterOptions();
+                      
+                      // Only show sub-headers for users that are actively selected in the filter
+                      const activeUsers = availableUsers.filter(name => 
+                        userFilters[name] === true && name !== 'Joint'
+                      );
+                      const showJoint = userFilters['Joint'] === true;
+                      
+                      const subHeaders = [];
+                      
+                      // Add sub-headers for active individual users
+                      activeUsers.forEach(name => {
+                        userSection.fields.forEach(field => {
+                          subHeaders.push(
+                            <th key={`${name}-${field.name}`} className="user-field-header">{field.label}</th>
+                          );
+                        });
+                      });
+                      
+                      // Add Joint sub-headers if Joint is active
+                      if (showJoint) {
+                        userSection.fields.forEach(field => {
+                          subHeaders.push(
+                            <th key={`joint-${field.name}`} className="user-field-header">{field.label}</th>
+                          );
+                        });
+                      }
+                      
+                      return subHeaders;
+                    })()}
+                    {/* Only show combined-section sub-headers for enabled fields */}
+                    {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
+                      section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]).map(field => (
+                        <th key={field.name} className="combined-field-header">{field.label}</th>
+                      ))
+                    )}
+                    {(allowEdit || allowDelete) && <th className="actions-column-sub"></th>}
+                  </tr>
+                </thead>
+                <tbody>
+                  {sortedKeys.map(key => {
+                    const entry = filteredEntryData[key];
+                    const isNew = key === newlyAddedKey;
+                    return (
+                      <tr
+                        key={key}
+                        className={`data-row${isNew ? ' new-row-highlight' : ''}`}
+                        style={isNew ? { animation: 'new-row-flash 1.2s' } : undefined}
+                      >
+                        <td className={`${fieldCssClasses[primaryKey] || 'data-year-cell'} year-cell`}>
+                          {entry.year || entry[primaryKey]}
+                        </td>
+                        {/* Dynamic cell generation for user data */}
+                        {(() => {
+                          const userSection = schema.sections.find(s => s.name === 'users');
+                          if (!userSection || !usePaycheckUsers || Object.keys(userFilters).length === 0) {
+                            return null;
+                          }
+
+                          // Get all available filter options (users that actually exist in data)
+                          const availableUsers = getAvailableFilterOptions();
+                          
+                          // Only show cells for users that are actively selected in the filter
+                          const activeUsers = availableUsers.filter(name => 
+                            userFilters[name] === true && name !== 'Joint'
+                          );
+                          const showJoint = userFilters['Joint'] === true;
+                          
+                          const cells = [];
+                          
+                          // Add cells for active individual users
+                          activeUsers.forEach(name => {
+                            userSection.fields.forEach(field => {
+                              cells.push(
+                                <td key={`${name}-${field.name}`} className={`${fieldCssClasses[`${name}-${field.name}`] || 'historical-text-cell'} user-data-cell`}>
+                                  {renderUserTableCell(entry, name, field.name, key)}
+                                </td>
+                              );
+                            });
+                          });
+                          
+                          // Add Joint cells if Joint is active
+                          if (showJoint) {
+                            userSection.fields.forEach(field => {
+                              cells.push(
+                                <td key={`joint-${field.name}`} className={`${fieldCssClasses[`Joint-${field.name}`] || 'historical-text-cell'} user-data-cell joint-data-cell`}>
+                                  {renderUserTableCell(entry, 'Joint', field.name, key)}
+                                </td>
+                              );
+                            });
+                          }
+                          
+                          return cells;
+                        })()}
+                        {/* Only show combined-section cells for enabled fields */}
+                        {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
+                          section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]).map(field => (
+                            <td key={field.name} className={`${fieldCssClasses[field.name] || (field.format === 'currency' ? 'data-currency-cell' : field.className === 'percentage' ? 'data-percentage-cell' : 'data-text-cell')} combined-data-cell`}>
+                              {renderTableCell(entry, field.name, key)}
+                            </td>
+                          ))
+                        )}
+                        {(allowEdit || allowDelete) && (
+                          <td className="data-actions-cell actions-cell">
+                            <div className="data-action-buttons">
+                              {allowDelete && (
+                                <button
+                                  onClick={() => deleteEntry(key)}
+                                  className="data-btn-icon delete"
+                                  title="Delete entry"
+                                >
+                                  🗑️
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        )}
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           </div>
-
-          {/* Add/Edit Entry Form */}
-          {showAddEntry && renderEntryForm(!!editingKey)}
-
-          {/* Data Table */}
-          <div className="historical-table">
-            <table>
-              <thead>
-                <tr>
-                  {/* Always show 'Year' if entry has a year field, otherwise fallback to primary key */}
-                  <th className="year-column">
-                    {Object.values(entryData).some(e => e && e.year !== undefined)
-                      ? 'Year'
-                      : schema.primaryKeyLabel}
-                  </th>
-                  {userNames.length > 0 && schema.sections.find(s => s.name === 'users') && 
-                    userNames.map(name => (
-                      <th key={name} className="user-section" colSpan={schema.sections.find(s => s.name === 'users').fields.length}>
-                        {name}
-                      </th>
-                    ))
-                  }
-                  {schema.sections.filter(s => s.name !== 'users').map(section => (
-                    <th key={section.name} className="combined-section" colSpan={
-                      // Exclude 'year' field from colSpan if it's already rendered as the first column
-                      section.fields.filter(f => f.name !== 'year').length
-                    }>
-                      {section.title}
-                    </th>
-                  ))}
-                  {(allowEdit || allowDelete) && <th className="actions-column">Actions</th>}
-                </tr>
-                <tr className="sub-header">
-                  <th></th>
-                  {userNames.length > 0 && schema.sections.find(s => s.name === 'users') &&
-                    userNames.map(name => (
-                      schema.sections.find(s => s.name === 'users').fields.map(field => (
-                        <th key={`${name}-${field.name}`}>{field.label}</th>
-                      ))
-                    ))
-                  }
-                  {schema.sections.filter(s => s.name !== 'users').map(section =>
-                    section.fields
-                      .filter(field => field.name !== 'year') // Exclude 'year' from sub-header
-                      .map(field => (
-                        <th key={field.name}>{field.label}</th>
-                      ))
-                  )}
-                  {(allowEdit || allowDelete) && <th></th>}
-                </tr>
-              </thead>
-              <tbody>
-                {sortedKeys.map(key => {
-                  const entry = entryData[key];
-                  return (
-                    <tr key={key} className="historical-data-row">
-                      {/* Always show year if present, otherwise fallback to primary key */}
-                      {entry && entry.year !== undefined ? (
-                        <td className="historical-year-cell">{entry.year}</td>
-                      ) : (
-                        <td className="historical-year-cell">{entry[primaryKey]}</td>
-                      )}
-                      {userNames.length > 0 && schema.sections.find(s => s.name === 'users') &&
-                        userNames.map(userName => (
-                          schema.sections.find(s => s.name === 'users').fields.map(field => (
-                            <td key={`${userName}-${field.name}`} className="historical-text-cell">
-                              {renderUserTableCell(entry, userName, field.name)}
-                            </td>
-                          ))
-                        ))
-                      }
-                      {schema.sections.filter(s => s.name !== 'users').map(section =>
-                        section.fields
-                          .filter(field => field.name !== 'year') // Exclude 'year' from section fields
-                          .map(field => (
-                            <td key={field.name} className={
-                              [
-                                'historical-currency-cell',
-                                fieldCssClasses[field.name] || ''
-                              ].filter(Boolean).join(' ')
-                            }>
-                              {renderTableCell(entry, field.name)}
-                            </td>
-                          ))
-                      )}
-                      {(allowEdit || allowDelete) && (
-                        <td className="historical-actions-cell">
-                          <div className="historical-action-buttons">
-                            {allowEdit && (
-                              <button
-                                onClick={() => editEntry(key)}
-                                className="historical-btn-icon edit"
-                                title="Edit entry"
-                              >
-                                ✏️
-                              </button>
-                            )}
-                            {allowDelete && (
-                              <button
-                                onClick={() => deleteEntry(key)}
-                                className="historical-btn-icon delete"
-                                title="Delete entry"
-                              >
-                                🗑️
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      )}
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+          {/* Render import/export section below table if data exists */}
+          <div style={{ marginBottom: '20px' }}>
+            {renderImportExportSection()}
           </div>
-        </div>
+        </>
       ) : (
-        <div className="historical-empty-state">
+        <div className="data-empty-state">
           <div className="empty-state-icon">📊</div>
           <h2>No Data Yet</h2>
           <p>{subtitle}</p>
           
           {allowAdd && (
-            <div style={{ marginTop: '30px' }}>
-              {!showAddEntry ? (
-                <button onClick={() => setShowAddEntry(true)} className="btn-primary">
-                  ➕ Add New Entry
-                </button>
-              ) : (
-                <div style={{ maxWidth: '800px', margin: '0 auto' }}>
-                  {renderEntryForm(false)}
-                </div>
-              )}
+            <div style={{ marginTop: '20px' }}>
+              <button onClick={addEntry} className="btn-primary">
+                ➕ Add New Entry
+              </button>
             </div>
           )}
         </div>

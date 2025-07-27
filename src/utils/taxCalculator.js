@@ -52,7 +52,7 @@ export function calculateFederalTax(taxableIncome, filingStatus, w4Type = 'new',
     tax += additionalTax;
   }
 
-  return Math.max(0, tax);
+  return tax;
 }
 
 export function calculateTakeHomePay(

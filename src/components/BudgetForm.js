@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FormContext } from '../context/FormContext';
 import { getBudgetData, setBudgetData, getPaycheckData } from '../utils/localStorage';
 import { calculateExtraPaycheckIncome } from '../utils/calculationHelpers';
+import Navigation from './Navigation';
 
 // Define empty budget categories constant
 const EMPTY_BUDGET_CATEGORIES = [];
@@ -71,9 +72,7 @@ const BudgetForm = () => {
           // Save migrated data back to localStorage if migration occurred
           if (JSON.stringify(migratedData) !== JSON.stringify(savedData)) {
             setBudgetData(migratedData);
-          }
-          
-          console.log('Budget data loaded and migrated:', migratedData); // Debug log
+          }          
         } else {
           // Initialize with empty budget categories instead of hardcoded defaults
           setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
@@ -91,7 +90,6 @@ const BudgetForm = () => {
 
     // Listen for budget data updates from FormContext with consistent event handling
     const handleBudgetUpdate = (event) => {
-      console.log('Budget update event received:', event.detail); // Debug log
       loadBudgetData();
     };
 
@@ -116,7 +114,6 @@ const BudgetForm = () => {
 
     // Listen for paycheck data updates with consistent event handling
     const handlePaycheckUpdate = (event) => {
-      console.log('Paycheck update event received:', event.detail); // Debug log
       loadPaycheckData();
     };
 
@@ -208,16 +205,6 @@ const BudgetForm = () => {
       }
     }
   }, [budgetCategories]);
-
-  // Add effect to log formData changes for debugging
-  useEffect(() => {
-    console.log('FormData budget impacting changed:', {
-      your: formData.yourBudgetImpacting,
-      spouse: formData.spouseBudgetImpacting,
-      showSpouse: formData.showSpouseCalculator
-    });
-  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator]);
-
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -392,11 +379,20 @@ const BudgetForm = () => {
     };
 
     const handleResetAll = () => {
-      setBudgetData(EMPTY_BUDGET_CATEGORIES);
-      setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
-      setCollapsedCategories(new Set());
-      setNewCategoryName('');
-      setShowAddCategory(false);
+      try {
+        // Clear budget data from localStorage
+        setBudgetData([]);
+        
+        // Reset all local state
+        setBudgetCategories([]);
+        setCollapsedCategories(new Set());
+        setNewCategoryName('');
+        setShowAddCategory(false);
+        setActiveBudgetMode('standard');
+        
+      } catch (error) {
+        console.error('Error resetting budget data:', error);
+      }
     };
 
     window.addEventListener('expandAllSections', handleExpandAll);
@@ -408,13 +404,13 @@ const BudgetForm = () => {
       window.removeEventListener('collapseAllSections', handleCollapseAll);
       window.removeEventListener('resetAllData', handleResetAll);
     };
-  }, [budgetCategories]);
+  }, [budgetCategories, setBudgetData]);
 
   // Add enhanced demo data loading function for settings menu
   const loadDemoDataWithExport = async () => {
     try {
-      const { importDemoDataWithExportOption } = await import('../utils/localStorage');
-      const result = await importDemoDataWithExportOption();
+      const { importDemoData } = await import('../utils/localStorage');
+      const result = await importDemoData();
       
       if (result.success) {
         if (window.confirm('Demo data loaded successfully! The page will refresh to show the demo data. You can explore all features with realistic financial data.')) {
@@ -430,305 +426,294 @@ const BudgetForm = () => {
   };
 
   return (
-    <div className="app-container">
-      {/* Remove Floating Settings Menu */}
-      
-      <div className="header">
-        <h1>💰 Budget Planner</h1>
-        <p>Plan And Track Your Monthly Budget Based On Your Calculated Income</p>
-      </div>
-
-      {/* Income Summary */}
-      <div className="household-summary">
-        <div className="household-header">
-          <h2>📊 Income Summary</h2>
+    <>
+      <Navigation />
+      <div className="app-container">
+        <div className="header">
+          <h1>💰 Budget Planner</h1>
+          <p>Plan And Track Your Monthly Budget Based On Your Calculated Income</p>
         </div>
-        
-        <div className="household-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
-          <div className="metric-card">
-            <div className="metric-value">
-              {formatCurrency(formData.combinedMonthlyTakeHome)}
-            </div>
-            <div className="metric-label">Combined Monthly Net (2 paychecks)</div>
+
+        {/* Income Summary */}
+        <div className="household-summary">
+          <div className="household-header">
+            <h2>📊 Income Summary</h2>
           </div>
-
-          <div className="metric-card">
-            <div className="metric-value">
-              {formatCurrency(formData.combinedMonthlyTakeHome * 12)}
-            </div>
-            <div className="metric-label">Combined Annual Net</div>
-          </div>
-
-          {/* Extra Paycheck Details in place of metric */}
-          {extraPaycheckInfo.totalExtraPaychecks > 0 ? (
-            <div className="metric-card">
-              <div className="metric-value" style={{ fontSize: '1rem', lineHeight: '1.4' }}>
-                {extraPaycheckInfo.individuals.map((individual, index) => (
-                  <div key={index} style={{ marginBottom: index < extraPaycheckInfo.individuals.length - 1 ? '8px' : '0' }}>
-                    <strong>{individual.name}:</strong> {formatCurrency(individual.netPerPaycheck)}/paycheck × {individual.totalExtraPaychecks} = {formatCurrency(individual.totalExtraIncome)}
-                    <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
-                      {individual.extraMonths.map(m => m.name.slice(0, 3)).join(', ')}
-                    </div>
-                  </div>
-                ))}
-              </div>
-              <div className="metric-label">
-                Extra Paychecks ({new Date().getFullYear()})
-              </div>
-            </div>
-          ) : (
-            <div className="metric-card">
-              <div className="metric-value" style={{ fontSize: '1.2rem', color: '#94a3b8' }}>
-                No extra paychecks
-              </div>
-              <div className="metric-label">Extra Paychecks ({new Date().getFullYear()})</div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Budget Overview */}
-      <div className="budget-overview">
-        <div className="budget-overview-header">
-          <h2>💡 Budget Overview</h2>
           
-          {/* Budget Mode Selectors */}
-          <div className="budget-mode-selectors">
-            {budgetModes.map(mode => (
-              <button
-                key={mode.key}
-                onClick={() => setActiveBudgetMode(mode.key)}
-                className={`budget-mode-selector ${activeBudgetMode === mode.key ? 'active' : ''}`}
-                style={{
-                  backgroundColor: activeBudgetMode === mode.key ? mode.color : 'transparent',
-                  borderColor: mode.color,
-                  color: activeBudgetMode === mode.key ? 'white' : mode.color
-                }}
-                title={`Switch to ${mode.name}`}
-              >
-                {mode.icon} {mode.name}
-              </button>
-            ))}
-          </div>
-        </div>
-        
-        <div className="budget-overview-metrics">
-          <div className="budget-metric-card">
-            <div className="budget-metric-value">
-              {formatCurrency(calculateTotalByMode(activeBudgetMode))}
+          <div className="household-metrics" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div className="metric-card">
+              <div className="metric-value">
+                {formatCurrency(formData.combinedMonthlyTakeHome)}
+              </div>
+              <div className="metric-label">Combined Monthly Net (2 paychecks)</div>
             </div>
-            <div className="budget-metric-label">Total Budget ({budgetModes.find(m => m.key === activeBudgetMode)?.name})</div>
-          </div>
 
-          <div className={`budget-metric-card ${remainingIncome < 0 ? 'negative' : 'positive'}`}>
-            <div className="budget-metric-value">
-              {formatCurrency(remainingIncome)}
+            <div className="metric-card">
+              <div className="metric-value">
+                {formatCurrency(formData.combinedMonthlyTakeHome * 12)}
+              </div>
+              <div className="metric-label">Combined Annual Net</div>
             </div>
-            <div className="budget-metric-label">
-              {remainingIncome < 0 ? 'Over Budget' : 'Remaining Income'}
-            </div>
-          </div>
-        </div>
-      </div>
 
-      {/* Budget Categories */}
-      <div className="budget-categories">
-        <div className="budget-categories-header">
-          <h2>📂 Budgets</h2>
-          <div className="categories-header-actions">
-            <div className="drag-hint">💡 Drag categories to reorder</div>
-            <button
-              onClick={() => setShowAddCategory(true)}
-              className="btn-primary"
-            >
-              ➕ Add Category
-            </button>
-          </div>
-        </div>
-
-        {/* Add Category Form */}
-        {showAddCategory && (
-          <div className="add-category-form">
-            <div className="form-group">
-              <input
-                type="text"
-                placeholder="Enter category name"
-                value={newCategoryName}
-                onChange={(e) => setNewCategoryName(e.target.value)}
-                className="form-input"
-                onKeyPress={(e) => e.key === 'Enter' && addCategory()}
-              />
-            </div>
-            <div className="form-actions">
-              <button onClick={addCategory} className="btn-primary">Add</button>
-              <button onClick={() => {setShowAddCategory(false); setNewCategoryName('');}} className="btn-secondary">Cancel</button>
-            </div>
-          </div>
-        )}
-
-        {/* Drag and Drop Categories List */}
-        <DragDropContext onDragEnd={handleDragEnd}>
-          <Droppable droppableId="budget-categories">
-            {(provided, snapshot) => (
-              <div
-                {...provided.droppableProps}
-                ref={provided.innerRef}
-                className={`categories-list ${snapshot.isDraggingOver ? 'drag-active' : ''}`}
-              >
-                {budgetCategories.map((category, index) => (
-                  <Draggable 
-                    key={category.id} 
-                    draggableId={category.id.toString()} 
-                    index={index}
-                    isDragDisabled={category.isAutoManaged}
-                  >
-                    {(provided, snapshot) => (
-                      <div
-                        ref={provided.innerRef}
-                        {...provided.draggableProps}
-                        className={`category-card ${snapshot.isDragging ? 'dragging' : ''} ${collapsedCategories.has(category.id) ? 'collapsed' : ''} ${category.isAutoManaged ? 'auto-managed' : ''}`}
-                      >
-                        <div className="category-header">
-                          <div className="category-title">
-                            {!category.isAutoManaged && (
-                              <div
-                                {...provided.dragHandleProps}
-                                className="drag-handle"
-                                title="Drag to reorder"
-                              >
-                                ⋮⋮
-                              </div>
-                            )}
-                            {category.isAutoManaged && (
-                              <div className="auto-managed-indicator" title="Auto-managed by paycheck calculator">
-                                🔒
-                              </div>
-                            )}
-                            <button
-                              onClick={() => toggleCategoryCollapse(category.id)}
-                              className="collapse-toggle"
-                              title={collapsedCategories.has(category.id) ? "Expand category" : "Collapse category"}
-                            >
-                              {collapsedCategories.has(category.id) ? '▶️' : '▼'}
-                            </button>
-                            <h3>
-                              {category.name}
-                              {category.isAutoManaged && (
-                                <span className="auto-managed-badge">Auto-Managed</span>
-                              )}
-                            </h3>
-                            <span className="category-total">
-                              {formatCurrency(calculateCategoryTotal(category, activeBudgetMode))}
-                              <span className="category-percentage">
-                                {calculateCategoryPercentage(category, activeBudgetMode).toFixed(1)}% of net
-                              </span>
-                            </span>
-                          </div>
-                          
-                          {/* Budget Mode Labels */}
-                          <div className="budget-mode-labels">
-                            {budgetModes.map(mode => (
-                              <div 
-                                key={mode.key} 
-                                className={`budget-mode-label ${activeBudgetMode === mode.key ? 'active' : ''}`}
-                              >
-                                {mode.icon} {mode.name.split(' ')[0]}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Budget Items */}
-                        {!collapsedCategories.has(category.id) && (
-                          <>
-                            <div className="budget-items">
-                              {category.items.map(item => (
-                                <div key={item.id} className={`budget-item ${category.isAutoManaged ? 'auto-managed-item' : ''}`}>
-                                  <div className="item-name">
-                                    <input
-                                      type="text"
-                                      value={item.name}
-                                      onChange={(e) => updateItem(category.id, item.id, 'name', e.target.value)}
-                                      className="item-name-input"
-                                      readOnly={category.isAutoManaged}
-                                      title={category.isAutoManaged ? "This item is managed by the paycheck calculator" : ""}
-                                    />
-                                  </div>
-                                  
-                                  <div className="item-amounts">
-                                    {budgetModes.map(mode => (
-                                      <div key={mode.key} className={`amount-input ${activeBudgetMode === mode.key ? 'active' : ''}`}>
-                                        <div className="amount-input-label">
-                                          <span>{mode.icon}</span>
-                                          <span>{mode.name.split(' ')[0]}</span>
-                                        </div>
-                                        <input
-                                          type="number"
-                                          value={item[mode.key]}
-                                          onChange={(e) => updateItem(category.id, item.id, mode.key, e.target.value)}
-                                          className="form-input"
-                                          placeholder="0"
-                                          readOnly={category.isAutoManaged}
-                                          title={category.isAutoManaged ? "This amount is managed by the paycheck calculator" : ""}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                  
-                                  {!category.isAutoManaged && (
-                                    <button
-                                      onClick={() => deleteItem(category.id, item.id)}
-                                      className="btn-danger item-delete"
-                                    >
-                                      🗑️
-                                    </button>
-                                  )}
-                                </div>
-                              ))}
-                            </div>
-
-                            {/* Category Actions - Moved to Bottom */}
-                            {!category.isAutoManaged && (
-                              <div className="category-footer">
-                                <div className="category-actions">
-                                  <button
-                                    onClick={() => addItem(category.id)}
-                                    className="btn-secondary"
-                                  >
-                                    ➕ Add Item
-                                  </button>
-                                  <button
-                                    onClick={() => deleteCategory(category.id)}
-                                    className="btn-danger"
-                                  >
-                                    🗑️ Delete Category
-                                  </button>
-                                </div>
-                              </div>
-                            )}
-                            
-                            {/* Auto-managed category notice */}
-                            {category.isAutoManaged && (
-                              <div className="category-footer">
-                                <div className="auto-managed-notice">
-                                  💡 This category is automatically updated based on your paycheck calculator settings.
-                                  To modify these amounts, update your Budget Impacting Contributions in the paycheck calculator.
-                                </div>
-                              </div>
-                            )}
-                          </>
-                        )}
+            {/* Extra Paycheck Details in place of metric */}
+            {extraPaycheckInfo.totalExtraPaychecks > 0 ? (
+              <div className="metric-card">
+                <div className="metric-value" style={{ fontSize: '1rem', lineHeight: '1.4' }}>
+                  {extraPaycheckInfo.individuals.map((individual, index) => (
+                    <div key={index} style={{ marginBottom: index < extraPaycheckInfo.individuals.length - 1 ? '8px' : '0' }}>
+                      <strong>{individual.name}:</strong> {formatCurrency(individual.netPerPaycheck)}/paycheck × {individual.totalExtraPaychecks} = {formatCurrency(individual.totalExtraIncome)}
+                      <div style={{ fontSize: '0.75rem', color: '#94a3b8' }}>
+                        {individual.extraMonths.map(m => m.name.slice(0, 3)).join(', ')}
                       </div>
-                    )}
-                  </Draggable>
-                ))}
-                {provided.placeholder}
+                    </div>
+                  ))}
+                </div>
+                <div className="metric-label">
+                  Extra Paychecks ({new Date().getFullYear()})
+                </div>
+              </div>
+            ) : (
+              <div className="metric-card">
+                <div className="metric-value" style={{ fontSize: '1.2rem', color: '#94a3b8' }}>
+                  No extra paychecks
+                </div>
+                <div className="metric-label">Extra Paychecks ({new Date().getFullYear()})</div>
               </div>
             )}
-          </Droppable>
-        </DragDropContext>
+          </div>
+        </div>
+
+        {/* Budget Overview */}
+        <div className="budget-overview">
+          <div className="budget-overview-header">
+            <h2>💡 Budget Overview</h2>
+            
+            {/* Budget Mode Selectors */}
+            <div className="budget-mode-selectors">
+              {budgetModes.map(mode => (
+                <button
+                  key={mode.key}
+                  onClick={() => setActiveBudgetMode(mode.key)}
+                  className={`budget-mode-selector ${activeBudgetMode === mode.key ? 'active' : ''}`}
+                  style={{
+                    backgroundColor: activeBudgetMode === mode.key ? mode.color : 'transparent',
+                    borderColor: mode.color,
+                    color: activeBudgetMode === mode.key ? 'white' : mode.color
+                  }}
+                  title={`Switch to ${mode.name}`}
+                >
+                  {mode.icon} {mode.name}
+                </button>
+              ))}
+            </div>
+          </div>
+          
+          <div className="budget-overview-metrics">
+            <div className="budget-metric-card">
+              <div className="budget-metric-value">
+                {formatCurrency(calculateTotalByMode(activeBudgetMode))}
+              </div>
+              <div className="budget-metric-label">Total Budget ({budgetModes.find(m => m.key === activeBudgetMode)?.name})</div>
+            </div>
+
+            <div className={`budget-metric-card ${remainingIncome < 0 ? 'negative' : 'positive'}`}>
+              <div className="budget-metric-value">
+                {formatCurrency(remainingIncome)}
+              </div>
+              <div className="budget-metric-label">
+                {remainingIncome < 0 ? 'Over Budget' : 'Remaining Income'}
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Budget Categories */}
+        <div className="budget-categories">
+          <div className="budget-categories-header">
+            <h2>📂 Budgets</h2>
+            <div className="categories-header-actions">
+              <div className="drag-hint">💡 Drag categories to reorder</div>
+              <button
+                onClick={() => setShowAddCategory(true)}
+                className="btn-primary"
+              >
+                ➕ Add Category
+              </button>
+            </div>
+          </div>
+
+          {/* Add Category Form */}
+          {showAddCategory && (
+            <div className="add-category-form">
+              <div className="form-group">
+                <input
+                  type="text"
+                  placeholder="Enter category name"
+                  value={newCategoryName}
+                  onChange={(e) => setNewCategoryName(e.target.value)}
+                  className="form-input"
+                  onKeyPress={(e) => e.key === 'Enter' && addCategory()}
+                />
+              </div>
+              <div className="form-actions">
+                <button onClick={addCategory} className="btn-primary">Add</button>
+                <button onClick={() => {setShowAddCategory(false); setNewCategoryName('');}} className="btn-secondary">Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Drag and Drop Categories List */}
+          <DragDropContext onDragEnd={handleDragEnd}>
+            <Droppable droppableId="budget-categories">
+              {(provided, snapshot) => (
+                <div
+                  {...provided.droppableProps}
+                  ref={provided.innerRef}
+                  className={`categories-list ${snapshot.isDraggingOver ? 'drag-active' : ''}`}
+                >
+                  {budgetCategories.map((category, index) => (
+                    <Draggable 
+                      key={category.id} 
+                      draggableId={category.id.toString()} 
+                      index={index}
+                      isDragDisabled={category.isAutoManaged}
+                    >
+                      {(provided, snapshot) => (
+                        <div
+                          ref={provided.innerRef}
+                          {...provided.draggableProps}
+                          className={`category-card ${snapshot.isDragging ? 'dragging' : ''} ${collapsedCategories.has(category.id) ? 'collapsed' : ''} ${category.isAutoManaged ? 'auto-managed' : ''}`}
+                        >
+                          <div className="category-header">
+                            <div className="category-title">
+                              {!category.isAutoManaged && (
+                                <div
+                                  {...provided.dragHandleProps}
+                                  className="drag-handle"
+                                  title="Drag to reorder"
+                                >
+                                  ⋮⋮
+                                </div>
+                              )}
+                              {category.isAutoManaged && (
+                                <div className="auto-managed-indicator" title="Auto-managed by paycheck calculator">
+                                  🔒
+                                </div>
+                              )}
+                              <button
+                                onClick={() => toggleCategoryCollapse(category.id)}
+                                className="collapse-toggle"
+                                title={collapsedCategories.has(category.id) ? "Expand category" : "Collapse category"}
+                              >
+                                {collapsedCategories.has(category.id) ? '▶️' : '▼'}
+                              </button>
+                              <h3>
+                                {category.name}
+                                {category.isAutoManaged && (
+                                  <span className="auto-managed-badge">Auto-Managed</span>
+                                )}
+                              </h3>
+                              <span className="category-total">
+                                {formatCurrency(calculateCategoryTotal(category, activeBudgetMode))}
+                                <span className="category-percentage">
+                                  {calculateCategoryPercentage(category, activeBudgetMode).toFixed(1)}% of Monthly Net
+                                </span>
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Budget Items */}
+                          {!collapsedCategories.has(category.id) && (
+                            <>
+                              <div className="budget-items">
+                                {category.items.map(item => (
+                                  <div key={item.id} className={`budget-item ${category.isAutoManaged ? 'auto-managed-item' : ''}`}>
+                                    <div className="item-name">
+                                      <input
+                                        type="text"
+                                        value={item.name}
+                                        onChange={(e) => updateItem(category.id, item.id, 'name', e.target.value)}
+                                        className="item-name-input"
+                                        readOnly={category.isAutoManaged}
+                                        title={category.isAutoManaged ? "This item is managed by the paycheck calculator" : ""}
+                                      />
+                                    </div>
+                                    
+                                    <div className="item-amounts">
+                                      {budgetModes.map(mode => (
+                                        <div key={mode.key} className={`amount-input ${activeBudgetMode === mode.key ? 'active' : ''}`}>
+                                          <div className="amount-input-label">
+                                            <span>{mode.icon}</span>
+                                            <span>{mode.name.split(' ')[0]}</span>
+                                          </div>
+                                          <input
+                                            type="number"
+                                            value={item[mode.key]}
+                                            onChange={(e) => updateItem(category.id, item.id, mode.key, e.target.value)}
+                                            className="form-input"
+                                            placeholder="0"
+                                            readOnly={category.isAutoManaged}
+                                            title={category.isAutoManaged ? "This amount is managed by the paycheck calculator" : ""}
+                                          />
+                                        </div>
+                                      ))}
+                                    </div>
+                                    
+                                    {!category.isAutoManaged && (
+                                      <button
+                                        onClick={() => deleteItem(category.id, item.id)}
+                                        className="btn-danger item-delete"
+                                      >
+                                        🗑️
+                                      </button>
+                                    )}
+                                  </div>
+                                ))}
+                              </div>
+
+                              {/* Category Actions - Moved to Bottom */}
+                              {!category.isAutoManaged && (
+                                <div className="category-footer">
+                                  <div className="category-actions">
+                                    <button
+                                      onClick={() => addItem(category.id)}
+                                      className="btn-secondary"
+                                    >
+                                      ➕ Add Item
+                                    </button>
+                                    <button
+                                      onClick={() => deleteCategory(category.id)}
+                                      className="btn-danger"
+                                    >
+                                      🗑️ Delete Category
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
+                              
+                              {/* Auto-managed category notice */}
+                              {category.isAutoManaged && (
+                                <div className="category-footer">
+                                  <div className="auto-managed-notice">
+                                    💡 This category is automatically updated based on your paycheck calculator settings.
+                                    To modify these amounts, update your Budget Impacting Contributions in the paycheck calculator.
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </div>
+                      )}
+                    </Draggable>
+                  ))}
+                  {provided.placeholder}
+                </div>
+              )}
+            </Droppable>
+          </DragDropContext>
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

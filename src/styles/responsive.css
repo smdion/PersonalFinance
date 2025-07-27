@@ -1,0 +1,521 @@
+/* ===================================================================
+   RESPONSIVE DESIGN UTILITIES
+   ================================================================ */
+
+/* Responsive Display Classes */
+.mobile-only {
+  display: none;
+}
+
+.desktop-only {
+  display: block;
+}
+
+.tablet-up {
+  display: block;
+}
+
+.tablet-down {
+  display: none;
+}
+
+/* Responsive Spacing */
+@media (max-width: 768px) {
+  .mobile-only {
+    display: block;
+  }
+  
+  .desktop-only {
+    display: none;
+  }
+  
+  .tablet-down {
+    display: block;
+  }
+  
+  .tablet-up {
+    display: none;
+  }
+  
+  /* Mobile spacing adjustments */
+  .mobile-p-10 {
+    padding: 10px;
+  }
+  
+  .mobile-p-15 {
+    padding: 15px;
+  }
+  
+  .mobile-m-10 {
+    margin: 10px;
+  }
+  
+  .mobile-mb-15 {
+    margin-bottom: 15px;
+  }
+  
+  .mobile-text-sm {
+    font-size: 0.875rem;
+  }
+  
+  .mobile-text-center {
+    text-align: center;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .tablet-only {
+    display: block;
+  }
+}
+
+/* ===================================================================
+   GLOBAL RESPONSIVE BREAKPOINTS
+   ================================================================ */
+
+/* Large Desktop (1200px and up) */
+@media (min-width: 1200px) {
+  .app-container {
+    max-width: 1400px;
+    padding: 25px;
+    padding-top: 85px;
+  }
+  
+  .header h1 {
+    font-size: 2.8rem;
+  }
+  
+  .header p {
+    font-size: 1.3rem;
+  }
+}
+
+/* Desktop (992px to 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+  .app-container {
+    max-width: 1200px;
+    padding: 22px;
+    padding-top: 82px;
+  }
+  
+  .header h1 {
+    font-size: 2.6rem;
+  }
+}
+
+/* Tablet Landscape (768px to 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+  .app-container {
+    max-width: 960px;
+    padding: 20px;
+    padding-top: 80px;
+  }
+  
+  .header h1 {
+    font-size: 2.2rem;
+  }
+  
+  .header p {
+    font-size: 1.1rem;
+  }
+  
+  /* Navigation adjustments */
+  .nav-menu {
+    gap: 1rem;
+  }
+  
+  .nav-link {
+    padding: 6px 12px;
+    font-size: 0.9rem;
+  }
+}
+
+/* Tablet Portrait (576px to 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+  .app-container {
+    max-width: 720px;
+    padding: 18px;
+    padding-top: 75px;
+  }
+  
+  .header {
+    margin-bottom: 30px;
+  }
+  
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .header p {
+    font-size: 1rem;
+  }
+  
+  /* Card adjustments */
+  .calculator-card,
+  .data-table-container,
+  .import-export-section {
+    border-radius: 16px;
+    margin: 0 -8px;
+  }
+  
+  /* Form adjustments */
+  .form-grid-2,
+  .form-grid-3 {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}
+
+/* Mobile Large (480px to 575px) */
+@media (min-width: 480px) and (max-width: 575px) {
+  .app-container {
+    padding: 15px;
+    padding-top: 70px;
+  }
+  
+  .header h1 {
+    font-size: 1.8rem;
+  }
+  
+  .header p {
+    font-size: 0.95rem;
+    margin-bottom: 15px;
+  }
+  
+  .header-controls {
+    margin-top: 15px;
+  }
+  
+  .header-toggle {
+    padding: 10px 16px;
+    font-size: 0.9rem;
+  }
+  
+  /* Button adjustments */
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 18px;
+    font-size: 0.9rem;
+  }
+  
+  /* Navigation mobile adjustments */
+  .navigation {
+    padding: 12px 15px;
+  }
+  
+  .nav-brand {
+    font-size: 1.2rem;
+  }
+}
+
+/* Mobile Small (320px to 479px) */
+@media (max-width: 479px) {
+  .app-container {
+    padding: 12px;
+    padding-top: 65px;
+  }
+  
+  .header {
+    margin-bottom: 25px;
+  }
+  
+  .header h1 {
+    font-size: 1.6rem;
+    margin-bottom: 8px;
+  }
+  
+  .header p {
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+  }
+  
+  .header-controls {
+    margin-top: 12px;
+  }
+  
+  .header-toggle {
+    padding: 8px 14px;
+    font-size: 0.85rem;
+    gap: 8px;
+  }
+  
+  .header-toggle .modern-checkbox {
+    width: 16px;
+    height: 16px;
+  }
+  
+  /* Form small mobile adjustments */
+  .form-input,
+  .form-select {
+    padding: 10px 12px;
+    font-size: 0.9rem;
+  }
+  
+  .form-label {
+    font-size: 0.9rem;
+    margin-bottom: 6px;
+  }
+  
+  /* Button small mobile adjustments */
+  .btn-primary,
+  .btn-secondary {
+    padding: 8px 16px;
+    font-size: 0.85rem;
+  }
+  
+  /* Calculator card small mobile adjustments */
+  .calculator-card {
+    border-radius: 12px;
+    margin: 0 -5px;
+  }
+  
+  .calculator-header {
+    padding: 18px;
+  }
+  
+  .calculator-header h2 {
+    font-size: 1.4rem;
+  }
+  
+  .calculator-body {
+    padding: 0 18px 18px 18px;
+  }
+  
+  /* Navigation small mobile adjustments */
+  .navigation {
+    padding: 10px 12px;
+  }
+  
+  .nav-brand {
+    font-size: 1.1rem;
+  }
+  
+  .nav-right {
+    gap: 0.5rem;
+  }
+  
+  .settings-menu {
+    right: 5px;
+    left: 5px;
+    min-width: auto;
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE GRID UTILITIES
+   ================================================================ */
+
+/* Responsive grid classes for dynamic layouts */
+.grid-responsive {
+  display: grid;
+  gap: 20px;
+}
+
+.grid-1-2-3 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 576px) {
+  .grid-1-2-3 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 992px) {
+  .grid-1-2-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.grid-1-2 {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  .grid-1-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE TEXT UTILITIES
+   ================================================================ */
+
+/* Responsive font sizes */
+.text-responsive-xl {
+  font-size: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-xl {
+    font-size: 2rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .text-responsive-xl {
+    font-size: 2.5rem;
+  }
+}
+
+.text-responsive-lg {
+  font-size: 1.2rem;
+}
+
+@media (min-width: 768px) {
+  .text-responsive-lg {
+    font-size: 1.5rem;
+  }
+}
+
+@media (min-width: 1200px) {
+  .text-responsive-lg {
+    font-size: 1.8rem;
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE LAYOUT UTILITIES
+   ================================================================ */
+
+/* Responsive flex utilities */
+.flex-responsive {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .flex-responsive {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+}
+
+.flex-responsive-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .flex-responsive-center {
+    flex-direction: row;
+    justify-content: center;
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE VISIBILITY UTILITIES
+   ================================================================ */
+
+/* Hide/show elements at different breakpoints */
+@media (max-width: 575px) {
+  .hide-mobile {
+    display: none !important;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767px) {
+  .hide-tablet {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .hide-desktop {
+    display: none !important;
+  }
+}
+
+@media (max-width: 767px) {
+  .show-mobile-only {
+    display: block !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .show-mobile-only {
+    display: none !important;
+  }
+}
+
+/* ===================================================================
+   RESPONSIVE CONTAINER UTILITIES
+   ================================================================ */
+
+/* Container width utilities for different screen sizes */
+.container-responsive {
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 15px;
+}
+
+@media (min-width: 576px) {
+  .container-responsive {
+    max-width: 540px;
+  }
+}
+
+@media (min-width: 768px) {
+  .container-responsive {
+    max-width: 720px;
+    padding: 0 20px;
+  }
+}
+
+@media (min-width: 992px) {
+  .container-responsive {
+    max-width: 960px;
+  }
+}
+
+@media (min-width: 1200px) {
+  .container-responsive {
+    max-width: 1140px;
+    padding: 0 25px;
+  }
+}
+
+/* ===================================================================
+   PRINT STYLES
+   ================================================================ */
+@media print {
+  .navigation,
+  .settings-menu,
+  .btn-primary,
+  .btn-secondary,
+  .btn-danger,
+  .import-export-actions,
+  .form-actions,
+  .category-actions {
+    display: none !important;
+  }
+  
+  .app-container {
+    padding-top: 0;
+    max-width: none;
+  }
+  
+  .calculator-card,
+  .data-table-container {
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+  
+  .header h1 {
+    color: #000;
+    text-shadow: none;
+  }
+  
+  .header p {
+    color: #333;
+  }
+  
+  body {
+    background: white;
+    color: #000;
+  }
+}

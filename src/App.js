@@ -3,7 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { FormProvider } from './context/FormContext';
 import Welcome from './components/Welcome';
 import BudgetForm from './components/BudgetForm';
-import PaycheckForm from './components/PaycheckForm';
+import TaxCalculator from './components/TaxCalculator';
 import Historical from './components/Historical';
 import Performance from './components/Performance';
 import NetWorth from './components/NetWorth';
@@ -15,7 +15,7 @@ function App() {
         <div className="App">
           <Routes>
             <Route path="/" element={<Welcome />} />
-            <Route path="/paycheck" element={<PaycheckForm />} />
+            <Route path="/paycheck" element={<TaxCalculator />} />
             <Route path="/budget" element={<BudgetForm />} />
             <Route path="/historical" element={<Historical />} />
             <Route path="/performance" element={<Performance />} />
