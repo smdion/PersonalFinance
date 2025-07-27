@@ -53,6 +53,9 @@ const DataManager = ({
   const hasLoadedInitialData = useRef(false);
   const lastPaycheckDataRef = useRef(null);
 
+  // Add account type filtering state
+  const [accountTypeFilters, setAccountTypeFilters] = useState({});
+
   // Load paycheck data if usePaycheckUsers is enabled
   useEffect(() => {
     if (usePaycheckUsers) {
@@ -973,6 +976,28 @@ const DataManager = ({
     return Array.from(new Set(years)).sort((a, b) => b - a);
   };
 
+  // Get all account types present in the data
+  const getAvailableAccountTypes = () => {
+    const accountTypes = new Set();
+    Object.values(entryData).forEach(entry => {
+      if (entry.users && typeof entry.users === 'object') {
+        Object.values(entry.users).forEach(userData => {
+          if (userData.accountType && userData.accountType.trim()) {
+            accountTypes.add(userData.accountType.trim());
+          }
+        });
+      }
+    });
+    return Array.from(accountTypes).sort();
+  };
+
+  // Check if schema has accountType field
+  const hasAccountTypeField = () => {
+    return schema?.sections?.some(section => 
+      section.fields?.some(field => field.name === 'accountType')
+    );
+  };
+
   // Initialize year filters when data changes
   useEffect(() => {
     const years = getAvailableYears();
@@ -983,11 +1008,31 @@ const DataManager = ({
     }
   }, [entryData]);
 
+  // Initialize account type filters when data changes
+  useEffect(() => {
+    if (hasAccountTypeField()) {
+      const accountTypes = getAvailableAccountTypes();
+      if (accountTypes.length > 0) {
+        const initial = {};
+        accountTypes.forEach(type => { initial[type] = true; });
+        setAccountTypeFilters(initial);
+      }
+    }
+  }, [entryData]);
+
   // Toggle year filter
   const toggleYearFilter = (year) => {
     setYearFilters(prev => ({
       ...prev,
       [year]: !prev[year]
+    }));
+  };
+
+  // Toggle account type filter
+  const toggleAccountTypeFilter = (accountType) => {
+    setAccountTypeFilters(prev => ({
+      ...prev,
+      [accountType]: !prev[accountType]
     }));
   };
 
@@ -1007,7 +1052,23 @@ const DataManager = ({
     setYearFilters(newFilters);
   };
 
-  // Filter entries based on active user filters and year filters - ENHANCED
+  // Select all account types
+  const selectAllAccountTypes = () => {
+    const accountTypes = getAvailableAccountTypes();
+    const newFilters = {};
+    accountTypes.forEach(type => { newFilters[type] = true; });
+    setAccountTypeFilters(newFilters);
+  };
+
+  // Deselect all account types
+  const deselectAllAccountTypes = () => {
+    const accountTypes = getAvailableAccountTypes();
+    const newFilters = {};
+    accountTypes.forEach(type => { newFilters[type] = false; });
+    setAccountTypeFilters(newFilters);
+  };
+
+  // Filter entries based on active user filters, year filters, and account type filters - ENHANCED
   const getFilteredEntryData = () => {
     let filtered = entryData;
     
@@ -1016,32 +1077,44 @@ const DataManager = ({
       filtered = Object.fromEntries(
         Object.entries(filtered).filter(([key, entry]) => {
           if (entry.users && typeof entry.users === 'object') {
-            // Check if ANY of the entry's users (after name mapping) are actively selected in the filter
-            const entryUsers = Object.keys(entry.users);
-            const shouldInclude = entryUsers.some(ownerName => {
-              // Apply name mapping to get current name
-              const mappedName = getCurrentUserName(ownerName);
-              // User must exist in filter AND be set to true
-              return userFilters.hasOwnProperty(mappedName) && userFilters[mappedName] === true;
-            });
-            
-            return shouldInclude;
+            return Object.keys(entry.users).some(userName => userFilters[userName]);
           }
-          // Include entries without users object by default (fallback)
           return true;
         })
       );
     }
-    
+
     // Year filter
     if (Object.keys(yearFilters).length > 0) {
       filtered = Object.fromEntries(
         Object.entries(filtered).filter(([key, entry]) => {
-          return yearFilters[entry.year] === true;
+          const year = entry.year;
+          if (year !== undefined && year !== null) {
+            return yearFilters[year];
+          }
+          return true;
         })
       );
     }
-    
+
+    // Account type filter - only apply if we have account type field and filters
+    if (hasAccountTypeField() && Object.keys(accountTypeFilters).length > 0) {
+      filtered = Object.fromEntries(
+        Object.entries(filtered).filter(([key, entry]) => {
+          if (entry.users && typeof entry.users === 'object') {
+            return Object.values(entry.users).some(userData => {
+              const accountType = userData.accountType;
+              if (accountType && accountType.trim()) {
+                return accountTypeFilters[accountType.trim()];
+              }
+              return true;
+            });
+          }
+          return true;
+        })
+      );
+    }
+
     return filtered;
   };
 
@@ -1354,6 +1427,96 @@ const DataManager = ({
     </div>
   );
 
+  // Update filter controls rendering
+  const renderFilterControls = () => {
+    const years = getAvailableYears();
+    const accountTypes = getAvailableAccountTypes();
+    const showAccountTypeFilter = hasAccountTypeField() && accountTypes.length > 0;
+    
+    if (years.length === 0 && !showAccountTypeFilter && (!usePaycheckUsers || Object.keys(userFilters).length === 0)) {
+      return null;
+    }
+
+    return (
+      <div className="filter-controls">
+        {/* Year filters */}
+        {years.length > 0 && (
+          <div className="filter-group">
+            <div className="filter-group-header">
+              <h4>📅 Filter by Year</h4>
+              <div className="filter-group-actions">
+                <button onClick={selectAllYears} className="filter-action-btn">Select All</button>
+                <button onClick={deselectAllYears} className="filter-action-btn">Deselect All</button>
+              </div>
+            </div>
+            <div className="filter-chips">
+              {years.map(year => (
+                <label key={year} className="filter-chip">
+                  <input
+                    type="checkbox"
+                    checked={yearFilters[year] || false}
+                    onChange={() => toggleYearFilter(year)}
+                  />
+                  <span className="filter-chip-label">{year}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Account type filters */}
+        {showAccountTypeFilter && (
+          <div className="filter-group">
+            <div className="filter-group-header">
+              <h4>🏦 Filter by Account Type</h4>
+              <div className="filter-group-actions">
+                <button onClick={selectAllAccountTypes} className="filter-action-btn">Select All</button>
+                <button onClick={deselectAllAccountTypes} className="filter-action-btn">Deselect All</button>
+              </div>
+            </div>
+            <div className="filter-chips">
+              {accountTypes.map(accountType => (
+                <label key={accountType} className="filter-chip">
+                  <input
+                    type="checkbox"
+                    checked={accountTypeFilters[accountType] || false}
+                    onChange={() => toggleAccountTypeFilter(accountType)}
+                  />
+                  <span className="filter-chip-label">{accountType}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* User filters - existing code */}
+        {usePaycheckUsers && Object.keys(userFilters).length > 0 && (
+          <div className="filter-group">
+            <div className="filter-group-header">
+              <h4>👥 Filter by User</h4>
+              <div className="filter-group-actions">
+                <button onClick={selectAllUsers} className="filter-action-btn">Select All</button>
+                <button onClick={deselectAllUsers} className="filter-action-btn">Deselect All</button>
+              </div>
+            </div>
+            <div className="filter-chips">
+              {Object.keys(userFilters).map(userName => (
+                <label key={userName} className="filter-chip">
+                  <input
+                    type="checkbox"
+                    checked={userFilters[userName]}
+                    onChange={() => toggleUserFilter(userName)}
+                  />
+                  <span className="filter-chip-label">{userName}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div>
       {/* Render import/export section at the top only if there is no data */}
@@ -1474,6 +1637,35 @@ const DataManager = ({
                   )}
                 </div>
               </div>
+              {/* Account Type Filter */}
+              {hasAccountTypeField() && (
+                <div className="user-filter-section compact filter-fixed-width">
+                  <div className="user-filter-header">
+                    <h3 className="user-filter-title">
+                      🏦 Filter by Account Type
+                    </h3>
+                    <div className="user-filter-actions">
+                      <button onClick={selectAllAccountTypes} className="user-filter-btn">
+                        Select All
+                      </button>
+                      <button onClick={deselectAllAccountTypes} className="user-filter-btn">
+                        Clear All
+                      </button>
+                    </div>
+                  </div>
+                  <div className="user-filter-buttons">
+                    {getAvailableAccountTypes().map(accountType => (
+                      <button
+                        key={accountType}
+                        onClick={() => toggleAccountTypeFilter(accountType)}
+                        className={`user-filter-btn ${accountTypeFilters[accountType] ? 'active' : ''}`}
+                      >
+                        {accountType}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
