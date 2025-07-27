@@ -7,8 +7,51 @@
 .networth-controls {
   margin-bottom: 24px;
   display: grid;
-  grid-template-columns: 1fr 1fr 1fr;
+  grid-template-columns: 1fr 1fr;
   gap: 16px;
+}
+
+/* Compact Controls Layout */
+.networth-controls-compact {
+  margin-bottom: 24px;
+  padding: 16px;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.networth-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.networth-controls-row:not(:last-child) {
+  margin-bottom: 16px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.networth-control-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.networth-year-actions-compact {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.networth-year-checkboxes-compact {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  flex: 1;
+  margin: 0 16px;
 }
 
 .networth-control-card {
@@ -56,6 +99,27 @@
 .networth-year-action-btn {
   font-size: 0.8rem;
   padding: 4px 8px;
+}
+
+.networth-year-from-select {
+  font-size: 0.8rem;
+  padding: 4px 8px;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  background: #ffffff;
+  color: #374151;
+  cursor: pointer;
+  min-width: 120px;
+}
+
+.networth-year-from-select:hover {
+  border-color: #9ca3af;
+}
+
+.networth-year-from-select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 1px #3b82f6;
 }
 
 .networth-year-checkboxes {
@@ -480,6 +544,20 @@
   opacity: 0.7;
 }
 
+.networth-score-item.army-power {
+  background: linear-gradient(135deg, #fdf2f8 0%, #fce7f3 100%);
+  border-color: #ec4899;
+}
+
+.networth-score-item.army-power::before {
+  content: '🪖';
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  font-size: 1.2rem;
+  opacity: 0.7;
+}
+
 .networth-score-label {
   font-size: 0.85rem;
   font-weight: 600;
@@ -498,6 +576,10 @@
 
 .networth-score-label.contribution {
   color: #d97706;
+}
+
+.networth-score-label.army-power {
+  color: #be185d;
 }
 
 .networth-score-value {
@@ -519,6 +601,10 @@
   color: #92400e;
 }
 
+.networth-score-value.army-power {
+  color: #9d174d;
+}
+
 .networth-score-details {
   font-size: 0.75rem;
   font-weight: 500;
@@ -537,6 +623,62 @@
   color: #d97706;
 }
 
+.networth-score-details.army-power {
+  color: #be185d;
+}
+
+.networth-score-info-icon {
+  margin-left: 8px;
+  font-size: 0.75rem;
+  opacity: 0.7;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+  user-select: none;
+}
+
+.networth-score-info-icon:hover {
+  opacity: 1;
+}
+
+.networth-score-info-panel {
+  margin-top: 12px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  line-height: 1.4;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.networth-score-info-title {
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-bottom: 8px;
+  color: #334155;
+}
+
+.networth-score-info-formula,
+.networth-score-info-logic,
+.networth-score-info-benchmarks {
+  margin-bottom: 10px;
+}
+
+.networth-score-info-panel ul {
+  margin: 4px 0 0 0;
+  padding-left: 16px;
+}
+
+.networth-score-info-panel li {
+  margin-bottom: 2px;
+}
+
+.networth-score-info-source {
+  margin-top: 8px;
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
 .networth-score-warning {
   font-size: 0.75rem;
   color: #dc2626;
@@ -545,6 +687,42 @@
   padding: 6px 10px;
   background: rgba(220, 38, 38, 0.1);
   border-radius: 6px;
+}
+
+/* Benchmark Visual Indicators */
+.networth-score-indicator {
+  margin-top: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-align: center;
+  border: 1px solid;
+  transition: all 0.2s ease;
+}
+
+.networth-score-indicator.excellent {
+  background: linear-gradient(135deg, #dcfce7 0%, #bbf7d0 100%);
+  border-color: #22c55e;
+  color: #15803d;
+}
+
+.networth-score-indicator.good {
+  background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.networth-score-indicator.fair {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border-color: #f59e0b;
+  color: #d97706;
+}
+
+.networth-score-indicator.poor {
+  background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+  border-color: #ef4444;
+  color: #dc2626;
 }
 
 /* Detailed Data Table */
@@ -657,6 +835,31 @@
   color: #9ca3af;
 }
 
+/* Compact Table Styles */
+.networth-table td.compact {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.networth-table.compact-mode {
+  font-size: 0.9rem;
+}
+
+.networth-table.compact-mode th {
+  padding: 8px 12px;
+  font-size: 0.85rem;
+}
+
+.networth-table.compact-mode td {
+  padding: 8px 12px;
+}
+
+.networth-table.compact-mode .networth-table-value {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0;
+}
+
 /* Empty State */
 .networth-empty-state {
   text-align: center;
@@ -689,10 +892,154 @@
   margin-bottom: 0;
 }
 
+/* Redesigned Controls Layout */
+.networth-controls-redesigned {
+  margin-bottom: 24px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.networth-control-panel {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.networth-control-panel:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  transform: translateY(-2px);
+}
+
+.networth-control-panel-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0 0 16px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #3b82f6;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.networth-control-panel-title::before {
+  content: '⚙️';
+  font-size: 1rem;
+}
+
+.networth-control-panel:nth-child(2) .networth-control-panel-title::before {
+  content: '📅';
+}
+
+.networth-control-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.networth-control-item {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  transition: all 0.2s ease;
+}
+
+.networth-control-item:hover {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: #cbd5e1;
+}
+
+.networth-control-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.networth-control-item-label {
+  font-weight: 600;
+  color: #334155;
+  font-size: 0.9rem;
+}
+
+.networth-control-item-description {
+  font-size: 0.8rem;
+  color: #64748b;
+  line-height: 1.4;
+  margin-top: 8px;
+}
+
+.networth-control-item .networth-mode-buttons {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.networth-control-item .networth-mode-button {
+  font-size: 0.8rem;
+  padding: 6px 12px;
+  min-width: 80px;
+}
+
+.networth-year-selection-content {
+  background: rgba(255, 255, 255, 0.8);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.networth-year-selection-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+}
+
+.networth-year-selection-checkboxes {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.networth-year-selection-summary {
+  font-size: 0.8rem;
+  color: #64748b;
+  margin-top: 8px;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .networth-controls {
     grid-template-columns: 1fr;
+  }
+  
+  .networth-controls-redesigned {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+  
+  .networth-control-panel {
+    padding: 16px;
+  }
+  
+  .networth-control-item-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+  
+  .networth-year-selection-actions {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
   }
   
   .networth-control-header {
@@ -705,6 +1052,27 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
+  }
+
+  /* Compact Controls Responsive */
+  .networth-controls-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .networth-year-checkboxes-compact {
+    margin: 0;
+    justify-content: center;
+  }
+
+  .networth-control-group {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .networth-year-actions-compact {
+    flex-wrap: wrap;
   }
   
   .networth-tab-buttons {

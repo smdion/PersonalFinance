@@ -849,7 +849,8 @@ export const getNetWorthSettings = () => {
     showAllYearsInNetWorthBreakdownChart: false,
     showAllYearsInMoneyGuyChart: false,
     useThreeYearIncomeAverage: false,
-    useReverseChronological: false
+    useReverseChronological: false,
+    isCompactTable: false
   });
 };
 

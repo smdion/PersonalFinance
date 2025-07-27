@@ -44,6 +44,50 @@ const NetWorth = () => {
   const [useThreeYearIncomeAverage, setUseThreeYearIncomeAverage] = useState(false); // Toggle for 3-year income averaging in Money Guy scores
   const [useReverseChronological, setUseReverseChronological] = useState(false); // Global toggle for chronological order (default: oldest first)
   const [isInitialized, setIsInitialized] = useState(false); // Prevent saving during initial load
+  const [showScoreInfo, setShowScoreInfo] = useState({}); // State for showing score info panels
+  const [isCompactTable, setIsCompactTable] = useState(false); // Toggle for compact table view
+
+  // Toggle score info visibility
+  const toggleScoreInfo = (scoreType, year) => {
+    const key = `${scoreType}_${year}`;
+    setShowScoreInfo(prev => ({
+      ...prev,
+      [key]: !prev[key]
+    }));
+  };
+
+  // Helper functions to determine benchmark performance levels
+  const getMoneyGuyPerformance = (score) => {
+    if (score === null || score === undefined) return { level: 'unknown', color: '#9ca3af', label: 'N/A' };
+    if (score >= 2.0) return { level: 'excellent', color: '#059669', label: 'Prodigious Accumulator' };
+    if (score >= 1.0) return { level: 'good', color: '#3b82f6', label: 'Average Accumulator' };
+    return { level: 'needs-improvement', color: '#dc2626', label: 'Under Accumulator' };
+  };
+
+  const getWealthScorePerformance = (score) => {
+    if (score === null || score === undefined) return { level: 'unknown', color: '#9ca3af', label: 'N/A' };
+    if (score > 100) return { level: 'excellent', color: '#7c3aed', label: 'Great Big Beautiful Tomorrow' };
+    if (score >= 51) return { level: 'very-good', color: '#059669', label: 'Army of Dollars Work Zone' };
+    if (score >= 26) return { level: 'good', color: '#3b82f6', label: 'Critical Mass Approaching' };
+    if (score >= 0) return { level: 'starting', color: '#f59e0b', label: 'Starting to Get Traction' };
+    return { level: 'needs-improvement', color: '#dc2626', label: 'Below Expectations' };
+  };
+
+  const getContributionRatePerformance = (rate) => {
+    if (rate === null || rate === undefined || rate <= 0) return { level: 'unknown', color: '#9ca3af', label: 'N/A' };
+    if (rate >= 20) return { level: 'excellent', color: '#059669', label: 'Money Guy Recommended' };
+    if (rate >= 15) return { level: 'good', color: '#3b82f6', label: 'Above Average' };
+    if (rate >= 10) return { level: 'fair', color: '#f59e0b', label: 'Getting Started' };
+    return { level: 'needs-improvement', color: '#dc2626', label: 'Below Recommended' };
+  };
+
+  const getArmyPowerPerformance = (score) => {
+    if (score === null || score === undefined) return { level: 'unknown', emoji: '❓', label: 'N/A' };
+    if (score >= 100) return { level: 'excellent', emoji: '🌟', label: 'Financial Independence Ready' };
+    if (score >= 50) return { level: 'good', emoji: '👍', label: 'Strong Army Building' };
+    if (score >= 25) return { level: 'fair', emoji: '⚠️', label: 'Growing Strength' };
+    return { level: 'poor', emoji: '🚨', label: 'Army Needs Reinforcement' };
+  };
 
   // Load data from localStorage
   useEffect(() => {
@@ -66,6 +110,7 @@ const NetWorth = () => {
       setShowAllYearsInMoneyGuyChart(savedSettings.showAllYearsInMoneyGuyChart || false);
       setUseThreeYearIncomeAverage(savedSettings.useThreeYearIncomeAverage || false);
       setUseReverseChronological(savedSettings.useReverseChronological !== undefined ? savedSettings.useReverseChronological : false);
+      setIsCompactTable(savedSettings.isCompactTable || false);
       
       const availableYears = Object.values(historical)
         .map(entry => entry.year)
@@ -142,10 +187,11 @@ const NetWorth = () => {
       showAllYearsInNetWorthBreakdownChart,
       showAllYearsInMoneyGuyChart,
       useThreeYearIncomeAverage,
-      useReverseChronological
+      useReverseChronological,
+      isCompactTable
     };
     setNetWorthSettings(settings);
-  }, [selectedYears, netWorthMode, activeTab, showAllYearsInChart, showAllYearsInPortfolioChart, showAllYearsInNetWorthBreakdownChart, showAllYearsInMoneyGuyChart, useThreeYearIncomeAverage, useReverseChronological, isInitialized]);
+  }, [selectedYears, netWorthMode, activeTab, showAllYearsInChart, showAllYearsInPortfolioChart, showAllYearsInNetWorthBreakdownChart, showAllYearsInMoneyGuyChart, useThreeYearIncomeAverage, useReverseChronological, isCompactTable, isInitialized]);
 
   // Calculate house value based on mode
   const calculateHouseValue = (year, historicalEntry) => {
@@ -321,6 +367,11 @@ const NetWorth = () => {
       const shouldShowWithMatch = agi < 200000;
       const displayedContributionRate = shouldShowWithMatch ? contributionRateWithMatch : contributionRateWithoutMatch;
       
+      // Calculate Army Power Score (Liquid Assets / AGI as percentage)
+      // Liquid assets = Net Worth - House Value (excludes property)
+      const liquidAssets = netWorth - houseValue;
+      const armyPowerScore = agi > 0 ? (liquidAssets / agi) * 100 : null;
+      
       return {
         year,
         agi,
@@ -352,7 +403,10 @@ const NetWorth = () => {
         contributionRateWithMatch,
         contributionRateWithoutMatch,
         shouldShowWithMatch,
-        displayedContributionRate
+        displayedContributionRate,
+        // Army Power Score
+        liquidAssets,
+        armyPowerScore
       };
     }).filter(Boolean);
   }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage]);
@@ -915,6 +969,12 @@ const NetWorth = () => {
   // Select all/none helpers
   const selectAllYears = () => setSelectedYears(availableYears);
   const selectNoneYears = () => setSelectedYears([]);
+  
+  // Select years from a specific year onwards
+  const selectYearsFrom = (fromYear) => {
+    const yearsFromOnwards = availableYears.filter(year => year >= fromYear);
+    setSelectedYears(yearsFromOnwards);
+  };
 
   if (availableYears.length === 0) {
     return (
@@ -945,84 +1005,137 @@ const NetWorth = () => {
         </div>
 
         {/* Controls Section */}
-        <div className="networth-controls">
-          {/* Net Worth Calculation Mode Toggle */}
-          <div className="networth-control-card">
-            <div className="networth-control-header">
-              <span className="networth-control-label">Calculation Mode:</span>
-              <div className="networth-mode-buttons">
-                <button
-                  className={`btn networth-mode-button ${netWorthMode === 'market' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setNetWorthMode('market')}
-                >
-                  Market Value
-                </button>
-                <button
-                  className={`btn networth-mode-button ${netWorthMode === 'costBasis' ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setNetWorthMode('costBasis')}
-                >
-                  Cost Basis
-                </button>
+        <div className="networth-controls-redesigned">
+          {/* Configuration Controls */}
+          <div className="networth-control-panel">
+            <h3 className="networth-control-panel-title">Dashboard Settings</h3>
+            
+            <div className="networth-control-items">
+              {/* Home Calculation Mode */}
+              <div className="networth-control-item">
+                <div className="networth-control-header">
+                  <span className="networth-control-label">Home Value Calculation</span>
+                  <div className="networth-mode-buttons">
+                    <button
+                      className={`btn networth-mode-button ${netWorthMode === 'market' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setNetWorthMode('market')}
+                    >
+                      Market Value
+                    </button>
+                    <button
+                      className={`btn networth-mode-button ${netWorthMode === 'costBasis' ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setNetWorthMode('costBasis')}
+                    >
+                      Cost Basis
+                    </button>
+                  </div>
+                </div>
+                <div className="networth-control-description">
+                  {netWorthMode === 'market' 
+                    ? 'Uses estimated house values from online sources' 
+                    : 'Uses $315k purchase price + home improvements'}
+                </div>
               </div>
-            </div>
-            <div className="networth-control-description">
-              {netWorthMode === 'market' 
-                ? 'Uses estimated house values from online sources' 
-                : 'Uses $315k purchase price + home improvements'}
+
+              {/* Chart Order */}
+              <div className="networth-control-item">
+                <div className="networth-control-header">
+                  <span className="networth-control-label">Chart Order</span>
+                  <div className="networth-mode-buttons">
+                    <button
+                      className={`btn networth-mode-button ${!useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setUseReverseChronological(false)}
+                    >
+                      Oldest First
+                    </button>
+                    <button
+                      className={`btn networth-mode-button ${useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
+                      onClick={() => setUseReverseChronological(true)}
+                    >
+                      Newest First
+                    </button>
+                  </div>
+                </div>
+                <div className="networth-control-description">
+                  {useReverseChronological 
+                    ? 'Show newest data first in charts and scores (reverse chronological)' 
+                    : 'Show oldest data first in charts and scores (chronological)'}
+                </div>
+              </div>
+
+              {/* Income Calculation */}
+              <div className="networth-control-item">
+                <div className="networth-control-header">
+                  <span className="networth-control-label">Money Guy Score Calculation</span>
+                  <label className="networth-chart-toggle">
+                    <input
+                      type="checkbox"
+                      checked={useThreeYearIncomeAverage}
+                      onChange={(e) => setUseThreeYearIncomeAverage(e.target.checked)}
+                    />
+                    <span className="networth-chart-toggle-label">
+                      Use 3-Year Income Average
+                    </span>
+                  </label>
+                </div>
+                <div className="networth-control-description">
+                  {useThreeYearIncomeAverage 
+                    ? 'Uses 3-year rolling average income for more stable calculations' 
+                    : 'Uses current year income only. You may want to check this if you have had a significant income change recently.'}
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Year Selection */}
-          <div className="networth-control-card">
-            <div className="networth-year-actions">
-              <span className="networth-control-label">Years to Display:</span>
-              <button className="btn btn-secondary networth-year-action-btn" onClick={selectAllYears}>
-                All
-              </button>
-              <button className="btn btn-secondary networth-year-action-btn" onClick={selectNoneYears}>
-                Clear
-              </button>
-            </div>
-            <div className="networth-year-checkboxes">
-              {availableYears.map(year => (
-                <label key={year} className={`networth-year-checkbox ${selectedYears.includes(year) ? 'selected' : ''}`}>
-                  <input
-                    type="checkbox"
-                    checked={selectedYears.includes(year)}
-                    onChange={() => toggleYear(year)}
-                  />
-                  {year}
-                </label>
-              ))}
-            </div>
-            <div className="networth-year-summary">
-              {selectedYears.length}/{availableYears.length} selected
-            </div>
-          </div>
-
-          {/* Chronological Order Toggle */}
-          <div className="networth-control-card">
-            <div className="networth-control-header">
-              <span className="networth-control-label">Chart Order:</span>
-              <div className="networth-mode-buttons">
-                <button
-                  className={`btn networth-mode-button ${useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setUseReverseChronological(true)}
-                >
-                  Newest First
+          {/* Year Selection Panel */}
+          <div className="networth-control-panel">
+            <h3 className="networth-control-panel-title">Year Selection</h3>
+            
+            <div className="networth-year-controls">
+              <div className="networth-year-actions">
+                <span className="networth-control-label">Quick Actions:</span>
+                <button className="btn btn-secondary networth-year-action-btn" onClick={selectAllYears}>
+                  Select All
                 </button>
-                <button
-                  className={`btn networth-mode-button ${!useReverseChronological ? 'btn-primary' : 'btn-secondary'}`}
-                  onClick={() => setUseReverseChronological(false)}
-                >
-                  Oldest First
+                <button className="btn btn-secondary networth-year-action-btn" onClick={selectNoneYears}>
+                  Clear All
                 </button>
+                <select 
+                  className="networth-year-from-select"
+                  onChange={(e) => {
+                    const fromYear = parseInt(e.target.value);
+                    if (!isNaN(fromYear)) {
+                      selectYearsFrom(fromYear);
+                    }
+                  }}
+                  defaultValue=""
+                >
+                  <option value="" disabled>From year onwards...</option>
+                  {availableYears.map(year => (
+                    <option key={year} value={year}>
+                      {year} onwards
+                    </option>
+                  ))}
+                </select>
               </div>
-            </div>
-            <div className="networth-control-description">
-              {useReverseChronological 
-                ? 'Show newest data first in charts and scores (reverse chronological)' 
-                : 'Show oldest data first in charts and scores (chronological)'}
+
+              <div className="networth-year-selection">
+                <div className="networth-year-checkboxes">
+                  {availableYears.map(year => (
+                    <label key={year} className={`networth-year-checkbox ${selectedYears.includes(year) ? 'selected' : ''}`}>
+                      <input
+                        type="checkbox"
+                        checked={selectedYears.includes(year)}
+                        onChange={() => toggleYear(year)}
+                      />
+                      {year}
+                    </label>
+                  ))}
+                </div>
+                <div className="networth-year-summary">
+                  {selectedYears.length} of {availableYears.length} years selected
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -1035,7 +1148,7 @@ const NetWorth = () => {
                 {[
                   { id: 'overview', label: '📈 Overview & Trends', icon: '📈' },
                   { id: 'breakdown', label: '📊 Portfolio Breakdown', icon: '📊' },
-                  { id: 'comparison', label: '⚖️ Money Guy Analysis', icon: '⚖️' },
+                  { id: 'comparison', label: '⚖️ Financial Health Metrics', icon: '⚖️' },
                   { id: 'details', label: '📋 Detailed Data', icon: '📋' }
                 ].map(tab => (
                   <button
@@ -1188,7 +1301,7 @@ const NetWorth = () => {
                 <div className="networth-chart-container">
                   <div className="networth-chart-header">
                     <h3 className="networth-chart-title">
-                      ⚖️ Money Guy Score Analysis - Average vs Prodigious Accumulator
+                      ⚖️ Average vs Prodigious Accumulator
                     </h3>
                     <div className="networth-chart-controls">
                       <label className="networth-chart-toggle">
@@ -1211,42 +1324,8 @@ const NetWorth = () => {
                 {/* Custom Scores Section */}
                 {filteredData.length > 0 && (
                   <div className="networth-scores">
-                    {/* Explanatory text for contribution rate logic */}
-                    <div style={{ 
-                      background: '#f8fafc', 
-                      border: '1px solid #e2e8f0', 
-                      borderRadius: '8px', 
-                      padding: '16px', 
-                      marginBottom: '24px',
-                      fontSize: '0.875rem',
-                      color: '#475569'
-                    }}>
-                      <div style={{ fontWeight: '600', marginBottom: '8px', color: '#334155' }}>
-                        📊 About Contribution Rates
-                      </div>
-                      <p style={{ margin: '0 0 8px 0' }}>
-                        Contribution rates show your total retirement savings as a percentage of AGI (Adjusted Gross Income).
-                      </p>
-                      <ul style={{ margin: '0', paddingLeft: '20px' }}>
-                        <li><strong>AGI under $200,000:</strong> Shows rate including employer match (total retirement benefit)</li>
-                        <li><strong>AGI $200,000+:</strong> Shows personal contributions only (high earners typically max out employer match)</li>
-                      </ul>
-                    </div>
-
                     <div className="networth-scores-header">
                       <h2 className="networth-scores-title">🎯 Financial Scores by Year</h2>
-                      <div className="networth-scores-controls">
-                        <label className="networth-chart-toggle">
-                          <input
-                            type="checkbox"
-                            checked={useThreeYearIncomeAverage}
-                            onChange={(e) => setUseThreeYearIncomeAverage(e.target.checked)}
-                          />
-                          <span className="networth-chart-toggle-label">
-                            Use 3-Year Income Average
-                          </span>
-                        </label>
-                      </div>
                     </div>
                     <div className="networth-scores-grid">
                       {(useReverseChronological ? 
@@ -1262,9 +1341,20 @@ const NetWorth = () => {
                           <div className="networth-score-item money-guy">
                             <div className="networth-score-label money-guy">
                               Money Guy Score
+                              <span 
+                                className="networth-score-info-icon"
+                                onClick={() => toggleScoreInfo('moneyGuy', data.year)}
+                              >
+                                ℹ️
+                              </span>
                             </div>
                             <div className="networth-score-value money-guy">
                               {data.moneyGuyScore !== null ? data.moneyGuyScore.toFixed(2) : 'N/A'}
+                              {data.moneyGuyScore !== null && (
+                                <div className={`networth-score-indicator ${getMoneyGuyPerformance(data.moneyGuyScore).level}`}>
+                                  {getMoneyGuyPerformance(data.moneyGuyScore).emoji} {getMoneyGuyPerformance(data.moneyGuyScore).label}
+                                </div>
+                              )}
                             </div>
                             {data.averageAge === null ? (
                               <div className="networth-score-warning">
@@ -1275,28 +1365,91 @@ const NetWorth = () => {
                                 Avg Age: {data.averageAge.toFixed(1)} • AGI: {formatCurrency(data.agi)}
                               </div>
                             )}
+                            {showScoreInfo[`moneyGuy_${data.year}`] && (
+                              <div className="networth-score-info-panel">
+                                <div className="networth-score-info-title">What is Money Guy Score?</div>
+                                <p>Measures your wealth accumulation progress compared to expected wealth for someone your age and income.</p>
+                                <div className="networth-score-info-formula">
+                                  <strong>Formula:</strong> Net Worth ÷ (Age × Annual Income ÷ 10)
+                                </div>
+                                <div className="networth-score-info-benchmarks">
+                                  <strong>Benchmarks:</strong>
+                                  <ul>
+                                    <li>1.0 = Average Accumulator</li>
+                                    <li>2.0+ = Prodigious Accumulator</li>
+                                    <li>0.0-1.0 = Under Accumulator</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-source">
+                                  <em>Based on "The Millionaire Next Door" methodology</em>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Wealth Score */}
                           <div className="networth-score-item wealth">
                             <div className="networth-score-label wealth">
                               Wealth Score
+                              <span 
+                                className="networth-score-info-icon"
+                                onClick={() => toggleScoreInfo('wealth', data.year)}
+                              >
+                                ℹ️
+                              </span>
                             </div>
                             <div className="networth-score-value wealth">
                               {data.wealthScore !== null ? `${data.wealthScore.toFixed(1)}%` : 'N/A'}
+                              {data.wealthScore !== null && (
+                                <div className={`networth-score-indicator ${getWealthScorePerformance(data.wealthScore).level}`}>
+                                  {getWealthScorePerformance(data.wealthScore).emoji} {getWealthScorePerformance(data.wealthScore).label}
+                                </div>
+                              )}
                             </div>
                             <div className="networth-score-details wealth">
                               Net Worth ÷ Cumulative Earnings
                             </div>
+                            {showScoreInfo[`wealth_${data.year}`] && (
+                              <div className="networth-score-info-panel">
+                                <div className="networth-score-info-title">What is Wealth Score?</div>
+                                <p>Shows what percentage of your total lifetime earnings you've accumulated as net worth.</p>
+                                <div className="networth-score-info-formula">
+                                  <strong>Formula:</strong> Net Worth ÷ Cumulative Lifetime Earnings × 100
+                                </div>
+                                <div className="networth-score-info-benchmarks">
+                                  <strong>Benchmarks:</strong>
+                                  <ul>
+                                    <li>0-25% = Brand New to Wealth Building</li>
+                                    <li>26%-50% = Net Worth Starts Growing</li>
+                                    <li>51%-100% = Our dollars are working as hard as us</li>
+                                    <li>&gt;100% = More Net Worth then we earned</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-source">
+                                  <em>Measures wealth retention and spending discipline over your career</em>
+                                </div>
+                              </div>
+                            )}
                           </div>
 
                           {/* Contribution Rate Score */}
                           <div className="networth-score-item contribution">
                             <div className="networth-score-label contribution">
                               Contribution Rate
+                              <span 
+                                className="networth-score-info-icon"
+                                onClick={() => toggleScoreInfo('contribution', data.year)}
+                              >
+                                ℹ️
+                              </span>
                             </div>
                             <div className="networth-score-value contribution">
                               {data.displayedContributionRate > 0 ? `${data.displayedContributionRate.toFixed(1)}%` : 'N/A'}
+                              {data.displayedContributionRate > 0 && (
+                                <div className={`networth-score-indicator ${getContributionRatePerformance(data.displayedContributionRate).level}`}>
+                                  {getContributionRatePerformance(data.displayedContributionRate).emoji} {getContributionRatePerformance(data.displayedContributionRate).label}
+                                </div>
+                              )}
                             </div>
                             <div className="networth-score-details contribution">
                               {data.shouldShowWithMatch ? 
@@ -1304,6 +1457,84 @@ const NetWorth = () => {
                                 `Employee: ${formatCurrency(data.totalContributions)} (match not included)`
                               }
                             </div>
+                            {showScoreInfo[`contribution_${data.year}`] && (
+                              <div className="networth-score-info-panel">
+                                <div className="networth-score-info-title">What is Contribution Rate?</div>
+                                <p>Shows your retirement savings as a percentage of AGI (Adjusted Gross Income).</p>
+                                <div className="networth-score-info-formula">
+                                  <strong>Formula:</strong> Total Retirement Contributions ÷ AGI × 100
+                                </div>
+                                <div className="networth-score-info-logic">
+                                  <strong>AGI-Based Logic:</strong>
+                                  <ul>
+                                    <li>AGI &lt; $200k: Includes employer match (total benefit)</li>
+                                    <li>AGI ≥ $200k: Employee contributions only (high earners typically max match)</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-benchmarks">
+                                  <strong>Benchmarks:</strong>
+                                  <ul>
+                                    <li>The Money Guy Show Recommends 20-25%</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-source">
+                                  <em>Data sourced from Performance Tracker contributions</em>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Army Power Score */}
+                          <div className="networth-score-item army-power">
+                            <div className="networth-score-label army-power">
+                              How Powerful is your Army
+                              <span 
+                                className="networth-score-info-icon"
+                                onClick={() => toggleScoreInfo('army', data.year)}
+                              >
+                                ℹ️
+                              </span>
+                            </div>
+                            <div className="networth-score-value army-power">
+                              {data.armyPowerScore !== null ? `${data.armyPowerScore.toFixed(1)}%` : 'N/A'}
+                              {data.armyPowerScore !== null && (
+                                <div className={`networth-score-indicator ${getArmyPowerPerformance(data.armyPowerScore).level}`}>
+                                  {getArmyPowerPerformance(data.armyPowerScore).emoji} {getArmyPowerPerformance(data.armyPowerScore).label}
+                                </div>
+                              )}
+                            </div>
+                            <div className="networth-score-details army-power">
+                              Liquid Assets: {formatCurrency(data.liquidAssets)} ÷ AGI: {formatCurrency(data.agi)}
+                            </div>
+                            {showScoreInfo[`army_${data.year}`] && (
+                              <div className="networth-score-info-panel">
+                                <div className="networth-score-info-title">How Powerful is your Army?</div>
+                                <p>Measures your liquid financial assets (excluding property) as a percentage of your annual income.</p>
+                                <div className="networth-score-info-formula">
+                                  <strong>Formula:</strong> (Net Worth - House Value) ÷ AGI × 100
+                                </div>
+                                <div className="networth-score-info-logic">
+                                  <strong>What it measures:</strong>
+                                  <ul>
+                                    <li>Your financial flexibility and liquidity</li>
+                                    <li>How many years of income you have in liquid assets</li>
+                                    <li>Your readiness for financial emergencies or opportunities</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-benchmarks">
+                                  <strong>Benchmarks:</strong>
+                                  <ul>
+                                    <li>100%+ = Financial Independence Ready</li>
+                                    <li>50-99% = Strong Army Building</li>
+                                    <li>25-49% = Growing Strength</li>
+                                    <li>&lt;25% = Army Needs Reinforcement</li>
+                                  </ul>
+                                </div>
+                                <div className="networth-score-info-source">
+                                  <em>Excludes real estate to focus on liquid financial strength</em>
+                                </div>
+                              </div>
+                            )}
                           </div>
                         </div>
                       ))}
@@ -1319,10 +1550,24 @@ const NetWorth = () => {
                 {/* Year-over-Year Comparison Table */}
                 {filteredData.length >= 2 ? (
                   <div className="networth-table-container">
-                    <h2 className="networth-table-title">📋 Year-over-Year Comparison</h2>
+                    <div className="networth-chart-header">
+                      <h2 className="networth-table-title">📋 Year-over-Year Comparison</h2>
+                      <div className="networth-chart-controls">
+                        <label className="networth-chart-toggle">
+                          <input
+                            type="checkbox"
+                            checked={isCompactTable}
+                            onChange={(e) => setIsCompactTable(e.target.checked)}
+                          />
+                          <span className="networth-chart-toggle-label">
+                            Compact View
+                          </span>
+                        </label>
+                      </div>
+                    </div>
                     <div className="networth-table-wrapper">
                       <div className="networth-table-scroll">
-                        <table className="networth-table">
+                        <table className={`networth-table ${isCompactTable ? 'compact-mode' : ''}`}>
                           <thead>
                             <tr>
                               <th className="sticky">
@@ -1345,9 +1590,7 @@ const NetWorth = () => {
                         { key: 'cash', label: 'Cash', format: 'currency' },
                         { key: 'espp', label: 'ESPP', format: 'currency' },
                         { key: 'retirement', label: 'Retirement', format: 'currency' },
-                        { key: 'portfolio', label: 'Total Portfolio', format: 'currency' },
-                        { key: 'moneyGuyScore', label: 'Money Guy Score', format: 'decimal' },
-                        { key: 'wealthScore', label: 'Wealth Score (%)', format: 'percentage' }
+                        { key: 'portfolio', label: 'Total Portfolio', format: 'currency' }
                       ];
 
                       return metrics.map((metric, metricIdx) => (
@@ -1377,7 +1620,7 @@ const NetWorth = () => {
                             }
 
                             return (
-                              <td key={data.year}>
+                              <td key={data.year} className={isCompactTable ? 'compact' : ''}>
                                 <div className="networth-table-value">
                                   {(() => {
                                     if (currentValue === null || currentValue === undefined) return 'N/A';
@@ -1394,7 +1637,7 @@ const NetWorth = () => {
                                     }
                                   })()}
                                 </div>
-                                {dollarChange !== null && (
+                                {!isCompactTable && dollarChange !== null && (
                                   <div className="networth-table-change">
                                     <div className={`networth-table-change-amount ${dollarChange >= 0 ? 'positive' : 'negative'}`}>
                                       {dollarChange >= 0 ? '+' : ''}{(() => {
@@ -1415,7 +1658,7 @@ const NetWorth = () => {
                                     </div>
                                   </div>
                                 )}
-                                {dollarChange === null && previousData === null && (
+                                {!isCompactTable && dollarChange === null && previousData === null && (
                                   <div className="networth-table-no-data">
                                     No previous year
                                   </div>
