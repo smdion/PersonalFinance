@@ -3,7 +3,7 @@ import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, updateNameMapping } from '../utils/localStorage';
 import Navigation from './Navigation';
 
 const TaxCalculator = () => {

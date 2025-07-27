@@ -52,8 +52,15 @@ const Navigation = () => {
   const resetAllData = async () => {
     if (window.confirm('Are you sure you want to reset ALL data across the entire application? This will clear:\n\n• All paycheck calculator data\n• All budget categories and items\n• All historical financial data\n• All performance tracking data\n• All form settings\n\nThis action cannot be undone.')) {
       try {
-        window.dispatchEvent(new CustomEvent('resetAllData'));
-        alert('All data has been reset successfully.');
+        const { resetAllAppData } = await import('../utils/localStorage');
+        const result = resetAllAppData();
+        
+        if (result.success) {
+          alert('All data has been reset successfully! The page will refresh.');
+          window.location.reload();
+        } else {
+          alert(`Failed to reset data: ${result.message}`);
+        }
       } catch (error) {
         alert('Failed to reset data. Please try again.');
       }
@@ -143,6 +150,20 @@ const Navigation = () => {
           </Link>
         </div>
 
+        {/* Desktop Navigation (hidden on mobile) */}
+        <div className="nav-items-desktop">
+          {navItems.map((item) => (
+            <Link
+              key={item.path}
+              to={item.path}
+              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+            >
+              <span className="nav-item-icon">{item.icon}</span>
+              <span className="nav-item-label">{item.label}</span>
+            </Link>
+          ))}
+        </div>
+
         {/* Mobile Menu Controls */}
         <div className="nav-controls">
           {/* Hamburger Menu Button */}
@@ -219,20 +240,6 @@ const Navigation = () => {
               </div>
             )}
           </div>
-        </div>
-
-        {/* Desktop Navigation (hidden on mobile) */}
-        <div className="nav-items-desktop">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <span className="nav-item-icon">{item.icon}</span>
-              <span className="nav-item-label">{item.label}</span>
-            </Link>
-          ))}
         </div>
       </div>
     </nav>

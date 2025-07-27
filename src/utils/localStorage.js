@@ -399,10 +399,10 @@ export const exportAllData = () => {
 const isUserDataEmpty = (userData) => {
   if (!userData || typeof userData !== 'object') return true;
   
-  // Check if all values are empty, null, undefined, or zero
+  // Check if all values are empty, null, undefined
+  // NOTE: We do NOT consider 0 as empty since it can be valid financial data
   return Object.values(userData).every(value => {
     if (value === null || value === undefined || value === '') return true;
-    if (typeof value === 'number' && value === 0) return true;
     if (typeof value === 'string' && value.trim() === '') return true;
     return false;
   });
@@ -448,6 +448,14 @@ export const importAllData = (importData) => {
       throw new Error('Invalid import data format');
     }
     
+    // Clear any existing name mappings and localStorage to prevent conflicts
+    setNameMapping({});
+    localStorage.removeItem(NAME_MAPPING_KEY);
+    
+    // Clear the in-memory cache
+    nameMapping = {};
+    nameMappingLoaded = false;
+    
     // Import each section if it exists
     if (importData.budgetData !== undefined) {
       setBudgetData(importData.budgetData);
@@ -491,13 +499,15 @@ export const importAllData = (importData) => {
       const cleanedPerformanceData = cleanEmptyUserData(performanceDataToImport);
       
       const result = setPerformanceData(cleanedPerformanceData);
-      if (result.success) {
+      if (result) {
         importedSections.push('Performance Data');
       } else {
-        errors.push('Performance Data: ' + result.message);
+        errors.push('Performance Data: Failed to save');
       }
     }
 
+    // Import completed successfully
+    
     // Trigger events to notify components
     setTimeout(() => {
       dispatchGlobalEvent('budgetDataUpdated');

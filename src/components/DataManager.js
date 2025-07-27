@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { 
   getPaycheckData, 
   updateNameMapping, 
@@ -8,6 +8,223 @@ import {
 } from '../utils/localStorage';
 import { formatCurrency, generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
+
+// Resizable header component
+const ResizableHeader = ({ columnKey, children, width, onResize, compactView, className = '', style = {} }) => {
+  return (
+    <th 
+      className={`resizable-header ${className}`}
+      style={{
+        ...style,
+        width: width || 'auto',
+        minWidth: '80px',
+        position: 'relative'
+      }}
+    >
+      {children}
+      <div
+        style={{
+          position: 'absolute',
+          top: 0,
+          right: 0,
+          width: '8px',
+          height: '100%',
+          cursor: 'col-resize',
+          backgroundColor: 'transparent',
+          borderRight: '2px solid transparent',
+          marginRight: '-4px'
+        }}
+        onMouseDown={(e) => onResize(columnKey, e)}
+        onMouseEnter={(e) => {
+          e.target.style.borderRightColor = '#3b82f6';
+          e.target.style.backgroundColor = 'rgba(59, 130, 246, 0.1)';
+        }}
+        onMouseLeave={(e) => {
+          e.target.style.borderRightColor = 'transparent';
+          e.target.style.backgroundColor = 'transparent';
+        }}
+        title="Drag to resize column"
+      />
+    </th>
+  );
+};
+
+// Memoized table row component for performance
+const DataTableRow = memo(({ 
+  rowKey, 
+  entry, 
+  isNew,
+  schema,
+  usePaycheckUsers,
+  userFilters,
+  combinedSectionFilters,
+  fieldCssClasses,
+  allowEdit,
+  allowDelete,
+  editingCell,
+  editingCellValue,
+  setEditingCellValue,
+  saveEditCell,
+  cancelEditCell,
+  handleCellInputKeyDown,
+  startEditCell,
+  deleteEntry,
+  getAvailableFilterOptions,
+  renderUserTableCell,
+  renderTableCell,
+  compactView,
+  rowIndex,
+  columnWidths
+}) => {
+  const isEvenRow = rowIndex % 2 === 0;
+  
+  return (
+    <tr
+      className={`data-row${isNew ? ' new-row-highlight' : ''}`}
+      style={{
+        ...(isNew ? { animation: 'new-row-flash 1.2s' } : {}),
+        backgroundColor: isEvenRow ? '#f9fafb' : '#ffffff',
+        fontSize: compactView ? '0.8rem' : '0.9rem',
+        height: compactView ? '32px' : '40px'
+      }}
+      onMouseEnter={(e) => {
+        if (!isNew) e.currentTarget.style.backgroundColor = '#e0f2fe';
+      }}
+      onMouseLeave={(e) => {
+        if (!isNew) e.currentTarget.style.backgroundColor = isEvenRow ? '#f9fafb' : '#ffffff';
+      }}
+    >
+      <td className={`${(fieldCssClasses && fieldCssClasses.year) || 'data-year-cell'} year-cell`} 
+          style={{ 
+            padding: compactView ? '4px 8px' : '8px 12px',
+            borderBottom: '1px solid #e5e7eb',
+            fontWeight: '500',
+            position: 'sticky',
+            left: 0,
+            backgroundColor: 'inherit',
+            zIndex: 1,
+            width: (columnWidths && columnWidths.year) || 'auto',
+            minWidth: '80px'
+          }}>
+        {entry && (entry.year || entry[schema.primaryKey])}
+      </td>
+      {/* Dynamic cell generation for user data */}
+      {(() => {
+        const userSection = schema.sections.find(s => s.name === 'users');
+        if (!userSection || !usePaycheckUsers || Object.keys(userFilters).length === 0) {
+          return null;
+        }
+
+        const availableUsers = getAvailableFilterOptions;
+        const activeUsers = availableUsers.filter(name => 
+          userFilters[name] === true && name !== 'Joint'
+        );
+        const showJoint = userFilters['Joint'] === true;
+        
+        const cells = [];
+        
+        activeUsers.forEach(name => {
+          userSection.fields.forEach(field => {
+            const columnKey = `${name}-${field.name}`;
+            cells.push(
+              <td key={columnKey} 
+                  className={`${(fieldCssClasses && fieldCssClasses[columnKey]) || 'historical-text-cell'} user-data-cell`}
+                  style={{ 
+                    padding: compactView ? '4px 6px' : '8px 10px',
+                    borderBottom: '1px solid #e5e7eb',
+                    whiteSpace: compactView ? 'nowrap' : 'normal',
+                    overflow: compactView ? 'hidden' : 'visible',
+                    textOverflow: compactView ? 'ellipsis' : 'clip',
+                    width: (columnWidths && columnWidths[columnKey]) || 'auto',
+                    minWidth: '80px'
+                  }}>
+                {renderUserTableCell(entry, name, field.name, rowKey)}
+              </td>
+            );
+          });
+        });
+        
+        if (showJoint) {
+          userSection.fields.forEach(field => {
+            const columnKey = `joint-${field.name}`;
+            cells.push(
+              <td key={columnKey} 
+                  className={`${(fieldCssClasses && fieldCssClasses[`Joint-${field.name}`]) || 'historical-text-cell'} user-data-cell joint-data-cell`}
+                  style={{ 
+                    padding: compactView ? '4px 6px' : '8px 10px',
+                    borderBottom: '1px solid #e5e7eb',
+                    whiteSpace: compactView ? 'nowrap' : 'normal',
+                    overflow: compactView ? 'hidden' : 'visible',
+                    textOverflow: compactView ? 'ellipsis' : 'clip',
+                    width: (columnWidths && columnWidths[columnKey]) || 'auto',
+                    minWidth: '80px'
+                  }}>
+                {renderUserTableCell(entry, 'Joint', field.name, rowKey)}
+              </td>
+            );
+          });
+        }
+        
+        return cells;
+      })()}
+      {/* Only show combined-section cells for enabled fields */}
+      {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
+        section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]).map(field => (
+          <td key={field.name} 
+              className={`${(fieldCssClasses && fieldCssClasses[field.name]) || (field.format === 'currency' ? 'data-currency-cell' : field.className === 'percentage' ? 'data-percentage-cell' : 'data-text-cell')} combined-data-cell`}
+              style={{ 
+                padding: compactView ? '4px 6px' : '8px 10px',
+                borderBottom: '1px solid #e5e7eb',
+                whiteSpace: compactView ? 'nowrap' : 'normal',
+                overflow: compactView ? 'hidden' : 'visible',
+                textOverflow: compactView ? 'ellipsis' : 'clip'
+              }}>
+            {renderTableCell(entry, field.name, rowKey)}
+          </td>
+        ))
+      )}
+      {(allowEdit || allowDelete) && (
+        <td className="data-actions-cell actions-cell"
+            style={{ 
+              padding: compactView ? '4px 6px' : '8px 10px',
+              borderBottom: '1px solid #e5e7eb',
+              position: 'sticky',
+              right: 0,
+              backgroundColor: 'inherit',
+              zIndex: 1
+            }}>
+          <div className="data-action-buttons">
+            {allowDelete && (
+              <button
+                onClick={() => deleteEntry(rowKey)}
+                className="data-btn-icon delete"
+                title="Delete entry"
+                style={{
+                  fontSize: compactView ? '0.7rem' : '0.8rem',
+                  padding: compactView ? '2px 4px' : '4px 6px'
+                }}
+              >
+                🗑️
+              </button>
+            )}
+          </div>
+        </td>
+      )}
+    </tr>
+  );
+}, (prevProps, nextProps) => {
+  // Custom comparison for better memoization
+  return (
+    prevProps.rowKey === nextProps.rowKey &&
+    prevProps.isNew === nextProps.isNew &&
+    prevProps.compactView === nextProps.compactView &&
+    JSON.stringify(prevProps.entry) === JSON.stringify(nextProps.entry) &&
+    JSON.stringify(prevProps.userFilters) === JSON.stringify(nextProps.userFilters) &&
+    JSON.stringify(prevProps.combinedSectionFilters) === JSON.stringify(nextProps.combinedSectionFilters) &&
+    JSON.stringify(prevProps.fieldCssClasses) === JSON.stringify(nextProps.fieldCssClasses) &&
+    prevProps.editingCell?.rowKey !== prevProps.rowKey && nextProps.editingCell?.rowKey !== nextProps.rowKey
+  );
+});
 
 const DataManager = ({
   title,
@@ -53,8 +270,19 @@ const DataManager = ({
   const hasLoadedInitialData = useRef(false);
   const lastPaycheckDataRef = useRef(null);
 
+  // Load initial data on component mount
+  useEffect(() => {
+    const initialData = getData();
+    setEntryData(initialData);
+  }, [getData, title]);
+
   // Add account type filtering state
   const [accountTypeFilters, setAccountTypeFilters] = useState({});
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [compactView, setCompactView] = useState(false);
+  const [columnWidths, setColumnWidths] = useState({});
+  const [resizing, setResizing] = useState(null);
 
   // Load paycheck data if usePaycheckUsers is enabled
   useEffect(() => {
@@ -65,11 +293,11 @@ const DataManager = ({
     }
   }, [usePaycheckUsers]);
 
-  // Listen for paycheckDataUpdated and handle name changes
+  // Listen for data update events
   useEffect(() => {
-    if (!usePaycheckUsers) return;
-
     const handlePaycheckDataUpdated = (event) => {
+      if (!usePaycheckUsers) return;
+      
       const newPaycheckData = event.detail || getPaycheckData();
       
       // Check for name changes and migrate data
@@ -97,6 +325,7 @@ const DataManager = ({
         
         if (hasNameChanges) {
           setData(migratedData);
+          setEntryData(migratedData); // Also update local state immediately
         }
       }
       
@@ -105,13 +334,31 @@ const DataManager = ({
       lastPaycheckDataRef.current = newPaycheckData;
     };
 
-    // Register the event listener
+    const handleDataUpdated = () => {
+      // Reload data when the component's specific data is updated
+      const freshData = getData();
+      setEntryData(freshData);
+    };
+
+    // Register the event listeners
     window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
+    
+    // Listen for this component's specific data updates
+    if (dataKey === 'historicalData') {
+      window.addEventListener('historicalDataUpdated', handleDataUpdated);
+    } else if (dataKey === 'performanceData') {
+      window.addEventListener('performanceDataUpdated', handleDataUpdated);
+    }
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
+      if (dataKey === 'historicalData') {
+        window.removeEventListener('historicalDataUpdated', handleDataUpdated);
+      } else if (dataKey === 'performanceData') {
+        window.removeEventListener('performanceDataUpdated', handleDataUpdated);
+      }
     };
-  }, [usePaycheckUsers, entryData, setData, dataKey]);
+  }, [usePaycheckUsers, entryData, setData, dataKey, getData, title]);
 
   // Update user names based on paycheck data when usePaycheckUsers is enabled
   useEffect(() => {
@@ -201,7 +448,7 @@ const DataManager = ({
     if (userNames.length > 0) {
       // For accounts that can be owned by both users, we need special handling
       const userSection = schema.sections.find(s => s.name === 'users');
-      if (userSection && userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name))) {
+      if (userSection && userSection.fields.some(f => ['accountName', 'accountType'].includes(f.name))) {
         // This is likely a performance/account schema - use "Joint" option
         baseData.users = {
           'Joint': {}
@@ -276,7 +523,7 @@ const DataManager = ({
       const userSection = schema.sections.find(s => s.name === 'users');
       if (userSection) {
         // Determine if this schema supports joint accounts
-        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType'].includes(f.name));
         // Always include all userNames and Joint (if supported) for both export and template
         let ownerOptions = [...userNames];
         if (supportsJoint) ownerOptions.push('Joint');
@@ -301,8 +548,8 @@ const DataManager = ({
     return csvHeaders || [];
   };
 
-  // Enhanced field CSS classes generation
-  const getEffectiveFieldCssClasses = () => {
+  // Enhanced field CSS classes generation - memoized for performance
+  const getEffectiveFieldCssClasses = React.useMemo(() => {
     if (usePaycheckUsers && userNames.length > 0) {
       const classes = { ...fieldCssClasses };
       
@@ -329,7 +576,7 @@ const DataManager = ({
     }
     
     return fieldCssClasses;
-  };
+  }, [usePaycheckUsers, userNames, entryData, fieldCssClasses, schema.sections]);
 
   // Convert stored entry to form data - generic version
   const getFormDataFromEntry = (entry) => {
@@ -440,7 +687,7 @@ const DataManager = ({
       // Handle user fields - always parse all user columns (including Joint if schema supports it)
       const userSection = schema.sections.find(s => s.name === 'users');
       if (usePaycheckUsers && userSection && userNames.length > 0) {
-        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+        const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType'].includes(f.name));
         let ownerOptions = [...userNames];
         if (supportsJoint) ownerOptions.push('Joint');
         entry.users = {};
@@ -493,7 +740,7 @@ const DataManager = ({
     const row = [entry.year || ''];
     const userSection = schema.sections.find(s => s.name === 'users');
     if (usePaycheckUsers && userSection && userNames.length > 0) {
-      const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType', 'employer'].includes(f.name));
+      const supportsJoint = userSection.fields.some(f => ['accountName', 'accountType'].includes(f.name));
       let ownerOptions = [...userNames];
       if (supportsJoint) ownerOptions.push('Joint');
       ownerOptions.forEach(ownerName => {
@@ -1118,8 +1365,8 @@ const DataManager = ({
     return filtered;
   };
 
-  // Get available filter options
-  const getAvailableFilterOptions = () => {
+  // Get available filter options - memoized for performance
+  const getAvailableFilterOptions = React.useMemo(() => {
     const allUsersInData = new Set();
     
     // Collect all users that actually exist in the data, applying name mapping
@@ -1165,7 +1412,7 @@ const DataManager = ({
     });
     
     return options;
-  };
+  }, [entryData, userNames, paycheckData?.settings?.showSpouseCalculator]);
 
   // Toggle user filter
   const toggleUserFilter = (userName) => {
@@ -1177,9 +1424,8 @@ const DataManager = ({
 
   // Select all users
   const selectAllUsers = () => {
-    const allOptions = getAvailableFilterOptions();
     const newFilters = {};
-    allOptions.forEach(option => {
+    getAvailableFilterOptions.forEach(option => {
       newFilters[option] = true;
     });
     setUserFilters(newFilters);
@@ -1224,6 +1470,54 @@ const DataManager = ({
       return String(bVal).localeCompare(String(aVal));
     });
   }, [filteredEntryData, currentSortField, currentSortOrder, newlyAddedKey]);
+
+  // Pagination logic
+  const totalItems = sortedKeys.length;
+  const totalPages = Math.ceil(totalItems / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedKeys = sortedKeys.slice(startIndex, endIndex);
+
+  // Reset to page 1 only when filters change (not when data changes)
+  React.useEffect(() => {
+    setCurrentPage(1);
+  }, [userFilters, yearFilters, accountTypeFilters, combinedSectionFilters]);
+
+  // Pagination controls
+  const goToPage = (page) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+  };
+
+  const nextPage = () => goToPage(currentPage + 1);
+  const prevPage = () => goToPage(currentPage - 1);
+
+  // Column resizing functionality
+  const handleMouseDown = useCallback((columnKey, e) => {
+    e.preventDefault();
+    const startWidth = (columnWidths && columnWidths[columnKey]) || 150;
+    const startX = e.clientX;
+    
+    setResizing({ columnKey, startX, startWidth });
+
+    const handleMouseMove = (e) => {
+      const deltaX = e.clientX - startX;
+      const newWidth = Math.max(80, startWidth + deltaX); // Min width of 80px
+      setColumnWidths(prev => ({
+        ...prev,
+        [columnKey]: newWidth
+      }));
+    };
+
+    const handleMouseUp = () => {
+      setResizing(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [columnWidths]);
+
 
   // When editing is finished, remove highlight after a short delay
   useEffect(() => {
@@ -1569,7 +1863,7 @@ const DataManager = ({
                   </div>
                 </div>
                 <div className="user-filter-buttons">
-                  {getAvailableFilterOptions().map(option => (
+                  {getAvailableFilterOptions.map(option => (
                     <button
                       key={option}
                       onClick={() => toggleUserFilter(option)}
@@ -1671,9 +1965,31 @@ const DataManager = ({
         </div>
       )}
       
-      {sortedKeys.length > 0 ? (
+      {totalItems > 0 ? (
         <>
           <div className="data-table-container" style={{ marginBottom: '20px' }}>
+            {/* Performance Warning for Large Datasets */}
+            {totalItems > 100 && (
+              <div style={{
+                background: '#fef3c7',
+                border: '1px solid #f59e0b',
+                borderRadius: '8px',
+                padding: '12px 16px',
+                marginBottom: '16px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                fontSize: '0.9rem'
+              }}>
+                <span>⚡</span>
+                <span>
+                  <strong>Large Dataset ({totalItems} entries)</strong> - 
+                  For better performance, consider using the filters above to view specific data subsets.
+                  {totalItems > 500 && ' Performance may be slower with this many entries.'}
+                </span>
+              </div>
+            )}
+
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
               <h2>📊 {title} Overview</h2>
               <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
@@ -1712,6 +2028,15 @@ const DataManager = ({
                     <option value="desc">High to Low</option>
                     <option value="asc">Low to High</option>
                   </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer', marginLeft: '12px' }}>
+                    <input
+                      type="checkbox"
+                      checked={compactView}
+                      onChange={(e) => setCompactView(e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    <span style={{ fontSize: '0.9rem', color: '#374151' }}>Compact view</span>
+                  </label>
                 </div>
                 
                 {allowAdd && (
@@ -1722,13 +2047,96 @@ const DataManager = ({
               </div>
             </div>
 
-            <div className="data-table">
-              <table>
-                <thead>
+            {/* Pagination Controls - Top */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px', fontSize: '0.9rem', color: '#6b7280', flexWrap: 'wrap' }}>
+                  <span>Showing {startIndex + 1}-{Math.min(endIndex, totalItems)} of {totalItems} entries</span>
+                  <select
+                    value={itemsPerPage}
+                    onChange={(e) => {
+                      setItemsPerPage(Number(e.target.value));
+                      setCurrentPage(1);
+                    }}
+                    style={{
+                      padding: '4px 6px',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      fontSize: '0.8rem'
+                    }}
+                  >
+                    <option value={25}>25 per page</option>
+                    <option value={50}>50 per page</option>
+                    <option value={100}>100 per page</option>
+                    <option value={200}>200 per page</option>
+                  </select>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                    <input
+                      type="checkbox"
+                      checked={compactView}
+                      onChange={(e) => setCompactView(e.target.checked)}
+                      style={{ margin: 0 }}
+                    />
+                    <span style={{ fontSize: '0.8rem' }}>Compact view</span>
+                  </label>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <button
+                    onClick={prevPage}
+                    disabled={currentPage === 1}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      background: currentPage === 1 ? '#f9fafb' : '#fff',
+                      color: currentPage === 1 ? '#9ca3af' : '#374151',
+                      cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    ← Previous
+                  </button>
+                  <span style={{ fontSize: '0.9rem', color: '#6b7280', padding: '0 8px' }}>
+                    Page {currentPage} of {totalPages}
+                  </span>
+                  <button
+                    onClick={nextPage}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      padding: '6px 12px',
+                      borderRadius: '4px',
+                      border: '1px solid #d1d5db',
+                      background: currentPage === totalPages ? '#f9fafb' : '#fff',
+                      color: currentPage === totalPages ? '#9ca3af' : '#374151',
+                      cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                      fontSize: '0.9rem'
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className={`data-table ${compactView ? 'compact-view' : ''}`} style={{ 
+              maxHeight: '70vh', 
+              overflowY: 'auto',
+              overflowX: 'auto',
+              border: '1px solid #e5e7eb',
+              borderRadius: '8px'
+            }}>
+              <table style={{ width: '100%', minWidth: 'max-content', borderCollapse: 'collapse' }}>
+                <thead className="main-header">
                   <tr>
-                    <th className="year-column">
+                    <ResizableHeader 
+                      columnKey="year" 
+                      width={(columnWidths && columnWidths.year)}
+                      onResize={handleMouseDown}
+                      compactView={compactView}
+                      className="year-column"
+                    >
                       Year
-                    </th>
+                    </ResizableHeader>
                     {/* Dynamic header generation for account owners */}
                     {(() => {
                       const userSection = schema.sections.find(s => s.name === 'users');
@@ -1737,7 +2145,7 @@ const DataManager = ({
                       }
 
                       // Get all available filter options (users that actually exist in data)
-                      const availableUsers = getAvailableFilterOptions();
+                      const availableUsers = getAvailableFilterOptions;
                       
                       // Only show headers for users that are actively selected in the filter
                       const activeUsers = availableUsers.filter(name => 
@@ -1789,7 +2197,7 @@ const DataManager = ({
                       }
 
                       // Get all available filter options (users that actually exist in data)
-                      const availableUsers = getAvailableFilterOptions();
+                      const availableUsers = getAvailableFilterOptions;
                       
                       // Only show sub-headers for users that are actively selected in the filter
                       const activeUsers = availableUsers.filter(name => 
@@ -1802,8 +2210,17 @@ const DataManager = ({
                       // Add sub-headers for active individual users
                       activeUsers.forEach(name => {
                         userSection.fields.forEach(field => {
+                          const columnKey = `${name}-${field.name}`;
                           subHeaders.push(
-                            <th key={`${name}-${field.name}`} className="user-field-header">{field.label}</th>
+                            <ResizableHeader 
+                              key={columnKey} 
+                              columnKey={columnKey}
+                              width={(columnWidths && columnWidths[columnKey])}
+                              onResize={handleMouseDown}
+                              compactView={compactView}
+                            >
+                              {field.label}
+                            </ResizableHeader>
                           );
                         });
                       });
@@ -1811,8 +2228,17 @@ const DataManager = ({
                       // Add Joint sub-headers if Joint is active
                       if (showJoint) {
                         userSection.fields.forEach(field => {
+                          const columnKey = `joint-${field.name}`;
                           subHeaders.push(
-                            <th key={`joint-${field.name}`} className="user-field-header">{field.label}</th>
+                            <ResizableHeader 
+                              key={columnKey} 
+                              columnKey={columnKey}
+                              width={(columnWidths && columnWidths[columnKey])}
+                              onResize={handleMouseDown}
+                              compactView={compactView}
+                            >
+                              {field.label}
+                            </ResizableHeader>
                           );
                         });
                       }
@@ -1822,96 +2248,96 @@ const DataManager = ({
                     {/* Only show combined-section sub-headers for enabled fields */}
                     {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
                       section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]).map(field => (
-                        <th key={field.name} className="combined-field-header">{field.label}</th>
+                        <ResizableHeader 
+                          key={field.name} 
+                          columnKey={field.name}
+                          width={(columnWidths && columnWidths[field.name])}
+                          onResize={handleMouseDown}
+                          compactView={compactView}
+                        >
+                          {field.label}
+                        </ResizableHeader>
                       ))
                     )}
                     {(allowEdit || allowDelete) && <th className="actions-column-sub"></th>}
                   </tr>
                 </thead>
                 <tbody>
-                  {sortedKeys.map(key => {
+                  {paginatedKeys.map((key, index) => {
                     const entry = filteredEntryData[key];
                     const isNew = key === newlyAddedKey;
                     return (
-                      <tr
+                      <DataTableRow
                         key={key}
-                        className={`data-row${isNew ? ' new-row-highlight' : ''}`}
-                        style={isNew ? { animation: 'new-row-flash 1.2s' } : undefined}
-                      >
-                        <td className={`${fieldCssClasses[primaryKey] || 'data-year-cell'} year-cell`}>
-                          {entry.year || entry[primaryKey]}
-                        </td>
-                        {/* Dynamic cell generation for user data */}
-                        {(() => {
-                          const userSection = schema.sections.find(s => s.name === 'users');
-                          if (!userSection || !usePaycheckUsers || Object.keys(userFilters).length === 0) {
-                            return null;
-                          }
-
-                          // Get all available filter options (users that actually exist in data)
-                          const availableUsers = getAvailableFilterOptions();
-                          
-                          // Only show cells for users that are actively selected in the filter
-                          const activeUsers = availableUsers.filter(name => 
-                            userFilters[name] === true && name !== 'Joint'
-                          );
-                          const showJoint = userFilters['Joint'] === true;
-                          
-                          const cells = [];
-                          
-                          // Add cells for active individual users
-                          activeUsers.forEach(name => {
-                            userSection.fields.forEach(field => {
-                              cells.push(
-                                <td key={`${name}-${field.name}`} className={`${fieldCssClasses[`${name}-${field.name}`] || 'historical-text-cell'} user-data-cell`}>
-                                  {renderUserTableCell(entry, name, field.name, key)}
-                                </td>
-                              );
-                            });
-                          });
-                          
-                          // Add Joint cells if Joint is active
-                          if (showJoint) {
-                            userSection.fields.forEach(field => {
-                              cells.push(
-                                <td key={`joint-${field.name}`} className={`${fieldCssClasses[`Joint-${field.name}`] || 'historical-text-cell'} user-data-cell joint-data-cell`}>
-                                  {renderUserTableCell(entry, 'Joint', field.name, key)}
-                                </td>
-                              );
-                            });
-                          }
-                          
-                          return cells;
-                        })()}
-                        {/* Only show combined-section cells for enabled fields */}
-                        {schema.sections.filter(s => s.name !== 'users' && s.name !== 'basic').map(section =>
-                          section.fields.filter(f => f.name !== 'year' && combinedSectionFilters[f.name]).map(field => (
-                            <td key={field.name} className={`${fieldCssClasses[field.name] || (field.format === 'currency' ? 'data-currency-cell' : field.className === 'percentage' ? 'data-percentage-cell' : 'data-text-cell')} combined-data-cell`}>
-                              {renderTableCell(entry, field.name, key)}
-                            </td>
-                          ))
-                        )}
-                        {(allowEdit || allowDelete) && (
-                          <td className="data-actions-cell actions-cell">
-                            <div className="data-action-buttons">
-                              {allowDelete && (
-                                <button
-                                  onClick={() => deleteEntry(key)}
-                                  className="data-btn-icon delete"
-                                  title="Delete entry"
-                                >
-                                  🗑️
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        )}
-                      </tr>
+                        rowKey={key}
+                        entry={entry}
+                        isNew={isNew}
+                        rowIndex={index}
+                        schema={{ ...schema, primaryKey }}
+                        usePaycheckUsers={usePaycheckUsers}
+                        userFilters={userFilters}
+                        combinedSectionFilters={combinedSectionFilters}
+                        fieldCssClasses={getEffectiveFieldCssClasses || {}}
+                        allowEdit={allowEdit}
+                        allowDelete={allowDelete}
+                        editingCell={editingCell}
+                        editingCellValue={editingCellValue}
+                        setEditingCellValue={setEditingCellValue}
+                        saveEditCell={saveEditCell}
+                        cancelEditCell={cancelEditCell}
+                        handleCellInputKeyDown={handleCellInputKeyDown}
+                        startEditCell={startEditCell}
+                        deleteEntry={deleteEntry}
+                        getAvailableFilterOptions={getAvailableFilterOptions}
+                        renderUserTableCell={renderUserTableCell}
+                        renderTableCell={renderTableCell}
+                        compactView={compactView}
+                        columnWidths={columnWidths || {}}
+                      />
                     );
                   })}
                 </tbody>
               </table>
             </div>
+
+            {/* Pagination Controls - Bottom */}
+            {totalPages > 1 && (
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', marginTop: '16px', gap: '8px' }}>
+                <button
+                  onClick={prevPage}
+                  disabled={currentPage === 1}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #d1d5db',
+                    background: currentPage === 1 ? '#f9fafb' : '#fff',
+                    color: currentPage === 1 ? '#9ca3af' : '#374151',
+                    cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  ← Previous
+                </button>
+                <span style={{ fontSize: '0.9rem', color: '#6b7280', padding: '0 12px' }}>
+                  Page {currentPage} of {totalPages}
+                </span>
+                <button
+                  onClick={nextPage}
+                  disabled={currentPage === totalPages}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '4px',
+                    border: '1px solid #d1d5db',
+                    background: currentPage === totalPages ? '#f9fafb' : '#fff',
+                    color: currentPage === totalPages ? '#9ca3af' : '#374151',
+                    cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Next →
+                </button>
+              </div>
+            )}
           </div>
           {/* Render import/export section below table if data exists */}
           <div style={{ marginBottom: '20px' }}>
