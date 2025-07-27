@@ -692,8 +692,9 @@ const BudgetForm = () => {
                                       <button
                                         onClick={() => deleteItem(category.id, item.id)}
                                         className="btn-danger item-delete"
+                                        title="Delete this budget item"
                                       >
-                                        🗑️
+                                        🗑️ Delete
                                       </button>
                                     )}
                                   </div>
