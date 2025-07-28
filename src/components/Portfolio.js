@@ -10,7 +10,15 @@ import {
   getPortfolioUpdateHistory,
   getPortfolioRecords,
   addPortfolioRecord,
-  deletePortfolioRecord
+  deletePortfolioRecord,
+  // New shared account functions
+  getSharedAccounts,
+  addOrUpdateSharedAccount,
+  syncAllAccountsToShared,
+  initializeSharedAccounts,
+  clearSharedAccounts,
+  // Need this for debugging
+  getPerformanceData
 } from '../utils/localStorage';
 import { generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
@@ -34,6 +42,9 @@ const Portfolio = () => {
   const ACCOUNT_TYPES = ['IRA', 'Brokerage', '401k', '401k-Rollover', '401k-EmployerMatch', 'ESPP', 'HSA'];
 
   useEffect(() => {
+    // Initialize shared accounts system on component mount
+    initializeSharedAccounts();
+    
     loadCurrentYearData();
     loadUpdateHistory();
     loadPortfolioRecords();
@@ -56,13 +67,24 @@ const Portfolio = () => {
       setSuccessMessage('');
       setShowHistory(false);
       setShowRecords(false);
+      
+      // Also clear shared accounts when global reset happens
+      clearSharedAccounts();
+    };
+
+    // Listen for shared accounts updates from Performance component
+    const handleSharedAccountsUpdated = () => {
+      // Refresh portfolio inputs when shared accounts are updated
+      loadCurrentYearData();
     };
 
     window.addEventListener('resetAllData', handleResetAllData);
+    window.addEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
 
-    // Cleanup event listener
+    // Cleanup event listeners
     return () => {
       window.removeEventListener('resetAllData', handleResetAllData);
+      window.removeEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
     };
   }, []);
 
@@ -113,19 +135,41 @@ const Portfolio = () => {
     setUsers(ownerOptions);
     setCurrentYearData(historicalData[currentYear] || { users: {} });
     
-    // Auto-populate portfolio inputs with stored accounts
-    const storedAccounts = getPortfolioAccounts();
-    if (storedAccounts.length > 0) {
-      // Convert stored accounts to portfolio inputs
-      const autoPopulatedInputs = storedAccounts.map(account => ({
+    // Auto-populate portfolio inputs with master account list (Portfolio data takes precedence)
+    const sharedAccounts = getSharedAccounts();
+    
+    // Convert shared accounts to portfolio inputs, maintaining Portfolio as master
+    const allAccounts = sharedAccounts.map(account => {
+      // For accounts without tax type (from Performance), infer based on account type
+      let taxType = account.taxType;
+      if (!taxType && account.accountType) {
+        if (account.accountType === 'HSA' || account.accountType === 'ESPP') {
+          taxType = 'After-Tax';
+        } else if (account.accountType === '401k') {
+          taxType = 'Tax-Deferred';
+        } else if (account.accountType === 'IRA') {
+          taxType = 'Tax-Free'; // Default to Roth IRA
+        } else if (account.accountType === 'Brokerage') {
+          taxType = 'After-Tax';
+        }
+      }
+      
+      return {
         id: generateUniqueId(),
         accountName: account.accountName,
-        taxType: account.taxType,
+        taxType: taxType || '',
         accountType: account.accountType,
         owner: account.owner,
-        amount: '' // Always start with empty amount for new updates
-      }));
-      setPortfolioInputs(autoPopulatedInputs);
+        employer: account.employer || '',
+        amount: '', // Always start with empty amount for new updates
+        source: account.source,
+        // Show which systems this account appears in
+        sources: account.sources || [account.source]
+      };
+    });
+    
+    if (allAccounts.length > 0) {
+      setPortfolioInputs(allAccounts);
     } else {
       // If no stored accounts, initialize with empty form
       setPortfolioInputs([{
@@ -413,10 +457,21 @@ const Portfolio = () => {
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
         
-        // Save account names for future use
+        // Save account names for future use in both old and new systems
         portfolioInputs.forEach(input => {
           if (input.accountName.trim()) {
+            // Save to old Portfolio system
             addPortfolioAccount(input.accountName, input.taxType, input.accountType, input.owner);
+            
+            // Save to new shared account system
+            addOrUpdateSharedAccount({
+              accountName: input.accountName,
+              owner: input.owner,
+              accountType: input.accountType,
+              employer: input.employer || '',
+              taxType: input.taxType,
+              source: 'portfolio'
+            });
           }
         });
         
@@ -426,29 +481,8 @@ const Portfolio = () => {
         // Add portfolio record with current date
         const portfolioRecord = addPortfolioRecord(portfolioInputs);
         
-        // Repopulate portfolio inputs with stored accounts after successful update
-        const storedAccounts = getPortfolioAccounts();
-        if (storedAccounts.length > 0) {
-          const repopulatedInputs = storedAccounts.map(account => ({
-            id: generateUniqueId(),
-            accountName: account.accountName,
-            taxType: account.taxType,
-            accountType: account.accountType,
-            owner: account.owner,
-            amount: '' // Clear amounts for next update
-          }));
-          setPortfolioInputs(repopulatedInputs);
-        } else {
-          // If no stored accounts, show single empty row
-          setPortfolioInputs([{
-            id: generateUniqueId(),
-            accountName: '',
-            owner: users[0] || '',
-            taxType: '',
-            accountType: '',
-            amount: ''
-          }]);
-        }
+        // Repopulate portfolio inputs with all available accounts (including from Performance)
+        loadCurrentYearData(); // This will reload accounts from both sources
         
         // Clear any validation errors
         setErrors({});
@@ -674,6 +708,9 @@ const Portfolio = () => {
         setHistoricalData(historicalData);
       }
       
+      // Also clear shared accounts
+      clearSharedAccounts();
+      
       alert('Portfolio data has been reset successfully.');
     }
   };
@@ -879,6 +916,113 @@ const Portfolio = () => {
               Update Historical Data
             </button>
           </div>
+
+          {/* Account Sync and Management */}
+          {(() => {
+            const sharedAccounts = getSharedAccounts();
+            const performanceOnlyAccounts = sharedAccounts.filter(acc => 
+              acc.sources && acc.sources.includes('performance') && !acc.sources.includes('portfolio')
+            );
+            const portfolioAccounts = sharedAccounts.filter(acc => 
+              acc.sources && acc.sources.includes('portfolio')
+            );
+            const combinedAccounts = sharedAccounts.filter(acc => 
+              acc.sources && acc.sources.includes('portfolio') && acc.sources.includes('performance')
+            );
+
+            return (
+              <div className="account-sync-section">
+                <div className="sync-controls">
+                  <button 
+                    type="button"
+                    onClick={() => {
+                      const result = syncAllAccountsToShared();
+                      console.log('Sync result:', result);
+                      loadCurrentYearData(); // Refresh the component
+                      setSuccessMessage(`Synced ${result.totalAccounts} accounts from both Portfolio and Performance`);
+                      setTimeout(() => setSuccessMessage(''), 3000);
+                    }}
+                    className="btn-secondary"
+                    title="Sync accounts from Performance Tracker"
+                  >
+                    🔄 Sync Accounts from Performance Tracker
+                  </button>
+                  <div className="account-summary">
+                    <span className="sync-info">
+                      📊 {sharedAccounts.length} total accounts: {portfolioAccounts.length} Portfolio, {performanceOnlyAccounts.length} Performance-only, {combinedAccounts.length} Combined
+                    </span>
+                    <button 
+                      type="button"
+                      onClick={() => {
+                        console.log('=== ACCOUNT MAPPING DEBUG ===');
+                        console.log('All shared accounts:', sharedAccounts);
+                        console.log('Portfolio accounts:', portfolioAccounts);
+                        console.log('Performance-only accounts:', performanceOnlyAccounts);
+                        console.log('Combined accounts:', combinedAccounts);
+                        console.log('Current portfolio inputs:', portfolioInputs);
+                        console.log('Performance data sample:', Object.values(getPerformanceData()).slice(0, 3));
+                      }}
+                      className="btn-tertiary"
+                      title="Debug: Show detailed account mapping in console"
+                    >
+                      🐛 Debug Mapping
+                    </button>
+                  </div>
+                </div>
+
+                {/* Show accounts that exist in Performance but not in Portfolio */}
+                {performanceOnlyAccounts.length > 0 && (
+                  <div className="account-suggestions">
+                    <h3>💡 Performance-Only Accounts</h3>
+                    <p>These accounts were found in your Performance Tracker but don't have Portfolio definitions yet:</p>
+                  <div className="suggestion-cards">
+                    {performanceOnlyAccounts.map(acc => (
+                      <div key={acc.id} className="suggestion-card">
+                        <div className="suggestion-info">
+                          <strong>{acc.accountName}</strong>
+                          <div className="suggestion-details">
+                            Owner: {acc.owner} | Type: {acc.accountType}
+                            {acc.employer && ` | Employer: ${acc.employer}`}
+                          </div>
+                        </div>
+                        <button 
+                          type="button"
+                          onClick={() => {
+                            // Determine tax type based on account type
+                            let taxType = '';
+                            if (acc.accountType === 'HSA' || acc.accountType === 'ESPP') {
+                              taxType = 'After-Tax';
+                            } else if (acc.accountType === '401k') {
+                              taxType = 'Tax-Deferred';
+                            } else if (acc.accountType === 'IRA') {
+                              taxType = 'Tax-Free'; // Default to Roth IRA
+                            } else if (acc.accountType === 'Brokerage') {
+                              taxType = 'After-Tax';
+                            }
+
+                            const newInput = {
+                              id: generateUniqueId(),
+                              accountName: acc.accountName,
+                              owner: acc.owner,
+                              taxType: taxType,
+                              accountType: acc.accountType,
+                              amount: ''
+                            };
+                            setPortfolioInputs(prev => [...prev, newInput]);
+                          }}
+                          className="btn-suggestion"
+                          title="Add this account to your portfolio update form"
+                        >
+                          + Add to Form
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* CSV Import/Export Section */}
           <CSVImportExport

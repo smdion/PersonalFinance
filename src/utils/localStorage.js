@@ -23,7 +23,8 @@ export const STORAGE_KEYS = {
   RETIREMENT_DATA: 'retirementData',
   PORTFOLIO_ACCOUNTS: 'portfolioAccounts',
   PORTFOLIO_UPDATE_HISTORY: 'portfolioUpdateHistory',
-  PORTFOLIO_RECORDS: 'portfolioRecords'
+  PORTFOLIO_RECORDS: 'portfolioRecords',
+  SHARED_ACCOUNTS: 'sharedAccounts'
 };
 
 // Helper function to generate unique IDs
@@ -757,6 +758,7 @@ export const clearAllAppData = () => {
       'portfolioAccounts',
       'portfolioUpdateHistory',
       'portfolioRecords',
+      'sharedAccounts', // Also clear shared accounts
       'nameMapping',
       'hasSeenBetaWelcome' // Also clear beta welcome flag
     ];
@@ -906,6 +908,7 @@ export const resetAllAppData = () => {
       setPortfolioAccounts([]); // Reset portfolio accounts
       setPortfolioUpdateHistory([]); // Reset portfolio update history
       setPortfolioRecords([]); // Reset portfolio records
+      clearSharedAccounts(); // Reset shared accounts system
       
       // Reset the flag after a short delay to ensure all events are processed
       setTimeout(() => {
@@ -1198,4 +1201,235 @@ export const deletePortfolioRecord = (recordId) => {
   const filteredRecords = records.filter(record => record.id !== recordId);
   setPortfolioRecords(filteredRecords);
   return filteredRecords;
+};
+
+// =============================================================================
+// SHARED ACCOUNT MANAGEMENT SYSTEM
+// =============================================================================
+// This system allows Portfolio and Performance components to share account definitions
+
+export const SHARED_ACCOUNTS_KEY = STORAGE_KEYS.SHARED_ACCOUNTS;
+
+// Get all shared accounts that both Portfolio and Performance can use
+export const getSharedAccounts = () => {
+  return getFromStorage(SHARED_ACCOUNTS_KEY, []);
+};
+
+// Set shared accounts (used internally)
+export const setSharedAccounts = (accounts) => {
+  const result = setToStorage(SHARED_ACCOUNTS_KEY, accounts);
+  if (result) {
+    // Notify components that shared accounts have been updated
+    setTimeout(() => {
+      dispatchGlobalEvent('sharedAccountsUpdated', accounts);
+    }, 50);
+  }
+  return result;
+};
+
+// Add or update a shared account with Portfolio as master
+export const addOrUpdateSharedAccount = (accountData) => {
+  const accounts = getSharedAccounts();
+  const {
+    accountName,
+    owner,
+    accountType,
+    employer = '',
+    taxType = '',
+    source = 'manual' // 'portfolio' or 'performance' or 'manual'
+  } = accountData;
+
+  // Validate required fields
+  if (!accountName || !owner || !accountType) {
+    console.error('Missing required account fields:', { accountName, owner, accountType });
+    return null;
+  }
+
+  // Smart matching: find similar accounts that should be combined
+  // 1. Exact match (name, owner, type, employer)
+  // 2. Similar match (name, owner, type - ignore employer differences)
+  let existingIndex = accounts.findIndex(acc => 
+    acc.accountName.toLowerCase() === accountName.toLowerCase().trim() &&
+    acc.owner === owner &&
+    acc.accountType === accountType &&
+    acc.employer === employer
+  );
+
+  // If no exact match, look for similar account (same name, owner, type but different employer)
+  if (existingIndex === -1) {
+    existingIndex = accounts.findIndex(acc => 
+      acc.accountName.toLowerCase() === accountName.toLowerCase().trim() &&
+      acc.owner === owner &&
+      acc.accountType === accountType
+    );
+  }
+
+  const now = new Date().toISOString();
+  let accountEntry;
+
+  if (existingIndex >= 0) {
+    const existing = accounts[existingIndex];
+    
+    // Portfolio data takes precedence over Performance data
+    if (source === 'portfolio' || existing.source !== 'portfolio') {
+      accountEntry = {
+        id: existing.id,
+        accountName: accountName.trim(),
+        owner,
+        accountType,
+        employer: source === 'portfolio' ? employer : (existing.employer || employer),
+        taxType: source === 'portfolio' ? taxType : (existing.taxType || taxType),
+        source: source === 'portfolio' ? 'portfolio' : existing.source,
+        createdAt: existing.createdAt,
+        updatedAt: now,
+        // Keep track of both sources
+        sources: [...new Set([...(existing.sources || [existing.source]), source])]
+      };
+    } else {
+      // Keep existing Portfolio data, just update timestamp
+      accountEntry = {
+        ...existing,
+        updatedAt: now,
+        sources: [...new Set([...(existing.sources || [existing.source]), source])]
+      };
+    }
+    
+    accounts[existingIndex] = accountEntry;
+  } else {
+    // Add new account
+    accountEntry = {
+      id: generateUniqueId(),
+      accountName: accountName.trim(),
+      owner,
+      accountType,
+      employer,
+      taxType,
+      source,
+      createdAt: now,
+      updatedAt: now,
+      sources: [source]
+    };
+    accounts.push(accountEntry);
+  }
+
+  setSharedAccounts(accounts);
+  return accountEntry;
+};
+
+// Get accounts filtered by source (portfolio, performance, or all)
+export const getAccountsBySource = (source = 'all') => {
+  const accounts = getSharedAccounts();
+  if (source === 'all') {
+    return accounts;
+  }
+  return accounts.filter(acc => acc.source === source);
+};
+
+// Sync Portfolio accounts to shared system
+export const syncPortfolioAccountsToShared = () => {
+  const portfolioAccounts = getPortfolioAccounts();
+  let syncCount = 0;
+
+  portfolioAccounts.forEach(acc => {
+    const synced = addOrUpdateSharedAccount({
+      accountName: acc.accountName,
+      owner: acc.owner,
+      accountType: acc.accountType,
+      employer: '', // Portfolio doesn't track employer
+      taxType: acc.taxType,
+      source: 'portfolio'
+    });
+    if (synced) syncCount++;
+  });
+
+  return syncCount;
+};
+
+// Sync Performance data accounts to shared system
+export const syncPerformanceAccountsToShared = () => {
+  const performanceData = getPerformanceData();
+  let syncCount = 0;
+  const processedAccounts = new Set(); // Avoid duplicates in single sync
+
+  Object.values(performanceData).forEach(entry => {
+    if (entry.users && typeof entry.users === 'object') {
+      Object.entries(entry.users).forEach(([owner, userData]) => {
+        if (userData.accountName && userData.accountType) {
+          const accountKey = `${userData.accountName}-${owner}-${userData.accountType}-${userData.employer || ''}`;
+          
+          if (!processedAccounts.has(accountKey)) {
+            const synced = addOrUpdateSharedAccount({
+              accountName: userData.accountName,
+              owner: owner,
+              accountType: userData.accountType,
+              employer: userData.employer || '',
+              taxType: '', // Performance doesn't track tax type
+              source: 'performance'
+            });
+            if (synced) syncCount++;
+            processedAccounts.add(accountKey);
+          }
+        }
+      });
+    }
+  });
+
+  return syncCount;
+};
+
+// Full sync - combines accounts from both Portfolio and Performance
+export const syncAllAccountsToShared = () => {
+  const portfolioCount = syncPortfolioAccountsToShared();
+  const performanceCount = syncPerformanceAccountsToShared();
+  
+  return {
+    portfolioSynced: portfolioCount,
+    performanceSynced: performanceCount,
+    totalAccounts: getSharedAccounts().length
+  };
+};
+
+// Get accounts that can be used in Performance component (from Portfolio)
+export const getAccountsForPerformance = () => {
+  return getSharedAccounts().filter(acc => acc.source === 'portfolio' || acc.source === 'manual');
+};
+
+// Get accounts that can be used in Portfolio component (from Performance)
+export const getAccountsForPortfolio = () => {
+  return getSharedAccounts().filter(acc => acc.source === 'performance' || acc.source === 'manual');
+};
+
+// Delete a shared account
+export const deleteSharedAccount = (accountId) => {
+  const accounts = getSharedAccounts();
+  const filteredAccounts = accounts.filter(acc => acc.id !== accountId);
+  setSharedAccounts(filteredAccounts);
+  return filteredAccounts;
+};
+
+// Initialize shared accounts on app startup
+export const initializeSharedAccounts = () => {
+  // Check if we need to migrate existing data
+  const sharedAccounts = getSharedAccounts();
+  
+  if (sharedAccounts.length === 0) {
+    // First time setup - sync existing accounts
+    const syncResult = syncAllAccountsToShared();
+    console.log('Initialized shared accounts:', syncResult);
+    return syncResult;
+  }
+  
+  return { message: 'Shared accounts already initialized', totalAccounts: sharedAccounts.length };
+};
+
+// Clear all shared accounts (used during reset operations)
+export const clearSharedAccounts = () => {
+  const result = setToStorage(SHARED_ACCOUNTS_KEY, []);
+  if (result) {
+    // Notify components that shared accounts have been cleared
+    setTimeout(() => {
+      dispatchGlobalEvent('sharedAccountsUpdated', []);
+    }, 50);
+  }
+  return result;
 };
