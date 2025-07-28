@@ -83,6 +83,9 @@ const Welcome = () => {
                     <li><strong>Savings Goal Tracker:</strong> Automatic goal creation, bulk editing, progress tracking, purchase management</li>
                     <li><strong>Historical Financial Data Tracking:</strong> 20+ metrics per year, year-over-year analysis, tax information</li>
                     <li><strong>Account Performance Tracker:</strong> Investment analytics, individual & joint accounts, return calculations</li>
+                    <li><strong>Contribution Optimizer:</strong> Analyze 401k/IRA/HSA strategy, identify unused contribution capacity</li>
+                    <li><strong>Portfolio Data Manager:</strong> Update investment account values with tax classification and multi-user support</li>
+                    <li><strong>Assets & Liabilities Tracker:</strong> Monitor homes, vehicles, debt balances for complete net worth picture</li>
                     <li><strong>Net Worth Dashboard:</strong> Interactive charts, growth analysis, asset allocation breakdowns</li>
                     <li><strong>Advanced Data Management:</strong> CSV import/export, demo data, backup/restore functionality</li>
                     <li><strong>Responsive Design:</strong> Works perfectly on desktop, tablet, and mobile devices</li>
@@ -92,11 +95,11 @@ const Welcome = () => {
                 <div className="beta-upcoming-features">
                   <h3>🔮 Coming Soon</h3>
                   <ul>
-                    <li><strong>Retirement Planning:</strong> 401k optimization, IRA strategies, withdrawal planning, catch-up calculations</li>
+                    <li><strong>Retirement Planning:</strong> Withdrawal planning, retirement timeline analysis, catch-up calculations</li>
                     <li><strong>Mortgage & Loan Tools:</strong> Refinancing calculator, extra payment analysis, amortization schedules</li>
                     <li><strong>Enhanced Visualizations:</strong> Interactive charts, trend forecasting, scenario modeling</li>
-                    <li><strong>Portfolio Analytics:</strong> Asset allocation analysis, risk assessment, rebalancing recommendations</li>
-                    <li><strong>Savings Optimization:</strong> Automated recommendations, goal prioritization, cash flow analysis</li>
+                    <li><strong>Advanced Portfolio Analytics:</strong> Risk assessment, rebalancing recommendations, diversification analysis</li>
+                    <li><strong>Automated Recommendations:</strong> AI-driven savings optimization, goal prioritization, cash flow analysis</li>
                     <li><strong>API Integration:</strong> Bank connections, real-time data sync, automated account updates</li>
                     <li><strong>Mobile Applications:</strong> iOS and Android apps with offline sync and push notifications</li>
                   </ul>
@@ -342,6 +345,82 @@ const Welcome = () => {
             </div>
 
             <div className="calculator-card">
+              <Link to="/optimize" className="calculator-link">
+                <div className="calculator-icon">⚡</div>
+                <h3>Contribution Optimizer</h3>
+                <p>
+                  Analyze your current contribution strategy and identify optimization opportunities across all tax-advantaged accounts. 
+                  Track 401k, IRA, HSA contributions with remaining capacity and household-wide optimization analysis.
+                </p>
+                <div className="calculator-features">
+                  <span className="feature-tag">2025 Tax Strategy</span>
+                  <span className="feature-tag">Dual Income Analysis</span>
+                  <span className="feature-tag">Remaining Capacity</span>
+                  <span className="feature-tag">Real-time Sync</span>
+                  <span className="feature-tag">Optimization Opportunities</span>
+                  <span className="feature-tag">Strategic Planning</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="calculator-card">
+              <Link to="/portfolio" className="calculator-link">
+                <div className="calculator-icon">📈</div>
+                <h3>Portfolio Data Manager</h3>
+                <p>
+                  Update your investment portfolio values with proper tax classification and account type categorization. 
+                  Integrates directly with historical data for immediate net worth impact and comprehensive portfolio tracking.
+                </p>
+                <div className="calculator-features">
+                  <span className="feature-tag">Investment Integration</span>
+                  <span className="feature-tag">Tax Classification</span>
+                  <span className="feature-tag">Account Types</span>
+                  <span className="feature-tag">Real-time Updates</span>
+                  <span className="feature-tag">Multi-User Support</span>
+                  <span className="feature-tag">Historical Sync</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="calculator-card">
+              <Link to="/other-assets" className="calculator-link">
+                <div className="calculator-icon">🏠</div>
+                <h3>Other Assets Tracker</h3>
+                <p>
+                  Track and manage your non-investment assets including homes, vehicles, jewelry, and collectibles. 
+                  Input current market values to maintain accurate net worth calculations with organized asset categories.
+                </p>
+                <div className="calculator-features">
+                  <span className="feature-tag">Asset Management</span>
+                  <span className="feature-tag">Current Values</span>
+                  <span className="feature-tag">Asset Categories</span>
+                  <span className="feature-tag">Historical Integration</span>
+                  <span className="feature-tag">Net Worth Impact</span>
+                  <span className="feature-tag">Comprehensive Coverage</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="calculator-card">
+              <Link to="/liabilities" className="calculator-link">
+                <div className="calculator-icon">💳</div>
+                <h3>Liabilities Manager</h3>
+                <p>
+                  Monitor and track all your debts and liabilities including mortgages, loans, and credit cards. 
+                  Input current outstanding balances to maintain accurate net worth with comprehensive debt tracking.
+                </p>
+                <div className="calculator-features">
+                  <span className="feature-tag">Debt Tracking</span>
+                  <span className="feature-tag">Liability Categories</span>
+                  <span className="feature-tag">Balance Updates</span>
+                  <span className="feature-tag">Historical Tracking</span>
+                  <span className="feature-tag">Net Worth Impact</span>
+                  <span className="feature-tag">Complete Coverage</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="calculator-card">
               <Link to="/networth" className="calculator-link">
                 <div className="calculator-icon">💎</div>
                 <h3>Net Worth Dashboard</h3>
@@ -409,28 +488,42 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">4</div>
                     <div className="step-content">
-                      <h4>Track Investment Performance</h4>
-                      <p>Add 401k, IRA, HSA, and brokerage accounts. Monitor balances, contributions, employer matches, gains/losses, and calculate returns over time.</p>
+                      <h4>Optimize Contributions</h4>
+                      <p>Analyze your 401k, IRA, and HSA contribution strategy. Identify unused capacity and optimization opportunities for maximum tax benefits.</p>
                     </div>
                   </div>
                   <div className="step">
                     <div className="step-number">5</div>
+                    <div className="step-content">
+                      <h4>Update Portfolio & Assets</h4>
+                      <p>Use Portfolio Manager to update investment account values. Track other assets like homes and vehicles, and monitor liabilities for complete net worth.</p>
+                    </div>
+                  </div>
+                  <div className="step">
+                    <div className="step-number">6</div>
+                    <div className="step-content">
+                      <h4>Track Investment Performance</h4>
+                      <p>Add individual accounts to monitor balances, contributions, employer matches, gains/losses, and calculate returns over time.</p>
+                    </div>
+                  </div>
+                  <div className="step">
+                    <div className="step-number">7</div>
                     <div className="step-content">
                       <h4>Record Historical Data</h4>
                       <p>Build your financial timeline with annual data including AGI, tax rates, asset values, and net worth. Import CSV files for bulk data entry.</p>
                     </div>
                   </div>
                   <div className="step">
-                    <div className="step-number">6</div>
+                    <div className="step-number">8</div>
                     <div className="step-content">
                       <h4>Visualize Your Progress</h4>
                       <p>Use the Net Worth Dashboard to see growth trends, compare years, analyze asset allocation, and track your wealth building journey.</p>
                     </div>
                   </div>
                   <div className="step">
-                    <div className="step-number">7</div>
+                    <div className="step-number">9</div>
                     <div className="step-content">
-                      <h4>Optimize and Plan</h4>
+                      <h4>Maintain & Optimize</h4>
                       <p>Return to any tool as your situation changes. Export data for safekeeping, model scenarios, and maintain optimal financial planning.</p>
                     </div>
                   </div>
@@ -499,6 +592,18 @@ const Welcome = () => {
               </Link>
               <Link to="/savings" className="quick-start-button secondary">
                 Track Savings Goals
+              </Link>
+              <Link to="/optimize" className="quick-start-button secondary">
+                Optimize Contributions
+              </Link>
+              <Link to="/portfolio" className="quick-start-button secondary">
+                Update Portfolio Values
+              </Link>
+              <Link to="/other-assets" className="quick-start-button secondary">
+                Track Other Assets
+              </Link>
+              <Link to="/liabilities" className="quick-start-button secondary">
+                Track Liabilities
               </Link>
               <Link to="/performance" className="quick-start-button secondary">
                 Track Account Performance

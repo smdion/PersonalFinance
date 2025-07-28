@@ -48,6 +48,22 @@ const NetWorth = () => {
   const [isCompactTable, setIsCompactTable] = useState(false); // Toggle for compact table view
   const [showFloatingControls, setShowFloatingControls] = useState(false); // Show floating controls on scroll
 
+  // Get current year for YTD indicators
+  const currentYear = new Date().getFullYear();
+
+  // Helper function to check if a year is current year (for YTD indicators)
+  const isCurrentYear = (year) => year === currentYear;
+
+  // Helper function to get YTD indicator JSX
+  const getYTDIndicator = (year, className = '') => {
+    if (!isCurrentYear(year)) return null;
+    return (
+      <span className={`networth-ytd-indicator ${className}`} title="Year-to-date data - some metrics may be incomplete">
+        YTD
+      </span>
+    );
+  };
+
   // Toggle score info visibility
   const toggleScoreInfo = (scoreType, year) => {
     const key = `${scoreType}_${year}`;
@@ -462,6 +478,10 @@ const NetWorth = () => {
       [...chartFilteredData].sort((a, b) => a.year - b.year);
       
     const years = sortedData.map(d => d.year);
+    // Add YTD indicator to current year labels
+    const labelsWithYTD = years.map(year => {
+      return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
+    });
     const netWorthData = sortedData.map(d => d.netWorth);
     const portfolioData = sortedData.map(d => d.portfolio);
     const houseData = sortedData.map(d => d.houseValue);
@@ -469,7 +489,7 @@ const NetWorth = () => {
     const liabilityData = sortedData.map(d => d.totalLiabilities); // Show as positive values
 
     return {
-      labels: years,
+      labels: labelsWithYTD,
       datasets: [
         {
           label: 'Net Worth',
@@ -527,6 +547,10 @@ const NetWorth = () => {
       [...portfolioChartFilteredData].sort((a, b) => b.year - a.year) :
       [...portfolioChartFilteredData].sort((a, b) => a.year - b.year);
     const years = sortedData.map(d => d.year);
+    // Add YTD indicator to current year labels
+    const labelsWithYTD = years.map(year => {
+      return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
+    });
     const categories = ['Tax-Free (Roth)', 'Tax-Deferred (Trad)', 'Brokerage (Taxable)', 'HSA', 'ESPP'];
     const colors = [
       'rgba(34, 197, 94, 0.8)',
@@ -562,7 +586,7 @@ const NetWorth = () => {
     });
 
     return {
-      labels: years,
+      labels: labelsWithYTD,
       datasets: datasets
     };
   }, [portfolioChartFilteredData, useReverseChronological]);
@@ -574,6 +598,10 @@ const NetWorth = () => {
       [...netWorthBreakdownChartFilteredData].sort((a, b) => b.year - a.year) :
       [...netWorthBreakdownChartFilteredData].sort((a, b) => a.year - b.year);
     const years = sortedData.map(d => d.year);
+    // Add YTD indicator to current year labels
+    const labelsWithYTD = years.map(year => {
+      return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
+    });
     const categories = ['Portfolio', 'House Equity', 'Cash', 'Other Assets'];
     const colors = [
       'rgba(59, 130, 246, 0.8)',
@@ -612,7 +640,7 @@ const NetWorth = () => {
     });
 
     return {
-      labels: years,
+      labels: labelsWithYTD,
       datasets: datasets
     };
   }, [netWorthBreakdownChartFilteredData, useReverseChronological]);
@@ -625,6 +653,10 @@ const NetWorth = () => {
       [...moneyGuyChartFilteredData].sort((a, b) => a.year - b.year);
     
     const years = sortedData.map(d => d.year);
+    // Add YTD indicator to current year labels
+    const labelsWithYTD = years.map(year => {
+      return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
+    });
     
     // Calculate Average Accumulator values for each year
     const averageAccumulatorData = sortedData.map(d => d.averageAccumulator || 0);
@@ -637,7 +669,7 @@ const NetWorth = () => {
     const portfolioData = sortedData.map(d => d.portfolio);
 
     return {
-      labels: years,
+      labels: labelsWithYTD,
       datasets: [
         {
           label: 'Average Accumulator',
@@ -1368,13 +1400,14 @@ const NetWorth = () => {
                         return [
                           { label: 'Latest Net Worth', value: formatCurrency(latest.netWorth), year: latest.year },
                           { label: 'Total Growth', value: formatCurrency(totalGrowth), change: `${percentGrowth >= 0 ? '+' : ''}${percentGrowth.toFixed(1)}%` },
-                          { label: 'Current Portfolio', value: formatCurrency(latest.portfolio) },
-                          { label: 'Current House Value', value: formatCurrency(latest.houseValue) },
-                          { label: 'Current Liabilities', value: formatCurrency(latest.totalLiabilities) }
+                          { label: 'Latest Portfolio', value: formatCurrency(latest.portfolio), year: latest.year },
+                          { label: 'Latest House Value', value: formatCurrency(latest.houseValue), year: latest.year },
+                          { label: 'Latest Liabilities', value: formatCurrency(latest.totalLiabilities), year: latest.year }
                         ].map((stat, idx) => (
                           <div key={idx} className="networth-summary-card">
                             <div className="networth-summary-label">
                               {stat.label} {stat.year && `(${stat.year})`}
+                              {stat.year && getYTDIndicator(stat.year, 'summary')}
                             </div>
                             <div className="networth-summary-value">
                               {stat.value}
@@ -1519,6 +1552,7 @@ const NetWorth = () => {
                         <div key={data.year} className="networth-score-card">
                           <h3 className="networth-score-year">
                             {data.year}
+                            {getYTDIndicator(data.year, 'score-year')}
                           </h3>
                           
                           {/* Money Guy Score */}
@@ -1760,6 +1794,7 @@ const NetWorth = () => {
                               {[...filteredData].reverse().map(data => (
                                 <th key={data.year} className="year-header">
                                   {data.year}
+                                  {getYTDIndicator(data.year, 'table-header')}
                                 </th>
                               ))}
                             </tr>

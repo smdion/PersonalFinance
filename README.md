@@ -56,6 +56,34 @@ The Personal Finance Calculator Suite is designed to be your complete financial 
 - **Joint Account Support**: Handle both individual and joint investment accounts
 - **Historical Performance**: Multi-year tracking to analyze investment trends
 
+### ⚡ Contribution Optimizer
+- **2025 Tax Strategy**: Analyze current contribution strategy using latest tax advantages
+- **Dual Income Optimization**: Household-wide view of 401k, IRA, HSA, and brokerage contributions
+- **Remaining Capacity**: Identify unused contribution room across all tax-advantaged accounts
+- **Real-time Analysis**: Live calculations from paycheck data with optimization opportunities
+- **Strategic Planning**: Maximize tax benefits and retirement savings potential
+
+### 🏠 Other Assets Tracker
+- **Asset Management**: Track homes, vehicles, jewelry, collectibles, and other valuable assets
+- **Current Value Updates**: Input current market values to maintain accurate net worth
+- **Asset Categories**: Organized by type including real estate, vehicles, personal property
+- **Historical Integration**: Updates historical data automatically for net worth calculations
+- **Comprehensive Coverage**: Track all non-investment assets in one location
+
+### 💳 Liabilities Manager
+- **Debt Tracking**: Monitor mortgages, loans, credit cards, and other outstanding balances
+- **Liability Categories**: Organized by type including secured/unsecured debt, student loans
+- **Balance Updates**: Input current outstanding balances for accurate net worth calculations
+- **Historical Tracking**: Maintains debt reduction progress over time
+- **Complete Picture**: Full liability coverage for comprehensive financial analysis
+
+### 📈 Portfolio Data Manager
+- **Investment Account Integration**: Update tax-free, tax-deferred, and brokerage account values
+- **Tax Classification**: Properly categorize accounts by tax treatment for optimal analysis
+- **Account Types**: Support for 401k, IRA, HSA, ESPP, and brokerage accounts
+- **Real-time Updates**: Direct integration with historical data for immediate net worth impact
+- **Multi-User Support**: Handle individual and joint account ownership
+
 ### 💎 Net Worth Dashboard
 - **Interactive Visualizations**: Charts and graphs showing financial progress over time
 - **Year-over-Year Comparisons**: Compare multiple years to track wealth growth
@@ -122,11 +150,11 @@ Experience all features immediately with realistic sample data:
 
 ## 🚧 Coming Soon
 
-- **Retirement Planning**: 401k optimization, IRA strategies, withdrawal planning
+- **Retirement Planning**: Withdrawal planning, retirement timeline analysis
 - **Mortgage Tools**: Refinancing calculator, extra payment analysis
 - **Enhanced Visualizations**: Interactive charts, trend analysis, forecasting
-- **Portfolio Analytics**: Asset allocation, risk analysis, rebalancing
-- **Savings Recommendations**: Automated savings optimization and goal suggestions
+- **Advanced Portfolio Analytics**: Risk analysis, rebalancing recommendations
+- **Automated Recommendations**: AI-driven savings optimization and goal suggestions
 - **API Integration**: Bank connections, real-time data sync
 - **Mobile App**: iOS and Android applications with offline sync
 
@@ -211,6 +239,10 @@ src/
 - `Savings.js` - Savings goal tracking with bulk editing
 - `Historical.js` - Historical data tracker
 - `Performance.js` - Investment performance tracker
+- `Optimize.js` - Contribution optimization analyzer
+- `OtherAssets.js` - Asset value tracking
+- `Portfolio.js` - Investment portfolio data manager
+- `Liabilities.js` - Debt and liability tracker
 - `NetWorthDashboard.js` - Visualization dashboard
 - `DataManager.js` - Reusable data management component
 

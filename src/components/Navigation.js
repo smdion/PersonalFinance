@@ -5,18 +5,55 @@ const Navigation = () => {
   const location = useLocation();
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
+  const [openFolders, setOpenFolders] = useState({});
   const settingsMenuRef = useRef(null);
   const hamburgerMenuRef = useRef(null);
+  const desktopNavRef = useRef(null);
 
-  const navItems = [
-    { path: '/paycheck', label: 'Paycheck', icon: '💰' },
-    { path: '/budget', label: 'Budget', icon: '💵' },
-    { path: '/savings', label: 'Savings', icon: '🎯' },
-    { path: '/optimize', label: 'Optimize', icon: '⚡' },
-    { path: '/historical', label: 'Historical', icon: '📈' },
-    { path: '/performance', label: 'Performance', icon: '📊' },
-    { path: '/networth', label: 'Net Worth', icon: '💎' }
+  const navFolders = [
+    {
+      label: 'Cash Flow',
+      icon: '💸',
+      items: [
+        { path: '/paycheck', label: 'Paycheck', icon: '💰' },
+        { path: '/budget', label: 'Budget', icon: '💵' },
+        { path: '/savings', label: 'Savings', icon: '🎯' }
+      ]
+    },
+    {
+      label: 'Data',
+      icon: '📊',
+      items: [
+        { path: '/other-assets', label: 'Other Assets', icon: '🏠' },
+        { path: '/liabilities', label: 'Liabilities', icon: '💳' },
+        { path: '/portfolio', label: 'Portfolio', icon: '📈' },
+        { path: '/historical', label: 'Historical', icon: '📋' },
+        { path: '/performance', label: 'Performance', icon: '🎯' },
+        { path: '/retirement', label: 'Retirement', icon: '🏖️' }
+      ]
+    },
+    {
+      label: 'Analyze',
+      icon: '🔍',
+      items: [
+        { path: '/optimize', label: 'Optimize', icon: '⚡' },
+        { path: '/networth', label: 'Net Worth', icon: '💎' }
+      ]
+    }
   ];
+
+  // Get all navigation items flattened for active state checking
+  const getAllNavItems = () => {
+    return navFolders.flatMap(folder => folder.items);
+  };
+
+  // Toggle folder open/closed state
+  const toggleFolder = (folderLabel) => {
+    setOpenFolders(prev => ({
+      ...prev,
+      [folderLabel]: !prev[folderLabel]
+    }));
+  };
 
   // Handle click outside to close menus
   useEffect(() => {
@@ -26,6 +63,10 @@ const Navigation = () => {
       }
       if (hamburgerMenuRef.current && !hamburgerMenuRef.current.contains(event.target)) {
         setShowHamburgerMenu(false);
+      }
+      // Close desktop navigation folder dropdowns when clicking outside
+      if (desktopNavRef.current && !desktopNavRef.current.contains(event.target)) {
+        setOpenFolders({});
       }
     };
 
@@ -160,16 +201,34 @@ const Navigation = () => {
         </div>
 
         {/* Desktop Navigation (hidden on mobile) */}
-        <div className="nav-items-desktop">
-          {navItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-            >
-              <span className="nav-item-icon">{item.icon}</span>
-              <span className="nav-item-label">{item.label}</span>
-            </Link>
+        <div className="nav-items-desktop" ref={desktopNavRef}>
+          {navFolders.map((folder) => (
+            <div key={folder.label} className="nav-folder">
+              <button
+                className="nav-folder-toggle"
+                onClick={() => toggleFolder(folder.label)}
+                aria-expanded={openFolders[folder.label]}
+              >
+                <span className="nav-folder-icon">{folder.icon}</span>
+                <span className="nav-folder-label">{folder.label}</span>
+                <span className={`nav-folder-arrow ${openFolders[folder.label] ? 'open' : ''}`}>▼</span>
+              </button>
+              {openFolders[folder.label] && (
+                <div className="nav-folder-items">
+                  {folder.items.map((item) => (
+                    <Link
+                      key={item.path}
+                      to={item.path}
+                      className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                      onClick={() => setOpenFolders({})}
+                    >
+                      <span className="nav-item-icon">{item.icon}</span>
+                      <span className="nav-item-label">{item.label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
           ))}
         </div>
 
@@ -192,16 +251,33 @@ const Navigation = () => {
             {showHamburgerMenu && (
               <div className="hamburger-dropdown">
                 <div className="hamburger-menu-items">
-                  {navItems.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
-                      onClick={() => setShowHamburgerMenu(false)}
-                    >
-                      <span className="menu-item-icon">{item.icon}</span>
-                      <span className="menu-item-label">{item.label}</span>
-                    </Link>
+                  {navFolders.map((folder) => (
+                    <div key={folder.label} className="hamburger-folder">
+                      <button
+                        className="hamburger-folder-toggle"
+                        onClick={() => toggleFolder(folder.label)}
+                        aria-expanded={openFolders[folder.label]}
+                      >
+                        <span className="menu-folder-icon">{folder.icon}</span>
+                        <span className="menu-folder-label">{folder.label}</span>
+                        <span className={`menu-folder-arrow ${openFolders[folder.label] ? 'open' : ''}`}>▼</span>
+                      </button>
+                      {openFolders[folder.label] && (
+                        <div className="hamburger-folder-items">
+                          {folder.items.map((item) => (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
+                              onClick={() => setShowHamburgerMenu(false)}
+                            >
+                              <span className="menu-item-icon">{item.icon}</span>
+                              <span className="menu-item-label">{item.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   ))}
                 </div>
               </div>

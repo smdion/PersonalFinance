@@ -19,7 +19,8 @@ export const STORAGE_KEYS = {
   HISTORICAL_DATA: 'historicalData',
   PERFORMANCE_DATA: 'performanceData',
   NETWORTH_SETTINGS: 'networthSettings',
-  SAVINGS_DATA: 'savingsData'
+  SAVINGS_DATA: 'savingsData',
+  RETIREMENT_DATA: 'retirementData'
 };
 
 // Generic localStorage utilities
@@ -495,7 +496,8 @@ export const exportAllData = () => {
     formData: getFormData(),
     appSettings: getAppSettings(),
     historicalData: getHistoricalData(),
-    performanceData: getPerformanceData()
+    performanceData: getPerformanceData(),
+    retirementData: getRetirementData()
   };
   
   return exportData;
@@ -626,6 +628,12 @@ export const importAllData = (importData) => {
       } else {
         errors.push('Performance Data: Failed to save');
       }
+    }
+    
+    
+    if (importData.retirementData !== undefined) {
+      setRetirementData(importData.retirementData);
+      importedSections.push('Retirement Data');
     }
 
     // Import completed successfully
@@ -759,6 +767,7 @@ export const clearAllAppData = () => {
       'historicalData',
       'performanceData',
       'networthSettings',
+      'retirementData',
       'nameMapping',
       'hasSeenBetaWelcome' // Also clear beta welcome flag
     ];
@@ -803,7 +812,8 @@ export const exportAllDataWithTimestamp = () => {
       paycheckData: getPaycheckData(),
       formData: getFormData(),
       historicalData: getHistoricalData(),
-      performanceData: getPerformanceData()
+      performanceData: getPerformanceData(),
+      retirementData: getRetirementData()
     };
 
     // Get user names from paycheck data for filename
@@ -903,6 +913,7 @@ export const resetAllAppData = () => {
       setHistoricalData({});
       setPerformanceData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
+      setRetirementData({}); // Reset retirement data as well
       
       // Reset the flag after a short delay to ensure all events are processed
       setTimeout(() => {
@@ -972,6 +983,7 @@ export const cleanupObsoleteFields = () => {
   }
 };
 
+
 // Net Worth settings utilities
 export const getNetWorthSettings = () => {
   return getFromStorage(STORAGE_KEYS.NETWORTH_SETTINGS, {
@@ -999,4 +1011,13 @@ export const getSavingsData = () => {
 
 export const setSavingsData = (data) => {
   return setToStorage(STORAGE_KEYS.SAVINGS_DATA, data);
+};
+
+// Retirement data utilities
+export const getRetirementData = () => {
+  return getFromStorage(STORAGE_KEYS.RETIREMENT_DATA, {});
+};
+
+export const setRetirementData = (data) => {
+  return setToStorage(STORAGE_KEYS.RETIREMENT_DATA, data);
 };

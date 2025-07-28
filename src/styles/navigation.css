@@ -46,6 +46,89 @@
   gap: 0.5rem;
 }
 
+/* Navigation Folders */
+.nav-folder {
+  position: relative;
+}
+
+.nav-folder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: rgba(255, 255, 255, 0.9);
+  background: none;
+  border: none;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  font-size: 0.9rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.nav-folder-toggle:hover {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  transform: translateY(-1px);
+}
+
+.nav-folder-icon {
+  font-size: 1.1rem;
+}
+
+.nav-folder-label {
+  font-size: 0.9rem;
+}
+
+.nav-folder-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.nav-folder-arrow.open {
+  transform: rotate(180deg);
+}
+
+.nav-folder-items {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e2e8f0;
+  min-width: 180px;
+  overflow: hidden;
+  animation: fadeInSlideDown 0.2s ease;
+  z-index: 1001;
+}
+
+.nav-folder-items .nav-item {
+  color: #374151;
+  padding: 0.75rem 1rem;
+  margin: 0;
+  border-radius: 0;
+  font-size: 0.85rem;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.nav-folder-items .nav-item:last-child {
+  border-bottom: none;
+}
+
+.nav-folder-items .nav-item:hover {
+  background: #f8fafc;
+  color: #0891b2;
+  transform: none;
+}
+
+.nav-folder-items .nav-item.active {
+  background: #e0f2fe;
+  color: #0891b2;
+  font-weight: 600;
+}
+
 .nav-item {
   display: flex;
   align-items: center;
@@ -197,6 +280,74 @@
 
 .menu-item-label {
   flex: 1;
+}
+
+/* Hamburger Menu Folders */
+.hamburger-folder {
+  margin-bottom: 0.5rem;
+}
+
+.hamburger-folder:last-child {
+  margin-bottom: 0;
+}
+
+.hamburger-folder-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: #f8fafc;
+  border: none;
+  color: #374151;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  margin-bottom: 0.25rem;
+}
+
+.hamburger-folder-toggle:hover {
+  background: #e2e8f0;
+  color: #0891b2;
+  transform: translateX(2px);
+}
+
+.menu-folder-icon {
+  font-size: 1rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.menu-folder-label {
+  flex: 1;
+}
+
+.menu-folder-arrow {
+  font-size: 0.7rem;
+  transition: transform 0.2s ease;
+}
+
+.menu-folder-arrow.open {
+  transform: rotate(180deg);
+}
+
+.hamburger-folder-items {
+  padding-left: 1rem;
+  border-left: 2px solid #e2e8f0;
+  margin-left: 1rem;
+}
+
+.hamburger-folder-items .hamburger-menu-item {
+  font-size: 0.85rem;
+  padding: 0.5rem 1rem;
+  margin-bottom: 0.125rem;
+}
+
+.hamburger-folder-items .hamburger-menu-item:last-child {
+  margin-bottom: 0;
 }
 
 /* Settings Menu */

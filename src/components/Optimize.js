@@ -178,8 +178,9 @@ const Optimize = () => {
     return (
       <div className="optimize-container">
         <Navigation />
-        <div className="optimize-content">
-          <div className="optimize-header">
+        <div className="app-container">
+          <div className="header">
+            <div className="optimize-header-icon">⚡</div>
             <h1>Optimize Your Contributions</h1>
             <p>Analyze your contribution strategy and find optimization opportunities</p>
           </div>
@@ -329,9 +330,10 @@ const Optimize = () => {
   return (
     <div className="optimize-container">
       <Navigation />
-      <div className="optimize-content">
-        <div className="optimize-header">
-          <h1>⚡ Optimize Your Contributions</h1>
+      <div className="app-container">
+        <div className="header">
+          <div className="optimize-header-icon">⚡</div>
+          <h1>Optimize Your Contributions</h1>
           <p>Analyze your current contribution strategy and identify optimization opportunities</p>
         </div>
 
