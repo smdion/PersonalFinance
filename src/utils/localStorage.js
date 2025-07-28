@@ -20,7 +20,15 @@ export const STORAGE_KEYS = {
   PERFORMANCE_DATA: 'performanceData',
   NETWORTH_SETTINGS: 'networthSettings',
   SAVINGS_DATA: 'savingsData',
-  RETIREMENT_DATA: 'retirementData'
+  RETIREMENT_DATA: 'retirementData',
+  PORTFOLIO_ACCOUNTS: 'portfolioAccounts',
+  PORTFOLIO_UPDATE_HISTORY: 'portfolioUpdateHistory',
+  PORTFOLIO_RECORDS: 'portfolioRecords'
+};
+
+// Helper function to generate unique IDs
+const generateUniqueId = () => {
+  return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 };
 
 // Generic localStorage utilities
@@ -768,6 +776,9 @@ export const clearAllAppData = () => {
       'performanceData',
       'networthSettings',
       'retirementData',
+      'portfolioAccounts',
+      'portfolioUpdateHistory',
+      'portfolioRecords',
       'nameMapping',
       'hasSeenBetaWelcome' // Also clear beta welcome flag
     ];
@@ -787,6 +798,7 @@ export const clearAllAppData = () => {
       dispatchGlobalEvent('historicalDataUpdated', {});
       dispatchGlobalEvent('performanceDataUpdated', []);
       dispatchGlobalEvent('formDataUpdated', {});
+      dispatchGlobalEvent('resetAllData', true); // Notify all components of complete reset
     }, 50);
     
     return true;
@@ -914,6 +926,9 @@ export const resetAllAppData = () => {
       setPerformanceData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well
+      setPortfolioAccounts([]); // Reset portfolio accounts
+      setPortfolioUpdateHistory([]); // Reset portfolio update history
+      setPortfolioRecords([]); // Reset portfolio records
       
       // Reset the flag after a short delay to ensure all events are processed
       setTimeout(() => {
@@ -1020,4 +1035,182 @@ export const getRetirementData = () => {
 
 export const setRetirementData = (data) => {
   return setToStorage(STORAGE_KEYS.RETIREMENT_DATA, data);
+};
+
+// Portfolio account names utilities
+export const getPortfolioAccounts = () => {
+  return getFromStorage(STORAGE_KEYS.PORTFOLIO_ACCOUNTS, []);
+};
+
+export const setPortfolioAccounts = (accounts) => {
+  return setToStorage(STORAGE_KEYS.PORTFOLIO_ACCOUNTS, accounts);
+};
+
+export const addPortfolioAccount = (accountName, taxType, accountType, owner) => {
+  const accounts = getPortfolioAccounts();
+  const newAccount = {
+    id: generateUniqueId(),
+    accountName: accountName.trim(),
+    taxType,
+    accountType,
+    owner,
+    createdAt: new Date().toISOString()
+  };
+  
+  // Check if account already exists to avoid duplicates
+  const exists = accounts.some(acc => 
+    acc.accountName.toLowerCase() === accountName.toLowerCase().trim() &&
+    acc.owner === owner &&
+    acc.taxType === taxType &&
+    acc.accountType === accountType
+  );
+  
+  if (!exists) {
+    accounts.push(newAccount);
+    setPortfolioAccounts(accounts);
+  }
+  
+  return newAccount;
+};
+
+// Portfolio update history utilities
+export const getPortfolioUpdateHistory = () => {
+  return getFromStorage(STORAGE_KEYS.PORTFOLIO_UPDATE_HISTORY, []);
+};
+
+export const setPortfolioUpdateHistory = (history) => {
+  return setToStorage(STORAGE_KEYS.PORTFOLIO_UPDATE_HISTORY, history);
+};
+
+export const addPortfolioUpdateRecord = (accounts, totals, previousTotals = null) => {
+  const history = getPortfolioUpdateHistory();
+  
+  // Calculate changes from previous update
+  const changes = {};
+  if (previousTotals) {
+    changes.taxFree = (totals.taxFree || 0) - (previousTotals.taxFree || 0);
+    changes.taxDeferred = (totals.taxDeferred || 0) - (previousTotals.taxDeferred || 0);
+    changes.brokerage = (totals.brokerage || 0) - (previousTotals.brokerage || 0);
+    changes.espp = (totals.espp || 0) - (previousTotals.espp || 0);
+    changes.hsa = (totals.hsa || 0) - (previousTotals.hsa || 0);
+    changes.total = Object.values(changes).reduce((sum, change) => sum + change, 0);
+  }
+  
+  const updateRecord = {
+    id: generateUniqueId(),
+    timestamp: new Date().toISOString(),
+    year: new Date().getFullYear(),
+    accountsUpdated: accounts.length,
+    accounts: accounts.map(acc => ({
+      accountName: acc.accountName,
+      owner: acc.owner,
+      taxType: acc.taxType,
+      accountType: acc.accountType,
+      amount: parseFloat(acc.amount) || 0
+    })),
+    totals: {
+      taxFree: totals.taxFree || 0,
+      taxDeferred: totals.taxDeferred || 0,
+      brokerage: totals.brokerage || 0,
+      espp: totals.espp || 0,
+      hsa: totals.hsa || 0
+    },
+    previousTotals: previousTotals ? {
+      taxFree: previousTotals.taxFree || 0,
+      taxDeferred: previousTotals.taxDeferred || 0,
+      brokerage: previousTotals.brokerage || 0,
+      espp: previousTotals.espp || 0,
+      hsa: previousTotals.hsa || 0
+    } : null,
+    changes: Object.keys(changes).length > 0 ? changes : null,
+    totalAmount: accounts.reduce((sum, acc) => sum + (parseFloat(acc.amount) || 0), 0)
+  };
+  
+  // Add to beginning of array to show most recent first
+  history.unshift(updateRecord);
+  
+  // Keep only last 50 updates to prevent excessive storage usage
+  if (history.length > 50) {
+    history.splice(50);
+  }
+  
+  setPortfolioUpdateHistory(history);
+  return updateRecord;
+};
+
+// Portfolio records utilities (comprehensive update tracking with dates)
+export const getPortfolioRecords = () => {
+  return getFromStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, []);
+};
+
+export const setPortfolioRecords = (records) => {
+  return setToStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, records);
+};
+
+export const addPortfolioRecord = (accounts, updateDate = null) => {
+  const records = getPortfolioRecords();
+  const recordDate = updateDate || new Date().toISOString();
+  
+  const newRecord = {
+    id: generateUniqueId(),
+    updateDate: recordDate,
+    timestamp: new Date(recordDate).getTime(), // For sorting
+    year: new Date(recordDate).getFullYear(),
+    month: new Date(recordDate).getMonth() + 1,
+    accountsCount: accounts.length,
+    accounts: accounts.map(acc => ({
+      accountName: acc.accountName,
+      owner: acc.owner,
+      taxType: acc.taxType,
+      accountType: acc.accountType,
+      amount: parseFloat(acc.amount) || 0,
+      updateDate: recordDate
+    })),
+    totals: {
+      taxFree: 0,
+      taxDeferred: 0,
+      brokerage: 0,
+      hsa: 0,
+      espp: 0
+    }
+  };
+
+  // Calculate totals using consistent logic
+  newRecord.accounts.forEach(acc => {
+    const amount = acc.amount || 0;
+    
+    // Use account type first for special accounts, then fall back to tax type
+    if (acc.accountType === 'ESPP') {
+      newRecord.totals.espp += amount;
+    } else if (acc.accountType === 'HSA') {
+      newRecord.totals.hsa += amount;
+    } else {
+      // Map by tax type for regular accounts
+      switch (acc.taxType) {
+        case 'Tax-Free':
+          newRecord.totals.taxFree += amount;
+          break;
+        case 'Tax-Deferred':
+          newRecord.totals.taxDeferred += amount;
+          break;
+        case 'After-Tax':
+        case 'Roth':
+          newRecord.totals.brokerage += amount;
+          break;
+      }
+    }
+  });
+
+  newRecord.totalAmount = Object.values(newRecord.totals).reduce((sum, amount) => sum + amount, 0);
+
+  // Add to beginning of array (most recent first)
+  records.unshift(newRecord);
+  
+  // Keep only last 100 records to prevent excessive storage usage
+  if (records.length > 100) {
+    records.splice(100);
+  }
+  
+  setPortfolioRecords(records);
+  return newRecord;
 };
