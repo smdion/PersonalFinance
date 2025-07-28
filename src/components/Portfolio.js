@@ -767,38 +767,6 @@ const Portfolio = () => {
           </div>
         )}
 
-        {/* Current Historical Data Display */}
-        {currentYearData && Object.keys(currentYearData).length > 0 && (
-          <div className="current-data-section">
-            <h2>Current {currentYear} Investment Data</h2>
-            {updateHistory.length > 0 && (
-              <p className="last-update-info">
-                Last updated: {formatDateTime(updateHistory[0].timestamp)}
-                {updateHistory[0].changes && updateHistory[0].changes.total !== 0 && (
-                  <span 
-                    className="last-update-change"
-                    style={{ color: formatChange(updateHistory[0].changes.total)?.color }}
-                  >
-                    {' '}({formatChange(updateHistory[0].changes.total)?.sign}{formatChange(updateHistory[0].changes.total)?.formatted} total change)
-                  </span>
-                )}
-              </p>
-            )}
-            <div className="current-data-cards">
-              <div className="user-data-card">
-                <h3>Combined Portfolio Total</h3>
-                <div className="investment-fields">
-                  <div>Tax-Free: {formatCurrency(currentYearData.taxFree || 0)}</div>
-                  <div>Tax-Deferred: {formatCurrency(currentYearData.taxDeferred || 0)}</div>
-                  <div>Brokerage: {formatCurrency(currentYearData.brokerage || 0)}</div>
-                  <div>ESPP: {formatCurrency(currentYearData.espp || 0)}</div>
-                  <div>HSA: {formatCurrency(currentYearData.hsa || 0)}</div>
-                  <div>Cash: {formatCurrency(currentYearData.cash || 0)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
 
         {/* Portfolio Accounts Table */}
@@ -1026,6 +994,39 @@ const Portfolio = () => {
             })()}
           </div>
         </div>
+
+        {/* Current Historical Data Display */}
+        {currentYearData && Object.keys(currentYearData).length > 0 && (
+          <div className="current-data-section">
+            <h2>Current {currentYear} Investment Data</h2>
+            {updateHistory.length > 0 && (
+              <p className="last-update-info">
+                Last updated: {formatDateTime(updateHistory[0].timestamp)}
+                {updateHistory[0].changes && updateHistory[0].changes.total !== 0 && (
+                  <span 
+                    className="last-update-change"
+                    style={{ color: formatChange(updateHistory[0].changes.total)?.color }}
+                  >
+                    {' '}({formatChange(updateHistory[0].changes.total)?.sign}{formatChange(updateHistory[0].changes.total)?.formatted} total change)
+                  </span>
+                )}
+              </p>
+            )}
+            <div className="current-data-cards">
+              <div className="user-data-card">
+                <h3>Combined Portfolio Total</h3>
+                <div className="investment-fields">
+                  <div>Tax-Free: {formatCurrency(currentYearData.taxFree || 0)}</div>
+                  <div>Tax-Deferred: {formatCurrency(currentYearData.taxDeferred || 0)}</div>
+                  <div>Brokerage: {formatCurrency(currentYearData.brokerage || 0)}</div>
+                  <div>ESPP: {formatCurrency(currentYearData.espp || 0)}</div>
+                  <div>HSA: {formatCurrency(currentYearData.hsa || 0)}</div>
+                  <div>Cash: {formatCurrency(currentYearData.cash || 0)}</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Update History */}
         {updateHistory.length > 0 && (
