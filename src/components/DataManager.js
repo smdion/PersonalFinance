@@ -2355,7 +2355,7 @@ const DataManager = ({
       ) : (
         <div className="data-empty-state">
           <div className="data-empty-state-content">
-            <div className="data-empty-state-icon">📊</div>
+            <div className="data-empty-state-icon">📈📊</div>
             <h2>Welcome to {title}!</h2>
             <p className="data-empty-state-description">{subtitle}</p>
             

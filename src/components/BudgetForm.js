@@ -412,15 +412,6 @@ const BudgetForm = () => {
 
   // Add global event listeners
   useEffect(() => {
-    const handleExpandAll = () => {
-      setCollapsedCategories(new Set());
-    };
-
-    const handleCollapseAll = () => {
-      const allCategoryIds = new Set(budgetCategories.map(cat => cat.id));
-      setCollapsedCategories(allCategoryIds);
-    };
-
     const handleResetAll = () => {
       try {
         // Clear budget data from localStorage
@@ -438,16 +429,12 @@ const BudgetForm = () => {
       }
     };
 
-    window.addEventListener('expandAllSections', handleExpandAll);
-    window.addEventListener('collapseAllSections', handleCollapseAll);
     window.addEventListener('resetAllData', handleResetAll);
 
     return () => {
-      window.removeEventListener('expandAllSections', handleExpandAll);
-      window.removeEventListener('collapseAllSections', handleCollapseAll);
       window.removeEventListener('resetAllData', handleResetAll);
     };
-  }, [budgetCategories, setBudgetData]);
+  }, [setBudgetData]);
 
   // Add enhanced demo data loading function for settings menu
   const loadDemoDataWithExport = async () => {
@@ -667,6 +654,22 @@ const BudgetForm = () => {
           <div className="budget-categories-header">
             <h2>📂 Budgets</h2>
             <div className="categories-header-actions">
+              <div className="budget-control-buttons">
+                <button
+                  onClick={expandAllCategories}
+                  className="budget-control-button expand"
+                  title="Expand all budget categories"
+                >
+                  📖 Expand All
+                </button>
+                <button
+                  onClick={collapseAllCategories}
+                  className="budget-control-button collapse"
+                  title="Collapse all budget categories"
+                >
+                  📕 Collapse All
+                </button>
+              </div>
               <div className="drag-hint">💡 Drag categories to reorder</div>
               <button
                 onClick={() => setShowAddCategory(true)}
@@ -701,7 +704,7 @@ const BudgetForm = () => {
           {budgetCategories.length === 0 && (
             <div className="budget-empty-state">
               <div className="budget-empty-state-content">
-                <div className="budget-empty-state-icon">💰</div>
+                <div className="budget-empty-state-icon">💵</div>
                 <h2>Welcome to Budget Planning!</h2>
                 <p className="budget-empty-state-description">
                   Create budget categories and track your monthly expenses to take control of your finances.

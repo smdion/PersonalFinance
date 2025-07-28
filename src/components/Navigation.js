@@ -12,6 +12,7 @@ const Navigation = () => {
     { path: '/paycheck', label: 'Paycheck', icon: '💰' },
     { path: '/budget', label: 'Budget', icon: '💵' },
     { path: '/savings', label: 'Savings', icon: '🎯' },
+    { path: '/optimize', label: 'Optimize', icon: '⚡' },
     { path: '/historical', label: 'Historical', icon: '📈' },
     { path: '/performance', label: 'Performance', icon: '📊' },
     { path: '/networth', label: 'Net Worth', icon: '💎' }
@@ -40,15 +41,6 @@ const Navigation = () => {
   }, [location.pathname]);
 
   // Settings menu functions
-  const expandAllSections = () => {
-    window.dispatchEvent(new CustomEvent('expandAllSections'));
-    setShowSettingsMenu(false);
-  };
-
-  const collapseAllSections = () => {
-    window.dispatchEvent(new CustomEvent('collapseAllSections'));
-    setShowSettingsMenu(false);
-  };
 
   const resetAllData = async () => {
     if (window.confirm('Are you sure you want to reset ALL data across the entire application? This will clear:\n\n• All paycheck calculator data\n• All budget categories and items\n• All historical financial data\n• All performance tracking data\n• All form settings\n\nThis action cannot be undone.')) {
@@ -233,12 +225,6 @@ const Navigation = () => {
                   <h3>🛠️ Tools</h3>
                 </div>
                 <div className="settings-menu-items">
-                  <button onClick={expandAllSections} className="settings-menu-item">
-                    📖 Expand All Sections
-                  </button>
-                  <button onClick={collapseAllSections} className="settings-menu-item">
-                    📕 Collapse All Sections
-                  </button>
                   <button onClick={loadDemoDataWithExport} className="settings-menu-item">
                     🎯 Load Demo Data
                   </button>

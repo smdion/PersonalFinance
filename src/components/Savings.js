@@ -889,7 +889,7 @@ const Savings = () => {
         {Object.keys(savingsData).length === 0 && (
           <div className="savings-empty-state">
             <div className="savings-empty-state-content">
-              <div className="savings-empty-state-icon">💰</div>
+              <div className="savings-empty-state-icon">🎯</div>
               <h2>Welcome to Savings Goals!</h2>
               <p className="savings-empty-state-description">
                 Your savings goals are automatically created from budget items in categories with "saving" in the name.

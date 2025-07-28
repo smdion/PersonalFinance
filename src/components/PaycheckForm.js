@@ -28,6 +28,9 @@ const PaycheckForm = ({
   medicalDeductions, setMedicalDeductions,
   esppDeductionPercent, setEsppDeductionPercent,
   budgetImpacting, setBudgetImpacting,
+  onAddBrokerageAccount,
+  onUpdateBrokerageAccount,
+  onRemoveBrokerageAccount,
   bonusMultiplier, setBonusMultiplier, 
   bonusTarget, setBonusTarget, 
   onCalculate,
@@ -258,10 +261,9 @@ const PaycheckForm = ({
 
   // Add the missing calculateTotalMonthlyBudget function
   const calculateTotalMonthlyBudget = () => {
-    return (budgetImpacting.traditionalIraMonthly || 0) + 
-           (budgetImpacting.rothIraMonthly || 0) + 
-           (budgetImpacting.retirementBrokerageMonthly || 0) + 
-           (budgetImpacting.longTermSavingsMonthly || 0);
+    const iraTotal = (budgetImpacting.traditionalIraMonthly || 0) + (budgetImpacting.rothIraMonthly || 0);
+    const brokerageTotal = (budgetImpacting.brokerageAccounts || []).reduce((sum, account) => sum + (account.monthlyAmount || 0), 0);
+    return iraTotal + brokerageTotal;
   };
 
   return (
@@ -738,32 +740,58 @@ const PaycheckForm = ({
                   />
                 </div>
 
-                <div className="form-group">
-                  <label htmlFor={`retirementBrokerageMonthly-${personName}`} className="form-label">
-                    Retirement Brokerage (Monthly):
-                  </label>
-                  <input
-                    type="text"
-                    id={`retirementBrokerageMonthly-${personName}`}
-                    className="form-input"
-                    value={formatCurrency(budgetImpacting.retirementBrokerageMonthly || 0)}
-                    onChange={(e) => handleBudgetImpactingChange('retirementBrokerageMonthly', e.target.value)}
-                    placeholder="$0.00"
-                  />
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor={`longTermSavingsMonthly-${personName}`} className="form-label">
-                    Long-Term Savings (Monthly):
-                  </label>
-                  <input
-                    type="text"
-                    id={`longTermSavingsMonthly-${personName}`}
-                    className="form-input"
-                    value={formatCurrency(budgetImpacting.longTermSavingsMonthly || 0)}
-                    onChange={(e) => handleBudgetImpactingChange('longTermSavingsMonthly', e.target.value)}
-                    placeholder="$0.00"
-                  />
+                {/* Dynamic Brokerage Accounts */}
+                <div className="brokerage-accounts-section">
+                  <div className="brokerage-accounts-header">
+                    <label className="form-label">Brokerage Accounts (Monthly):</label>
+                    <button 
+                      type="button"
+                      onClick={() => onAddBrokerageAccount(personName)}
+                      className="btn-secondary btn-sm"
+                    >
+                      ➕ Add Brokerage Account
+                    </button>
+                  </div>
+                  
+                  {budgetImpacting.brokerageAccounts && budgetImpacting.brokerageAccounts.map((account, index) => (
+                    <div key={account.id} className="brokerage-account-item">
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={account.name}
+                          onChange={(e) => onUpdateBrokerageAccount(personName, account.id, 'name', e.target.value)}
+                          placeholder="Account name"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <input
+                          type="text"
+                          className="form-input"
+                          value={formatCurrency(account.monthlyAmount)}
+                          onChange={(e) => {
+                            const rawValue = e.target.value.replace(/[$,]/g, '');
+                            onUpdateBrokerageAccount(personName, account.id, 'monthlyAmount', parseFloat(rawValue) || 0);
+                          }}
+                          placeholder="$0.00"
+                        />
+                      </div>
+                      <button 
+                        type="button"
+                        onClick={() => onRemoveBrokerageAccount(personName, account.id)}
+                        className="btn-danger btn-sm"
+                        title="Remove this brokerage account"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  ))}
+                  
+                  {(!budgetImpacting.brokerageAccounts || budgetImpacting.brokerageAccounts.length === 0) && (
+                    <div className="no-brokerage-accounts">
+                      <p>No brokerage accounts added. Click "Add Brokerage Account" to add your first one.</p>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -1034,7 +1062,7 @@ const PaycheckForm = ({
               </button>
             </div>
 
-            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
+            {(results.esppPaycheck > 0 || results.traditional401kPaycheck > 0 || results.roth401kPaycheck > 0 || budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || (budgetImpacting.brokerageAccounts && budgetImpacting.brokerageAccounts.some(account => account.monthlyAmount > 0))) && (
               <>
                 <div className="results-divider"></div>
                 
@@ -1083,7 +1111,7 @@ const PaycheckForm = ({
                 )}
 
                 {/* Budget Contributions */}
-                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || budgetImpacting.retirementBrokerageMonthly > 0 || budgetImpacting.longTermSavingsMonthly > 0) && (
+                {(budgetImpacting.traditionalIraMonthly > 0 || budgetImpacting.rothIraMonthly > 0 || (budgetImpacting.brokerageAccounts && budgetImpacting.brokerageAccounts.some(account => account.monthlyAmount > 0))) && (
                   <div className="results-section">
                     <h4 className="results-section-title">
                       📊 {showMonthlyView ? 'Monthly' : 'Per Paycheck'} Contributions
@@ -1111,28 +1139,19 @@ const PaycheckForm = ({
                           </span>
                         </div>
                       )}
-                      {budgetImpacting.retirementBrokerageMonthly > 0 && (
-                        <div className="results-item">
-                          <span className="results-item-label">Retirement Brokerage</span>
-                          <span className="results-item-value">
-                            {showMonthlyView 
-                              ? formatCurrency(budgetImpacting.retirementBrokerageMonthly)
-                              : formatCurrency(budgetImpacting.retirementBrokerageMonthly / 2)
-                            }
-                          </span>
-                        </div>
-                      )}
-                      {budgetImpacting.longTermSavingsMonthly > 0 && (
-                        <div className="results-item">
-                          <span className="results-item-label">Long-Term Savings</span>
-                          <span className="results-item-value">
-                            {showMonthlyView 
-                              ? formatCurrency(budgetImpacting.longTermSavingsMonthly)
-                              : formatCurrency(budgetImpacting.longTermSavingsMonthly / 2)
-                            }
-                          </span>
-                        </div>
-                      )}
+                      {budgetImpacting.brokerageAccounts && budgetImpacting.brokerageAccounts.map(account => (
+                        account.monthlyAmount > 0 && (
+                          <div key={account.id} className="results-item">
+                            <span className="results-item-label">{account.name}</span>
+                            <span className="results-item-value">
+                              {showMonthlyView 
+                                ? formatCurrency(account.monthlyAmount)
+                                : formatCurrency(account.monthlyAmount / 2)
+                              }
+                            </span>
+                          </div>
+                        )
+                      ))}
                     </div>
                   </div>
                 )}

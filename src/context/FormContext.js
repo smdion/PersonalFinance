@@ -20,14 +20,12 @@ export const FormProvider = ({ children }) => {
     yourBudgetImpacting: {
       traditionalIraMonthly: 0,
       rothIraMonthly: 0,
-      retirementBrokerageMonthly: 0,
-      longTermSavingsMonthly: 0, // Changed from longtermSavingsMonthly
+      brokerageAccounts: [], // Array of {id, name, monthlyAmount} objects
     },
     spouseBudgetImpacting: {
       traditionalIraMonthly: 0,
       rothIraMonthly: 0,
-      retirementBrokerageMonthly: 0,
-      longTermSavingsMonthly: 0, // Changed from longtermSavingsMonthly
+      brokerageAccounts: [], // Array of {id, name, monthlyAmount} objects
     },
     showSpouseCalculator: true,
   };
@@ -49,6 +47,50 @@ export const FormProvider = ({ children }) => {
   const updateBudgetImpacting = useCallback((person, contributions) => {
     const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
     setFormDataState((prev) => ({ ...prev, [key]: contributions }));
+  }, []);
+
+  const addBrokerageAccount = useCallback((person, accountName = 'New Brokerage Account') => {
+    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    setFormDataState((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        brokerageAccounts: [
+          ...prev[key].brokerageAccounts,
+          {
+            id: Date.now() + Math.random(),
+            name: accountName,
+            monthlyAmount: 0
+          }
+        ]
+      }
+    }));
+  }, []);
+
+  const updateBrokerageAccount = useCallback((person, accountId, field, value) => {
+    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    setFormDataState((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        brokerageAccounts: prev[key].brokerageAccounts.map(account =>
+          account.id === accountId
+            ? { ...account, [field]: value }
+            : account
+        )
+      }
+    }));
+  }, []);
+
+  const removeBrokerageAccount = useCallback((person, accountId) => {
+    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    setFormDataState((prev) => ({
+      ...prev,
+      [key]: {
+        ...prev[key],
+        brokerageAccounts: prev[key].brokerageAccounts.filter(account => account.id !== accountId)
+      }
+    }));
   }, []);
 
   const resetFormData = useCallback(() => {
@@ -79,14 +121,14 @@ export const FormProvider = ({ children }) => {
   // Helper function to create budget items for a person
   const createBudgetItemsForPerson = useCallback((personData, personPrefix, personLabel) => {
     const items = [];
-    const contributions = [
+    
+    // Add traditional IRA and Roth IRA if they have values
+    const iraContributions = [
       { key: 'traditionalIraMonthly', label: 'Traditional IRA' },
-      { key: 'rothIraMonthly', label: 'Roth IRA' },
-      { key: 'retirementBrokerageMonthly', label: 'Retirement Brokerage' },
-      { key: 'longTermSavingsMonthly', label: 'Long-Term Savings' }
+      { key: 'rothIraMonthly', label: 'Roth IRA' }
     ];
 
-    contributions.forEach(({ key, label }) => {
+    iraContributions.forEach(({ key, label }) => {
       if (personData[key] > 0) {
         items.push({
           id: `${personPrefix}-${key.replace('Monthly', '').replace(/([A-Z])/g, '-$1').toLowerCase()}`,
@@ -97,6 +139,21 @@ export const FormProvider = ({ children }) => {
         });
       }
     });
+
+    // Add brokerage accounts
+    if (personData.brokerageAccounts && Array.isArray(personData.brokerageAccounts)) {
+      personData.brokerageAccounts.forEach((account) => {
+        if (account.monthlyAmount > 0) {
+          items.push({
+            id: `${personPrefix}-brokerage-${account.id}`,
+            name: `${personLabel} ${account.name}`,
+            standard: account.monthlyAmount,
+            tight: account.monthlyAmount,
+            emergency: account.monthlyAmount
+          });
+        }
+      });
+    }
 
     return items;
   }, []);
@@ -174,6 +231,39 @@ export const FormProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator]);
 
+  // Helper function to migrate old format to new format
+  const migrateBudgetImpactingData = useCallback((oldData) => {
+    const newData = {
+      traditionalIraMonthly: oldData.traditionalIraMonthly || 0,
+      rothIraMonthly: oldData.rothIraMonthly || 0,
+      brokerageAccounts: []
+    };
+
+    // Migrate old hard-coded fields to brokerage accounts array
+    if (oldData.retirementBrokerageMonthly > 0) {
+      newData.brokerageAccounts.push({
+        id: Date.now() + Math.random(),
+        name: 'Retirement Brokerage',
+        monthlyAmount: oldData.retirementBrokerageMonthly
+      });
+    }
+
+    if (oldData.longTermSavingsMonthly > 0) {
+      newData.brokerageAccounts.push({
+        id: Date.now() + Math.random() + 1,
+        name: 'Long-Term Savings',
+        monthlyAmount: oldData.longTermSavingsMonthly
+      });
+    }
+
+    // Keep existing brokerage accounts if they exist
+    if (oldData.brokerageAccounts && Array.isArray(oldData.brokerageAccounts)) {
+      newData.brokerageAccounts = [...newData.brokerageAccounts, ...oldData.brokerageAccounts];
+    }
+
+    return newData;
+  }, []);
+
   // Add effect to load budget impacting data from paycheck data
   useEffect(() => {
     const loadBudgetImpactingFromPaycheck = () => {
@@ -184,14 +274,10 @@ export const FormProvider = ({ children }) => {
         if (paycheckData?.your?.budgetImpacting) {
           const yourContributions = paycheckData.your.budgetImpacting;
           if (typeof yourContributions === 'object') {
+            const migratedData = migrateBudgetImpactingData(yourContributions);
             setFormDataState(prev => ({
               ...prev,
-              yourBudgetImpacting: {
-                traditionalIraMonthly: yourContributions.traditionalIraMonthly || 0,
-                rothIraMonthly: yourContributions.rothIraMonthly || 0,
-                retirementBrokerageMonthly: yourContributions.retirementBrokerageMonthly || 0,
-                longTermSavingsMonthly: yourContributions.longTermSavingsMonthly || 0
-              }
+              yourBudgetImpacting: migratedData
             }));
           }
         }
@@ -199,14 +285,10 @@ export const FormProvider = ({ children }) => {
         if (paycheckData?.spouse?.budgetImpacting) {
           const spouseContributions = paycheckData.spouse.budgetImpacting;
           if (typeof spouseContributions === 'object') {
+            const migratedData = migrateBudgetImpactingData(spouseContributions);
             setFormDataState(prev => ({
               ...prev,
-              spouseBudgetImpacting: {
-                traditionalIraMonthly: spouseContributions.traditionalIraMonthly || 0,
-                rothIraMonthly: spouseContributions.rothIraMonthly || 0,
-                retirementBrokerageMonthly: spouseContributions.retirementBrokerageMonthly || 0,
-                longTermSavingsMonthly: spouseContributions.longTermSavingsMonthly || 0
-              }
+              spouseBudgetImpacting: migratedData
             }));
           }
         }
@@ -216,7 +298,7 @@ export const FormProvider = ({ children }) => {
     };
 
     loadBudgetImpactingFromPaycheck();
-  }, []);
+  }, [migrateBudgetImpactingData]);
 
   // Add effect to listen for paycheck data updates and re-sync names
   useEffect(() => {
@@ -247,6 +329,9 @@ export const FormProvider = ({ children }) => {
     formData, 
     updateFormData, 
     updateBudgetImpacting, 
+    addBrokerageAccount,
+    updateBrokerageAccount,
+    removeBrokerageAccount,
     resetFormData
   };
 
