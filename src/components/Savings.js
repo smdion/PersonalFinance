@@ -64,6 +64,9 @@ const Savings = () => {
   // State for removal confirmation dialog
   const [removalConfirmation, setRemovalConfirmation] = useState(null);
   
+  // State for help section visibility
+  const [showHelp, setShowHelp] = useState(false);
+  
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState({
     month: 80,
@@ -1005,70 +1008,182 @@ const Savings = () => {
           </div>
         )}
 
-        {/* Legend and Shortcuts */}
+        {/* Help Section Toggle */}
         {Object.keys(savingsData).length > 0 && (
-          <div className="savings-summary">
-            <div className="savings-summary-header">
-              <h2>📊 Legend & Shortcuts</h2>
+          <div className="savings-help-section">
+            <div className="help-toggle-header">
+              <button 
+                onClick={() => setShowHelp(!showHelp)}
+                className={`help-toggle-button ${showHelp ? 'expanded' : ''}`}
+              >
+                {showHelp ? '📖 Hide Help' : '❓ Show Help'}
+              </button>
+              <p className="help-toggle-description">
+                Learn about color coding, keyboard shortcuts, and bulk editing features
+              </p>
             </div>
             
-            <div className="savings-summary-additional">
-              {/* Legend */}
-              <div className="savings-legend">
-                <div className="legend-section">
-                  <h4>Color Coding</h4>
-                  <div className="legend-items">
-                    <div className="legend-item">
-                      <div className="legend-indicator yellow"></div>
-                      <span>Custom contributions (percentage-based calculations shown in yellow)</span>
+            {showHelp && (
+              <div className="help-content">
+                {/* Legend Section */}
+                <div className="help-section">
+                  <h3>📊 Color Coding & Legend</h3>
+                  <div className="savings-legend">
+                    <div className="legend-section">
+                      <div className="legend-items">
+                        <div className="legend-item">
+                          <div className="legend-indicator yellow"></div>
+                          <span>Custom contributions (percentage-based calculations shown in yellow)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator blue"></div>
+                          <span>Editable balance or contribution amounts (blue background)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator green"></div>
+                          <span>Selected cells for bulk editing (green highlight)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator red"></div>
+                          <span>Planned purchases or major expenses (red indicator)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator percent"></div>
+                          <span>Percentage contributions (small % indicator shown)</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator blue"></div>
-                      <span>Editable balance or contribution amounts (blue background)</span>
+                  </div>
+                </div>
+
+                {/* Keyboard Shortcuts Section */}
+                <div className="help-section">
+                  <h3>⌨️ Keyboard Shortcuts</h3>
+                  <div className="savings-shortcuts">
+                    <div className="shortcuts-section">
+                      <div className="shortcut-items">
+                        <div className="shortcut-item">
+                          <kbd>Arrow Keys</kbd> <span>Navigate between cells</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Tab/Shift+Tab</kbd> <span>Move between goals</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Enter</kbd> <span>Start editing cell</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Escape</kbd> <span>Clear selection</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Shift+Click</kbd> <span>Select range</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Ctrl+A</kbd> <span>Select all</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Ctrl+B</kbd> <span>Toggle bulk edit mode</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator green"></div>
-                      <span>Selected cells for bulk editing (green highlight)</span>
+                  </div>
+                </div>
+
+                {/* Bulk Edit Mode Section */}
+                <div className="help-section">
+                  <h3>💡 Bulk Edit Mode Guide</h3>
+                  <p className="help-section-description">
+                    Efficiently update multiple savings contributions at once
+                  </p>
+                  
+                  <div className="bulk-mode-steps">
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">1</div>
+                      <div className="bulk-step-content">
+                        <strong>Activate Bulk Mode</strong>
+                        <p>Click "📝 Bulk Edit Mode" button or press <kbd>Ctrl+B</kbd></p>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator red"></div>
-                      <span>Planned purchases or major expenses (red indicator)</span>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">2</div>
+                      <div className="bulk-step-content">
+                        <strong>Select Cells</strong>
+                        <p>Click individual cells, drag to select ranges, or use <kbd>Ctrl+A</kbd> to select all</p>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator percent"></div>
-                      <span>Percentage contributions (small % indicator shown)</span>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">3</div>
+                      <div className="bulk-step-content">
+                        <strong>Choose Edit Type</strong>
+                        <p>Select "Dollar Amount" or "Percentage" from the dropdown</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">4</div>
+                      <div className="bulk-step-content">
+                        <strong>Apply Changes</strong>
+                        <p>Enter your value and click "Apply to X cells" to update all selected cells</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">5</div>
+                      <div className="bulk-step-content">
+                        <strong>Apply to Future Months</strong>
+                        <p>Use "⬇️$" or "⬇️%" buttons to copy a cell's value to all months below it. Great for setting consistent monthly contributions from a starting point forward.</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bulk-mode-features">
+                    <h4>Bulk Mode Features:</h4>
+                    <div className="bulk-features-grid">
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">💰</span>
+                        <div>
+                          <strong>Dollar Amount</strong>
+                          <p>Set exact dollar values across multiple cells</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">📊</span>
+                        <div>
+                          <strong>Percentage Mode</strong>
+                          <p>Apply percentage increases/decreases to existing values</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">🎯</span>
+                        <div>
+                          <strong>Range Selection</strong>
+                          <p>Hold Shift and click to select ranges of cells</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">🧹</span>
+                        <div>
+                          <strong>Clear & Deselect</strong>
+                          <p>Clear values or deselect cells with dedicated buttons</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">⬇️</span>
+                        <div>
+                          <strong>Apply Below</strong>
+                          <p>Copy cell values to all future months with "⬇️$" and "⬇️%" buttons</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              {/* Shortcuts */}
-              <div className="savings-shortcuts">
-                <div className="shortcuts-section">
-                  <h4>Keyboard Shortcuts</h4>
-                  <div className="shortcut-items">
-                    <div className="shortcut-item">
-                      <kbd>Arrow Keys</kbd> <span>Navigate between cells</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Tab/Shift+Tab</kbd> <span>Move between goals</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Enter</kbd> <span>Start editing cell</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Escape</kbd> <span>Clear selection</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Shift+Click</kbd> <span>Select range</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Ctrl+A</kbd> <span>Select all</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 

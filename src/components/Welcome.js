@@ -80,6 +80,7 @@ const Welcome = () => {
                   <ul>
                     <li><strong>2025 Tax-Accurate Paycheck Calculator:</strong> Dual income support, 401k/HSA planning, bonus calculations</li>
                     <li><strong>Complete Budget Planning:</strong> Auto-sync, drag & drop categories, three budget modes, extra paycheck planning</li>
+                    <li><strong>Savings Goal Tracker:</strong> Automatic goal creation, bulk editing, progress tracking, purchase management</li>
                     <li><strong>Historical Financial Data Tracking:</strong> 20+ metrics per year, year-over-year analysis, tax information</li>
                     <li><strong>Account Performance Tracker:</strong> Investment analytics, individual & joint accounts, return calculations</li>
                     <li><strong>Net Worth Dashboard:</strong> Interactive charts, growth analysis, asset allocation breakdowns</li>
@@ -92,10 +93,10 @@ const Welcome = () => {
                   <h3>🔮 Coming Soon</h3>
                   <ul>
                     <li><strong>Retirement Planning:</strong> 401k optimization, IRA strategies, withdrawal planning, catch-up calculations</li>
-                    <li><strong>Advanced Savings Goals:</strong> Target tracking, automated recommendations, progress visualization</li>
                     <li><strong>Mortgage & Loan Tools:</strong> Refinancing calculator, extra payment analysis, amortization schedules</li>
                     <li><strong>Enhanced Visualizations:</strong> Interactive charts, trend forecasting, scenario modeling</li>
                     <li><strong>Portfolio Analytics:</strong> Asset allocation analysis, risk assessment, rebalancing recommendations</li>
+                    <li><strong>Savings Optimization:</strong> Automated recommendations, goal prioritization, cash flow analysis</li>
                     <li><strong>API Integration:</strong> Bank connections, real-time data sync, automated account updates</li>
                     <li><strong>Mobile Applications:</strong> iOS and Android apps with offline sync and push notifications</li>
                   </ul>
@@ -198,8 +199,8 @@ const Welcome = () => {
                   <div className="demo-benefit">
                     <div className="demo-benefit-icon">📊</div>
                     <div className="demo-benefit-text">
-                      <strong>Complete Budget</strong>
-                      <div>12 categories with 35+ budget items across 3 scenarios</div>
+                      <strong>Complete Budget & Savings</strong>
+                      <div>12 categories with 35+ budget items plus automatic savings goals</div>
                     </div>
                   </div>
                   <div className="demo-benefit">
@@ -279,6 +280,25 @@ const Welcome = () => {
                   <span className="feature-tag">Extra Paychecks</span>
                   <span className="feature-tag">Smart Categories</span>
                   <span className="feature-tag">Real-time Updates</span>
+                </div>
+              </Link>
+            </div>
+
+            <div className="calculator-card">
+              <Link to="/savings" className="calculator-link">
+                <div className="calculator-icon">🎯</div>
+                <h3>Savings Goal Tracker</h3>
+                <p>
+                  Track and manage your savings goals with automatic creation from budget items containing "saving". 
+                  Features bulk editing, monthly contribution tracking, purchase management, and visual progress indicators.
+                </p>
+                <div className="calculator-features">
+                  <span className="feature-tag">Auto Goal Creation</span>
+                  <span className="feature-tag">Bulk Edit Mode</span>
+                  <span className="feature-tag">Progress Tracking</span>
+                  <span className="feature-tag">Purchase History</span>
+                  <span className="feature-tag">Visual Indicators</span>
+                  <span className="feature-tag">Budget Sync</span>
                 </div>
               </Link>
             </div>
@@ -382,26 +402,33 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">3</div>
                     <div className="step-content">
+                      <h4>Track Savings Goals</h4>
+                      <p>Budget items with "saving" automatically become trackable goals. Use bulk editing to plan monthly contributions and track progress toward your targets.</p>
+                    </div>
+                  </div>
+                  <div className="step">
+                    <div className="step-number">4</div>
+                    <div className="step-content">
                       <h4>Track Investment Performance</h4>
                       <p>Add 401k, IRA, HSA, and brokerage accounts. Monitor balances, contributions, employer matches, gains/losses, and calculate returns over time.</p>
                     </div>
                   </div>
                   <div className="step">
-                    <div className="step-number">4</div>
+                    <div className="step-number">5</div>
                     <div className="step-content">
                       <h4>Record Historical Data</h4>
                       <p>Build your financial timeline with annual data including AGI, tax rates, asset values, and net worth. Import CSV files for bulk data entry.</p>
                     </div>
                   </div>
                   <div className="step">
-                    <div className="step-number">5</div>
+                    <div className="step-number">6</div>
                     <div className="step-content">
                       <h4>Visualize Your Progress</h4>
                       <p>Use the Net Worth Dashboard to see growth trends, compare years, analyze asset allocation, and track your wealth building journey.</p>
                     </div>
                   </div>
                   <div className="step">
-                    <div className="step-number">6</div>
+                    <div className="step-number">7</div>
                     <div className="step-content">
                       <h4>Optimize and Plan</h4>
                       <p>Return to any tool as your situation changes. Export data for safekeeping, model scenarios, and maintain optimal financial planning.</p>
@@ -469,6 +496,9 @@ const Welcome = () => {
               </Link>
               <Link to="/budget" className="quick-start-button secondary">
                 Go to Budget Planner
+              </Link>
+              <Link to="/savings" className="quick-start-button secondary">
+                Track Savings Goals
               </Link>
               <Link to="/performance" className="quick-start-button secondary">
                 Track Account Performance

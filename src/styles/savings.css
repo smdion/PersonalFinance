@@ -2817,6 +2817,347 @@
   border-radius: 4px;
 }
 
+/* ===================================================================
+   BULK MODE EXPLANATION STYLES
+   ================================================================ */
+
+.bulk-mode-explanation {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  border: 1px solid #bae6fd;
+  border-radius: 16px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.1);
+}
+
+.bulk-mode-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.bulk-mode-header h3 {
+  color: #0c4a6e;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 0.5rem 0;
+}
+
+.bulk-mode-header p {
+  color: #075985;
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+.bulk-mode-steps {
+  margin-bottom: 2rem;
+}
+
+.bulk-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 12px;
+  border: 1px solid #e0f2fe;
+  transition: all 0.2s ease;
+}
+
+.bulk-step:hover {
+  border-color: #0891b2;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.1);
+  transform: translateY(-2px);
+}
+
+.bulk-step:last-child {
+  margin-bottom: 0;
+}
+
+.bulk-step-number {
+  background: #0891b2;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+
+.bulk-step-content {
+  flex: 1;
+}
+
+.bulk-step-content strong {
+  color: #0c4a6e;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.bulk-step-content p {
+  color: #075985;
+  margin: 0;
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.bulk-step-content kbd {
+  background: #1e293b;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-family: monospace;
+}
+
+.bulk-mode-features h4 {
+  color: #0c4a6e;
+  font-size: 1.2rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  text-align: center;
+}
+
+.bulk-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.bulk-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  border: 1px solid #e0f2fe;
+  transition: all 0.2s ease;
+}
+
+.bulk-feature:hover {
+  border-color: #0891b2;
+  box-shadow: 0 2px 8px rgba(8, 145, 178, 0.1);
+  transform: translateY(-1px);
+}
+
+.bulk-feature-icon {
+  font-size: 1.25rem;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.bulk-feature strong {
+  color: #0c4a6e;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.bulk-feature p {
+  color: #075985;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* Responsive bulk mode explanation */
+@media (max-width: 768px) {
+  .bulk-mode-explanation {
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+  
+  .bulk-mode-header h3 {
+    font-size: 1.25rem;
+  }
+  
+  .bulk-mode-header p {
+    font-size: 1rem;
+  }
+  
+  .bulk-step {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .bulk-step-number {
+    align-self: center;
+  }
+  
+  .bulk-features-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .bulk-feature {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .bulk-mode-explanation {
+    padding: 1rem;
+  }
+  
+  .bulk-step {
+    padding: 0.75rem;
+  }
+  
+  .bulk-feature {
+    padding: 0.75rem;
+  }
+}
+
+/* ===================================================================
+   HELP SECTION TOGGLE STYLES
+   ================================================================ */
+
+.savings-help-section {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  margin: 2rem 0;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.help-toggle-header {
+  padding: 1.5rem;
+  text-align: center;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.help-toggle-button {
+  background: #0891b2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-toggle-button:hover {
+  background: #0e7490;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+.help-toggle-button.expanded {
+  background: #059669;
+}
+
+.help-toggle-button.expanded:hover {
+  background: #047857;
+}
+
+.help-toggle-description {
+  margin: 0.75rem 0 0 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.help-content {
+  padding: 0;
+  background: white;
+  animation: slideDown 0.3s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.help-section {
+  padding: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.help-section:last-child {
+  border-bottom: none;
+}
+
+.help-section h3 {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.help-section-description {
+  color: #64748b;
+  font-size: 1rem;
+  margin: 0 0 1.5rem 0;
+  line-height: 1.5;
+}
+
+/* Responsive help section */
+@media (max-width: 768px) {
+  .help-toggle-header {
+    padding: 1rem;
+  }
+  
+  .help-toggle-button {
+    padding: 0.625rem 1.25rem;
+    font-size: 0.9rem;
+  }
+  
+  .help-section {
+    padding: 1.5rem;
+  }
+  
+  .help-section h3 {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .help-toggle-header {
+    padding: 0.75rem;
+  }
+  
+  .help-toggle-button {
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+  }
+  
+  .help-section {
+    padding: 1rem;
+  }
+  
+  .help-section h3 {
+    font-size: 1rem;
+    flex-direction: column;
+    text-align: center;
+    gap: 0.25rem;
+  }
+}
+
 /* Responsive empty state */
 @media (max-width: 768px) {
   .savings-empty-state {
