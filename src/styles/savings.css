@@ -489,8 +489,8 @@
   margin-left: 1px;
 }
 
-/* Resizable Headers */
-.resizable-header {
+/* Resizable Headers - Savings Page Specific */
+.consolidated-projections .resizable-header {
   background: #f8fafc;
   border-right: 1px solid #e2e8f0;
   color: #374151;
@@ -506,11 +506,12 @@
   font-size: 0.9rem;
 }
 
-.resizable-header:hover {
+.consolidated-projections .resizable-header:hover {
   background: #f1f5f9;
 }
 
-.month-header, .date-header {
+.consolidated-projections .month-header, 
+.consolidated-projections .date-header {
   padding: 8px 12px;
   display: flex;
   align-items: center;
