@@ -1,10 +1,10 @@
 # Personal Finance Calculator Suite
 
-A comprehensive financial planning platform that helps you calculate paychecks, plan budgets, track historical data, monitor investment performance, and visualize your net worth progress - all while keeping your data completely private in your browser.
+A comprehensive financial planning platform that helps you calculate paychecks, plan budgets, track savings goals, monitor historical data, analyze investment performance, and visualize your net worth progress - all while keeping your data completely private in your browser.
 
 ## 🎯 Overview
 
-The Personal Finance Calculator Suite is designed to be your complete financial command center. Whether you're calculating your take-home pay, planning your monthly budget, tracking investment performance, or visualizing your net worth growth, this platform provides the tools you need in one integrated experience.
+The Personal Finance Calculator Suite is designed to be your complete financial command center. Whether you're calculating your take-home pay, planning your monthly budget, tracking savings goals, monitoring investment performance, or visualizing your net worth growth, this platform provides the tools you need in one integrated experience.
 
 ### Key Principles
 - **Privacy First**: All data is stored locally in your browser using localStorage
@@ -29,6 +29,17 @@ The Personal Finance Calculator Suite is designed to be your complete financial 
 - **Smart Categories**: Auto-managed categories for retirement contributions from paycheck data
 - **Extra Paycheck Planning**: Calculates and plans for bi-weekly extra paycheck months
 - **Real-time Calculations**: Live updates of remaining income and budget percentages
+- **Savings Integration**: Budget items with "saving" in the name automatically become trackable savings goals
+
+### 🎯 Savings Goal Tracker
+- **Automatic Goal Creation**: Budget items containing "saving" automatically become savings goals
+- **Monthly Contribution Tracking**: Plan and track monthly contributions toward each goal
+- **Purchase Management**: Record purchases and their impact on goal progress
+- **Bulk Edit Mode**: Efficiently update multiple months of contributions at once
+- **Visual Progress Tracking**: See goal completion percentage and timeline
+- **Flexible Goal Management**: Set target amounts, deadlines, and track balances
+- **Keyboard Shortcuts**: Fast navigation and editing with Ctrl+B, Ctrl+A, and more
+- **Smart Synchronization**: Real-time sync with budget changes and automatic balance updates
 
 ### 📈 Historical Data Tracker
 - **Year-over-Year Tracking**: Monitor financial progress with 20+ metrics per year
@@ -88,9 +99,10 @@ Experience all features immediately with realistic sample data:
 ### Option 2: Start Fresh
 1. **Calculate Paychecks**: Enter your salary, deductions, and tax information
 2. **Plan Budget**: Use auto-synced income to allocate expenses and savings
-3. **Track Performance**: Add investment accounts and monitor returns
-4. **Record History**: Build your financial timeline year-over-year
-5. **Visualize Progress**: Use the dashboard to see your wealth growth
+3. **Track Savings Goals**: Budget items with "saving" automatically become trackable goals
+4. **Monitor Performance**: Add investment accounts and track returns
+5. **Record History**: Build your financial timeline year-over-year
+6. **Visualize Progress**: Use the dashboard to see your wealth growth
 
 ## 💡 Use Cases
 
@@ -111,10 +123,10 @@ Experience all features immediately with realistic sample data:
 ## 🚧 Coming Soon
 
 - **Retirement Planning**: 401k optimization, IRA strategies, withdrawal planning
-- **Advanced Savings**: Goal tracking, automated savings recommendations  
 - **Mortgage Tools**: Refinancing calculator, extra payment analysis
 - **Enhanced Visualizations**: Interactive charts, trend analysis, forecasting
 - **Portfolio Analytics**: Asset allocation, risk analysis, rebalancing
+- **Savings Recommendations**: Automated savings optimization and goal suggestions
 - **API Integration**: Bank connections, real-time data sync
 - **Mobile App**: iOS and Android applications with offline sync
 
@@ -163,9 +175,10 @@ This creates an optimized production build in the `build` folder.
 ### Typical Workflow
 1. **Paycheck Calculator**: Enter your income and deductions
 2. **Budget Planner**: Your income auto-syncs; add expense categories
-3. **Historical Tracker**: Add past years' financial data
-4. **Performance Tracker**: Track investment account balances
-5. **Net Worth Dashboard**: View your financial progress
+3. **Savings Tracker**: Budget items with "saving" become trackable goals automatically
+4. **Historical Tracker**: Add past years' financial data
+5. **Performance Tracker**: Track investment account balances
+6. **Net Worth Dashboard**: View your financial progress
 
 ### Data Privacy
 - No data leaves your browser
@@ -195,6 +208,7 @@ src/
 ### Key Components
 - `TaxCalculator.js` - Main paycheck calculator
 - `BudgetForm.js` - Budget planning interface
+- `Savings.js` - Savings goal tracking with bulk editing
 - `Historical.js` - Historical data tracker
 - `Performance.js` - Investment performance tracker
 - `NetWorthDashboard.js` - Visualization dashboard

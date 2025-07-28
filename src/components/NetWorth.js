@@ -1003,10 +1003,83 @@ const NetWorth = () => {
             <h1>📊 Net Worth Dashboard</h1>
             <p>Track your financial progress over time</p>
           </div>
-          <div className="empty-state">
-            <div className="empty-state-icon">📊</div>
-            <h2>No Historical Data</h2>
-            <p>Add some data in the Historical Tracker to see your net worth analysis.</p>
+          <div className="networth-empty-state">
+            <div className="networth-empty-state-content">
+              <div className="networth-empty-state-icon">📊</div>
+              <h2>Welcome to Net Worth Dashboard!</h2>
+              <p className="networth-empty-state-description">
+                Your net worth dashboard provides comprehensive financial analysis and insights based on your historical data.
+              </p>
+              
+              <div className="networth-empty-state-steps">
+                <h3>How to Get Started:</h3>
+                <div className="networth-step">
+                  <div className="networth-step-number">1</div>
+                  <div className="networth-step-content">
+                    <strong>Add Historical Data</strong>
+                    <p>Go to the Historical page and enter your financial data for one or more years</p>
+                  </div>
+                </div>
+                
+                <div className="networth-step">
+                  <div className="networth-step-number">2</div>
+                  <div className="networth-step-content">
+                    <strong>Include Investment Performance</strong>
+                    <p>Add account performance data on the Performance page for detailed investment analysis</p>
+                  </div>
+                </div>
+                
+                <div className="networth-step">
+                  <div className="networth-step-number">3</div>
+                  <div className="networth-step-content">
+                    <strong>Explore Your Dashboard</strong>
+                    <p>Return here to see charts, trends, Money Guy scores, and comprehensive analysis</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="networth-empty-state-features">
+                <h3>What You'll See Here:</h3>
+                <div className="networth-features-grid">
+                  <div className="networth-feature">
+                    <div className="networth-feature-icon">📈</div>
+                    <div className="networth-feature-text">
+                      <strong>Net Worth Trends</strong>
+                      <p>Track your financial growth over time with interactive charts</p>
+                    </div>
+                  </div>
+                  
+                  <div className="networth-feature">
+                    <div className="networth-feature-icon">🎯</div>
+                    <div className="networth-feature-text">
+                      <strong>Financial Health Analysis</strong>
+                      <p>See your Financial Health metrics</p>
+                    </div>
+                  </div>
+                  
+                  <div className="networth-feature">
+                    <div className="networth-feature-icon">💼</div>
+                    <div className="networth-feature-text">
+                      <strong>Portfolio Breakdown</strong>
+                      <p>Analyze your asset allocation and investment mix</p>
+                    </div>
+                  </div>
+                  
+                  <div className="networth-feature">
+                    <div className="networth-feature-icon">📊</div>
+                    <div className="networth-feature-text">
+                      <strong>Detailed Analytics</strong>
+                      <p>Compare years, track goals, and get actionable insights</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="networth-empty-state-cta">
+                <p><strong>Ready to start?</strong></p>
+                <p>Head to the <a href="/historical" className="networth-historical-link">Historical page</a> to add your first year of data!</p>
+              </div>
+            </div>
           </div>
         </div>
       </>

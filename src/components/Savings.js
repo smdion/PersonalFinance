@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Navigation from './Navigation';
-import { getBudgetData, getSavingsData, setSavingsData } from '../utils/localStorage';
+import { getBudgetData, getSavingsData, setSavingsData, getIsResettingAllData } from '../utils/localStorage';
 
 // Resizable header component for savings table
 const ResizableHeader = ({ columnKey, children, width, onResize, className = '', style = {} }) => {
@@ -60,6 +60,12 @@ const Savings = () => {
   const [bulkEditValue, setBulkEditValue] = useState('');
   const [bulkEditType, setBulkEditType] = useState('dollar'); // 'dollar' or 'percentage'
   const [copiedPattern, setCopiedPattern] = useState(null);
+  
+  // State for removal confirmation dialog
+  const [removalConfirmation, setRemovalConfirmation] = useState(null);
+  
+  // State for help section visibility
+  const [showHelp, setShowHelp] = useState(false);
   
   // Column resizing state
   const [columnWidths, setColumnWidths] = useState({
@@ -265,6 +271,7 @@ const Savings = () => {
     
     const updatedSavingsData = { ...savingsData };
     let hasChanges = false;
+    const itemsToRemove = [];
     
     // Create or update goals for each savings category
     savingsCategories.forEach(category => {
@@ -281,7 +288,7 @@ const Savings = () => {
           hasChanges = true;
         }
       } else {
-        // Create new goal
+        // Create new goal - auto-add without confirmation
         const currentDate = new Date();
         updatedSavingsData[goalId] = {
           id: goalId,
@@ -298,17 +305,56 @@ const Savings = () => {
           purchases: [] // Keep for backward compatibility
         };
         hasChanges = true;
+        
+        // Show notification for auto-added item
+        console.log(`✅ Auto-added savings goal: ${category.itemName}`);
       }
     });
     
-    // Remove goals that no longer have corresponding budget items
+    // Identify goals that no longer have corresponding budget items
     Object.keys(updatedSavingsData).forEach(goalId => {
       const hasMatchingCategory = savingsCategories.some(cat => cat.fullKey === goalId);
       if (!hasMatchingCategory) {
-        delete updatedSavingsData[goalId];
-        hasChanges = true;
+        const goal = updatedSavingsData[goalId];
+        // Check if goal has significant data (balance > $1 or custom contributions/purchases)
+        const hasSignificantData = 
+          (goal.currentBalance && goal.currentBalance > 1) ||
+          Object.keys(goal.monthlyContributions || {}).length > 0 ||
+          Object.keys(goal.monthlyPurchases || {}).length > 0 ||
+          (goal.purchases && goal.purchases.length > 0);
+        
+        if (hasSignificantData) {
+          // Add to removal confirmation list instead of immediate deletion
+          itemsToRemove.push({
+            goalId,
+            name: goal.name,
+            currentBalance: goal.currentBalance || 0,
+            hasCustomData: Object.keys(goal.monthlyContributions || {}).length > 0 ||
+                          Object.keys(goal.monthlyPurchases || {}).length > 0
+          });
+        } else {
+          // Auto-remove if no significant data
+          delete updatedSavingsData[goalId];
+          hasChanges = true;
+          console.log(`🗑️ Auto-removed empty savings goal: ${goal.name}`);
+        }
       }
     });
+    
+    // Show confirmation dialog if there are items to remove (unless we're resetting all data)
+    if (itemsToRemove.length > 0 && !getIsResettingAllData()) {
+      setRemovalConfirmation({
+        items: itemsToRemove,
+        updatedData: updatedSavingsData
+      });
+    } else if (itemsToRemove.length > 0 && getIsResettingAllData()) {
+      // During reset, automatically remove items without confirmation
+      itemsToRemove.forEach(item => {
+        delete updatedSavingsData[item.goalId];
+        console.log(`🗑️ Auto-removed savings goal during reset: ${item.name}`);
+      });
+      hasChanges = true;
+    }
     
     if (hasChanges) {
       setSavingsDataState(updatedSavingsData);
@@ -839,6 +885,88 @@ const Savings = () => {
 
 
 
+        {/* Empty State Placeholder */}
+        {Object.keys(savingsData).length === 0 && (
+          <div className="savings-empty-state">
+            <div className="savings-empty-state-content">
+              <div className="savings-empty-state-icon">💰</div>
+              <h2>Welcome to Savings Goals!</h2>
+              <p className="savings-empty-state-description">
+                Your savings goals are automatically created from budget items in categories with "saving" in the name.
+              </p>
+              
+              <div className="savings-empty-state-steps">
+                <h3>How to Get Started:</h3>
+                <div className="savings-step">
+                  <div className="savings-step-number">1</div>
+                  <div className="savings-step-content">
+                    <strong>Create a Savings Category</strong>
+                    <p>Go to the Budget page and add a category with "saving" in the name (e.g., "Emergency Savings", "Vacation Savings")</p>
+                  </div>
+                </div>
+                
+                <div className="savings-step">
+                  <div className="savings-step-number">2</div>
+                  <div className="savings-step-content">
+                    <strong>Add Budget Items</strong>
+                    <p>Add items to your savings category with monthly amounts (e.g., "Emergency Fund - $500/month")</p>
+                  </div>
+                </div>
+                
+                <div className="savings-step">
+                  <div className="savings-step-number">3</div>
+                  <div className="savings-step-content">
+                    <strong>Track Your Progress</strong>
+                    <p>Return here to see your goals, adjust contributions, plan purchases, and track 10-year projections</p>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="savings-empty-state-features">
+                <h3>What You Can Do Here:</h3>
+                <div className="savings-features-grid">
+                  <div className="savings-feature">
+                    <div className="savings-feature-icon">📊</div>
+                    <div className="savings-feature-text">
+                      <strong>10-Year Projections</strong>
+                      <p>See how your savings will grow over time</p>
+                    </div>
+                  </div>
+                  
+                  <div className="savings-feature">
+                    <div className="savings-feature-icon">💳</div>
+                    <div className="savings-feature-text">
+                      <strong>Purchase Planning</strong>
+                      <p>Schedule future purchases and see their impact</p>
+                    </div>
+                  </div>
+                  
+                  <div className="savings-feature">
+                    <div className="savings-feature-icon">🎯</div>
+                    <div className="savings-feature-text">
+                      <strong>Custom Contributions</strong>
+                      <p>Adjust monthly amounts and use percentage-based allocations</p>
+                    </div>
+                  </div>
+                  
+                  <div className="savings-feature">
+                    <div className="savings-feature-icon">📈</div>
+                    <div className="savings-feature-text">
+                      <strong>Balance Tracking</strong>
+                      <p>Monitor current balances and monthly progress</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="savings-empty-state-cta">
+                <p><strong>Ready to start?</strong></p>
+                <p>Head to the <a href="/budget" className="savings-budget-link">Budget page</a> to create your first savings category!</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Savings Summary */}
         {Object.keys(savingsData).length > 0 && (
           <div className="household-summary">
@@ -880,70 +1008,182 @@ const Savings = () => {
           </div>
         )}
 
-        {/* Legend and Shortcuts */}
+        {/* Help Section Toggle */}
         {Object.keys(savingsData).length > 0 && (
-          <div className="savings-summary">
-            <div className="savings-summary-header">
-              <h2>📊 Legend & Shortcuts</h2>
+          <div className="savings-help-section">
+            <div className="help-toggle-header">
+              <button 
+                onClick={() => setShowHelp(!showHelp)}
+                className={`help-toggle-button ${showHelp ? 'expanded' : ''}`}
+              >
+                {showHelp ? '📖 Hide Help' : '❓ Show Help'}
+              </button>
+              <p className="help-toggle-description">
+                Learn about color coding, keyboard shortcuts, and bulk editing features
+              </p>
             </div>
             
-            <div className="savings-summary-additional">
-              {/* Legend */}
-              <div className="savings-legend">
-                <div className="legend-section">
-                  <h4>Color Coding</h4>
-                  <div className="legend-items">
-                    <div className="legend-item">
-                      <div className="legend-indicator yellow"></div>
-                      <span>Custom contributions (percentage-based calculations shown in yellow)</span>
+            {showHelp && (
+              <div className="help-content">
+                {/* Legend Section */}
+                <div className="help-section">
+                  <h3>📊 Color Coding & Legend</h3>
+                  <div className="savings-legend">
+                    <div className="legend-section">
+                      <div className="legend-items">
+                        <div className="legend-item">
+                          <div className="legend-indicator yellow"></div>
+                          <span>Custom contributions (percentage-based calculations shown in yellow)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator blue"></div>
+                          <span>Editable balance or contribution amounts (blue background)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator green"></div>
+                          <span>Selected cells for bulk editing (green highlight)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator red"></div>
+                          <span>Planned purchases or major expenses (red indicator)</span>
+                        </div>
+                        <div className="legend-item">
+                          <div className="legend-indicator percent"></div>
+                          <span>Percentage contributions (small % indicator shown)</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator blue"></div>
-                      <span>Editable balance or contribution amounts (blue background)</span>
+                  </div>
+                </div>
+
+                {/* Keyboard Shortcuts Section */}
+                <div className="help-section">
+                  <h3>⌨️ Keyboard Shortcuts</h3>
+                  <div className="savings-shortcuts">
+                    <div className="shortcuts-section">
+                      <div className="shortcut-items">
+                        <div className="shortcut-item">
+                          <kbd>Arrow Keys</kbd> <span>Navigate between cells</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Tab/Shift+Tab</kbd> <span>Move between goals</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Enter</kbd> <span>Start editing cell</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Escape</kbd> <span>Clear selection</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Shift+Click</kbd> <span>Select range</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Ctrl+A</kbd> <span>Select all</span>
+                        </div>
+                        <div className="shortcut-item">
+                          <kbd>Ctrl+B</kbd> <span>Toggle bulk edit mode</span>
+                        </div>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator green"></div>
-                      <span>Selected cells for bulk editing (green highlight)</span>
+                  </div>
+                </div>
+
+                {/* Bulk Edit Mode Section */}
+                <div className="help-section">
+                  <h3>💡 Bulk Edit Mode Guide</h3>
+                  <p className="help-section-description">
+                    Efficiently update multiple savings contributions at once
+                  </p>
+                  
+                  <div className="bulk-mode-steps">
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">1</div>
+                      <div className="bulk-step-content">
+                        <strong>Activate Bulk Mode</strong>
+                        <p>Click "📝 Bulk Edit Mode" button or press <kbd>Ctrl+B</kbd></p>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator red"></div>
-                      <span>Planned purchases or major expenses (red indicator)</span>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">2</div>
+                      <div className="bulk-step-content">
+                        <strong>Select Cells</strong>
+                        <p>Click individual cells, drag to select ranges, or use <kbd>Ctrl+A</kbd> to select all</p>
+                      </div>
                     </div>
-                    <div className="legend-item">
-                      <div className="legend-indicator percent"></div>
-                      <span>Percentage contributions (small % indicator shown)</span>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">3</div>
+                      <div className="bulk-step-content">
+                        <strong>Choose Edit Type</strong>
+                        <p>Select "Dollar Amount" or "Percentage" from the dropdown</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">4</div>
+                      <div className="bulk-step-content">
+                        <strong>Apply Changes</strong>
+                        <p>Enter your value and click "Apply to X cells" to update all selected cells</p>
+                      </div>
+                    </div>
+                    
+                    <div className="bulk-step">
+                      <div className="bulk-step-number">5</div>
+                      <div className="bulk-step-content">
+                        <strong>Apply to Future Months</strong>
+                        <p>Use "⬇️$" or "⬇️%" buttons to copy a cell's value to all months below it. Great for setting consistent monthly contributions from a starting point forward.</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="bulk-mode-features">
+                    <h4>Bulk Mode Features:</h4>
+                    <div className="bulk-features-grid">
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">💰</span>
+                        <div>
+                          <strong>Dollar Amount</strong>
+                          <p>Set exact dollar values across multiple cells</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">📊</span>
+                        <div>
+                          <strong>Percentage Mode</strong>
+                          <p>Apply percentage increases/decreases to existing values</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">🎯</span>
+                        <div>
+                          <strong>Range Selection</strong>
+                          <p>Hold Shift and click to select ranges of cells</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">🧹</span>
+                        <div>
+                          <strong>Clear & Deselect</strong>
+                          <p>Clear values or deselect cells with dedicated buttons</p>
+                        </div>
+                      </div>
+                      
+                      <div className="bulk-feature">
+                        <span className="bulk-feature-icon">⬇️</span>
+                        <div>
+                          <strong>Apply Below</strong>
+                          <p>Copy cell values to all future months with "⬇️$" and "⬇️%" buttons</p>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              {/* Shortcuts */}
-              <div className="savings-shortcuts">
-                <div className="shortcuts-section">
-                  <h4>Keyboard Shortcuts</h4>
-                  <div className="shortcut-items">
-                    <div className="shortcut-item">
-                      <kbd>Arrow Keys</kbd> <span>Navigate between cells</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Tab/Shift+Tab</kbd> <span>Move between goals</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Enter</kbd> <span>Start editing cell</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Escape</kbd> <span>Clear selection</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Shift+Click</kbd> <span>Select range</span>
-                    </div>
-                    <div className="shortcut-item">
-                      <kbd>Ctrl+A</kbd> <span>Select all</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
         )}
 
@@ -1030,6 +1270,73 @@ const Savings = () => {
                 {selectedCells.size} cells selected - Click cells to select/deselect, Shift+Click for ranges
               </div>
             )}
+          </div>
+        )}
+
+        {/* Removal Confirmation Dialog */}
+        {removalConfirmation && (
+          <div className="removal-confirmation-overlay">
+            <div className="removal-confirmation-dialog">
+              <div className="removal-confirmation-header">
+                <h3>⚠️ Confirm Savings Goal Removal</h3>
+                <p>The following savings goals no longer have corresponding budget items and will be removed:</p>
+              </div>
+              
+              <div className="removal-confirmation-content">
+                {removalConfirmation.items.map(item => (
+                  <div key={item.goalId} className="removal-item">
+                    <div className="removal-item-name">
+                      <strong>{item.name}</strong>
+                    </div>
+                    <div className="removal-item-details">
+                      <span>Current Balance: {formatCurrency(item.currentBalance)}</span>
+                      {item.hasCustomData && (
+                        <span className="removal-custom-data-warning">
+                          ⚠️ Has custom contributions or purchases
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
+              <div className="removal-confirmation-actions">
+                <button
+                  onClick={() => {
+                    // Remove the items
+                    const finalData = { ...removalConfirmation.updatedData };
+                    removalConfirmation.items.forEach(item => {
+                      delete finalData[item.goalId];
+                      console.log(`🗑️ Confirmed removal of savings goal: ${item.name}`);
+                    });
+                    
+                    setSavingsDataState(finalData);
+                    setSavingsData(finalData);
+                    setRemovalConfirmation(null);
+                  }}
+                  className="removal-confirm-btn"
+                >
+                  ✓ Remove Goals
+                </button>
+                <button
+                  onClick={() => {
+                    // Keep the items - do nothing
+                    setRemovalConfirmation(null);
+                    console.log(`📌 Kept ${removalConfirmation.items.length} savings goals despite missing budget items`);
+                  }}
+                  className="removal-cancel-btn"
+                >
+                  ✕ Keep Goals
+                </button>
+              </div>
+              
+              <div className="removal-confirmation-note">
+                <p><small>
+                  <strong>Note:</strong> If you choose to keep these goals, they will remain in your savings tracker 
+                  even though they're no longer in your budget. You can manually delete them later if needed.
+                </small></p>
+              </div>
+            </div>
           </div>
         )}
 
