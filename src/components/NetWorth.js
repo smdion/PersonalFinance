@@ -1144,7 +1144,7 @@ const NetWorth = () => {
                 <div className="networth-control-description">
                   {netWorthMode === 'market' 
                     ? 'Uses estimated house values from online sources' 
-                    : 'Uses $315k purchase price + home improvements'}
+                    : 'Uses purchase price + home improvements'}
                 </div>
               </div>
 
