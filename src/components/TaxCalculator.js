@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useContext, useEffect, useRef } from 'react';
+import React, { useState, useCallback, useContext, useEffect, useRef, useMemo } from 'react';
 import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
@@ -7,7 +7,7 @@ import { getPaycheckData, setPaycheckData, updateNameMapping } from '../utils/lo
 import Navigation from './Navigation';
 
 const TaxCalculator = () => {
-  const { updateFormData, updateBudgetImpacting, addBrokerageAccount, updateBrokerageAccount, removeBrokerageAccount } = useContext(FormContext);
+  const { formData: contextFormData, updateFormData, updateBudgetImpacting, addBrokerageAccount, updateBrokerageAccount, removeBrokerageAccount } = useContext(FormContext);
 
   // Remove settings menu state and ref
   
@@ -528,12 +528,11 @@ const TaxCalculator = () => {
     }
   }, [showSpouseCalculator, updateFormData]);
 
-  // Add effect to update context when budgetImpacting changes
+  // Simple one-way sync: update context when local state changes
   useEffect(() => {
     updateBudgetImpacting('your', budgetImpacting);
   }, [budgetImpacting, updateBudgetImpacting]);
 
-  // Add effect to update context when spouseBudgetImpacting changes
   useEffect(() => {
     updateBudgetImpacting('spouse', spouseBudgetImpacting);
   }, [spouseBudgetImpacting, updateBudgetImpacting]);
@@ -671,9 +670,39 @@ const TaxCalculator = () => {
             setEsppDeductionPercent={setEsppDeductionPercent}
             budgetImpacting={budgetImpacting}
             setBudgetImpacting={setBudgetImpacting}
-            onAddBrokerageAccount={(person) => addBrokerageAccount('your')}
-            onUpdateBrokerageAccount={(person, accountId, field, value) => updateBrokerageAccount('your', accountId, field, value)}
-            onRemoveBrokerageAccount={(person, accountId) => removeBrokerageAccount('your', accountId)}
+            onAddBrokerageAccount={(person) => {
+              addBrokerageAccount('your');
+              // Update local state immediately
+              setBudgetImpacting(prev => ({
+                ...prev,
+                brokerageAccounts: [
+                  ...(prev.brokerageAccounts || []),
+                  {
+                    id: Date.now() + Math.random(),
+                    name: 'New Brokerage Account',
+                    monthlyAmount: 0
+                  }
+                ]
+              }));
+            }}
+            onUpdateBrokerageAccount={(person, accountId, field, value) => {
+              updateBrokerageAccount('your', accountId, field, value);
+              // Update local state immediately
+              setBudgetImpacting(prev => ({
+                ...prev,
+                brokerageAccounts: (prev.brokerageAccounts || []).map(account =>
+                  account.id === accountId ? { ...account, [field]: value } : account
+                )
+              }));
+            }}
+            onRemoveBrokerageAccount={(person, accountId) => {
+              removeBrokerageAccount('your', accountId);
+              // Update local state immediately
+              setBudgetImpacting(prev => ({
+                ...prev,
+                brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
+              }));
+            }}
             bonusMultiplier={bonusMultiplier}
             setBonusMultiplier={setBonusMultiplier}
             bonusTarget={bonusTarget}
@@ -714,9 +743,39 @@ const TaxCalculator = () => {
               setEsppDeductionPercent={setSpouseEsppDeductionPercent}
               budgetImpacting={spouseBudgetImpacting}
               setBudgetImpacting={setSpouseBudgetImpacting}
-              onAddBrokerageAccount={(person) => addBrokerageAccount('spouse')}
-              onUpdateBrokerageAccount={(person, accountId, field, value) => updateBrokerageAccount('spouse', accountId, field, value)}
-              onRemoveBrokerageAccount={(person, accountId) => removeBrokerageAccount('spouse', accountId)}
+              onAddBrokerageAccount={(person) => {
+                addBrokerageAccount('spouse');
+                // Update local state immediately
+                setSpouseBudgetImpacting(prev => ({
+                  ...prev,
+                  brokerageAccounts: [
+                    ...(prev.brokerageAccounts || []),
+                    {
+                      id: Date.now() + Math.random(),
+                      name: 'New Brokerage Account',
+                      monthlyAmount: 0
+                    }
+                  ]
+                }));
+              }}
+              onUpdateBrokerageAccount={(person, accountId, field, value) => {
+                updateBrokerageAccount('spouse', accountId, field, value);
+                // Update local state immediately
+                setSpouseBudgetImpacting(prev => ({
+                  ...prev,
+                  brokerageAccounts: (prev.brokerageAccounts || []).map(account =>
+                    account.id === accountId ? { ...account, [field]: value } : account
+                  )
+                }));
+              }}
+              onRemoveBrokerageAccount={(person, accountId) => {
+                removeBrokerageAccount('spouse', accountId);
+                // Update local state immediately
+                setSpouseBudgetImpacting(prev => ({
+                  ...prev,
+                  brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
+                }));
+              }}
               bonusMultiplier={spouseBonusMultiplier}
               setBonusMultiplier={setSpouseBonusMultiplier}
               bonusTarget={spouseBonusTarget}
