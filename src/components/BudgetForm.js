@@ -502,7 +502,7 @@ const BudgetForm = () => {
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <h1>💰 Budget Planner</h1>
+          <h1>💵 Budget Planner</h1>
           <p>Plan And Track Your Monthly Budget Based On Your Calculated Income</p>
         </div>
 

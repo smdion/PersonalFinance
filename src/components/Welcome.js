@@ -267,7 +267,7 @@ const Welcome = () => {
 
             <div className="calculator-card">
               <Link to="/budget" className="calculator-link">
-                <div className="calculator-icon">📊</div>
+                <div className="calculator-icon">💵</div>
                 <h3>Budget Planner</h3>
                 <p>
                   Plan your monthly expenses with auto-synced income from your paycheck calculator. 
