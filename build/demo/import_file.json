@@ -387,8 +387,7 @@
       "budgetImpacting": {
         "traditionalIraMonthly": 500,
         "rothIraMonthly": 300,
-        "retirementBrokerageMonthly": 0,
-        "longTermSavingsMonthly": 0
+        "brokerageAccounts": []
       },
       "bonusMultiplier": 0.1,
       "bonusTarget": 9500,
@@ -427,8 +426,13 @@
       "budgetImpacting": {
         "traditionalIraMonthly": 400,
         "rothIraMonthly": 0,
-        "retirementBrokerageMonthly": 250,
-        "longTermSavingsMonthly": 0
+        "brokerageAccounts": [
+          {
+            "id": "demo-retirement-brokerage",
+            "name": "Retirement Brokerage",
+            "monthlyAmount": 250
+          }
+        ]
       },
       "bonusMultiplier": 0.05,
       "bonusTarget": 3350,
@@ -441,14 +445,18 @@
     "yourBudgetImpacting": {
       "traditionalIraMonthly": 500,
       "rothIraMonthly": 300,
-      "retirementBrokerageMonthly": 0,
-      "longTermSavingsMonthly": 0
+      "brokerageAccounts": []
     },
     "spouseBudgetImpacting": {
       "traditionalIraMonthly": 400,
       "rothIraMonthly": 0,
-      "retirementBrokerageMonthly": 250,
-      "longTermSavingsMonthly": 0
+      "brokerageAccounts": [
+        {
+          "id": "demo-spouse-retirement-brokerage",
+          "name": "Retirement Brokerage",
+          "monthlyAmount": 250
+        }
+      ]
     },
     "combinedMonthlyTakeHome": 9000
   },

@@ -1005,7 +1005,7 @@ const NetWorth = () => {
           </div>
           <div className="networth-empty-state">
             <div className="networth-empty-state-content">
-              <div className="networth-empty-state-icon">📊</div>
+              <div className="networth-empty-state-icon">💎</div>
               <h2>Welcome to Net Worth Dashboard!</h2>
               <p className="networth-empty-state-description">
                 Your net worth dashboard provides comprehensive financial analysis and insights based on your historical data.

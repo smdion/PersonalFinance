@@ -7,7 +7,7 @@ import { getPaycheckData, setPaycheckData, updateNameMapping } from '../utils/lo
 import Navigation from './Navigation';
 
 const TaxCalculator = () => {
-  const { updateFormData, updateBudgetImpacting } = useContext(FormContext);
+  const { updateFormData, updateBudgetImpacting, addBrokerageAccount, updateBrokerageAccount, removeBrokerageAccount } = useContext(FormContext);
 
   // Remove settings menu state and ref
   
@@ -53,8 +53,7 @@ const TaxCalculator = () => {
       budgetImpacting: {
         traditionalIraMonthly: 0,
         rothIraMonthly: 0,
-        retirementBrokerageMonthly: 0,
-        longTermSavingsMonthly: 0,
+        brokerageAccounts: [],
       },
       bonusMultiplier: 0,
       bonusTarget: 0,
@@ -93,8 +92,7 @@ const TaxCalculator = () => {
       budgetImpacting: {
         traditionalIraMonthly: 0,
         rothIraMonthly: 0,
-        retirementBrokerageMonthly: 0,
-        longTermSavingsMonthly: 0,
+        brokerageAccounts: [],
       },
       bonusMultiplier: 0,
       bonusTarget: 0,
@@ -441,15 +439,6 @@ const TaxCalculator = () => {
 
   // Add global event listeners
   useEffect(() => {
-    const handleExpandAll = () => {
-      setGlobalSectionControl('expand');
-      setTimeout(() => setGlobalSectionControl(null), 100);
-    };
-
-    const handleCollapseAll = () => {
-      setGlobalSectionControl('collapse');
-      setTimeout(() => setGlobalSectionControl(null), 100);
-    };
 
     const handleResetAll = () => {
       // Reset to empty defaults and clear localStorage
@@ -507,13 +496,9 @@ const TaxCalculator = () => {
       }
     };
 
-    window.addEventListener('expandAllSections', handleExpandAll);
-    window.addEventListener('collapseAllSections', handleCollapseAll);
     window.addEventListener('resetAllData', handleResetAll);
 
     return () => {
-      window.removeEventListener('expandAllSections', handleExpandAll);
-      window.removeEventListener('collapseAllSections', handleCollapseAll);
       window.removeEventListener('resetAllData', handleResetAll);
     };
   }, [emptyDefaults, setPaycheckData]);
@@ -631,6 +616,22 @@ const TaxCalculator = () => {
           
           {/* Add toggle for spouse calculator directly in header */}
           <div className="header-controls">
+            <div className="paycheck-control-buttons">
+              <button
+                onClick={expandAllSectionsGlobal}
+                className="paycheck-control-button expand"
+                title="Expand all paycheck sections"
+              >
+                📖 Expand All
+              </button>
+              <button
+                onClick={collapseAllSectionsGlobal}
+                className="paycheck-control-button collapse"
+                title="Collapse all paycheck sections"
+              >
+                📕 Collapse All
+              </button>
+            </div>
             <label className="header-toggle">
               <input
                 type="checkbox"
@@ -670,6 +671,9 @@ const TaxCalculator = () => {
             setEsppDeductionPercent={setEsppDeductionPercent}
             budgetImpacting={budgetImpacting}
             setBudgetImpacting={setBudgetImpacting}
+            onAddBrokerageAccount={(person) => addBrokerageAccount('your')}
+            onUpdateBrokerageAccount={(person, accountId, field, value) => updateBrokerageAccount('your', accountId, field, value)}
+            onRemoveBrokerageAccount={(person, accountId) => removeBrokerageAccount('your', accountId)}
             bonusMultiplier={bonusMultiplier}
             setBonusMultiplier={setBonusMultiplier}
             bonusTarget={bonusTarget}
@@ -710,6 +714,9 @@ const TaxCalculator = () => {
               setEsppDeductionPercent={setSpouseEsppDeductionPercent}
               budgetImpacting={spouseBudgetImpacting}
               setBudgetImpacting={setSpouseBudgetImpacting}
+              onAddBrokerageAccount={(person) => addBrokerageAccount('spouse')}
+              onUpdateBrokerageAccount={(person, accountId, field, value) => updateBrokerageAccount('spouse', accountId, field, value)}
+              onRemoveBrokerageAccount={(person, accountId) => removeBrokerageAccount('spouse', accountId)}
               bonusMultiplier={spouseBonusMultiplier}
               setBonusMultiplier={setSpouseBonusMultiplier}
               bonusTarget={spouseBonusTarget}

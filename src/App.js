@@ -8,6 +8,7 @@ import Historical from './components/Historical';
 import Performance from './components/Performance';
 import NetWorth from './components/NetWorth';
 import Savings from './components/Savings';
+import Optimize from './components/Optimize';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
             <Route path="/paycheck" element={<TaxCalculator />} />
             <Route path="/budget" element={<BudgetForm />} />
             <Route path="/savings" element={<Savings />} />
+            <Route path="/optimize" element={<Optimize />} />
             <Route path="/historical" element={<Historical />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/networth" element={<NetWorth />} />

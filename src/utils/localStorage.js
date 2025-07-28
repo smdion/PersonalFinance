@@ -293,8 +293,72 @@ export const setBudgetData = (data) => {
   return setToStorage(STORAGE_KEYS.BUDGET_DATA, data);
 };
 
+// Helper function to migrate old budgetImpacting format to new format
+const migrateBudgetImpactingData = (oldData) => {
+  if (!oldData || typeof oldData !== 'object') return oldData;
+  
+  const newData = {
+    traditionalIraMonthly: oldData.traditionalIraMonthly || 0,
+    rothIraMonthly: oldData.rothIraMonthly || 0,
+    brokerageAccounts: []
+  };
+
+  // Migrate old hard-coded fields to brokerage accounts array
+  if (oldData.retirementBrokerageMonthly > 0) {
+    newData.brokerageAccounts.push({
+      id: `migrated-retirement-${Date.now()}`,
+      name: 'Retirement Brokerage',
+      monthlyAmount: oldData.retirementBrokerageMonthly
+    });
+  }
+
+  if (oldData.longTermSavingsMonthly > 0) {
+    newData.brokerageAccounts.push({
+      id: `migrated-savings-${Date.now()}`,
+      name: 'Long-Term Savings',
+      monthlyAmount: oldData.longTermSavingsMonthly
+    });
+  }
+
+  // Keep existing brokerage accounts if they exist
+  if (oldData.brokerageAccounts && Array.isArray(oldData.brokerageAccounts)) {
+    newData.brokerageAccounts = [...newData.brokerageAccounts, ...oldData.brokerageAccounts];
+  }
+
+  return newData;
+};
+
 export const getPaycheckData = () => {
-  return getFromStorage(STORAGE_KEYS.PAYCHECK_DATA, {});
+  const data = getFromStorage(STORAGE_KEYS.PAYCHECK_DATA, {});
+  
+  // Migrate old format if needed
+  let needsMigration = false;
+  const migratedData = { ...data };
+  
+  if (data.your?.budgetImpacting) {
+    const hasOldFormat = data.your.budgetImpacting.retirementBrokerageMonthly !== undefined || 
+                        data.your.budgetImpacting.longTermSavingsMonthly !== undefined;
+    if (hasOldFormat) {
+      migratedData.your.budgetImpacting = migrateBudgetImpactingData(data.your.budgetImpacting);
+      needsMigration = true;
+    }
+  }
+  
+  if (data.spouse?.budgetImpacting) {
+    const hasOldFormat = data.spouse.budgetImpacting.retirementBrokerageMonthly !== undefined || 
+                        data.spouse.budgetImpacting.longTermSavingsMonthly !== undefined;
+    if (hasOldFormat) {
+      migratedData.spouse.budgetImpacting = migrateBudgetImpactingData(data.spouse.budgetImpacting);
+      needsMigration = true;
+    }
+  }
+  
+  // Save migrated data back to localStorage
+  if (needsMigration) {
+    setPaycheckData(migratedData);
+  }
+  
+  return migratedData;
 };
 
 export const setPaycheckData = (data) => {
@@ -302,7 +366,36 @@ export const setPaycheckData = (data) => {
 };
 
 export const getFormData = () => {
-  return getFromStorage(STORAGE_KEYS.FORM_DATA, {});
+  const data = getFromStorage(STORAGE_KEYS.FORM_DATA, {});
+  
+  // Migrate old format if needed
+  let needsMigration = false;
+  const migratedData = { ...data };
+  
+  if (data.yourBudgetImpacting) {
+    const hasOldFormat = data.yourBudgetImpacting.retirementBrokerageMonthly !== undefined || 
+                        data.yourBudgetImpacting.longTermSavingsMonthly !== undefined;
+    if (hasOldFormat) {
+      migratedData.yourBudgetImpacting = migrateBudgetImpactingData(data.yourBudgetImpacting);
+      needsMigration = true;
+    }
+  }
+  
+  if (data.spouseBudgetImpacting) {
+    const hasOldFormat = data.spouseBudgetImpacting.retirementBrokerageMonthly !== undefined || 
+                        data.spouseBudgetImpacting.longTermSavingsMonthly !== undefined;
+    if (hasOldFormat) {
+      migratedData.spouseBudgetImpacting = migrateBudgetImpactingData(data.spouseBudgetImpacting);
+      needsMigration = true;
+    }
+  }
+  
+  // Save migrated data back to localStorage
+  if (needsMigration) {
+    setFormData(migratedData);
+  }
+  
+  return migratedData;
 };
 
 export const setFormData = (data) => {
@@ -476,12 +569,28 @@ export const importAllData = (importData) => {
     }
     
     if (importData.paycheckData !== undefined) {
-      setPaycheckData(importData.paycheckData);
+      // Migrate imported paycheck data if needed
+      const migratedPaycheckData = { ...importData.paycheckData };
+      if (migratedPaycheckData.your?.budgetImpacting) {
+        migratedPaycheckData.your.budgetImpacting = migrateBudgetImpactingData(migratedPaycheckData.your.budgetImpacting);
+      }
+      if (migratedPaycheckData.spouse?.budgetImpacting) {
+        migratedPaycheckData.spouse.budgetImpacting = migrateBudgetImpactingData(migratedPaycheckData.spouse.budgetImpacting);
+      }
+      setPaycheckData(migratedPaycheckData);
       importedSections.push('Paycheck Data');
     }
     
     if (importData.formData !== undefined) {
-      setFormData(importData.formData);
+      // Migrate imported form data if needed
+      const migratedFormData = { ...importData.formData };
+      if (migratedFormData.yourBudgetImpacting) {
+        migratedFormData.yourBudgetImpacting = migrateBudgetImpactingData(migratedFormData.yourBudgetImpacting);
+      }
+      if (migratedFormData.spouseBudgetImpacting) {
+        migratedFormData.spouseBudgetImpacting = migrateBudgetImpactingData(migratedFormData.spouseBudgetImpacting);
+      }
+      setFormData(migratedFormData);
       importedSections.push('Form Data');
     }
     
