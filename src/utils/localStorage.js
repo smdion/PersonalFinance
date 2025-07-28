@@ -7,7 +7,8 @@ export const STORAGE_KEYS = {
   APP_SETTINGS: 'appSettings',
   HISTORICAL_DATA: 'historicalData',
   PERFORMANCE_DATA: 'performanceData',
-  NETWORTH_SETTINGS: 'networthSettings'
+  NETWORTH_SETTINGS: 'networthSettings',
+  SAVINGS_DATA: 'savingsData'
 };
 
 // Generic localStorage utilities
@@ -856,4 +857,13 @@ export const getNetWorthSettings = () => {
 
 export const setNetWorthSettings = (settings) => {
   return setToStorage(STORAGE_KEYS.NETWORTH_SETTINGS, settings);
+};
+
+// Savings data utilities
+export const getSavingsData = () => {
+  return getFromStorage(STORAGE_KEYS.SAVINGS_DATA, {});
+};
+
+export const setSavingsData = (data) => {
+  return setToStorage(STORAGE_KEYS.SAVINGS_DATA, data);
 };

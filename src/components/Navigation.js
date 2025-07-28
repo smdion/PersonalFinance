@@ -11,6 +11,7 @@ const Navigation = () => {
   const navItems = [
     { path: '/paycheck', label: 'Paycheck', icon: '💰' },
     { path: '/budget', label: 'Budget', icon: '📊' },
+    { path: '/savings', label: 'Savings', icon: '🎯' },
     { path: '/historical', label: 'Historical', icon: '📈' },
     { path: '/performance', label: 'Performance', icon: '📊' },
     { path: '/networth', label: 'Net Worth', icon: '💎' }
