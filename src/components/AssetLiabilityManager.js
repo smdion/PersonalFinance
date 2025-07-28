@@ -203,7 +203,6 @@ const AssetLiabilityManager = ({
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
         
-        console.log(`Updated ${currentYear} historical data - ${historicalField}:`, totalAmount);
       } else {
         alert('Failed to save historical data. Please try again.');
       }

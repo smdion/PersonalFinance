@@ -100,7 +100,6 @@ const Retirement = () => {
     
     // If no paycheck data, create minimal projections with retirement data only
     if (!paycheckUser || !paycheckUser.birthday || !paycheckUser.salary) {
-      console.log(`No complete paycheck data for ${userKey}, creating basic projections`);
       const projections = [];
       const currentAge = 30; // Default age if no birthday
       const retirementAge = (parseFloat(user.ageAtRetirement) || 65);

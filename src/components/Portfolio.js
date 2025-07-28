@@ -9,10 +9,12 @@ import {
   addPortfolioUpdateRecord,
   getPortfolioUpdateHistory,
   getPortfolioRecords,
-  addPortfolioRecord
+  addPortfolioRecord,
+  deletePortfolioRecord
 } from '../utils/localStorage';
 import { generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
+import CSVImportExport from './CSVImportExport';
 import '../styles/portfolio.css';
 
 const Portfolio = () => {
@@ -25,6 +27,7 @@ const Portfolio = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [portfolioRecords, setPortfolioRecords] = useState([]);
   const [showRecords, setShowRecords] = useState(false);
+  const [sortRecordsNewestFirst, setSortRecordsNewestFirst] = useState(true);
 
   // Validation options
   const TAX_TYPES = ['Tax-Free', 'Tax-Deferred', 'After-Tax'];
@@ -79,11 +82,6 @@ const Portfolio = () => {
     const historicalData = getHistoricalData();
     const paycheckData = getPaycheckData();
     
-    console.log('Portfolio DEBUG - loadCurrentYearData:');
-    console.log('Current Year:', currentYear);
-    console.log('Full Historical Data:', historicalData);
-    console.log('Current Year Data:', historicalData[currentYear]);
-    console.log('Paycheck Data:', paycheckData);
     
     // Get users from paycheck data
     const userList = [];
@@ -111,9 +109,6 @@ const Portfolio = () => {
       ownerOptions.push('Joint');
     }
     
-    console.log('Portfolio DEBUG - Final data:');
-    console.log('Owner Options:', ownerOptions);
-    console.log('Current Year Data being set:', historicalData[currentYear] || { users: {} });
     
     setUsers(ownerOptions);
     setCurrentYearData(historicalData[currentYear] || { users: {} });
@@ -221,6 +216,15 @@ const Portfolio = () => {
     }
   };
 
+  const handleDeleteRecord = (recordId) => {
+    if (window.confirm('Are you sure you want to delete this portfolio record? This action cannot be undone.')) {
+      deletePortfolioRecord(recordId);
+      loadPortfolioRecords(); // Refresh the records list
+      setSuccessMessage('Portfolio record deleted successfully');
+      setTimeout(() => setSuccessMessage(''), 3000);
+    }
+  };
+
   const addPortfolioInput = () => {
     setPortfolioInputs([...portfolioInputs, {
       id: generateUniqueId(),
@@ -304,8 +308,6 @@ const Portfolio = () => {
         historicalData[currentYear] = { users: {} };
       }
 
-      console.log('Portfolio DEBUG - updateHistoricalData:');
-      console.log('Portfolio inputs:', portfolioInputs);
       
       // Calculate totals by owner
       const totalsByOwner = portfolioInputs.reduce((acc, input) => {
@@ -346,7 +348,6 @@ const Portfolio = () => {
         return acc;
       }, {});
       
-      console.log('Portfolio DEBUG - Totals by owner:', totalsByOwner);
 
       // Calculate combined totals for root level (matching historical data structure)
       const combinedTotals = Object.values(totalsByOwner).reduce((acc, ownerTotals) => {
@@ -359,7 +360,6 @@ const Portfolio = () => {
         };
       }, { taxFree: 0, taxDeferred: 0, brokerage: 0, espp: 0, hsa: 0 });
       
-      console.log('Portfolio DEBUG - Combined totals for root level:', combinedTotals);
 
       // Get previous totals for change tracking BEFORE updating
       const previousTotals = {
@@ -403,8 +403,6 @@ const Portfolio = () => {
         }
       });
       
-      console.log('Portfolio DEBUG - Final historical data to save:', historicalData);
-      console.log('Portfolio DEBUG - Current year data being saved:', historicalData[currentYear]);
       
       // Save updated historical data
       const saveResult = setHistoricalData(historicalData);
@@ -459,8 +457,6 @@ const Portfolio = () => {
         loadUpdateHistory();
         loadPortfolioRecords();
         
-        console.log(`Updated ${currentYear} historical data:`, totals);
-        console.log('Update record:', updateRecord);
       } else {
         alert('Failed to save historical data. Please try again.');
       }
@@ -496,29 +492,65 @@ const Portfolio = () => {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
-  // CSV Helper Functions
+  // CSV Helper Functions for the reusable component
   const getCSVHeaders = () => {
     return ['accountName', 'owner', 'taxType', 'accountType', 'amount', 'updateDate'];
   };
 
-  const generateCSVContent = (data, headers) => {
-    const csvHeaders = headers.join(',');
-    const csvRows = data.map(row => 
-      headers.map(header => {
-        const value = row[header] || '';
-        // Escape commas and quotes in CSV values
-        return typeof value === 'string' && (value.includes(',') || value.includes('"')) 
-          ? `"${value.replace(/"/g, '""')}"` 
-          : value;
-      }).join(',')
-    );
-    return [csvHeaders, ...csvRows].join('\n');
+  const formatCSVRow = (input) => {
+    const currentDate = new Date().toISOString().split('T')[0];
+    return [
+      input.accountName || '',
+      input.owner || '',
+      input.taxType || '',
+      input.accountType || '',
+      input.amount || '',
+      input.updateDate || currentDate
+    ];
   };
 
-  const downloadCSVTemplate = () => {
-    const headers = getCSVHeaders();
+  const parseCSVRow = (row) => {
+    const accountName = row.accountName || '';
+    const owner = row.owner || '';
+    const taxType = row.taxType || '';
+    const accountType = row.accountType || '';
+    const amount = row.amount || '';
+    const updateDate = row.updateDate || '';
+    
+    // Validate required fields
+    if (!accountName || !owner || !taxType || !accountType) {
+      return null; // Skip invalid rows
+    }
+
+    // Validate against allowed values
+    if (!TAX_TYPES.includes(taxType)) {
+      return null;
+    }
+
+    if (!ACCOUNT_TYPES.includes(accountType)) {
+      return null;
+    }
+
+    // Check if owner is valid (either in users list or empty for validation later)
+    const validOwners = [...users];
+    if (!validOwners.includes(owner)) {
+      return null;
+    }
+
+    return {
+      id: generateUniqueId(),
+      accountName: accountName.trim(),
+      owner: owner.trim(),
+      taxType: taxType.trim(),
+      accountType: accountType.trim(),
+      amount: amount ? amount.toString().trim() : '',
+      updateDate: updateDate ? updateDate.trim() : new Date().toISOString().split('T')[0]
+    };
+  };
+
+  const generateTemplateData = () => {
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    const sampleData = [
+    return [
       {
         accountName: 'Fidelity 401k',
         owner: users[0] || 'User',
@@ -546,174 +578,104 @@ const Portfolio = () => {
       {
         accountName: 'Health Savings Account',
         owner: users[0] || 'User',
-        taxType: 'HSA',
+        taxType: 'After-Tax',
         accountType: 'HSA',
         amount: '5000.00',
         updateDate: currentDate
       }
     ];
-
-    const csvContent = generateCSVContent(sampleData, headers);
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = generateDataFilename('portfolio_template', users.filter(u => u !== 'Joint'), 'csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
-  const downloadCurrentPortfolioCSV = () => {
-    if (portfolioInputs.length === 0) {
-      alert('No portfolio data to export. Please add some accounts first.');
-      return;
-    }
-
-    const headers = getCSVHeaders();
-    const currentDate = new Date().toISOString().split('T')[0];
+  const handleCSVImportSuccess = (parsed) => {
+    // Replace current portfolio inputs with CSV data
+    setPortfolioInputs(parsed);
     
+    // Add portfolio records for each unique update date in the CSV
+    const dateGroups = {};
+    parsed.forEach(account => {
+      const date = account.updateDate;
+      if (!dateGroups[date]) {
+        dateGroups[date] = [];
+      }
+      dateGroups[date].push(account);
+    });
+    
+    // Create records for each date group
+    Object.entries(dateGroups).forEach(([date, accounts]) => {
+      addPortfolioRecord(accounts, date);
+    });
+    
+    // Refresh records display
+    loadPortfolioRecords();
+    
+    // Clear any existing errors
+    setErrors({});
+    
+    alert(`Successfully imported ${parsed.length} accounts from CSV`);
+    if (Object.keys(dateGroups).length > 1) {
+      alert(`Created ${Object.keys(dateGroups).length} portfolio records for different update dates.`);
+    }
+  };
+
+  const handleCSVImportError = (error) => {
+    alert(`Error importing CSV: ${error.message}`);
+  };
+
+  const getCurrentPortfolioData = () => {
+    const currentDate = new Date().toISOString().split('T')[0];
     // Add updateDate to current portfolio inputs
-    const exportData = portfolioInputs.map(input => ({
+    return portfolioInputs.map(input => ({
       ...input,
       updateDate: currentDate
     }));
-    
-    const csvContent = generateCSVContent(exportData, headers);
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = generateDataFilename('portfolio_current', users.filter(u => u !== 'Joint'), 'csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
   };
 
-  const parseCSVRow = (row) => {
-    const [accountName, owner, taxType, accountType, amount, updateDate] = row;
-    
-    // Validate required fields
-    if (!accountName || !owner || !taxType || !accountType) {
-      return null; // Skip invalid rows
-    }
-
-    // Validate against allowed values
-    if (!TAX_TYPES.includes(taxType)) {
-      console.warn(`Invalid tax type: ${taxType}. Skipping row.`);
-      return null;
-    }
-
-    if (!ACCOUNT_TYPES.includes(accountType)) {
-      console.warn(`Invalid account type: ${accountType}. Skipping row.`);
-      return null;
-    }
-
-    // Check if owner is valid (either in users list or empty for validation later)
-    const validOwners = [...users];
-    if (!validOwners.includes(owner)) {
-      console.warn(`Invalid owner: ${owner}. Skipping row.`);
-      return null;
-    }
-
-    return {
-      id: generateUniqueId(),
-      accountName: accountName.trim(),
-      owner: owner.trim(),
-      taxType: taxType.trim(),
-      accountType: accountType.trim(),
-      amount: amount ? amount.toString().trim() : '',
-      updateDate: updateDate ? updateDate.trim() : new Date().toISOString().split('T')[0]
-    };
-  };
-
-  const parseCSV = (csvText) => {
-    try {
-      const result = Papa.parse(csvText, {
-        header: false,
-        skipEmptyLines: true
-      });
-
-      if (result.errors.length > 0) {
-        console.error('CSV parsing errors:', result.errors);
-        throw new Error('Invalid CSV format');
-      }
-
-      // Skip header row and parse data rows
-      const dataRows = result.data.slice(1);
-      const parsed = dataRows.map(row => parseCSVRow(row)).filter(Boolean);
+  const handleResetPortfolioData = () => {
+    if (window.confirm('Are you sure you want to reset all portfolio data? This cannot be undone.')) {
+      // Reset all portfolio component state
+      setPortfolioInputs([{
+        id: generateUniqueId(),
+        accountName: '',
+        owner: users[0] || 'User',
+        taxType: '',
+        accountType: '',
+        amount: ''
+      }]);
+      setCurrentYearData({});
+      setUpdateHistory([]);
+      setPortfolioRecords([]);
+      setErrors({});
+      setSuccessMessage('');
+      setShowHistory(false);
+      setShowRecords(false);
       
-      if (parsed.length === 0) {
-        throw new Error('No valid data found in CSV file');
-      }
-
-      return parsed;
-    } catch (error) {
-      console.error('Error parsing CSV:', error);
-      throw error;
-    }
-  };
-
-  const handleCSVUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    if (!file.name.toLowerCase().endsWith('.csv')) {
-      alert('Please select a CSV file');
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csvText = e.target.result;
-        const parsed = parseCSV(csvText);
+      // Clear localStorage data related to portfolio
+      const currentYear = new Date().getFullYear();
+      const historicalData = getHistoricalData();
+      if (historicalData[currentYear]) {
+        // Reset investment fields to 0
+        historicalData[currentYear].taxFree = 0;
+        historicalData[currentYear].taxDeferred = 0;
+        historicalData[currentYear].brokerage = 0;
+        historicalData[currentYear].espp = 0;
+        historicalData[currentYear].hsa = 0;
         
-        // Replace current portfolio inputs with CSV data
-        setPortfolioInputs(parsed);
-        
-        // Add portfolio records for each unique update date in the CSV
-        const dateGroups = {};
-        parsed.forEach(account => {
-          const date = account.updateDate;
-          if (!dateGroups[date]) {
-            dateGroups[date] = [];
+        // Reset user investment data
+        Object.keys(historicalData[currentYear].users || {}).forEach(userName => {
+          if (historicalData[currentYear].users[userName]) {
+            historicalData[currentYear].users[userName].taxFree = 0;
+            historicalData[currentYear].users[userName].taxDeferred = 0;
+            historicalData[currentYear].users[userName].brokerage = 0;
+            historicalData[currentYear].users[userName].espp = 0;
+            historicalData[currentYear].users[userName].hsa = 0;
           }
-          dateGroups[date].push(account);
         });
         
-        // Create records for each date group
-        Object.entries(dateGroups).forEach(([date, accounts]) => {
-          addPortfolioRecord(accounts, date);
-        });
-        
-        // Refresh records display
-        loadPortfolioRecords();
-        
-        // Clear any existing errors
-        setErrors({});
-        
-        alert(`Successfully imported ${parsed.length} accounts from CSV`);
-        if (Object.keys(dateGroups).length > 1) {
-          alert(`Created ${Object.keys(dateGroups).length} portfolio records for different update dates.`);
-        }
-      } catch (error) {
-        alert(`Error importing CSV: ${error.message}`);
+        setHistoricalData(historicalData);
       }
-    };
-
-    reader.onerror = () => {
-      alert('Error reading file');
-    };
-
-    reader.readAsText(file);
-    
-    // Clear the input so the same file can be selected again
-    event.target.value = '';
+      
+      alert('Portfolio data has been reset successfully.');
+    }
   };
 
   const downloadPortfolioRecordsCSV = () => {
@@ -951,50 +913,23 @@ const Portfolio = () => {
           </div>
 
           {/* CSV Import/Export Section */}
-          <div className="csv-section">
-            <h3>📁 CSV Import/Export</h3>
-            <p>Import account data from a CSV file or download the current data as CSV.</p>
-            
-            <div className="csv-actions">
-              <div className="csv-download-group">
-                <button 
-                  type="button" 
-                  onClick={downloadCSVTemplate}
-                  className="btn-csv-template"
-                  title="Download a sample CSV template with example data"
-                >
-                  📥 Download Template
-                </button>
-                
-                {portfolioInputs.length > 0 && (
-                  <button 
-                    type="button" 
-                    onClick={downloadCurrentPortfolioCSV}
-                    className="btn-csv-export"
-                    title="Export current portfolio data as CSV"
-                  >
-                    📤 Export Current
-                  </button>
-                )}
-              </div>
-
-              <div className="csv-upload-group">
-                <label htmlFor="csv-upload-input" className="btn-csv-upload">
-                  📁 Upload CSV
-                </label>
-                <input
-                  id="csv-upload-input"
-                  type="file"
-                  accept=".csv"
-                  onChange={handleCSVUpload}
-                  style={{ display: 'none' }}
-                />
-                <span className="csv-upload-hint">
-                  CSV format: accountName, owner, taxType, accountType, amount, updateDate
-                </span>
-              </div>
-            </div>
-          </div>
+          <CSVImportExport
+            title="CSV Import/Export"
+            subtitle="Import account data from a CSV file or download the current data as CSV."
+            data={getCurrentPortfolioData()}
+            headers={getCSVHeaders()}
+            formatRowData={formatCSVRow}
+            parseRowData={parseCSVRow}
+            onImportSuccess={handleCSVImportSuccess}
+            onImportError={handleCSVImportError}
+            generateTemplate={generateTemplateData}
+            compact={true}
+            dataType="portfolio_current"
+            userNames={users.filter(u => u !== 'Joint')}
+            showResetButton={true}
+            onReset={handleResetPortfolioData}
+            className="csv-section"
+          />
         </div>
 
         {/* Summary Preview */}
@@ -1224,26 +1159,52 @@ const Portfolio = () => {
           <div className="portfolio-records-section">
             <div className="portfolio-records-header">
               <h2>📋 Portfolio Records</h2>
-              <button 
-                type="button" 
-                onClick={() => setShowRecords(!showRecords)}
-                className="btn-secondary"
-              >
-                {showRecords ? 'Hide Records' : `Show All Records (${portfolioRecords.length})`}
-              </button>
+              <div className="portfolio-records-controls">
+                <button 
+                  type="button" 
+                  onClick={() => setSortRecordsNewestFirst(!sortRecordsNewestFirst)}
+                  className="btn-tertiary sort-records-btn"
+                  title={`Currently showing ${sortRecordsNewestFirst ? 'newest first' : 'oldest first'}`}
+                >
+                  📅 {sortRecordsNewestFirst ? 'Newest First' : 'Oldest First'}
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => setShowRecords(!showRecords)}
+                  className="btn-secondary"
+                >
+                  {showRecords ? 'Hide Records' : `Show All Records (${portfolioRecords.length})`}
+                </button>
+              </div>
             </div>
             
             {showRecords && (
               <div className="portfolio-records-list">
-                {portfolioRecords.map(record => (
+                {portfolioRecords
+                  .sort((a, b) => {
+                    if (sortRecordsNewestFirst) {
+                      return new Date(b.updateDate) - new Date(a.updateDate);
+                    } else {
+                      return new Date(a.updateDate) - new Date(b.updateDate);
+                    }
+                  })
+                  .map(record => (
                   <div key={record.id} className="portfolio-record">
                     <div className="record-header">
                       <div className="record-date">
-                        <strong>{new Date(record.updateDate).toLocaleDateString()}</strong>
+                        <strong>{record.updateDate}</strong>
                         <span className="record-details">
                           {record.accountsCount} accounts • {formatCurrency(record.totalAmount)} total
                         </span>
                       </div>
+                      <button 
+                        type="button"
+                        onClick={() => handleDeleteRecord(record.id)}
+                        className="delete-record-btn"
+                        title="Delete this record"
+                      >
+                        ×
+                      </button>
                     </div>
                     
                     <div className="record-totals">
@@ -1262,7 +1223,7 @@ const Portfolio = () => {
                         {record.accounts.map((acc, idx) => (
                           <div key={idx} className="record-account">
                             <strong>{acc.accountName}</strong> ({acc.owner}) - {acc.taxType} - {formatCurrency(acc.amount)}
-                            <span className="account-update-date">Updated: {new Date(acc.updateDate).toLocaleDateString()}</span>
+                            <span className="account-update-date">Updated: {acc.updateDate}</span>
                           </div>
                         ))}
                       </div>

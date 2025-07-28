@@ -29,8 +29,6 @@ const Optimize = () => {
   const contributionMetrics = useMemo(() => {
     if (!paycheckData?.your) return { hasData: false };
 
-    // Debug: log the paycheck data structure
-    console.log('Paycheck Data Structure:', paycheckData);
 
     const yourData = paycheckData.your;
     const spouseData = paycheckData.spouse || {};
@@ -38,7 +36,6 @@ const Optimize = () => {
 
     // Helper function to calculate person's metrics
     const calculatePersonMetrics = (person, personName) => {
-      console.log(`${personName} person data:`, person);
       
       const salary = parseFloat(person.salary) || 0;
       const birthday = person.birthday;
@@ -94,13 +91,6 @@ const Optimize = () => {
       const brokerageMonthly = (budgetImpacting.brokerageAccounts || []).reduce((sum, account) => sum + (account.monthlyAmount || 0), 0);
       const annualBrokerage = brokerageMonthly * 12;
 
-      console.log(`${personName} calculations:`, {
-        '401k': { traditional401k, roth401k, total401kPercent, annual401k, max401k, employerMatch, annualEmployerMatch },
-        'IRA': { traditionalIra, rothIra, annualIra, maxIra },
-        'HSA': { hsaContributionPerPaycheck, hsaContributionAnnual, hsaEmployerAnnual, hsaCoverage, maxHsa },
-        'ESPP': { esppPercent, annualEspp },
-        'Brokerage': { brokerageMonthly, annualBrokerage }
-      });
 
       return {
         name: personName,

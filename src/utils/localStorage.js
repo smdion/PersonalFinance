@@ -84,10 +84,8 @@ const loadNameMapping = () => {
       const savedMappings = JSON.parse(localStorage.getItem('nameMapping') || '{}');
       nameMapping = { ...savedMappings };
       nameMappingLoaded = true;
-      console.log('Loaded name mappings from localStorage:', nameMapping);
     } catch (error) {
-      console.error('Error loading name mappings:', error);
-      nameMapping = {};
+        nameMapping = {};
       nameMappingLoaded = true;
     }
   }
@@ -103,7 +101,6 @@ export const updateNameMapping = (oldName, newName) => {
   
   if (!trimmedOldName || !trimmedNewName || trimmedOldName === trimmedNewName) return;
   
-  console.log(`Updating name mapping: "${trimmedOldName}" -> "${trimmedNewName}"`);
   
   // Load current mappings first
   loadNameMapping();
@@ -114,13 +111,11 @@ export const updateNameMapping = (oldName, newName) => {
   // Save to localStorage immediately and synchronously
   try {
     localStorage.setItem('nameMapping', JSON.stringify(nameMapping));
-    console.log('Name mapping saved to localStorage:', nameMapping);
     
     // Force immediate migration of all data
     migrateAllDataForNameChange(trimmedOldName, trimmedNewName);
     
   } catch (error) {
-    console.error('Error saving name mapping:', error);
   }
   
   // Dispatch event to notify components
@@ -140,7 +135,6 @@ export const getCurrentUserName = (originalName) => {
   
   // Return mapped name or original if no mapping exists
   const mappedName = nameMapping[trimmedOriginalName] || trimmedOriginalName;
-  console.log(`Name mapping lookup: "${trimmedOriginalName}" -> "${mappedName}"`);
   return mappedName;
 };
 
@@ -151,7 +145,6 @@ export const applyNameMappingToData = (data) => {
   const mapping = getNameMapping();
   if (!mapping || Object.keys(mapping).length === 0) return data;
   
-  console.log('Applying name mapping to data:', { mapping, dataKeys: Object.keys(data) });
   
   const processedData = {};
   
@@ -161,7 +154,6 @@ export const applyNameMappingToData = (data) => {
       
       Object.entries(entry.users).forEach(([userName, userData]) => {
         const mappedName = getCurrentUserName(userName);
-        console.log(`Applying mapping: ${userName} -> ${mappedName}`);
         mappedUsers[mappedName] = userData;
       });
       
@@ -171,7 +163,6 @@ export const applyNameMappingToData = (data) => {
     }
   });
   
-  console.log('Data after name mapping:', processedData);
   return processedData;
 };
 
@@ -193,7 +184,6 @@ export const getAllUserNames = (currentName) => {
 };
 
 export const migrateDataForNameChange = (data, oldName, newName) => {
-  console.log(`Migrating data for name change: "${oldName}" -> "${newName}"`);
   
   if (!data || typeof data !== 'object') return data;
   
@@ -202,7 +192,6 @@ export const migrateDataForNameChange = (data, oldName, newName) => {
   const trimmedNewName = newName.trim();
   
   if (!trimmedOldName || !trimmedNewName || trimmedOldName === trimmedNewName) {
-    console.log('Skipping migration - invalid names');
     return data;
   }
   
@@ -218,7 +207,6 @@ export const migrateDataForNameChange = (data, oldName, newName) => {
         // Use exact string comparison with trimmed names to handle names with spaces
         const trimmedUserName = userName.trim();
         if (trimmedUserName === trimmedOldName) {
-          console.log(`Migrating user data from "${userName}" to "${trimmedNewName}"`);
           hasChanges = true;
           // Update the name field within the user data if it exists
           if (userData && typeof userData === 'object') {
@@ -243,7 +231,6 @@ export const migrateDataForNameChange = (data, oldName, newName) => {
     }
   });
   
-  console.log('Migration completed, hasChanges:', hasChanges);
   return migratedData;
 };
 
@@ -251,7 +238,6 @@ export const migrateDataForNameChange = (data, oldName, newName) => {
 export const migrateAllDataForNameChange = (oldName, newName) => {
   if (!oldName || !newName || oldName === newName) return;
   
-  console.log(`Forcefully migrating all data from "${oldName}" to "${newName}"`);
   
   // Migrate historical data - Force save
   try {
@@ -260,10 +246,8 @@ export const migrateAllDataForNameChange = (oldName, newName) => {
     
     // Force immediate save
     const saveResult = setToStorage(STORAGE_KEYS.HISTORICAL_DATA, migratedHistorical);
-    console.log('Historical data migration save result:', saveResult);
     
     if (saveResult) {
-      console.log('Historical data successfully migrated and saved');
     }
   } catch (error) {
     console.error('Error migrating historical data:', error);
@@ -276,10 +260,8 @@ export const migrateAllDataForNameChange = (oldName, newName) => {
     
     // Force immediate save
     const saveResult = setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, migratedPerformance);
-    console.log('Performance data migration save result:', saveResult);
     
     if (saveResult) {
-      console.log('Performance data successfully migrated and saved');
     }
   } catch (error) {
     console.error('Error migrating performance data:', error);
@@ -287,7 +269,6 @@ export const migrateAllDataForNameChange = (oldName, newName) => {
   
   // Dispatch events to notify components of the data changes - with delay to ensure saves are complete
   setTimeout(() => {
-    console.log('Dispatching data update events after migration');
     dispatchGlobalEvent('historicalDataUpdated', getFromStorage(STORAGE_KEYS.HISTORICAL_DATA, {}));
     dispatchGlobalEvent('performanceDataUpdated', getFromStorage(STORAGE_KEYS.PERFORMANCE_DATA, {}));
   }, 200);
@@ -436,7 +417,6 @@ export const getHistoricalData = () => {
 };
 
 export const setHistoricalData = (data) => {
-  console.log('Saving historical data:', data);
   
   // Don't apply name mapping when saving - data should already have correct names
   const result = setToStorage(STORAGE_KEYS.HISTORICAL_DATA, data);
@@ -444,7 +424,6 @@ export const setHistoricalData = (data) => {
 };
 
 export const setHistoricalDataWithNameMapping = (data) => {
-  console.log('Saving historical data with name mapping:', data);
   
   // Don't apply name mapping when saving - data should already have correct names
   const result = setHistoricalData(data);
@@ -474,7 +453,6 @@ export const getPerformanceData = () => {
 };
 
 export const setPerformanceData = (data) => {
-  console.log('Saving performance data:', data);
   
   // Don't apply name mapping when saving - data should already have correct names
   const result = setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, data);
@@ -787,7 +765,6 @@ export const clearAllAppData = () => {
       try {
         localStorage.removeItem(key);
       } catch (error) {
-        console.warn(`Could not remove ${key}:`, error);
       }
     });
     
@@ -986,10 +963,8 @@ export const cleanupObsoleteFields = () => {
     
     if (hasChanges) {
       setHistoricalData(cleanedData);
-      console.log('Cleaned up obsolete fields from historical data:', obsoleteFields);
       return { success: true, message: `Removed obsolete fields: ${obsoleteFields.join(', ')}` };
     } else {
-      console.log('No obsolete fields found in historical data');
       return { success: true, message: 'No obsolete fields found' };
     }
   } catch (error) {
@@ -1149,14 +1124,17 @@ export const setPortfolioRecords = (records) => {
 
 export const addPortfolioRecord = (accounts, updateDate = null) => {
   const records = getPortfolioRecords();
-  const recordDate = updateDate || new Date().toISOString();
+  const recordDate = updateDate || new Date().toISOString().split('T')[0];
+  
+  // Parse date correctly to avoid timezone issues
+  const dateForTimestamp = recordDate.includes('T') ? new Date(recordDate) : new Date(recordDate + 'T12:00:00');
   
   const newRecord = {
     id: generateUniqueId(),
     updateDate: recordDate,
-    timestamp: new Date(recordDate).getTime(), // For sorting
-    year: new Date(recordDate).getFullYear(),
-    month: new Date(recordDate).getMonth() + 1,
+    timestamp: dateForTimestamp.getTime(), // For sorting
+    year: dateForTimestamp.getFullYear(),
+    month: dateForTimestamp.getMonth() + 1,
     accountsCount: accounts.length,
     accounts: accounts.map(acc => ({
       accountName: acc.accountName,
@@ -1206,11 +1184,18 @@ export const addPortfolioRecord = (accounts, updateDate = null) => {
   // Add to beginning of array (most recent first)
   records.unshift(newRecord);
   
-  // Keep only last 100 records to prevent excessive storage usage
-  if (records.length > 100) {
-    records.splice(100);
+  // Keep only last 500 records to prevent excessive storage usage
+  if (records.length > 500) {
+    records.splice(500);
   }
   
   setPortfolioRecords(records);
   return newRecord;
+};
+
+export const deletePortfolioRecord = (recordId) => {
+  const records = getPortfolioRecords();
+  const filteredRecords = records.filter(record => record.id !== recordId);
+  setPortfolioRecords(filteredRecords);
+  return filteredRecords;
 };

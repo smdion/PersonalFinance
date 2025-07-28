@@ -307,7 +307,6 @@ const Savings = () => {
         hasChanges = true;
         
         // Show notification for auto-added item
-        console.log(`✅ Auto-added savings goal: ${category.itemName}`);
       }
     });
     
@@ -336,7 +335,6 @@ const Savings = () => {
           // Auto-remove if no significant data
           delete updatedSavingsData[goalId];
           hasChanges = true;
-          console.log(`🗑️ Auto-removed empty savings goal: ${goal.name}`);
         }
       }
     });
@@ -351,7 +349,6 @@ const Savings = () => {
       // During reset, automatically remove items without confirmation
       itemsToRemove.forEach(item => {
         delete updatedSavingsData[item.goalId];
-        console.log(`🗑️ Auto-removed savings goal during reset: ${item.name}`);
       });
       hasChanges = true;
     }
@@ -1307,7 +1304,6 @@ const Savings = () => {
                     const finalData = { ...removalConfirmation.updatedData };
                     removalConfirmation.items.forEach(item => {
                       delete finalData[item.goalId];
-                      console.log(`🗑️ Confirmed removal of savings goal: ${item.name}`);
                     });
                     
                     setSavingsDataState(finalData);
@@ -1322,7 +1318,6 @@ const Savings = () => {
                   onClick={() => {
                     // Keep the items - do nothing
                     setRemovalConfirmation(null);
-                    console.log(`📌 Kept ${removalConfirmation.items.length} savings goals despite missing budget items`);
                   }}
                   className="removal-cancel-btn"
                 >
