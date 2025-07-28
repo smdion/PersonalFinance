@@ -108,12 +108,28 @@ const Navigation = () => {
       const result = exportAllDataWithTimestamp();
       
       if (result.success) {
-        alert('Data exported successfully!');
+        alert('Data exported successfully as JSON!');
       } else {
         alert(`Export failed: ${result.message}`);
       }
     } catch (error) {
       alert('Failed to export data. Please try again.');
+    }
+    setShowSettingsMenu(false);
+  };
+
+  const exportAllCSV = async () => {
+    try {
+      const { downloadAllCSVExports } = await import('../utils/localStorage');
+      const result = downloadAllCSVExports();
+      
+      if (result.success) {
+        alert(`Successfully exported ${result.count} CSV files!`);
+      } else {
+        alert(`CSV export failed: ${result.message}`);
+      }
+    } catch (error) {
+      alert('Failed to export CSV data. Please try again.');
     }
     setShowSettingsMenu(false);
   };
@@ -309,7 +325,10 @@ const Navigation = () => {
                     🧹 Cleanup Old Data Fields
                   </button>
                   <button onClick={exportAllData} className="settings-menu-item">
-                    📤 Export All Data
+                    📤 Export All Data (JSON)
+                  </button>
+                  <button onClick={exportAllCSV} className="settings-menu-item">
+                    📊 Export All Data (CSV)
                   </button>
                   <button onClick={importData} className="settings-menu-item">
                     📥 Import Data

@@ -6,16 +6,19 @@ import {
   // Import shared account functions
   getSharedAccounts,
   addOrUpdateSharedAccount,
-  syncAllAccountsToShared,
   initializeSharedAccounts
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
+import DataAccuracyTracker from './DataAccuracyTracker';
+import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
 const Performance = () => {
   // Initialize shared accounts system on component mount
   useEffect(() => {
     initializeSharedAccounts();
+    // Sync to show only accounts from latest portfolio record
+    syncPerformanceAccountsFromLatestPortfolio();
   }, []);
 
   // Custom function to handle when Performance data is updated
@@ -23,9 +26,9 @@ const Performance = () => {
     // First save the data normally
     const result = setPerformanceData(data);
     
-    // Then sync accounts to shared system
+    // Then sync accounts to shared system (only from latest portfolio)
     if (result) {
-      syncAllAccountsToShared();
+      syncPerformanceAccountsFromLatestPortfolio();
     }
     
     return result;
@@ -76,13 +79,23 @@ const Performance = () => {
         const underscoreAccountType = `${ownerName}_accountType`;
         const accountType = safeGetString(row[dashAccountType] ?? row[underscoreAccountType] ?? '');
         
-        const dashEmployer = `${ownerName}-employer`;
-        const underscoreEmployer = `${ownerName}_employer`;
-        const employer = safeGetString(row[dashEmployer] ?? row[underscoreEmployer] ?? '');
+        const dashInvestmentCompany = `${ownerName}-investmentCompany`;
+        const underscoreInvestmentCompany = `${ownerName}_investmentCompany`;
+        const investmentCompany = safeGetString(row[dashInvestmentCompany] ?? row[underscoreInvestmentCompany] ?? '');
         
         userData.accountName = accountName;
         userData.accountType = accountType;
-        userData.employer = employer;
+        userData.investmentCompany = investmentCompany;
+        
+        // Generate consistent account name if we have the required fields
+        if (accountType && investmentCompany) {
+          userData.generatedAccountName = generateAccountName(
+            ownerName,
+            '', // Performance doesn't track tax type
+            accountType,
+            investmentCompany
+          );
+        }
         
         // Parse financial fields
         ['balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'].forEach(field => {
@@ -106,7 +119,7 @@ const Performance = () => {
               accountName: accountName,
               owner: ownerName,
               accountType: accountType,
-              employer: employer,
+              investmentCompany: investmentCompany,
               taxType: '', // Performance doesn't track tax type
               source: 'performance'
             });
@@ -147,7 +160,7 @@ const Performance = () => {
         fields: [
           { name: 'accountName', label: 'Account Name', type: 'text' },
           { name: 'accountType', label: 'Account Type', type: 'text' },
-          { name: 'employer', label: 'Employer', type: 'text' }
+          { name: 'investmentCompany', label: 'Investment Company', type: 'text' }
         ]
       },
       {
@@ -174,6 +187,8 @@ const Performance = () => {
           <p>Track Investment Account Performance and Returns</p>
         </div>
 
+        <DataAccuracyTracker />
+        
         <DataManager
           title="Performance Data"
           subtitle="Add your first account entry to start tracking performance"

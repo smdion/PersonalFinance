@@ -624,16 +624,19 @@
       "users": {
         "Alex Johnson": {
           "accountName": "Fidelity",
-          "accountType": "Traditional 401k",
-          "employer": "Acme Corp"
+          "accountType": "401k",
+          "employer": "Acme Corp",
+          "investmentCompany": "Fidelity",
+          "balance": 32000,
+          "contributions": 7000,
+          "employerMatch": 3500,
+          "gains": 2500,
+          "fees": 50,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 32000,
-      "contributions": 7000,
-      "employerMatch": 3500,
-      "gains": 2500,
-      "fees": 50,
-      "withdrawals": 0
+      }
     },
     "entry_2022_alex401k": {
       "entryId": "entry_2022_alex401k",
@@ -641,16 +644,19 @@
       "users": {
         "Alex Johnson": {
           "accountName": "Fidelity",
-          "accountType": "Traditional 401k",
-          "employer": "Acme Corp"
+          "accountType": "401k",
+          "employer": "Acme Corp",
+          "investmentCompany": "Fidelity",
+          "balance": 37000,
+          "contributions": 7500,
+          "employerMatch": 3700,
+          "gains": 2800,
+          "fees": 55,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 37000,
-      "contributions": 7500,
-      "employerMatch": 3700,
-      "gains": 2800,
-      "fees": 55,
-      "withdrawals": 0
+      }
     },
     "entry_2023_alex401k": {
       "entryId": "entry_2023_alex401k",
@@ -658,16 +664,19 @@
       "users": {
         "Alex Johnson": {
           "accountName": "Fidelity",
-          "accountType": "Traditional 401k",
-          "employer": "Acme Corp"
+          "accountType": "401k",
+          "employer": "Acme Corp",
+          "investmentCompany": "Fidelity",
+          "balance": 43000,
+          "contributions": 8000,
+          "employerMatch": 3900,
+          "gains": 3500,
+          "fees": 60,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 43000,
-      "contributions": 8000,
-      "employerMatch": 3900,
-      "gains": 3500,
-      "fees": 60,
-      "withdrawals": 0
+      }
     },
     "entry_2024_alex401k": {
       "entryId": "entry_2024_alex401k",
@@ -675,16 +684,19 @@
       "users": {
         "Alex Johnson": {
           "accountName": "Fidelity",
-          "accountType": "Traditional 401k",
-          "employer": "Acme Corp"
+          "accountType": "401k",
+          "employer": "Acme Corp",
+          "investmentCompany": "Fidelity",
+          "balance": 50000,
+          "contributions": 8500,
+          "employerMatch": 4100,
+          "gains": 4000,
+          "fees": 65,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 50000,
-      "contributions": 8500,
-      "employerMatch": 4100,
-      "gains": 4000,
-      "fees": 65,
-      "withdrawals": 0
+      }
     },
     "entry_2025_alex401k": {
       "entryId": "entry_2025_alex401k",
@@ -692,16 +704,19 @@
       "users": {
         "Alex Johnson": {
           "accountName": "Fidelity",
-          "accountType": "Traditional 401k",
-          "employer": "Acme Corp"
+          "accountType": "401k",
+          "employer": "Acme Corp",
+          "investmentCompany": "Fidelity",
+          "balance": 57000,
+          "contributions": 9000,
+          "employerMatch": 4300,
+          "gains": 4500,
+          "fees": 70,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
         }
-      },
-      "balance": 57000,
-      "contributions": 9000,
-      "employerMatch": 4300,
-      "gains": 4500,
-      "fees": 70,
-      "withdrawals": 0
+      }
     },
     "entry_2021_jamie401k": {
       "entryId": "entry_2021_jamie401k",
@@ -709,16 +724,19 @@
       "users": {
         "Jamie Lee": {
           "accountName": "Vanguard",
-          "accountType": "Traditional 401k",
-          "employer": "Bright Solutions"
+          "accountType": "401k",
+          "employer": "Bright Solutions",
+          "investmentCompany": "Vanguard",
+          "balance": 18000,
+          "contributions": 4000,
+          "employerMatch": 1800,
+          "gains": 1200,
+          "fees": 30,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 18000,
-      "contributions": 4000,
-      "employerMatch": 1800,
-      "gains": 1200,
-      "fees": 30,
-      "withdrawals": 0
+      }
     },
     "entry_2022_jamie401k": {
       "entryId": "entry_2022_jamie401k",
@@ -726,16 +744,19 @@
       "users": {
         "Jamie Lee": {
           "accountName": "Vanguard",
-          "accountType": "Traditional 401k",
-          "employer": "Bright Solutions"
+          "accountType": "401k",
+          "employer": "Bright Solutions",
+          "investmentCompany": "Vanguard",
+          "balance": 21000,
+          "contributions": 4200,
+          "employerMatch": 1900,
+          "gains": 1400,
+          "fees": 32,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 21000,
-      "contributions": 4200,
-      "employerMatch": 1900,
-      "gains": 1400,
-      "fees": 32,
-      "withdrawals": 0
+      }
     },
     "entry_2023_jamie401k": {
       "entryId": "entry_2023_jamie401k",
@@ -743,16 +764,19 @@
       "users": {
         "Jamie Lee": {
           "accountName": "Vanguard",
-          "accountType": "Traditional 401k",
-          "employer": "Bright Solutions"
+          "accountType": "401k",
+          "employer": "Bright Solutions",
+          "investmentCompany": "Vanguard",
+          "balance": 25000,
+          "contributions": 4500,
+          "employerMatch": 2000,
+          "gains": 1700,
+          "fees": 35,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 25000,
-      "contributions": 4500,
-      "employerMatch": 2000,
-      "gains": 1700,
-      "fees": 35,
-      "withdrawals": 0
+      }
     },
     "entry_2024_jamie401k": {
       "entryId": "entry_2024_jamie401k",
@@ -760,16 +784,19 @@
       "users": {
         "Jamie Lee": {
           "accountName": "Vanguard",
-          "accountType": "Traditional 401k",
-          "employer": "Bright Solutions"
+          "accountType": "401k",
+          "employer": "Bright Solutions",
+          "investmentCompany": "Vanguard",
+          "balance": 29000,
+          "contributions": 4700,
+          "employerMatch": 2100,
+          "gains": 1900,
+          "fees": 38,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 29000,
-      "contributions": 4700,
-      "employerMatch": 2100,
-      "gains": 1900,
-      "fees": 38,
-      "withdrawals": 0
+      }
     },
     "entry_2025_jamie401k": {
       "entryId": "entry_2025_jamie401k",
@@ -777,16 +804,19 @@
       "users": {
         "Jamie Lee": {
           "accountName": "Vanguard",
-          "accountType": "Traditional 401k",
-          "employer": "Bright Solutions"
+          "accountType": "401k",
+          "employer": "Bright Solutions",
+          "investmentCompany": "Vanguard",
+          "balance": 33000,
+          "contributions": 4900,
+          "employerMatch": 2200,
+          "gains": 2100,
+          "fees": 40,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
         }
-      },
-      "balance": 33000,
-      "contributions": 4900,
-      "employerMatch": 2200,
-      "gains": 2100,
-      "fees": 40,
-      "withdrawals": 0
+      }
     },
     "entry_2021_joint_brokerage": {
       "entryId": "entry_2021_joint_brokerage",
@@ -794,16 +824,19 @@
       "users": {
         "Joint": {
           "accountName": "Schwab",
-          "accountType": "Joint Brokerage",
-          "employer": "N/A"
+          "accountType": "Brokerage",
+          "employer": "N/A",
+          "investmentCompany": "Charles Schwab",
+          "balance": 15000,
+          "contributions": 3000,
+          "employerMatch": 0,
+          "gains": 1500,
+          "fees": 25,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 15000,
-      "contributions": 3000,
-      "employerMatch": 0,
-      "gains": 1500,
-      "fees": 25,
-      "withdrawals": 0
+      }
     },
     "entry_2022_joint_brokerage": {
       "entryId": "entry_2022_joint_brokerage",
@@ -811,16 +844,19 @@
       "users": {
         "Joint": {
           "accountName": "Schwab",
-          "accountType": "Joint Brokerage",
-          "employer": "N/A"
+          "accountType": "Brokerage",
+          "employer": "N/A",
+          "investmentCompany": "Charles Schwab",
+          "balance": 18500,
+          "contributions": 3200,
+          "employerMatch": 0,
+          "gains": 1700,
+          "fees": 30,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 18500,
-      "contributions": 3200,
-      "employerMatch": 0,
-      "gains": 1700,
-      "fees": 30,
-      "withdrawals": 0
+      }
     },
     "entry_2023_joint_brokerage": {
       "entryId": "entry_2023_joint_brokerage",
@@ -828,16 +864,19 @@
       "users": {
         "Joint": {
           "accountName": "Schwab",
-          "accountType": "Joint Brokerage",
-          "employer": "N/A"
+          "accountType": "Brokerage",
+          "employer": "N/A",
+          "investmentCompany": "Charles Schwab",
+          "balance": 22500,
+          "contributions": 3500,
+          "employerMatch": 0,
+          "gains": 2000,
+          "fees": 35,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 22500,
-      "contributions": 3500,
-      "employerMatch": 0,
-      "gains": 2000,
-      "fees": 35,
-      "withdrawals": 0
+      }
     },
     "entry_2024_joint_brokerage": {
       "entryId": "entry_2024_joint_brokerage",
@@ -845,16 +884,19 @@
       "users": {
         "Joint": {
           "accountName": "Schwab",
-          "accountType": "Joint Brokerage",
-          "employer": "N/A"
+          "accountType": "Brokerage",
+          "employer": "N/A",
+          "investmentCompany": "Charles Schwab",
+          "balance": 26800,
+          "contributions": 3800,
+          "employerMatch": 0,
+          "gains": 2300,
+          "fees": 40,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 26800,
-      "contributions": 3800,
-      "employerMatch": 0,
-      "gains": 2300,
-      "fees": 40,
-      "withdrawals": 0
+      }
     },
     "entry_2025_joint_brokerage": {
       "entryId": "entry_2025_joint_brokerage",
@@ -862,16 +904,19 @@
       "users": {
         "Joint": {
           "accountName": "Schwab",
-          "accountType": "Joint Brokerage",
-          "employer": "N/A"
+          "accountType": "Brokerage",
+          "employer": "N/A",
+          "investmentCompany": "Charles Schwab",
+          "balance": 31200,
+          "contributions": 4000,
+          "employerMatch": 0,
+          "gains": 2600,
+          "fees": 45,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
         }
-      },
-      "balance": 31200,
-      "contributions": 4000,
-      "employerMatch": 0,
-      "gains": 2600,
-      "fees": 45,
-      "withdrawals": 0
+      }
     },
     "entry_2023_joint_savings": {
       "entryId": "entry_2023_joint_savings",
@@ -879,16 +924,19 @@
       "users": {
         "Joint": {
           "accountName": "Marcus",
-          "accountType": "High Yield Savings",
-          "employer": "N/A"
+          "accountType": "Savings",
+          "employer": "N/A",
+          "investmentCompany": "Marcus by Goldman Sachs",
+          "balance": 12000,
+          "contributions": 6000,
+          "employerMatch": 0,
+          "gains": 500,
+          "fees": 0,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 12000,
-      "contributions": 6000,
-      "employerMatch": 0,
-      "gains": 500,
-      "fees": 0,
-      "withdrawals": 0
+      }
     },
     "entry_2024_joint_savings": {
       "entryId": "entry_2024_joint_savings",
@@ -896,16 +944,19 @@
       "users": {
         "Joint": {
           "accountName": "Marcus",
-          "accountType": "High Yield Savings",
-          "employer": "N/A"
+          "accountType": "Savings",
+          "employer": "N/A",
+          "investmentCompany": "Marcus by Goldman Sachs",
+          "balance": 18500,
+          "contributions": 6000,
+          "employerMatch": 0,
+          "gains": 800,
+          "fees": 0,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
         }
-      },
-      "balance": 18500,
-      "contributions": 6000,
-      "employerMatch": 0,
-      "gains": 800,
-      "fees": 0,
-      "withdrawals": 0
+      }
     },
     "entry_2025_joint_savings": {
       "entryId": "entry_2025_joint_savings",
@@ -913,16 +964,216 @@
       "users": {
         "Joint": {
           "accountName": "Marcus",
-          "accountType": "High Yield Savings",
-          "employer": "N/A"
+          "accountType": "Savings",
+          "employer": "N/A",
+          "investmentCompany": "Marcus by Goldman Sachs",
+          "balance": 25200,
+          "contributions": 6000,
+          "employerMatch": 0,
+          "gains": 1100,
+          "fees": 0,
+          "withdrawals": 0,
+          "balanceUpdatedFrom": "manual",
+          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
         }
-      },
-      "balance": 25200,
-      "contributions": 6000,
-      "employerMatch": 0,
-      "gains": 1100,
-      "fees": 0,
-      "withdrawals": 0
+      }
     }
-  }
+  },
+  "appSettings": {
+    "combineAccountsAcrossOwners": false,
+    "performanceSync": {}
+  },
+  "networthSettings": {
+    "selectedYears": [],
+    "netWorthMode": "market",
+    "activeTab": "overview",
+    "showAllYearsInChart": false,
+    "showAllYearsInPortfolioChart": false,
+    "showAllYearsInNetWorthBreakdownChart": false,
+    "showAllYearsInMoneyGuyChart": false,
+    "useThreeYearIncomeAverage": false,
+    "useReverseChronological": false,
+    "isCompactTable": false
+  },
+  "savingsData": {},
+  "retirementData": {},
+  "portfolioAccounts": [
+    {
+      "id": "demo-portfolio-account-1",
+      "accountName": "Fidelity 401k",
+      "taxType": "Tax-Deferred",
+      "accountType": "401k",
+      "owner": "Alex Johnson",
+      "createdAt": "2024-01-01T12:00:00.000Z"
+    },
+    {
+      "id": "demo-portfolio-account-2",
+      "accountName": "Vanguard 401k",
+      "taxType": "Tax-Deferred",
+      "accountType": "401k",
+      "owner": "Jamie Lee",
+      "createdAt": "2024-01-01T12:00:00.000Z"
+    },
+    {
+      "id": "demo-portfolio-account-3",
+      "accountName": "Schwab Joint Brokerage",
+      "taxType": "After-Tax",
+      "accountType": "Brokerage",
+      "owner": "Joint",
+      "createdAt": "2024-01-01T12:00:00.000Z"
+    },
+    {
+      "id": "demo-portfolio-account-4",
+      "accountName": "Marcus High Yield Savings",
+      "taxType": "After-Tax",
+      "accountType": "Savings",
+      "owner": "Joint",
+      "createdAt": "2024-01-01T12:00:00.000Z"
+    }
+  ],
+  "portfolioUpdateHistory": [],
+  "portfolioRecords": [
+    {
+      "id": "demo-portfolio-record-1",
+      "updateDate": "2025-01-15",
+      "timestamp": 1736960400000,
+      "year": 2025,
+      "month": 1,
+      "accountsCount": 4,
+      "accounts": [
+        {
+          "accountName": "Fidelity 401k",
+          "owner": "Alex Johnson",
+          "taxType": "Tax-Deferred",
+          "accountType": "401k",
+          "amount": 57000,
+          "updateDate": "2025-01-15"
+        },
+        {
+          "accountName": "Vanguard 401k",
+          "owner": "Jamie Lee",
+          "taxType": "Tax-Deferred",
+          "accountType": "401k",
+          "amount": 33000,
+          "updateDate": "2025-01-15"
+        },
+        {
+          "accountName": "Schwab Joint Brokerage",
+          "owner": "Joint",
+          "taxType": "After-Tax",
+          "accountType": "Brokerage",
+          "amount": 31200,
+          "updateDate": "2025-01-15"
+        },
+        {
+          "accountName": "Marcus High Yield Savings",
+          "owner": "Joint",
+          "taxType": "After-Tax",
+          "accountType": "Savings",
+          "amount": 25200,
+          "updateDate": "2025-01-15"
+        }
+      ],
+      "totals": {
+        "taxFree": 0,
+        "taxDeferred": 90000,
+        "brokerage": 56400,
+        "hsa": 0,
+        "espp": 0
+      },
+      "totalAmount": 146400
+    }
+  ],
+  "portfolioInputs": [
+    {
+      "id": "demo-input-1",
+      "accountName": "Fidelity 401k",
+      "owner": "Alex Johnson",
+      "taxType": "Tax-Deferred",
+      "accountType": "401k",
+      "investmentCompany": "Fidelity",
+      "description": "Primary retirement account"
+    },
+    {
+      "id": "demo-input-2",
+      "accountName": "Vanguard 401k",
+      "owner": "Jamie Lee",
+      "taxType": "Tax-Deferred",
+      "accountType": "401k",
+      "investmentCompany": "Vanguard",
+      "description": "Primary retirement account"
+    },
+    {
+      "id": "demo-input-3",
+      "accountName": "Schwab Joint Brokerage",
+      "owner": "Joint",
+      "taxType": "After-Tax",
+      "accountType": "Brokerage",
+      "investmentCompany": "Charles Schwab",
+      "description": "Joint taxable investment account"
+    },
+    {
+      "id": "demo-input-4",
+      "accountName": "Marcus High Yield Savings",
+      "owner": "Joint",
+      "taxType": "After-Tax",
+      "accountType": "Savings",
+      "investmentCompany": "Marcus by Goldman Sachs",
+      "description": "High yield savings account"
+    }
+  ],
+  "sharedAccounts": [
+    {
+      "id": "demo-shared-1",
+      "accountName": "Fidelity 401k",
+      "owner": "Alex Johnson",
+      "accountType": "401k",
+      "investmentCompany": "Fidelity",
+      "taxType": "Tax-Deferred",
+      "source": "portfolio",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z",
+      "sources": ["portfolio", "performance"]
+    },
+    {
+      "id": "demo-shared-2",
+      "accountName": "Vanguard 401k",
+      "owner": "Jamie Lee",
+      "accountType": "401k",
+      "investmentCompany": "Vanguard",
+      "taxType": "Tax-Deferred",
+      "source": "portfolio",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z",
+      "sources": ["portfolio", "performance"]
+    },
+    {
+      "id": "demo-shared-3",
+      "accountName": "Schwab Joint Brokerage",
+      "owner": "Joint",
+      "accountType": "Brokerage",
+      "investmentCompany": "Charles Schwab",
+      "taxType": "After-Tax",
+      "source": "portfolio",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z",
+      "sources": ["portfolio", "performance"]
+    },
+    {
+      "id": "demo-shared-4",
+      "accountName": "Marcus High Yield Savings",
+      "owner": "Joint",
+      "accountType": "Savings",
+      "investmentCompany": "Marcus by Goldman Sachs",
+      "taxType": "After-Tax",
+      "source": "portfolio",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z",
+      "sources": ["portfolio", "performance"]
+    }
+  ],
+  "manualAccountGroups": {},
+  "nameMapping": {},
+  "exportedAt": "2025-01-15T12:00:00.000Z",
+  "version": "2.0.0"
 }
