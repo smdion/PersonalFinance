@@ -331,7 +331,7 @@ const Optimize = () => {
       <Navigation />
       <div className="optimize-content">
         <div className="optimize-header">
-          <h1>Optimize Your Contributions</h1>
+          <h1>⚡ Optimize Your Contributions</h1>
           <p>Analyze your current contribution strategy and identify optimization opportunities</p>
         </div>
 

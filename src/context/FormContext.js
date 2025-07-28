@@ -56,7 +56,7 @@ export const FormProvider = ({ children }) => {
       [key]: {
         ...prev[key],
         brokerageAccounts: [
-          ...prev[key].brokerageAccounts,
+          ...(prev[key]?.brokerageAccounts || []),
           {
             id: Date.now() + Math.random(),
             name: accountName,
@@ -73,7 +73,7 @@ export const FormProvider = ({ children }) => {
       ...prev,
       [key]: {
         ...prev[key],
-        brokerageAccounts: prev[key].brokerageAccounts.map(account =>
+        brokerageAccounts: (prev[key]?.brokerageAccounts || []).map(account =>
           account.id === accountId
             ? { ...account, [field]: value }
             : account
@@ -88,7 +88,7 @@ export const FormProvider = ({ children }) => {
       ...prev,
       [key]: {
         ...prev[key],
-        brokerageAccounts: prev[key].brokerageAccounts.filter(account => account.id !== accountId)
+        brokerageAccounts: (prev[key]?.brokerageAccounts || []).filter(account => account.id !== accountId)
       }
     }));
   }, []);
