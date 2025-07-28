@@ -1145,6 +1145,14 @@ const DataManager = ({
     reader.readAsText(file);
   };
 
+  // Function to trigger CSV import for empty state button
+  const handleCSVImport = () => {
+    const fileInput = document.getElementById('csv-upload-input');
+    if (fileInput) {
+      fileInput.click();
+    }
+  };
+
   const getSortableFields = () => {
     const fields = [{ key: primaryKey, label: schema.primaryKeyLabel }];
     
@@ -2346,17 +2354,69 @@ const DataManager = ({
         </>
       ) : (
         <div className="data-empty-state">
-          <div className="empty-state-icon">📊</div>
-          <h2>No Data Yet</h2>
-          <p>{subtitle}</p>
-          
-          {allowAdd && (
-            <div style={{ marginTop: '20px' }}>
-              <button onClick={addEntry} className="btn-primary">
-                ➕ Add New Entry
-              </button>
+          <div className="data-empty-state-content">
+            <div className="data-empty-state-icon">📊</div>
+            <h2>Welcome to {title}!</h2>
+            <p className="data-empty-state-description">{subtitle}</p>
+            
+            <div className="data-empty-state-features">
+              <h3>What You Can Do Here:</h3>
+              <div className="data-features-grid">
+                <div className="data-feature">
+                  <div className="data-feature-icon">📝</div>
+                  <div className="data-feature-text">
+                    <strong>Track Financial Data</strong>
+                    <p>Record and manage your yearly financial information</p>
+                  </div>
+                </div>
+                
+                <div className="data-feature">
+                  <div className="data-feature-icon">📊</div>
+                  <div className="data-feature-text">
+                    <strong>View Trends</strong>
+                    <p>Analyze patterns and changes over time</p>
+                  </div>
+                </div>
+                
+                <div className="data-feature">
+                  <div className="data-feature-icon">💾</div>
+                  <div className="data-feature-text">
+                    <strong>Import/Export</strong>
+                    <p>Backup your data or import from spreadsheets</p>
+                  </div>
+                </div>
+                
+                <div className="data-feature">
+                  <div className="data-feature-icon">🔍</div>
+                  <div className="data-feature-text">
+                    <strong>Filter & Search</strong>
+                    <p>Find specific data points quickly and easily</p>
+                  </div>
+                </div>
+              </div>
             </div>
-          )}
+            
+            {allowAdd && (
+              <div className="data-empty-state-cta">
+                <p><strong>Ready to start?</strong></p>
+                <div className="data-empty-state-buttons">
+                  <button onClick={addEntry} className="btn-primary data-add-first-entry">
+                    ➕ Add Your First Entry
+                  </button>
+                  <button onClick={handleCSVImport} className="btn-secondary data-upload-csv">
+                    📁 Upload CSV
+                  </button>
+                  <input
+                    id="csv-upload-input"
+                    type="file"
+                    accept=".csv"
+                    onChange={handleFileUpload}
+                    style={{ display: 'none' }}
+                  />
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

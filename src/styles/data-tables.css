@@ -1884,3 +1884,221 @@
     padding: 1rem;
   }
 }
+
+/* ===================================================================
+   ENHANCED EMPTY STATE PLACEHOLDER STYLES (DataManager)
+   ================================================================ */
+
+.data-empty-state {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 500px;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 16px;
+  margin: 2rem 0;
+}
+
+.data-empty-state-content {
+  max-width: 700px;
+  text-align: center;
+  background: white;
+  padding: 3rem;
+  border-radius: 20px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.data-empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  animation: bounce 2s infinite;
+}
+
+.data-empty-state h2 {
+  color: #1e293b;
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 1rem 0;
+}
+
+.data-empty-state-description {
+  color: #64748b;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0 0 2.5rem 0;
+}
+
+.data-empty-state-features {
+  margin: 2.5rem 0;
+  text-align: left;
+}
+
+.data-empty-state-features h3 {
+  color: #1e293b;
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.data-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.data-feature {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f0f9ff;
+  border-radius: 8px;
+  border: 1px solid #bae6fd;
+  transition: all 0.2s ease;
+}
+
+.data-feature:hover {
+  background: #e0f2fe;
+  border-color: #0891b2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.15);
+}
+
+.data-feature-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+}
+
+.data-feature-text strong {
+  color: #0c4a6e;
+  font-size: 0.9rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.data-feature-text p {
+  color: #075985;
+  margin: 0;
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+.data-empty-state-cta {
+  margin-top: 2.5rem;
+  padding: 1.5rem;
+  background: #ecfdf5;
+  border-radius: 12px;
+  border: 1px solid #bbf7d0;
+}
+
+.data-empty-state-cta p {
+  margin: 0 0 1rem 0;
+  color: #065f46;
+  font-size: 1rem;
+}
+
+.data-empty-state-buttons {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.data-add-first-entry {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.data-add-first-entry:hover {
+  background: #047857;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+}
+
+.data-upload-csv {
+  background: #0891b2;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.data-upload-csv:hover {
+  background: #0e7490;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(8, 145, 178, 0.3);
+}
+
+/* Responsive data empty state */
+@media (max-width: 768px) {
+  .data-empty-state {
+    padding: 1rem;
+    min-height: 400px;
+  }
+  
+  .data-empty-state-content {
+    padding: 2rem;
+  }
+  
+  .data-empty-state-icon {
+    font-size: 3rem;
+  }
+  
+  .data-empty-state h2 {
+    font-size: 1.5rem;
+  }
+  
+  .data-features-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .data-feature {
+    flex-direction: column;
+    text-align: center;
+    gap: 0.75rem;
+  }
+  
+  .data-empty-state-buttons {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .data-add-first-entry,
+  .data-upload-csv {
+    width: 100%;
+    max-width: 250px;
+  }
+}
+
+@media (max-width: 480px) {
+  .data-empty-state-content {
+    padding: 1.5rem;
+  }
+  
+  .data-empty-state-icon {
+    font-size: 2.5rem;
+  }
+  
+  .data-empty-state h2 {
+    font-size: 1.25rem;
+  }
+  
+  .data-feature {
+    padding: 0.75rem;
+  }
+}

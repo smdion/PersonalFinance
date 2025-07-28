@@ -1,5 +1,16 @@
 // Centralized localStorage utilities for consistent data persistence
 
+// Global flag to bypass savings warnings during reset operations
+let isResettingAllData = false;
+
+export const setResettingAllData = (value) => {
+  isResettingAllData = value;
+};
+
+export const getIsResettingAllData = () => {
+  return isResettingAllData;
+};
+
 export const STORAGE_KEYS = {
   BUDGET_DATA: 'budgetData',
   PAYCHECK_DATA: 'paycheckData',
@@ -768,6 +779,9 @@ export const importDemoDataWithExportOption = importDemoData;
 // Enhanced reset function that ensures complete data clearing
 export const resetAllAppData = () => {
   try {
+    // Set flag to bypass savings warnings during reset
+    setResettingAllData(true);
+    
     // Clear all data
     const success = clearAllAppData();
     
@@ -779,13 +793,23 @@ export const resetAllAppData = () => {
       setAppSettings({});
       setHistoricalData({});
       setPerformanceData({}); // Changed from [] to {}
+      setSavingsData({}); // Reset savings data as well
+      
+      // Reset the flag after a short delay to ensure all events are processed
+      setTimeout(() => {
+        setResettingAllData(false);
+      }, 1000);
       
       return { success: true, message: 'All data has been reset successfully.' };
     } else {
+      // Reset flag on failure too
+      setResettingAllData(false);
       return { success: false, message: 'Failed to reset all data.' };
     }
   } catch (error) {
     console.error('Error resetting all app data:', error);
+    // Reset flag on error too
+    setResettingAllData(false);
     return { success: false, message: 'Error occurred while resetting data.' };
   }
 };

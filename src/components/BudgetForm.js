@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { FormContext } from '../context/FormContext';
-import { getBudgetData, setBudgetData, getPaycheckData } from '../utils/localStorage';
+import { getBudgetData, setBudgetData, getPaycheckData, getSavingsData, getIsResettingAllData } from '../utils/localStorage';
 import { calculateExtraPaycheckIncome, generateDataFilename } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
 
@@ -19,6 +19,9 @@ const BudgetForm = () => {
   const [newCategoryName, setNewCategoryName] = useState('');
   const [showAddCategory, setShowAddCategory] = useState(false);
   const [collapsedCategories, setCollapsedCategories] = useState(new Set());
+  
+  // State for savings removal confirmation dialog
+  const [savingsRemovalConfirmation, setSavingsRemovalConfirmation] = useState(null);
   
   // Add state for paycheck data
   const [paycheckData, setPaycheckData] = useState(null);
@@ -286,6 +289,46 @@ const BudgetForm = () => {
       return;
     }
     
+    // Skip savings warnings if we're in the middle of a reset operation
+    if (getIsResettingAllData()) {
+      performItemDeletion(categoryId, itemId);
+      return;
+    }
+    
+    // Check if this item has associated savings goals
+    const savingsData = getSavingsData();
+    const savingsGoalKey = `${categoryId}-${itemId}`;
+    const linkedSavingsGoal = savingsData && savingsData[savingsGoalKey];
+    
+    if (linkedSavingsGoal) {
+      // Check if savings goal has significant data
+      const hasSignificantData = 
+        (linkedSavingsGoal.currentBalance && linkedSavingsGoal.currentBalance > 1) ||
+        Object.keys(linkedSavingsGoal.monthlyContributions || {}).length > 0 ||
+        Object.keys(linkedSavingsGoal.monthlyPurchases || {}).length > 0 ||
+        (linkedSavingsGoal.purchases && linkedSavingsGoal.purchases.length > 0);
+      
+      if (hasSignificantData) {
+        // Show confirmation dialog
+        const category = budgetCategories.find(cat => cat.id === categoryId);
+        const item = category?.items.find(itm => itm.id === itemId);
+        
+        setSavingsRemovalConfirmation({
+          categoryId,
+          itemId,
+          categoryName: category?.name || 'Unknown Category',
+          itemName: item?.name || 'Unknown Item',
+          savingsGoal: linkedSavingsGoal
+        });
+        return;
+      }
+    }
+    
+    // Proceed with deletion if no significant savings data
+    performItemDeletion(categoryId, itemId);
+  };
+  
+  const performItemDeletion = (categoryId, itemId) => {
     setBudgetCategories(budgetCategories.map(category =>
       category.id === categoryId
         ? { ...category, items: category.items.filter(item => item.id !== itemId) }
@@ -556,6 +599,69 @@ const BudgetForm = () => {
           </div>
         </div>
 
+        {/* Savings Removal Confirmation Dialog */}
+        {savingsRemovalConfirmation && (
+          <div className="savings-removal-overlay">
+            <div className="savings-removal-dialog">
+              <div className="savings-removal-header">
+                <h3>⚠️ Linked Savings Goal Found</h3>
+                <p>This budget item has an associated savings goal that contains data:</p>
+              </div>
+              
+              <div className="savings-removal-content">
+                <div className="savings-removal-item">
+                  <div className="savings-removal-item-name">
+                    <strong>{savingsRemovalConfirmation.categoryName}</strong> → {savingsRemovalConfirmation.itemName}
+                  </div>
+                  <div className="savings-removal-item-details">
+                    <span>Current Balance: {formatCurrency(savingsRemovalConfirmation.savingsGoal.currentBalance || 0)}</span>
+                    {Object.keys(savingsRemovalConfirmation.savingsGoal.monthlyContributions || {}).length > 0 && (
+                      <span className="savings-custom-data-warning">
+                        ⚠️ Has custom monthly contributions
+                      </span>
+                    )}
+                    {(Object.keys(savingsRemovalConfirmation.savingsGoal.monthlyPurchases || {}).length > 0 || 
+                      (savingsRemovalConfirmation.savingsGoal.purchases && savingsRemovalConfirmation.savingsGoal.purchases.length > 0)) && (
+                      <span className="savings-custom-data-warning">
+                        ⚠️ Has purchase history
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+              
+              <div className="savings-removal-actions">
+                <button
+                  onClick={() => {
+                    // Proceed with deletion - this will also remove the savings goal
+                    performItemDeletion(savingsRemovalConfirmation.categoryId, savingsRemovalConfirmation.itemId);
+                    setSavingsRemovalConfirmation(null);
+                  }}
+                  className="savings-removal-confirm-btn"
+                >
+                  ✓ Delete Budget Item & Savings Goal
+                </button>
+                <button
+                  onClick={() => {
+                    // Cancel deletion
+                    setSavingsRemovalConfirmation(null);
+                  }}
+                  className="savings-removal-cancel-btn"
+                >
+                  ✕ Cancel
+                </button>
+              </div>
+              
+              <div className="savings-removal-note">
+                <p><small>
+                  <strong>Warning:</strong> Deleting this budget item will also trigger removal of the linked savings goal. 
+                  You can manage savings goals separately in the Savings page if needed.
+                </small></p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Budget Categories */}
         <div className="budget-categories">
           <div className="budget-categories-header">
@@ -591,16 +697,103 @@ const BudgetForm = () => {
             </div>
           )}
 
+          {/* Empty State Placeholder */}
+          {budgetCategories.length === 0 && (
+            <div className="budget-empty-state">
+              <div className="budget-empty-state-content">
+                <div className="budget-empty-state-icon">💰</div>
+                <h2>Welcome to Budget Planning!</h2>
+                <p className="budget-empty-state-description">
+                  Create budget categories and track your monthly expenses to take control of your finances.
+                </p>
+                
+                <div className="budget-empty-state-steps">
+                  <h3>How to Get Started:</h3>
+                  <div className="budget-step">
+                    <div className="budget-step-number">1</div>
+                    <div className="budget-step-content">
+                      <strong>Create Categories</strong>
+                      <p>Add budget categories like "Housing", "Food", "Transportation", etc.</p>
+                    </div>
+                  </div>
+                  
+                  <div className="budget-step">
+                    <div className="budget-step-number">2</div>
+                    <div className="budget-step-content">
+                      <strong>Add Budget Items</strong>
+                      <p>Within each category, add specific items with monthly amounts</p>
+                    </div>
+                  </div>
+                  
+                  <div className="budget-step">
+                    <div className="budget-step-number">3</div>
+                    <div className="budget-step-content">
+                      <strong>Use Budget Modes</strong>
+                      <p>Plan for different scenarios with Standard, Tight, and Emergency budgets</p>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="budget-empty-state-features">
+                  <h3>What You Can Do Here:</h3>
+                  <div className="budget-features-grid">
+                    <div className="budget-feature">
+                      <div className="budget-feature-icon">📊</div>
+                      <div className="budget-feature-text">
+                        <strong>Multi-Mode Planning</strong>
+                        <p>Plan standard, tight, and emergency budget scenarios</p>
+                      </div>
+                    </div>
+                    
+                    <div className="budget-feature">
+                      <div className="budget-feature-icon">🔗</div>
+                      <div className="budget-feature-text">
+                        <strong>Paycheck Integration</strong>
+                        <p>Auto-sync with your paycheck calculator for accurate budgeting</p>
+                      </div>
+                    </div>
+                    
+                    <div className="budget-feature">
+                      <div className="budget-feature-icon">🎯</div>
+                      <div className="budget-feature-text">
+                        <strong>Savings Goals</strong>
+                        <p>Categories with "saving" in the name become trackable savings goals</p>
+                      </div>
+                    </div>
+                    
+                    <div className="budget-feature">
+                      <div className="budget-feature-icon">🔄</div>
+                      <div className="budget-feature-text">
+                        <strong>Drag & Drop</strong>
+                        <p>Reorder categories and customize your budget layout</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="budget-empty-state-cta">
+                  <p><strong>Ready to start budgeting?</strong></p>
+                  <div className="budget-empty-state-buttons">
+                    <button onClick={() => setShowAddCategory(true)} className="btn-primary budget-add-first-category">
+                      ➕ Create Your First Category
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Drag and Drop Categories List */}
-          <DragDropContext onDragEnd={handleDragEnd}>
-            <Droppable droppableId="budget-categories">
-              {(provided, snapshot) => (
-                <div
-                  {...provided.droppableProps}
-                  ref={provided.innerRef}
-                  className={`categories-list ${snapshot.isDraggingOver ? 'drag-active' : ''}`}
-                >
-                  {budgetCategories.map((category, index) => (
+          {budgetCategories.length > 0 && (
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="budget-categories">
+                {(provided, snapshot) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className={`categories-list ${snapshot.isDraggingOver ? 'drag-active' : ''}`}
+                  >
+                    {budgetCategories.map((category, index) => (
                     <Draggable 
                       key={category.id} 
                       draggableId={category.id.toString()} 
@@ -741,6 +934,7 @@ const BudgetForm = () => {
               )}
             </Droppable>
           </DragDropContext>
+          )}
         </div>
       </div>
     </>
