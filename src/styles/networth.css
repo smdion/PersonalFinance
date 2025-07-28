@@ -3,6 +3,55 @@
    Dedicated styles for the Net Worth component
    ================================================================ */
 
+/* YTD Indicators */
+.networth-ytd-indicator {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  cursor: help;
+  animation: ytd-pulse 2s ease-in-out infinite;
+}
+
+.networth-ytd-indicator.summary {
+  font-size: 0.65rem;
+  padding: 1px 4px;
+  margin-left: 6px;
+}
+
+.networth-ytd-indicator.score-year {
+  font-size: 0.6rem;
+  padding: 1px 4px;
+  margin-left: 6px;
+}
+
+.networth-ytd-indicator.table-header {
+  font-size: 0.6rem;
+  padding: 1px 3px;
+  margin-left: 4px;
+  display: block;
+  margin-top: 2px;
+}
+
+@keyframes ytd-pulse {
+  0%, 100% {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  50% {
+    background: #fee2e2;
+    border-color: #fca5a5;
+  }
+}
+
 /* Controls Section */
 .networth-controls {
   margin-bottom: 24px;
@@ -345,7 +394,7 @@
 
 .networth-summary-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: 20px;
 }
 
@@ -381,12 +430,15 @@
 }
 
 .networth-summary-label {
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   color: #64748b;
   margin-bottom: 8px;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.025em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .networth-summary-value {

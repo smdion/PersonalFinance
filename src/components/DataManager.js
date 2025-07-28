@@ -8,6 +8,7 @@ import {
 } from '../utils/localStorage';
 import { formatCurrency, generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
+import CSVImportExport from './CSVImportExport';
 
 // Resizable header component
 const ResizableHeader = ({ columnKey, children, width, onResize, compactView, className = '', style = {} }) => {
@@ -1037,112 +1038,31 @@ const DataManager = ({
     }
   };
 
-  const generateCSVContent = (data, headers, rowFormatter) => {
-    const rows = [headers];
-    data.forEach(entry => {
-      const row = rowFormatter(entry);
-      const rowArray = Array.isArray(row) ? row : Object.values(row);
-      rows.push(rowArray);
+  // CSV Import/Export handlers for the reusable component
+  const handleCSVImportSuccess = (parsedData) => {
+    const newData = {};
+    parsedData.forEach(entry => {
+      const key = entry[primaryKey];
+      if (key) newData[key] = entry;
     });
-    
-    return rows.map(row =>
-      row.map(value => {
-        const stringValue = value == null ? '' : String(value);
-        if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
-          return `"${stringValue.replace(/"/g, '""')}"`;
-        }
-        return stringValue;
-      }).join(',')
-    ).join('\n');
+    setEntryData(newData);
   };
 
-  const downloadCSV = () => {
-    const sortedEntries = Object.values(entryData).sort((a, b) => {
+  const handleCSVImportError = (error) => {
+    alert(`Error importing CSV: ${error.message}`);
+  };
+
+  const generateTemplateData = () => {
+    // Always include Joint columns in template if schema supports it
+    return [generateEmptyFormData()];
+  };
+
+  const getCSVDataForExport = () => {
+    return Object.values(entryData).sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
       return sortOrder === 'desc' ? bVal - aVal : aVal - bVal;
     });
-    
-    const csvContent = generateCSVContent(sortedEntries, getEffectiveCSVHeaders(), formatCSVRow);
-  
-    // Determine data type from title
-    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
-                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
-    
-    // Get user names for filename
-    const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = generateDataFilename(dataType, filenameUserNames, 'csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const downloadTemplate = () => {
-    // Always include Joint columns in template if schema supports it
-    const templateEntries = [generateEmptyFormData()];
-    const csvContent = generateCSVContent(
-      templateEntries,
-      getEffectiveCSVHeaders(true), // forceIncludeJoint = true
-      formatCSVRow
-    );
-
-    // Determine data type from title
-    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
-                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
-    
-    // Get user names for filename
-    const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];
-    
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = generateDataFilename(`${dataType}_template`, filenameUserNames, 'csv');
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  const parseCSV = (csvText) => {
-    if (typeof handleEnhancedBeforeCSVImport === 'function') {
-      const proceed = handleEnhancedBeforeCSVImport();
-      if (!proceed) {
-        return [];
-      }
-    }
-    try {
-      const result = Papa.parse(csvText, {
-        header: true,
-        skipEmptyLines: true
-      });
-      return result.data.map(row => parseCSVRow(row)).filter(Boolean);
-    } catch (error) {
-      return [];
-    }
-  };
-
-  const handleFileUpload = (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const csvText = e.target.result;
-      const parsed = parseCSV(csvText);
-      const newData = {};
-      parsed.forEach(entry => {
-        const key = entry[primaryKey];
-        if (key) newData[key] = entry;
-      });
-      setEntryData(newData);
-    };
-    reader.readAsText(file);
   };
 
   // Function to trigger CSV import for empty state button
@@ -1677,57 +1597,35 @@ const DataManager = ({
     );
   };
 
-  // Helper to render the import/export section
-  const renderImportExportSection = () => (
-    <div
-      className={
-        "import-export-section" +
-        (Object.keys(entryData).length > 0 ? " compact" : "")
-      }
-    >
-      <div className="import-export-header">
-        <h3 className="import-export-title">📊 Data Management</h3>
-        <p className="import-export-subtitle">
-          Import and export your {title.toLowerCase()} using CSV files
-        </p>
-      </div>
-      <div className="import-export-actions">
-        <button
-          onClick={downloadCSV}
-          className="import-export-btn export"
-          disabled={Object.keys(entryData).length === 0}
-        >
-          📥 Download CSV
-        </button>
-        <button
-          onClick={downloadTemplate}
-          className="import-export-btn export"
-        >
-          📋 Download Template
-        </button>
-        <label className="import-export-btn import">
-          📤 Upload CSV
-          <input
-            type="file"
-            accept=".csv"
-            onChange={handleFileUpload}
-            className="file-input-hidden"
-          />
-        </label>
-        <button
-          onClick={resetAllData}
-          className="import-export-btn danger"
-          style={{
-            backgroundColor: '#dc2626',
-            borderColor: '#dc2626',
-            color: 'white'
-          }}
-        >
-          🗑️ Reset Data
-        </button>
-      </div>
-    </div>
-  );
+  // Helper to render the import/export section using the reusable component
+  const renderImportExportSection = () => {
+    // Determine data type from title
+    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
+                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
+    
+    // Get user names for filename
+    const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];
+
+    return (
+      <CSVImportExport
+        title="Data Management"
+        subtitle={`Import and export your ${title.toLowerCase()} using CSV files`}
+        data={getCSVDataForExport()}
+        headers={getEffectiveCSVHeaders(true)} // forceIncludeJoint = true for template
+        formatRowData={formatCSVRow}
+        parseRowData={parseCSVRow}
+        beforeImport={handleEnhancedBeforeCSVImport}
+        onImportSuccess={handleCSVImportSuccess}
+        onImportError={handleCSVImportError}
+        generateTemplate={generateTemplateData}
+        compact={Object.keys(entryData).length > 0}
+        dataType={dataType}
+        userNames={filenameUserNames}
+        showResetButton={true}
+        onReset={resetAllData}
+      />
+    );
+  };
 
   // Update filter controls rendering
   const renderFilterControls = () => {
@@ -2406,13 +2304,6 @@ const DataManager = ({
                   <button onClick={handleCSVImport} className="btn-secondary data-upload-csv">
                     📁 Upload CSV
                   </button>
-                  <input
-                    id="csv-upload-input"
-                    type="file"
-                    accept=".csv"
-                    onChange={handleFileUpload}
-                    style={{ display: 'none' }}
-                  />
                 </div>
               </div>
             )}

@@ -103,8 +103,16 @@ const PaycheckForm = ({
         ...prev,
         [field]: value
       }));
+    } else if (field === 'additionalIncome' || field === 'extraWithholding') {
+      // Handle currency fields with unified approach
+      const rawValue = typeof value === 'string' ? value.replace(/[$,]/g, '') : value;
+      setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
+      setW4Options(prev => ({
+        ...prev,
+        [field]: parseFloat(rawValue) || 0
+      }));
     } else {
-      // Remove currency formatting and non-numeric characters except decimal point
+      // Handle other numeric fields normally
       const rawValue = typeof value === 'string' ? value.replace(/[$,]/g, '') : value;
       setW4Options(prev => ({
         ...prev,
@@ -119,8 +127,16 @@ const PaycheckForm = ({
         ...prev,
         [field]: value
       }));
+    } else if (field === 'traditional401kPercent' || field === 'roth401kPercent') {
+      // Handle percentage fields with unified approach
+      const rawValue = typeof value === 'string' ? value.replace(/%/g, '') : value;
+      setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
+      setRetirementOptions(prev => ({
+        ...prev,
+        [field]: parseFloat(rawValue) || 0
+      }));
     } else {
-      // Remove percentage sign and convert to number
+      // Handle other numeric fields normally
       const rawValue = typeof value === 'string' ? value.replace(/%/g, '') : value;
       setRetirementOptions(prev => ({
         ...prev,
@@ -132,6 +148,7 @@ const PaycheckForm = ({
   // Consolidated medical deduction handler
   const handleMedicalDeductionChange = (field, value) => {
     const rawValue = value.replace(/[$,]/g, '');
+    setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
     setMedicalDeductions(prev => ({
       ...prev,
       [field]: parseFloat(rawValue) || 0
@@ -141,21 +158,122 @@ const PaycheckForm = ({
   const handleEsppChange = (value) => {
     // Remove percentage sign and convert to number
     const rawValue = typeof value === 'string' ? value.replace(/%/g, '') : value;
+    setCurrencyInputValues(prev => ({ ...prev, esppDeductionPercent: value })); // Keep raw input as-is while typing
     setEsppDeductionPercent(parseFloat(rawValue) || 0);
+  };
+
+  // Unified currency input handlers
+  const handleCurrencyInputFocus = (field, sourceData) => {
+    setCurrencyInputsFocused(prev => ({ ...prev, [field]: true }));
+    // Show raw value when focused for easier editing
+    const rawValue = sourceData[field] ? sourceData[field].toString() : '';
+    setCurrencyInputValues(prev => ({ ...prev, [field]: rawValue }));
+  };
+
+  const handleCurrencyInputBlur = (field, sourceData, formatter) => {
+    setCurrencyInputsFocused(prev => ({ ...prev, [field]: false }));
+    // Format the value when focus is lost
+    if (sourceData[field]) {
+      setCurrencyInputValues(prev => ({ 
+        ...prev, 
+        [field]: formatter(sourceData[field]) 
+      }));
+    }
   };
 
   const handleBudgetImpactingChange = (field, value) => {
     const rawValue = value.replace(/[$,]/g, '');
+    setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
     setBudgetImpacting(prev => ({
       ...prev,
       [field]: parseFloat(rawValue) || 0
     }));
   };
 
+  // Local state for salary input editing
+  const [salaryInputValue, setSalaryInputValue] = useState('');
+  const [isSalaryFocused, setIsSalaryFocused] = useState(false);
+
+  // Local state for all currency input editing
+  const [currencyInputValues, setCurrencyInputValues] = useState({});
+  const [currencyInputsFocused, setCurrencyInputsFocused] = useState({});
+
+  // Update local input value when salary prop changes (but not when focused)
+  useEffect(() => {
+    if (!isSalaryFocused) {
+      setSalaryInputValue(salary ? formatSalaryDisplay(salary) : '');
+    }
+  }, [salary, isSalaryFocused]);
+
+  // Update local currency input values when props change (but not when focused)
+  useEffect(() => {
+    const newValues = {};
+    
+    // Budget impacting fields
+    ['traditionalIraMonthly', 'rothIraMonthly'].forEach(field => {
+      if (!currencyInputsFocused[field]) {
+        newValues[field] = budgetImpacting[field] ? formatCurrency(budgetImpacting[field]) : '';
+      }
+    });
+
+    // Medical deduction fields
+    ['medical', 'dental', 'vision', 'shortTermDisability', 'longTermDisability', 'hsa', 'employerHsa'].forEach(field => {
+      if (!currencyInputsFocused[field]) {
+        newValues[field] = medicalDeductions[field] ? formatDeductionDisplay(medicalDeductions[field]) : '';
+      }
+    });
+
+    // W4 option fields
+    ['additionalIncome', 'extraWithholding'].forEach(field => {
+      if (!currencyInputsFocused[field]) {
+        newValues[field] = w4Options[field] ? formatDeductionDisplay(w4Options[field]) : '';
+      }
+    });
+
+    // Brokerage account fields (dynamic)
+    if (budgetImpacting.brokerageAccounts) {
+      budgetImpacting.brokerageAccounts.forEach(account => {
+        const fieldKey = `brokerage_${account.id}`;
+        if (!currencyInputsFocused[fieldKey]) {
+          newValues[fieldKey] = account.monthlyAmount ? formatCurrency(account.monthlyAmount) : '';
+        }
+      });
+    }
+
+    // Percentage fields
+    ['traditional401kPercent', 'roth401kPercent'].forEach(field => {
+      if (!currencyInputsFocused[field]) {
+        newValues[field] = retirementOptions[field] ? formatPercentageDisplay(retirementOptions[field]) : '';
+      }
+    });
+
+    // ESPP percentage field
+    if (!currencyInputsFocused['esppDeductionPercent']) {
+      newValues['esppDeductionPercent'] = esppDeductionPercent ? formatPercentageDisplay(esppDeductionPercent) : '';
+    }
+
+    setCurrencyInputValues(prev => ({ ...prev, ...newValues }));
+  }, [budgetImpacting, medicalDeductions, w4Options, retirementOptions, esppDeductionPercent, currencyInputsFocused]);
+
   const handleSalaryChange = (e) => {
     // Remove currency formatting and non-numeric characters except decimal point
     const rawValue = e.target.value.replace(/[$,]/g, '');
-    setSalary(rawValue);
+    setSalaryInputValue(e.target.value); // Keep the raw input as-is while typing
+    setSalary(rawValue); // Store the numeric value
+  };
+
+  const handleSalaryFocus = () => {
+    setIsSalaryFocused(true);
+    // Show raw value when focused for easier editing
+    setSalaryInputValue(salary || '');
+  };
+
+  const handleSalaryBlur = () => {
+    setIsSalaryFocused(false);
+    // Format the value when focus is lost
+    if (salary) {
+      setSalaryInputValue(formatSalaryDisplay(salary));
+    }
   };
 
   const SectionHeader = ({ title, section, subtitle, badge }) => {
@@ -368,8 +486,10 @@ const PaycheckForm = ({
                   type="text"
                   id={`salary-${personName}`}
                   className="form-input"
-                  value={salary ? formatSalaryDisplay(salary) : ''}
+                  value={salaryInputValue}
                   onChange={handleSalaryChange}
+                  onFocus={handleSalaryFocus}
+                  onBlur={handleSalaryBlur}
                   placeholder="Enter annual salary"
                 />
                 {/* Remove per pay period display but keep calculation in backend */}
@@ -411,8 +531,10 @@ const PaycheckForm = ({
                     type="text"
                     id={`traditional401kPercent-${personName}`}
                     className="form-input"
-                    value={formatPercentageDisplay(retirementOptions.traditional401kPercent)}
+                    value={currencyInputValues.traditional401kPercent || ''}
                     onChange={(e) => handleRetirementOptionChange('traditional401kPercent', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('traditional401kPercent', retirementOptions)}
+                    onBlur={() => handleCurrencyInputBlur('traditional401kPercent', retirementOptions, formatPercentageDisplay)}
                     placeholder="Percentage of pay"
                   />
                 </div>
@@ -425,8 +547,10 @@ const PaycheckForm = ({
                     type="text"
                     id={`roth401kPercent-${personName}`}
                     className="form-input"
-                    value={formatPercentageDisplay(retirementOptions.roth401kPercent)}
+                    value={currencyInputValues.roth401kPercent || ''}
                     onChange={(e) => handleRetirementOptionChange('roth401kPercent', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('roth401kPercent', retirementOptions)}
+                    onBlur={() => handleCurrencyInputBlur('roth401kPercent', retirementOptions, formatPercentageDisplay)}
                     placeholder="Percentage of pay"
                   />
                 </div>
@@ -480,8 +604,10 @@ const PaycheckForm = ({
                   <input
                     type="text"
                     id={`medical-${personName}`}
-                    value={formatDeductionDisplay(medicalDeductions.medical)}
+                    value={currencyInputValues.medical || ''}
                     onChange={(e) => handleMedicalDeductionChange('medical', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('medical', medicalDeductions)}
+                    onBlur={() => handleCurrencyInputBlur('medical', medicalDeductions, formatDeductionDisplay)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -491,8 +617,10 @@ const PaycheckForm = ({
                   <input
                     type="text"
                     id={`dental-${personName}`}
-                    value={formatDeductionDisplay(medicalDeductions.dental)}
+                    value={currencyInputValues.dental || ''}
                     onChange={(e) => handleMedicalDeductionChange('dental', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('dental', medicalDeductions)}
+                    onBlur={() => handleCurrencyInputBlur('dental', medicalDeductions, formatDeductionDisplay)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -502,8 +630,10 @@ const PaycheckForm = ({
                   <input
                     type="text"
                     id={`vision-${personName}`}
-                    value={formatDeductionDisplay(medicalDeductions.vision)}
+                    value={currencyInputValues.vision || ''}
                     onChange={(e) => handleMedicalDeductionChange('vision', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('vision', medicalDeductions)}
+                    onBlur={() => handleCurrencyInputBlur('vision', medicalDeductions, formatDeductionDisplay)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -513,8 +643,10 @@ const PaycheckForm = ({
                   <input
                     type="text"
                     id={`shortTermDisability-${personName}`}
-                    value={formatDeductionDisplay(medicalDeductions.shortTermDisability)}
+                    value={currencyInputValues.shortTermDisability || ''}
                     onChange={(e) => handleMedicalDeductionChange('shortTermDisability', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('shortTermDisability', medicalDeductions)}
+                    onBlur={() => handleCurrencyInputBlur('shortTermDisability', medicalDeductions, formatDeductionDisplay)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -524,8 +656,10 @@ const PaycheckForm = ({
                   <input
                     type="text"
                     id={`longTermDisability-${personName}`}
-                    value={formatDeductionDisplay(medicalDeductions.longTermDisability)}
+                    value={currencyInputValues.longTermDisability || ''}
                     onChange={(e) => handleMedicalDeductionChange('longTermDisability', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('longTermDisability', medicalDeductions)}
+                    onBlur={() => handleCurrencyInputBlur('longTermDisability', medicalDeductions, formatDeductionDisplay)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -587,8 +721,10 @@ const PaycheckForm = ({
                         type="text"
                         id={`hsa-${personName}`}
                         className="form-input"
-                        value={formatDeductionDisplay(medicalDeductions.hsa)}
+                        value={currencyInputValues.hsa || ''}
                         onChange={(e) => handleMedicalDeductionChange('hsa', e.target.value)}
+                        onFocus={() => handleCurrencyInputFocus('hsa', medicalDeductions)}
+                        onBlur={() => handleCurrencyInputBlur('hsa', medicalDeductions, formatDeductionDisplay)}
                         placeholder="$0.00"
                       />
                     </div>
@@ -601,8 +737,10 @@ const PaycheckForm = ({
                         type="text"
                         id={`employerHsa-${personName}`}
                         className="form-input"
-                        value={formatDeductionDisplay(medicalDeductions.employerHsa || 0)}
+                        value={currencyInputValues.employerHsa || ''}
                         onChange={(e) => handleMedicalDeductionChange('employerHsa', e.target.value)}
+                        onFocus={() => handleCurrencyInputFocus('employerHsa', medicalDeductions)}
+                        onBlur={() => handleCurrencyInputBlur('employerHsa', medicalDeductions, formatDeductionDisplay)}
                         placeholder="$0.00"
                       />
                     </div>
@@ -658,8 +796,10 @@ const PaycheckForm = ({
                   type="text"
                   id={`espp-${personName}`}
                   className="form-input"
-                  value={formatPercentageDisplay(esppDeductionPercent)}
+                  value={currencyInputValues.esppDeductionPercent || ''}
                   onChange={(e) => handleEsppChange(e.target.value)}
+                  onFocus={() => handleCurrencyInputFocus('esppDeductionPercent', { esppDeductionPercent })}
+                  onBlur={() => handleCurrencyInputBlur('esppDeductionPercent', { esppDeductionPercent }, formatPercentageDisplay)}
                   placeholder="Enter ESPP percentage"
                 />
               </div>
@@ -720,8 +860,10 @@ const PaycheckForm = ({
                     type="text"
                     id={`traditionalIraMonthly-${personName}`}
                     className="form-input"
-                    value={formatCurrency(budgetImpacting.traditionalIraMonthly || 0)}
+                    value={currencyInputValues.traditionalIraMonthly || ''}
                     onChange={(e) => handleBudgetImpactingChange('traditionalIraMonthly', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('traditionalIraMonthly', budgetImpacting)}
+                    onBlur={() => handleCurrencyInputBlur('traditionalIraMonthly', budgetImpacting, formatCurrency)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -734,8 +876,10 @@ const PaycheckForm = ({
                     type="text"
                     id={`rothIraMonthly-${personName}`}
                     className="form-input"
-                    value={formatCurrency(budgetImpacting.rothIraMonthly || 0)}
+                    value={currencyInputValues.rothIraMonthly || ''}
                     onChange={(e) => handleBudgetImpactingChange('rothIraMonthly', e.target.value)}
+                    onFocus={() => handleCurrencyInputFocus('rothIraMonthly', budgetImpacting)}
+                    onBlur={() => handleCurrencyInputBlur('rothIraMonthly', budgetImpacting, formatCurrency)}
                     placeholder="$0.00"
                   />
                 </div>
@@ -768,10 +912,20 @@ const PaycheckForm = ({
                         <input
                           type="text"
                           className="form-input"
-                          value={formatCurrency(account.monthlyAmount)}
+                          value={currencyInputValues[`brokerage_${account.id}`] || ''}
                           onChange={(e) => {
+                            const fieldKey = `brokerage_${account.id}`;
                             const rawValue = e.target.value.replace(/[$,]/g, '');
+                            setCurrencyInputValues(prev => ({ ...prev, [fieldKey]: e.target.value }));
                             onUpdateBrokerageAccount(personName, account.id, 'monthlyAmount', parseFloat(rawValue) || 0);
+                          }}
+                          onFocus={() => {
+                            const fieldKey = `brokerage_${account.id}`;
+                            handleCurrencyInputFocus(fieldKey, { [fieldKey]: account.monthlyAmount });
+                          }}
+                          onBlur={() => {
+                            const fieldKey = `brokerage_${account.id}`;
+                            handleCurrencyInputBlur(fieldKey, { [fieldKey]: account.monthlyAmount }, formatCurrency);
                           }}
                           placeholder="$0.00"
                         />
@@ -994,8 +1148,10 @@ const PaycheckForm = ({
                       type="text"
                       id={`additionalIncome-${personName}`}
                       className="form-input"
-                      value={formatDeductionDisplay(w4Options.additionalIncome)}
+                      value={currencyInputValues.additionalIncome || ''}
                       onChange={(e) => handleW4OptionChange('additionalIncome', e.target.value)}
+                      onFocus={() => handleCurrencyInputFocus('additionalIncome', w4Options)}
+                      onBlur={() => handleCurrencyInputBlur('additionalIncome', w4Options, formatDeductionDisplay)}
                       placeholder="Interest, dividends, retirement income (annual)"
                     />
                   </div>
@@ -1026,8 +1182,10 @@ const PaycheckForm = ({
                   type="text"
                   id={`extraWithholding-${personName}`}
                   className="form-input"
-                  value={formatDeductionDisplay(w4Options.extraWithholding)}
+                  value={currencyInputValues.extraWithholding || ''}
                   onChange={(e) => handleW4OptionChange('extraWithholding', e.target.value)}
+                  onFocus={() => handleCurrencyInputFocus('extraWithholding', w4Options)}
+                  onBlur={() => handleCurrencyInputBlur('extraWithholding', w4Options, formatDeductionDisplay)}
                   placeholder="Additional amount to withhold"
                 />
               </div>

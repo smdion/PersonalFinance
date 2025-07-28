@@ -3,23 +3,6 @@
 .optimize-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #67b3c1 0%, #4d9db8 100%);
-  /* Removed padding-top: 80px; */
-}
-
-.optimize-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
-  margin-top: 1.5rem; /* Match Savings top margin */
-}
-
-.optimize-header {
-  text-align: center;
-  margin-bottom: 2rem;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
 }
 
 .optimize-header-icon {
@@ -27,20 +10,6 @@
   margin-bottom: 0.25rem;
   color: #fffbe6;
   filter: drop-shadow(0 2px 6px rgba(245, 158, 11, 0.25));
-}
-
-.optimize-header h1 {
-  color: white;
-  font-size: 2.5rem;
-  font-weight: 600;
-  margin-bottom: 0.5rem;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
-}
-
-.optimize-header p {
-  color: rgba(255, 255, 255, 0.9);
-  font-size: 1.2rem;
-  font-weight: 300;
 }
 
 /* No Data State */
@@ -275,10 +244,6 @@
 
 /* Responsive Design */
 @media (max-width: 768px) {
-  .optimize-content {
-    padding: 15px;
-  }
-  
   .optimize-individuals {
     grid-template-columns: 1fr;
   }
@@ -302,14 +267,6 @@
 }
 
 @media (max-width: 480px) {
-  .optimize-header h1 {
-    font-size: 1.8rem;
-  }
-  
-  .optimize-header p {
-    font-size: 1rem;
-  }
-  
   .optimize-person-card {
     padding: 1rem;
   }
