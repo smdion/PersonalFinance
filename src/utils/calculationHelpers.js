@@ -596,3 +596,173 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
   };
 };
 
+// YTD Income Calculation Helpers
+
+// Calculate actual YTD income from income periods
+export const calculateYTDIncome = (incomePeriodsData) => {
+  if (!incomePeriodsData || incomePeriodsData.length === 0) return 0;
+  
+  const today = new Date();
+  let ytdIncome = 0;
+  
+  incomePeriodsData.forEach(period => {
+    const startDate = new Date(period.startDate);
+    const endDate = new Date(period.endDate);
+    const grossSalary = parseFloat(period.grossSalary) || 0;
+    
+    // Only count periods that have started
+    if (startDate <= today) {
+      const periodEndDate = endDate <= today ? endDate : today;
+      const daysInPeriod = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
+      const daysWorked = Math.max(1, Math.ceil((periodEndDate - startDate) / (1000 * 60 * 60 * 24)));
+      
+      // Calculate pro-rated income for this period
+      const periodIncome = (grossSalary / daysInPeriod) * daysWorked;
+      ytdIncome += periodIncome;
+    }
+  });
+  
+  return ytdIncome;
+};
+
+// Calculate projected annual income (YTD + projected remaining)
+export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary) => {
+  if (!incomePeriodsData || incomePeriodsData.length === 0) {
+    return parseFloat(currentSalary) || 0;
+  }
+  
+  const today = new Date();
+  const endOfYear = new Date(today.getFullYear(), 11, 31);
+  let projectedIncome = 0;
+  
+  // Add YTD income
+  projectedIncome += calculateYTDIncome(incomePeriodsData);
+  
+  // Add projected income for rest of year using current salary
+  const lastPeriod = incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
+  if (lastPeriod) {
+    const lastEndDate = new Date(lastPeriod.endDate);
+    if (lastEndDate < endOfYear) {
+      const remainingDays = Math.ceil((endOfYear - lastEndDate) / (1000 * 60 * 60 * 24));
+      const dailyRate = (parseFloat(currentSalary) || 0) / 365;
+      projectedIncome += dailyRate * remainingDays;
+    }
+  }
+  
+  return projectedIncome;
+};
+
+// Calculate YTD contributions for a person from Performance data
+export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear()) => {
+  const result = {
+    traditional401k: 0,
+    roth401k: 0,
+    traditionalIra: 0,
+    rothIra: 0,
+    hsa: 0,
+    total401k: 0,
+    totalIra: 0,
+    totalContributions: 0,
+    totalEmployerMatch: 0
+  };
+  
+  if (!performanceData || !userNames || userNames.length === 0) {
+    return result;
+  }
+  
+  // Performance data is organized by entryId, not by year directly
+  // We need to find all entries for the current year
+  const relevantUsers = [...userNames, 'Joint'];
+  
+  // Iterate through all performance entries
+  Object.values(performanceData).forEach(entry => {
+    // Check if this entry is for the current year
+    if (entry.year !== currentYear) return;
+    
+    // Check if this entry has users data
+    if (!entry.users) return;
+    
+    // Process each user in this entry
+    Object.keys(entry.users).forEach(userName => {
+      // Skip if this user is not relevant
+      if (!relevantUsers.includes(userName)) return;
+      
+      const account = entry.users[userName];
+      if (!account || !account.accountType) return;
+      
+      // Try user-level contributions first, then fall back to entry-level
+      let contributions = parseFloat(account.contributions) || 0;
+      let employerMatch = parseFloat(account.employerMatch) || 0;
+      
+      // If user-level is empty/zero, use entry-level data
+      if (contributions === 0 && entry.contributions) {
+        contributions = parseFloat(entry.contributions) || 0;
+      }
+      if (employerMatch === 0 && entry.employerMatch) {
+        employerMatch = parseFloat(entry.employerMatch) || 0;
+      }
+      
+      const accountType = account.accountType.toLowerCase();
+      
+      // Categorize by account type
+      if (accountType.includes('401k') || accountType.includes('401(k)')) {
+        if (accountType.includes('roth')) {
+          result.roth401k += contributions;
+        } else {
+          result.traditional401k += contributions;
+        }
+        result.totalEmployerMatch += employerMatch;
+      } else if (accountType.includes('ira')) {
+        if (accountType.includes('roth')) {
+          result.rothIra += contributions;
+        } else {
+          result.traditionalIra += contributions;
+        }
+      } else if (accountType.includes('hsa')) {
+        result.hsa += contributions;
+      }
+      
+      result.totalContributions += contributions;
+    });
+  });
+  
+  // Calculate totals
+  result.total401k = result.traditional401k + result.roth401k;
+  result.totalIra = result.traditionalIra + result.rothIra;
+  
+  return result;
+};
+
+// Calculate remaining contribution room based on YTD contributions
+export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCoverage) => {
+  const isOver50 = age >= 50;
+  const isOver55 = age >= 55;
+  
+  // 401k limits
+  const max401k = isOver50 
+    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
+    : CONTRIBUTION_LIMITS_2025.k401_employee;
+  
+  // IRA limits
+  const maxIra = isOver50 
+    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
+    : CONTRIBUTION_LIMITS_2025.ira_self;
+  
+  // HSA limits
+  let maxHsa = 0;
+  if (hsaCoverage === 'self') {
+    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+  } else if (hsaCoverage === 'family') {
+    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+  }
+  
+  return {
+    k401_remaining: Math.max(0, max401k - ytdContributions.total401k),
+    ira_remaining: Math.max(0, maxIra - ytdContributions.totalIra),
+    hsa_remaining: Math.max(0, maxHsa - ytdContributions.hsa),
+    k401_max: max401k,
+    ira_max: maxIra,
+    hsa_max: maxHsa
+  };
+};
+

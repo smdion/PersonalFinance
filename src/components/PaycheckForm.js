@@ -324,16 +324,21 @@ const PaycheckForm = ({
 
   const calculateBonus = () => {
     const annualSalary = parseFloat(salary) || 0;
-    return (annualSalary * bonusMultiplier * bonusTarget) / 10000; // Update calculation to include bonusTarget
+    if (noBonusExpected) return 0;
+    return (annualSalary * bonusMultiplier * bonusTarget) / 10000; // Divide by 10000 as originally intended
   };
 
   const getEffectiveBonus = () => {
-    const overrideValue = parseFloat(overrideBonus);
-    return !isNaN(overrideValue) && overrideValue > 0 ? overrideValue : calculateBonus();
+    if (noBonusExpected) return 0;
+    const rawValue = typeof overrideBonus === 'string' ? overrideBonus.replace(/[$,]/g, '') : overrideBonus;
+    const overrideValue = parseFloat(rawValue);
+    // If override has a value (including 0), use it; otherwise use calculated bonus
+    return !isNaN(overrideValue) && overrideBonus.trim() !== '' ? overrideValue : calculateBonus();
   };
 
   // Get the final bonus amount that should be saved to historical data
   const getFinalBonusAmount = () => {
+    if (noBonusExpected) return 0;
     return remove401kFromBonus ? calculateBonusAfter401k() : getEffectiveBonus();
   };
 
@@ -353,7 +358,7 @@ const PaycheckForm = ({
       const finalBonusAmount = getFinalBonusAmount();
       setEffectiveBonus(finalBonusAmount);
     }
-  }, [salary, bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, retirementOptions.traditional401kPercent, retirementOptions.roth401kPercent, setEffectiveBonus]);
+  }, [salary, bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, noBonusExpected, retirementOptions.traditional401kPercent, retirementOptions.roth401kPercent, setEffectiveBonus]);
 
   // Consolidated age-related effects
   useEffect(() => {
@@ -369,12 +374,14 @@ const PaycheckForm = ({
   }, [birthday, setRetirementOptions]);
 
   const calculateBonusAfterTax = () => {
+    if (noBonusExpected) return 0;
     const bonus = getEffectiveBonus();
     const taxRate = results?.effectiveTaxRate || 0;
     return bonus - (bonus * (taxRate / 100));
   };
 
   const calculateBonusAfter401k = () => {
+    if (noBonusExpected) return 0;
     const bonus = getEffectiveBonus();
     if (remove401kFromBonus) {
       const traditional401kPercent = retirementOptions.traditional401kPercent || 0;

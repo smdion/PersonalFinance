@@ -1,28 +1,48 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
-import { getPaycheckData } from '../utils/localStorage';
+import { getPaycheckData, getPerformanceData } from '../utils/localStorage';
 import { CONTRIBUTION_LIMITS_2025 } from '../config/taxConstants';
-import { formatCurrency, calculateAge } from '../utils/calculationHelpers';
+import { 
+  formatCurrency, 
+  calculateAge, 
+  calculateProjectedAnnualIncome, 
+  calculateYTDContributionsFromPerformance, 
+  calculateRemainingContributionRoom 
+} from '../utils/calculationHelpers';
 import '../styles/optimize.css';
 
 const Optimize = () => {
   const navigate = useNavigate();
   const [paycheckData, setPaycheckData] = useState({});
+  const [performanceData, setPerformanceData] = useState({});
+  const [useProjectedAGI, setUseProjectedAGI] = useState(false);
 
   useEffect(() => {
-    // Load paycheck data
-    const data = getPaycheckData();
-    setPaycheckData(data);
+    // Load paycheck and performance data
+    const paycheckData = getPaycheckData();
+    const performanceData = getPerformanceData();
+    setPaycheckData(paycheckData);
+    setPerformanceData(performanceData);
 
-    // Listen for paycheck data updates
+    // Listen for data updates
     const handlePaycheckUpdate = () => {
       const updatedData = getPaycheckData();
       setPaycheckData(updatedData);
     };
 
+    const handlePerformanceUpdate = () => {
+      const updatedData = getPerformanceData();
+      setPerformanceData(updatedData);
+    };
+
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
-    return () => window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    
+    return () => {
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+      window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    };
   }, []);
 
   // Calculate contribution metrics
@@ -43,19 +63,30 @@ const Optimize = () => {
       const isOver50 = age >= 50;
       const isOver55 = age >= 55;
 
+      // Calculate AGI based on toggle - use projected income from YTD data if available and toggle is on
+      let effectiveAGI = salary;
+      if (useProjectedAGI && person.incomePeriodsData && person.incomePeriodsData.length > 0) {
+        effectiveAGI = calculateProjectedAnnualIncome(person.incomePeriodsData, salary);
+      }
+
+      // Get YTD contributions from Performance data
+      const userNames = [person.name, spouseData.name].filter(n => n && n.trim());
+      const ytdContributions = calculateYTDContributionsFromPerformance(performanceData, userNames);
+      const remainingRoom = calculateRemainingContributionRoom(ytdContributions, age, person.hsaCoverageType);
+
       // 401k calculations - from retirementOptions
       const retirementOptions = person.retirementOptions || {};
       const traditional401k = parseFloat(retirementOptions.traditional401kPercent) || 0;
       const roth401k = parseFloat(retirementOptions.roth401kPercent) || 0;
       const total401kPercent = traditional401k + roth401k;
-      const annual401k = salary * (total401kPercent / 100);
+      const annual401k = effectiveAGI * (total401kPercent / 100);
       const max401k = isOver50 
         ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
         : CONTRIBUTION_LIMITS_2025.k401_employee;
       
       // Employer match - need to check if this field exists in the data
       const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
-      const annualEmployerMatch = salary * (employerMatch / 100);
+      const annualEmployerMatch = effectiveAGI * (employerMatch / 100);
 
       // IRA calculations - from budgetImpacting
       const budgetImpacting = person.budgetImpacting || {};
@@ -85,7 +116,7 @@ const Optimize = () => {
 
       // ESPP calculations
       const esppPercent = parseFloat(person.esppDeductionPercent) || 0;
-      const annualEspp = salary * (esppPercent / 100);
+      const annualEspp = effectiveAGI * (esppPercent / 100);
 
       // Brokerage calculations - from budgetImpacting
       const brokerageMonthly = (budgetImpacting.brokerageAccounts || []).reduce((sum, account) => sum + (account.monthlyAmount || 0), 0);
@@ -95,7 +126,10 @@ const Optimize = () => {
       return {
         name: personName,
         salary,
+        effectiveAGI,
         age,
+        ytdContributions,
+        remainingRoom,
         contributions: {
           k401: {
             employee: annual401k,
@@ -136,7 +170,7 @@ const Optimize = () => {
     }
 
     return metrics;
-  }, [paycheckData]);
+  }, [paycheckData, performanceData, useProjectedAGI]);
 
   const handleNavigateToPaycheck = () => {
     navigate('/paycheck');
@@ -199,10 +233,61 @@ const Optimize = () => {
           <div className="optimize-salary">
             <strong>Annual Salary:</strong> {formatCurrency(person.salary)}
           </div>
+          {useProjectedAGI && person.effectiveAGI !== person.salary && (
+            <div className="optimize-effective-agi">
+              <strong>Effective AGI (YTD + Projected):</strong> {formatCurrency(person.effectiveAGI)}
+            </div>
+          )}
           <div className="optimize-age">
             <strong>Age:</strong> {person.age}
           </div>
         </div>
+
+        {/* YTD Contributions Section */}
+        {useProjectedAGI && person.ytdContributions && (
+          <div className="optimize-ytd-section">
+            <h4>Year-to-Date Contributions</h4>
+            <div className="optimize-ytd-grid">
+              <div className="optimize-ytd-item">
+                <span className="label">401(k) YTD:</span>
+                <span className="value">{formatCurrency(person.ytdContributions.total401k)}</span>
+              </div>
+              <div className="optimize-ytd-item">
+                <span className="label">IRA YTD:</span>
+                <span className="value">{formatCurrency(person.ytdContributions.totalIra)}</span>
+              </div>
+              <div className="optimize-ytd-item">
+                <span className="label">HSA YTD:</span>
+                <span className="value">{formatCurrency(person.ytdContributions.hsa)}</span>
+              </div>
+            </div>
+            
+            {/* Remaining Contribution Room */}
+            <div className="optimize-remaining-room">
+              <h5>Remaining Contribution Room</h5>
+              <div className="optimize-remaining-grid">
+                <div className="optimize-remaining-item">
+                  <span className="label">401(k) Room:</span>
+                  <span className={`value ${person.remainingRoom?.k401_remaining > 0 ? 'opportunity' : 'maxed'}`}>
+                    {formatCurrency(person.remainingRoom?.k401_remaining || 0)}
+                  </span>
+                </div>
+                <div className="optimize-remaining-item">
+                  <span className="label">IRA Room:</span>
+                  <span className={`value ${person.remainingRoom?.ira_remaining > 0 ? 'opportunity' : 'maxed'}`}>
+                    {formatCurrency(person.remainingRoom?.ira_remaining || 0)}
+                  </span>
+                </div>
+                <div className="optimize-remaining-item">
+                  <span className="label">HSA Room:</span>
+                  <span className={`value ${person.remainingRoom?.hsa_remaining > 0 ? 'opportunity' : 'maxed'}`}>
+                    {formatCurrency(person.remainingRoom?.hsa_remaining || 0)}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="optimize-contributions">
           {/* 401k Section */}
@@ -325,6 +410,23 @@ const Optimize = () => {
           <div className="optimize-header-icon">⚡</div>
           <h1>Optimize Your Contributions</h1>
           <p>Analyze your current contribution strategy and identify optimization opportunities</p>
+          
+          {/* AGI Calculation Toggle */}
+          <div className="agi-toggle-section">
+            <label className="agi-toggle">
+              <input
+                type="checkbox"
+                checked={useProjectedAGI}
+                onChange={(e) => setUseProjectedAGI(e.target.checked)}
+              />
+              <span className="agi-toggle-text">
+                Use YTD + Projected AGI 
+                <span className="agi-toggle-description">
+                  (Instead of annual paycheck calculator salary)
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
 
         {/* Household Summary */}

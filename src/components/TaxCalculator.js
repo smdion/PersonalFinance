@@ -2,6 +2,7 @@ import React, { useState, useCallback, useContext, useEffect, useRef, useMemo } 
 import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
+import YTDIncomeTracker from './YTDIncomeTracker';
 import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToHistorical } from '../utils/localStorage';
 import Navigation from './Navigation';
@@ -150,6 +151,10 @@ const TaxCalculator = () => {
   const hasLoadedDataRef = useRef(false); // Add flag to prevent repeated loads
 
   const [formData, setFormData] = useState({}); // Keep empty initially
+
+  // YTD Income tracking state (contributions now come from Performance data)
+  const [incomePeriodsData, setIncomePeriodsData] = useState([]);
+  const [spouseIncomePeriodsData, setSpouseIncomePeriodsData] = useState([]);
 
   // Handle HSA coverage changes with synchronization
   const handleHsaCoverageChange = (type, isSpouse = false) => {
@@ -328,6 +333,7 @@ const TaxCalculator = () => {
           setEffectiveBonus(savedData.your.effectiveBonus || 0);
           setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
           setPayWeekType(savedData.your.payWeekType || 'even');
+          setIncomePeriodsData(savedData.your.incomePeriodsData || []);
         }
         
         // Load spouse data
@@ -351,6 +357,7 @@ const TaxCalculator = () => {
           setSpouseEffectiveBonus(savedData.spouse.effectiveBonus || 0);
           setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
           setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
+          setSpouseIncomePeriodsData(savedData.spouse.incomePeriodsData || []);
         }
         
         // Load settings
@@ -414,7 +421,8 @@ const TaxCalculator = () => {
         name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
         retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
         bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, payWeekType,
-        netTakeHomePaycheck: results?.netTakeHomePaycheck || 0
+        netTakeHomePaycheck: results?.netTakeHomePaycheck || 0,
+        incomePeriodsData
       },
       spouse: {
         name: spouseName, employer: spouseEmployer, birthday: spouseBirthday, 
@@ -423,7 +431,8 @@ const TaxCalculator = () => {
         medicalDeductions: spouseMedicalDeductions, esppDeductionPercent: spouseEsppDeductionPercent,
         budgetImpacting: spouseBudgetImpacting, bonusMultiplier: spouseBonusMultiplier,
         bonusTarget: spouseBonusTarget, overrideBonus: spouseOverrideBonus, remove401kFromBonus: spouseRemove401kFromBonus, effectiveBonus: spouseEffectiveBonus, hsaCoverageType: spouseHsaCoverageType, payWeekType: spousePayWeekType,
-        netTakeHomePaycheck: spouseResults?.netTakeHomePaycheck || 0
+        netTakeHomePaycheck: spouseResults?.netTakeHomePaycheck || 0,
+        incomePeriodsData: spouseIncomePeriodsData
       },
       settings: {
         showSpouseCalculator
@@ -446,7 +455,8 @@ const TaxCalculator = () => {
     spouseName, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
     spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions,
     spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBudgetImpacting,
-    spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType
+    spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType,
+    incomePeriodsData, spouseIncomePeriodsData
     // REMOVED results and spouseResults from dependencies to prevent infinite loop
   ]);
 
@@ -822,6 +832,27 @@ const TaxCalculator = () => {
               globalSectionControl={globalSectionControl}
               onCalculate={handleSpouseCalculate}
               results={spouseResults}
+            />
+          )}
+        </div>
+
+        {/* YTD Income Trackers */}
+        <div className="ytd-trackers-section">
+          <YTDIncomeTracker
+            personName={name || 'You'}
+            incomePeriodsData={incomePeriodsData}
+            onUpdateIncomePeriods={setIncomePeriodsData}
+            currentSalary={salary}
+            userNames={[name, spouseName].filter(n => n && n.trim())}
+          />
+
+          {showSpouseCalculator && (
+            <YTDIncomeTracker
+              personName={spouseName || 'Spouse'}
+              incomePeriodsData={spouseIncomePeriodsData}
+              onUpdateIncomePeriods={setSpouseIncomePeriodsData}
+              currentSalary={spouseSalary}
+              userNames={[name, spouseName].filter(n => n && n.trim())}
             />
           )}
         </div>

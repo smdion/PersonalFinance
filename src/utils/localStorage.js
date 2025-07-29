@@ -286,107 +286,10 @@ export const setBudgetData = (data) => {
   return setToStorage(STORAGE_KEYS.BUDGET_DATA, data);
 };
 
-// Helper function to migrate old 401k account types to single '401k' type
-const migrate401kAccountTypes = (data) => {
-  if (!data || typeof data !== 'object') return data;
-  
-  let hasChanges = false;
-  const migratedData = JSON.parse(JSON.stringify(data)); // Deep clone
-  
-  // Function to process any object that might contain accountType
-  const processObject = (obj) => {
-    if (!obj || typeof obj !== 'object') return;
-    
-    if (obj.accountType && typeof obj.accountType === 'string') {
-      if (obj.accountType === '401k-Rollover' || obj.accountType === '401k-EmployerMatch') {
-        obj.accountType = '401k';
-        hasChanges = true;
-      }
-    }
-    
-    // Recursively process nested objects and arrays
-    Object.values(obj).forEach(value => {
-      if (typeof value === 'object' && value !== null) {
-        if (Array.isArray(value)) {
-          value.forEach(item => processObject(item));
-        } else {
-          processObject(value);
-        }
-      }
-    });
-  };
-  
-  processObject(migratedData);
-  
-  return hasChanges ? migratedData : data;
-};
 
-// Helper function to migrate old budgetImpacting format to new format
-const migrateBudgetImpactingData = (oldData) => {
-  if (!oldData || typeof oldData !== 'object') return oldData;
-  
-  const newData = {
-    traditionalIraMonthly: oldData.traditionalIraMonthly || 0,
-    rothIraMonthly: oldData.rothIraMonthly || 0,
-    brokerageAccounts: []
-  };
-
-  // Migrate old hard-coded fields to brokerage accounts array
-  if (oldData.retirementBrokerageMonthly > 0) {
-    newData.brokerageAccounts.push({
-      id: `migrated-retirement-${Date.now()}`,
-      name: 'Retirement Brokerage',
-      monthlyAmount: oldData.retirementBrokerageMonthly
-    });
-  }
-
-  if (oldData.longTermSavingsMonthly > 0) {
-    newData.brokerageAccounts.push({
-      id: `migrated-savings-${Date.now()}`,
-      name: 'Long-Term Savings',
-      monthlyAmount: oldData.longTermSavingsMonthly
-    });
-  }
-
-  // Keep existing brokerage accounts if they exist
-  if (oldData.brokerageAccounts && Array.isArray(oldData.brokerageAccounts)) {
-    newData.brokerageAccounts = [...newData.brokerageAccounts, ...oldData.brokerageAccounts];
-  }
-
-  return newData;
-};
 
 export const getPaycheckData = () => {
-  const data = getFromStorage(STORAGE_KEYS.PAYCHECK_DATA, {});
-  
-  // Migrate old format if needed
-  let needsMigration = false;
-  const migratedData = { ...data };
-  
-  if (data.your?.budgetImpacting) {
-    const hasOldFormat = data.your.budgetImpacting.retirementBrokerageMonthly !== undefined || 
-                        data.your.budgetImpacting.longTermSavingsMonthly !== undefined;
-    if (hasOldFormat) {
-      migratedData.your.budgetImpacting = migrateBudgetImpactingData(data.your.budgetImpacting);
-      needsMigration = true;
-    }
-  }
-  
-  if (data.spouse?.budgetImpacting) {
-    const hasOldFormat = data.spouse.budgetImpacting.retirementBrokerageMonthly !== undefined || 
-                        data.spouse.budgetImpacting.longTermSavingsMonthly !== undefined;
-    if (hasOldFormat) {
-      migratedData.spouse.budgetImpacting = migrateBudgetImpactingData(data.spouse.budgetImpacting);
-      needsMigration = true;
-    }
-  }
-  
-  // Save migrated data back to localStorage
-  if (needsMigration) {
-    setPaycheckData(migratedData);
-  }
-  
-  return migratedData;
+  return getFromStorage(STORAGE_KEYS.PAYCHECK_DATA, {});
 };
 
 export const setPaycheckData = (data) => {
@@ -394,36 +297,7 @@ export const setPaycheckData = (data) => {
 };
 
 export const getFormData = () => {
-  const data = getFromStorage(STORAGE_KEYS.FORM_DATA, {});
-  
-  // Migrate old format if needed
-  let needsMigration = false;
-  const migratedData = { ...data };
-  
-  if (data.yourBudgetImpacting) {
-    const hasOldFormat = data.yourBudgetImpacting.retirementBrokerageMonthly !== undefined || 
-                        data.yourBudgetImpacting.longTermSavingsMonthly !== undefined;
-    if (hasOldFormat) {
-      migratedData.yourBudgetImpacting = migrateBudgetImpactingData(data.yourBudgetImpacting);
-      needsMigration = true;
-    }
-  }
-  
-  if (data.spouseBudgetImpacting) {
-    const hasOldFormat = data.spouseBudgetImpacting.retirementBrokerageMonthly !== undefined || 
-                        data.spouseBudgetImpacting.longTermSavingsMonthly !== undefined;
-    if (hasOldFormat) {
-      migratedData.spouseBudgetImpacting = migrateBudgetImpactingData(data.spouseBudgetImpacting);
-      needsMigration = true;
-    }
-  }
-  
-  // Save migrated data back to localStorage
-  if (needsMigration) {
-    setFormData(migratedData);
-  }
-  
-  return migratedData;
+  return getFromStorage(STORAGE_KEYS.FORM_DATA, {});
 };
 
 export const setFormData = (data) => {
@@ -473,15 +347,7 @@ export const getHistoricalDataWithNameMapping = () => {
 
 export const getHistoricalData = () => {
   // Always return data with name mapping applied for consistency
-  const data = getHistoricalDataWithNameMapping();
-  const migratedData = migrate401kAccountTypes(data);
-  
-  // Save migrated data back if changes were made
-  if (migratedData !== data) {
-    setToStorage(STORAGE_KEYS.HISTORICAL_DATA, migratedData);
-  }
-  
-  return migratedData;
+  return getHistoricalDataWithNameMapping();
 };
 
 export const setHistoricalData = (data) => {
@@ -517,15 +383,7 @@ export const getPerformanceDataWithNameMapping = () => {
 
 export const getPerformanceData = () => {
   // Always return data with name mapping applied for consistency
-  const data = getPerformanceDataWithNameMapping();
-  const migratedData = migrate401kAccountTypes(data);
-  
-  // Save migrated data back if changes were made
-  if (migratedData !== data) {
-    setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, migratedData);
-  }
-  
-  return migratedData;
+  return getPerformanceDataWithNameMapping();
 };
 
 export const setPerformanceData = (data) => {
@@ -989,40 +847,6 @@ const cleanEmptyUserData = (data) => {
   return cleanedData;
 };
 
-// Helper function to convert snake_case to camelCase for legacy compatibility
-const transformImportKeys = (data) => {
-  if (!data || typeof data !== 'object') return data;
-  
-  const keyMap = {
-    'budget_data': 'budgetData',
-    'paycheck_data': 'paycheckData', 
-    'form_data': 'formData',
-    'app_settings': 'appSettings',
-    'historical_data': 'historicalData',
-    'performance_data': 'performanceData',
-    'retirement_data': 'retirementData',
-    'networth_settings': 'networthSettings',
-    'savings_data': 'savingsData',
-    'portfolio_accounts': 'portfolioAccounts',
-    'portfolio_records': 'portfolioRecords',
-    'portfolio_inputs': 'portfolioInputs',
-    'shared_accounts': 'sharedAccounts',
-    'manual_account_groups': 'manualAccountGroups',
-    'name_mapping': 'nameMapping'
-  };
-  
-  const transformedData = { ...data };
-  
-  // Transform keys if they exist in snake_case format
-  Object.entries(keyMap).forEach(([snakeKey, camelKey]) => {
-    if (transformedData[snakeKey] !== undefined) {
-      transformedData[camelKey] = transformedData[snakeKey];
-      delete transformedData[snakeKey]; // Remove the snake_case version
-    }
-  });
-  
-  return transformedData;
-};
 
 // Import data from JSON (validation included)
 export const importAllData = (importData) => {
@@ -1034,9 +858,6 @@ export const importAllData = (importData) => {
       throw new Error('Invalid import data format');
     }
     
-    // Transform snake_case keys to camelCase for compatibility
-    const transformedData = transformImportKeys(importData);
-    
     // Clear any existing name mappings and localStorage to prevent conflicts
     setNameMapping({});
     localStorage.removeItem(NAME_MAPPING_KEY);
@@ -1046,52 +867,36 @@ export const importAllData = (importData) => {
     nameMappingLoaded = false;
     
     // Import each section if it exists
-    if (transformedData.budgetData !== undefined) {
-      setBudgetData(transformedData.budgetData);
+    if (importData.budgetData !== undefined) {
+      setBudgetData(importData.budgetData);
       importedSections.push('Budget Data');
     }
     
-    if (transformedData.paycheckData !== undefined) {
-      // Migrate imported paycheck data if needed
-      const migratedPaycheckData = { ...transformedData.paycheckData };
-      if (migratedPaycheckData.your?.budgetImpacting) {
-        migratedPaycheckData.your.budgetImpacting = migrateBudgetImpactingData(migratedPaycheckData.your.budgetImpacting);
-      }
-      if (migratedPaycheckData.spouse?.budgetImpacting) {
-        migratedPaycheckData.spouse.budgetImpacting = migrateBudgetImpactingData(migratedPaycheckData.spouse.budgetImpacting);
-      }
-      setPaycheckData(migratedPaycheckData);
+    if (importData.paycheckData !== undefined) {
+      setPaycheckData(importData.paycheckData);
       importedSections.push('Paycheck Data');
     }
     
-    if (transformedData.formData !== undefined) {
-      // Migrate imported form data if needed
-      const migratedFormData = { ...transformedData.formData };
-      if (migratedFormData.yourBudgetImpacting) {
-        migratedFormData.yourBudgetImpacting = migrateBudgetImpactingData(migratedFormData.yourBudgetImpacting);
-      }
-      if (migratedFormData.spouseBudgetImpacting) {
-        migratedFormData.spouseBudgetImpacting = migrateBudgetImpactingData(migratedFormData.spouseBudgetImpacting);
-      }
-      setFormData(migratedFormData);
+    if (importData.formData !== undefined) {
+      setFormData(importData.formData);
       importedSections.push('Form Data');
     }
     
-    if (transformedData.appSettings !== undefined) {
-      setAppSettings(transformedData.appSettings);
+    if (importData.appSettings !== undefined) {
+      setAppSettings(importData.appSettings);
       importedSections.push('App Settings');
     }
     
-    if (transformedData.historicalData !== undefined) {
+    if (importData.historicalData !== undefined) {
       // Clean empty user data before importing
-      const cleanedHistoricalData = cleanEmptyUserData(transformedData.historicalData);
+      const cleanedHistoricalData = cleanEmptyUserData(importData.historicalData);
       setHistoricalData(cleanedHistoricalData);
       importedSections.push('Historical Data');
     }
     
-    if (transformedData.performanceData !== undefined) {
+    if (importData.performanceData !== undefined) {
       // Handle both array and object formats during import
-      let performanceDataToImport = transformedData.performanceData;
+      let performanceDataToImport = importData.performanceData;
       if (Array.isArray(performanceDataToImport)) {
         // Convert array to object format
         performanceDataToImport = performanceDataToImport.reduce((acc, entry) => {
@@ -1111,52 +916,50 @@ export const importAllData = (importData) => {
       }
     }
     
-    
-    if (transformedData.retirementData !== undefined) {
-      setRetirementData(transformedData.retirementData);
+    if (importData.retirementData !== undefined) {
+      setRetirementData(importData.retirementData);
       importedSections.push('Retirement Data');
     }
     
-    // Import new portfolio-related data
-    if (transformedData.networthSettings !== undefined) {
-      setNetWorthSettings(transformedData.networthSettings);
+    // Import portfolio-related data
+    if (importData.networthSettings !== undefined) {
+      setNetWorthSettings(importData.networthSettings);
       importedSections.push('Net Worth Settings');
     }
     
-    if (transformedData.savingsData !== undefined) {
-      setSavingsData(transformedData.savingsData);
+    if (importData.savingsData !== undefined) {
+      setSavingsData(importData.savingsData);
       importedSections.push('Savings Data');
     }
     
-    if (transformedData.portfolioAccounts !== undefined) {
-      setPortfolioAccounts(transformedData.portfolioAccounts);
+    if (importData.portfolioAccounts !== undefined) {
+      setPortfolioAccounts(importData.portfolioAccounts);
       importedSections.push('Portfolio Accounts');
     }
     
-    
-    if (transformedData.portfolioRecords !== undefined) {
-      setPortfolioRecords(transformedData.portfolioRecords);
+    if (importData.portfolioRecords !== undefined) {
+      setPortfolioRecords(importData.portfolioRecords);
       importedSections.push('Portfolio Records');
     }
     
-    if (transformedData.sharedAccounts !== undefined) {
-      setSharedAccounts(transformedData.sharedAccounts);
+    if (importData.sharedAccounts !== undefined) {
+      setSharedAccounts(importData.sharedAccounts);
       importedSections.push('Shared Accounts');
     }
     
-    if (transformedData.portfolioInputs !== undefined) {
-      setPortfolioInputs(transformedData.portfolioInputs);
+    if (importData.portfolioInputs !== undefined) {
+      setPortfolioInputs(importData.portfolioInputs);
       importedSections.push('Portfolio Inputs');
     }
     
-    if (transformedData.manualAccountGroups !== undefined) {
-      setManualAccountGroups(transformedData.manualAccountGroups);
+    if (importData.manualAccountGroups !== undefined) {
+      setManualAccountGroups(importData.manualAccountGroups);
       importedSections.push('Manual Account Groups');
     }
     
     // Import name mapping (should be done last to ensure data integrity)
-    if (transformedData.nameMapping !== undefined) {
-      setNameMapping(transformedData.nameMapping);
+    if (importData.nameMapping !== undefined) {
+      setNameMapping(importData.nameMapping);
       importedSections.push('Name Mapping');
     }
 
@@ -1635,15 +1438,7 @@ export const addPortfolioAccount = (accountName, taxType, accountType, owner) =>
 
 // Portfolio records utilities (comprehensive update tracking with dates)
 export const getPortfolioRecords = () => {
-  const data = getFromStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, []);
-  const migratedData = migrate401kAccountTypes(data);
-  
-  // Save migrated data back if changes were made
-  if (migratedData !== data) {
-    setToStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, migratedData);
-  }
-  
-  return migratedData;
+  return getFromStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, []);
 };
 
 export const setPortfolioRecords = (records) => {
@@ -1776,15 +1571,7 @@ export const SHARED_ACCOUNTS_KEY = STORAGE_KEYS.SHARED_ACCOUNTS;
 
 // Get all shared accounts that both Portfolio and Performance can use
 export const getSharedAccounts = () => {
-  const data = getFromStorage(SHARED_ACCOUNTS_KEY, []);
-  const migratedData = migrate401kAccountTypes(data);
-  
-  // Save migrated data back if changes were made
-  if (migratedData !== data) {
-    setToStorage(SHARED_ACCOUNTS_KEY, migratedData);
-  }
-  
-  return migratedData;
+  return getFromStorage(SHARED_ACCOUNTS_KEY, []);
 };
 
 // Set shared accounts (used internally)
@@ -2261,17 +2048,46 @@ export const clearManualAccountGroups = () => {
   return result;
 };
 
+// Clean up empty historical entries (entries with no users or meaningful data)
+export const cleanupEmptyHistoricalEntries = () => {
+  try {
+    const historicalData = getHistoricalData();
+    let hasChanges = false;
+    
+    const cleanedData = {};
+    Object.entries(historicalData).forEach(([key, entry]) => {
+      // Keep entry if it has users with meaningful data, or if it has other financial data
+      const hasUsers = entry.users && Object.keys(entry.users).length > 0;
+      const hasFinancialData = entry.taxFree || entry.taxDeferred || entry.brokerage || 
+                               entry.espp || entry.hsa || entry.cash || entry.house || 
+                               entry.mortgage || entry.othAsset || entry.othLia;
+      const hasValidAGI = entry.agi && entry.agi > 0;
+      
+      if (hasUsers || hasFinancialData || hasValidAGI) {
+        cleanedData[key] = entry;
+      } else {
+        hasChanges = true; // This entry will be removed
+      }
+    });
+    
+    if (hasChanges) {
+      setHistoricalData(cleanedData);
+      return { success: true, message: 'Removed empty historical entries' };
+    } else {
+      return { success: true, message: 'No empty entries found' };
+    }
+  } catch (error) {
+    console.error('Error cleaning up empty historical entries:', error);
+    return { success: false, message: error.message };
+  }
+};
+
 // Sync paycheck data to historical data for current year
 export const syncPaycheckToHistorical = () => {
   try {
     const paycheckData = getPaycheckData();
     const historicalData = getHistoricalData();
     const currentYear = new Date().getFullYear();
-
-    // Initialize current year data if it doesn't exist
-    if (!historicalData[currentYear]) {
-      historicalData[currentYear] = { users: {} };
-    }
 
     // Get users from paycheck data
     const users = [];
@@ -2286,6 +2102,28 @@ export const syncPaycheckToHistorical = () => {
         name: paycheckData.spouse.name.trim(),
         data: paycheckData.spouse
       });
+    }
+
+    // Only proceed if we have actual paycheck data
+    if (users.length === 0) {
+      return true; // No data to sync, but not an error
+    }
+
+    // Check if there's already a proper historical entry for current year (like hist_2025_demo)
+    const hasProperHistoricalEntry = Object.keys(historicalData).some(key => {
+      const entry = historicalData[key];
+      return entry && entry.year === currentYear && key !== currentYear.toString() && 
+             entry.taxFree !== undefined; // Has full historical data structure
+    });
+
+    // If there's already a proper historical entry, don't create a duplicate simple entry
+    if (hasProperHistoricalEntry) {
+      return true; // Proper entry exists, no need to sync
+    }
+
+    // Initialize current year data if it doesn't exist
+    if (!historicalData[currentYear]) {
+      historicalData[currentYear] = { users: {} };
     }
 
     // Update historical data for each user
@@ -2303,6 +2141,18 @@ export const syncPaycheckToHistorical = () => {
       // Use the effective bonus calculated by PaycheckForm (includes override and 401k removal logic)
       userData.bonus = parseFloat(user.data.effectiveBonus) || 0;
     });
+
+    // Calculate AGI as sum of salary and bonus for all users in current year
+    let totalAGI = 0;
+    users.forEach(user => {
+      const userData = historicalData[currentYear].users[user.name];
+      if (userData) {
+        totalAGI += (userData.salary || 0) + (userData.bonus || 0);
+      }
+    });
+    
+    // Set the calculated AGI in the current year entry
+    historicalData[currentYear].agi = totalAGI;
 
     // Save updated historical data
     const saveResult = setHistoricalData(historicalData);
