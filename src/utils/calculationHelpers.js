@@ -599,7 +599,7 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 // YTD Income Calculation Helpers
 
 // Calculate actual YTD income from income periods
-export const calculateYTDIncome = (incomePeriodsData) => {
+export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly') => {
   if (!incomePeriodsData || incomePeriodsData.length === 0) return 0;
   
   const today = new Date();
@@ -613,11 +613,21 @@ export const calculateYTDIncome = (incomePeriodsData) => {
     // Only count periods that have started
     if (startDate <= today) {
       const periodEndDate = endDate <= today ? endDate : today;
-      const daysInPeriod = Math.max(1, Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)));
-      const daysWorked = Math.max(1, Math.ceil((periodEndDate - startDate) / (1000 * 60 * 60 * 24)));
+      
+      // Calculate number of pay periods that have occurred in this time frame
+      const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      const grossPayPerPaycheck = grossSalary / periodsPerYear;
+      
+      // Calculate total days in the period and days worked
+      const totalDaysInPeriod = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      const daysWorked = Math.ceil((periodEndDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      
+      // Calculate number of pay periods that have occurred
+      const totalPayPeriodsInPeriod = (totalDaysInPeriod / 365) * periodsPerYear;
+      const payPeriodsWorked = (daysWorked / 365) * periodsPerYear;
       
       // Calculate pro-rated income for this period
-      const periodIncome = (grossSalary / daysInPeriod) * daysWorked;
+      const periodIncome = grossPayPerPaycheck * payPeriodsWorked;
       ytdIncome += periodIncome;
     }
   });
@@ -626,7 +636,7 @@ export const calculateYTDIncome = (incomePeriodsData) => {
 };
 
 // Calculate projected annual income (YTD + projected remaining)
-export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary) => {
+export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary, payPeriod = 'biWeekly') => {
   if (!incomePeriodsData || incomePeriodsData.length === 0) {
     return parseFloat(currentSalary) || 0;
   }
@@ -636,16 +646,21 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary)
   let projectedIncome = 0;
   
   // Add YTD income
-  projectedIncome += calculateYTDIncome(incomePeriodsData);
+  projectedIncome += calculateYTDIncome(incomePeriodsData, payPeriod);
   
   // Add projected income for rest of year using current salary
   const lastPeriod = incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
   if (lastPeriod) {
     const lastEndDate = new Date(lastPeriod.endDate);
     if (lastEndDate < endOfYear) {
+      // Calculate remaining pay periods using the same method as YTD calculation
+      const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      const grossPayPerPaycheck = (parseFloat(currentSalary) || 0) / periodsPerYear;
+      
       const remainingDays = Math.ceil((endOfYear - lastEndDate) / (1000 * 60 * 60 * 24));
-      const dailyRate = (parseFloat(currentSalary) || 0) / 365;
-      projectedIncome += dailyRate * remainingDays;
+      const remainingPayPeriods = (remainingDays / 365) * periodsPerYear;
+      
+      projectedIncome += grossPayPerPaycheck * remainingPayPeriods;
     }
   }
   

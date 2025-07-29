@@ -455,8 +455,8 @@ const PaycheckForm = ({
     }
   };
 
-  const ytdIncome = calculateYTDIncome(incomePeriods);
-  const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, salary);
+  const ytdIncome = calculateYTDIncome(incomePeriods, payPeriod);
+  const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, salary, payPeriod);
 
 
   return (

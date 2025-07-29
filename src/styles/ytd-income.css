@@ -1,147 +1,90 @@
-/* YTD Income Tracker Styles */
-
-.ytd-income-tracker {
-  margin: 1rem 0;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  background: #ffffff;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-.ytd-header {
-  padding: 1rem;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #e2e8f0;
-  background: #f8fafc;
-  border-radius: 8px 8px 0 0;
-  transition: background-color 0.2s ease;
-}
-
-.ytd-header:hover {
-  background: #f1f5f9;
-}
-
-.ytd-header h3 {
-  margin: 0;
-  font-size: 1.1rem;
-  color: #1e293b;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.ytd-icon {
-  font-size: 1.2rem;
-}
-
-.ytd-summary {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  font-size: 0.9rem;
-}
-
-.ytd-amount {
-  color: #059669;
-  font-weight: 600;
-}
-
-.projected-amount {
-  color: #3b82f6;
-  font-weight: 600;
-}
-
-.expand-icon {
-  transition: transform 0.2s ease;
-  color: #64748b;
-  margin-left: 0.5rem;
-}
-
-.expand-icon.expanded {
-  transform: rotate(180deg);
-}
-
-.ytd-content {
-  padding: 1.5rem;
-}
+/* YTD Income Tracker Styles - Updated to match main form styling */
 
 .ytd-section {
-  margin-bottom: 2rem;
-}
-
-.ytd-section:last-child {
-  margin-bottom: 0;
+  margin: 0;
 }
 
 .ytd-section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 
 .ytd-section h4 {
   margin: 0;
   font-size: 1rem;
-  color: #374151;
+  color: #1e293b;
   font-weight: 600;
 }
 
 .ytd-empty-state {
-  padding: 2rem;
+  padding: 24px;
   text-align: center;
-  background: #f9fafb;
-  border: 2px dashed #d1d5db;
-  border-radius: 6px;
-  color: #6b7280;
+  background: #f8fafc;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  color: #64748b;
+  font-style: italic;
 }
 
 .income-periods-list {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 16px;
+  width: 100%;
 }
 
 .income-period-card {
-  border: 1px solid #e5e7eb;
-  border-radius: 6px;
-  padding: 1rem;
-  background: #f9fafb;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 24px;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .income-period-row {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1.5fr auto;
-  gap: 1rem;
+  grid-template-columns: 3fr 1.5fr 1.5fr 2fr auto;
+  gap: 16px;
   align-items: end;
+  width: 100%;
+  min-width: 0;
 }
 
 .income-period-field {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
 
 .income-period-field label {
-  font-size: 0.875rem;
-  font-weight: 500;
-  color: #374151;
-  margin-bottom: 0.25rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+  line-height: 1.4;
 }
 
 .income-period-field input {
-  padding: 0.5rem;
-  border: 1px solid #d1d5db;
-  border-radius: 4px;
-  font-size: 0.875rem;
+  padding: 16px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 50px;
+  line-height: 1.4;
 }
 
 .income-period-field input:focus {
   outline: none;
   border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
 }
 
 .ytd-contributions-grid {
@@ -250,50 +193,66 @@
   color: #dc2626;
 }
 
-.btn {
-  padding: 0.5rem 1rem;
+.ytd-section .btn {
+  padding: 8px 16px;
   border: none;
-  border-radius: 4px;
+  border-radius: 8px;
   font-size: 0.875rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
+  min-height: auto;
 }
 
-.btn-sm {
-  padding: 0.375rem 0.75rem;
-  font-size: 0.8rem;
+.ytd-section .btn-sm {
+  padding: 8px 16px;
+  font-size: 0.875rem;
 }
 
-.btn-secondary {
+.ytd-section .btn-secondary {
   background: #6b7280;
   color: white;
 }
 
-.btn-secondary:hover {
+.ytd-section .btn-secondary:hover {
   background: #4b5563;
 }
 
-.btn-danger {
+.ytd-section .btn-danger {
   background: #dc2626;
   color: white;
 }
 
-.btn-danger:hover {
+.ytd-section .btn-danger:hover {
   background: #b91c1c;
 }
 
 /* Responsive Design */
-@media (max-width: 768px) {
+@media (max-width: 1100px) {
   .income-period-row {
     grid-template-columns: 1fr;
-    gap: 0.75rem;
+    gap: 20px;
+    align-items: stretch;
   }
   
-  .ytd-summary {
+  .income-period-field {
+    width: 100%;
+  }
+  
+  .income-period-field input {
+    min-height: 48px;
+  }
+}
+
+@media (max-width: 768px) {
+  .ytd-section-header {
     flex-direction: column;
-    align-items: flex-end;
-    gap: 0.5rem;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .income-period-card {
+    padding: 20px;
   }
   
   .ytd-contributions-grid {
