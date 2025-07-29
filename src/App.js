@@ -9,7 +9,7 @@ import Performance from './components/Performance';
 import Portfolio from './components/Portfolio';
 import NetWorth from './components/NetWorth';
 import Savings from './components/Savings';
-import Optimize from './components/Optimize';
+import Contributions from './components/Contributions';
 import Retirement from './components/Retirement';
 import Assets from './components/Assets';
 import Liabilities from './components/Liabilities';
@@ -24,7 +24,7 @@ function App() {
             <Route path="/paycheck" element={<TaxCalculator />} />
             <Route path="/budget" element={<BudgetForm />} />
             <Route path="/savings" element={<Savings />} />
-            <Route path="/optimize" element={<Optimize />} />
+            <Route path="/contributions" element={<Contributions />} />
             <Route path="/historical" element={<Historical />} />
             <Route path="/performance" element={<Performance />} />
             <Route path="/networth" element={<NetWorth />} />

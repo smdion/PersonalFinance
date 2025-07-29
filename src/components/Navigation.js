@@ -24,27 +24,56 @@ const Navigation = () => {
     {
       label: 'Data and Review',
       icon: '📊',
-      items: [
-        { path: '/other-assets', label: 'Assets', icon: '🏠' },
-        { path: '/liabilities', label: 'Liabilities', icon: '💳' },
-        { path: '/portfolio', label: 'Portfolio', icon: '📈' },
-        { path: '/performance', label: 'Performance', icon: '🎯' },
-        { path: '/historical', label: 'Historical', icon: '📋' }
+      subfolders: [
+        {
+          label: 'Data',
+          icon: '💾',
+          items: [
+            { path: '/other-assets', label: 'Assets', icon: '🏠' },
+            { path: '/liabilities', label: 'Liabilities', icon: '💳' },
+            { path: '/portfolio', label: 'Portfolio', icon: '📈' }
+          ]
+        },
+        {
+          label: 'Review',
+          icon: '📈',
+          items: [
+            { path: '/performance', label: 'Performance', icon: '🎯' },
+            { path: '/historical', label: 'Historical', icon: '📋' }
+          ]
+        }
       ]
     },
     {
       label: 'Optimize and Visualize',
       icon: '🔍',
-      items: [
-        { path: '/optimize', label: 'Optimize', icon: '⚡' },
-        { path: '/networth', label: 'Net Worth', icon: '💎' }
+      subfolders: [
+        {
+          label: 'Optimize',
+          icon: '⚡',
+          items: [
+            { path: '/contributions', label: 'Contributions', icon: '⚡' }
+          ]
+        },
+        {
+          label: 'Visualize',
+          icon: '💎',
+          items: [
+            { path: '/networth', label: 'Net Worth', icon: '💎' }
+          ]
+        }
       ]
     }
   ];
 
   // Get all navigation items flattened for active state checking
   const getAllNavItems = () => {
-    return navFolders.flatMap(folder => folder.items);
+    return navFolders.flatMap(folder => {
+      if (folder.subfolders) {
+        return folder.subfolders.flatMap(subfolder => subfolder.items);
+      }
+      return folder.items || [];
+    });
   };
 
   // Toggle folder open/closed state - only allow one folder open at a time
@@ -244,17 +273,41 @@ const Navigation = () => {
               </button>
               {openFolders[folder.label] && (
                 <div className="nav-folder-items">
-                  {folder.items.map((item) => (
-                    <Link
-                      key={item.path}
-                      to={item.path}
-                      className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
-                      onClick={() => setOpenFolders({})}
-                    >
-                      <span className="nav-item-icon">{item.icon}</span>
-                      <span className="nav-item-label">{item.label}</span>
-                    </Link>
-                  ))}
+                  {folder.subfolders ? (
+                    folder.subfolders.map((subfolder) => (
+                      <div key={subfolder.label} className="nav-subfolder">
+                        <div className="nav-subfolder-header">
+                          <span className="nav-subfolder-icon">{subfolder.icon}</span>
+                          <span className="nav-subfolder-label">{subfolder.label}</span>
+                        </div>
+                        <div className="nav-subfolder-items">
+                          {subfolder.items.map((item) => (
+                            <Link
+                              key={item.path}
+                              to={item.path}
+                              className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                              onClick={() => setOpenFolders({})}
+                            >
+                              <span className="nav-item-icon">{item.icon}</span>
+                              <span className="nav-item-label">{item.label}</span>
+                            </Link>
+                          ))}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    folder.items?.map((item) => (
+                      <Link
+                        key={item.path}
+                        to={item.path}
+                        className={`nav-item ${location.pathname === item.path ? 'active' : ''}`}
+                        onClick={() => setOpenFolders({})}
+                      >
+                        <span className="nav-item-icon">{item.icon}</span>
+                        <span className="nav-item-label">{item.label}</span>
+                      </Link>
+                    ))
+                  )}
                 </div>
               )}
             </div>
@@ -293,20 +346,47 @@ const Navigation = () => {
                       </button>
                       {openFolders[folder.label] && (
                         <div className="hamburger-folder-items">
-                          {folder.items.map((item) => (
-                            <a
-                              key={item.path}
-                              href={item.path}
-                              className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
-                              onClick={() => {
-                                setShowHamburgerMenu(false);
-                                setOpenFolders({});
-                              }}
-                            >
-                              <span className="menu-item-icon">{item.icon}</span>
-                              <span className="menu-item-label">{item.label}</span>
-                            </a>
-                          ))}
+                          {folder.subfolders ? (
+                            folder.subfolders.map((subfolder) => (
+                              <div key={subfolder.label} className="hamburger-subfolder">
+                                <div className="hamburger-subfolder-header">
+                                  <span className="menu-subfolder-icon">{subfolder.icon}</span>
+                                  <span className="menu-subfolder-label">{subfolder.label}</span>
+                                </div>
+                                <div className="hamburger-subfolder-items">
+                                  {subfolder.items.map((item) => (
+                                    <a
+                                      key={item.path}
+                                      href={item.path}
+                                      className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
+                                      onClick={() => {
+                                        setShowHamburgerMenu(false);
+                                        setOpenFolders({});
+                                      }}
+                                    >
+                                      <span className="menu-item-icon">{item.icon}</span>
+                                      <span className="menu-item-label">{item.label}</span>
+                                    </a>
+                                  ))}
+                                </div>
+                              </div>
+                            ))
+                          ) : (
+                            folder.items?.map((item) => (
+                              <a
+                                key={item.path}
+                                href={item.path}
+                                className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
+                                onClick={() => {
+                                  setShowHamburgerMenu(false);
+                                  setOpenFolders({});
+                                }}
+                              >
+                                <span className="menu-item-icon">{item.icon}</span>
+                                <span className="menu-item-label">{item.label}</span>
+                              </a>
+                            ))
+                          )}
                         </div>
                       )}
                     </div>

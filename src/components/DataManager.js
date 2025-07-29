@@ -246,7 +246,8 @@ const DataManager = ({
   fieldCssClasses = {},
   beforeCSVImport,
   customFormatCSVRow,
-  customParseCSVRow
+  customParseCSVRow,
+  itemsPerPage: initialItemsPerPage = 50
 }) => {
   // Initialize all state variables first
   const [entryData, setEntryData] = useState({});
@@ -280,7 +281,7 @@ const DataManager = ({
   // Add account type filtering state
   const [accountTypeFilters, setAccountTypeFilters] = useState({});
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(50);
+  const [itemsPerPage, setItemsPerPage] = useState(initialItemsPerPage);
   const [compactView, setCompactView] = useState(false);
   const [columnWidths, setColumnWidths] = useState({});
   const [resizing, setResizing] = useState(null);
@@ -1997,6 +1998,7 @@ const DataManager = ({
                       fontSize: '0.8rem'
                     }}
                   >
+                    <option value={10}>10 per page</option>
                     <option value={25}>25 per page</option>
                     <option value={50}>50 per page</option>
                     <option value={100}>100 per page</option>

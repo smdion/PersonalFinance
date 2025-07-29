@@ -83,7 +83,7 @@ const Welcome = () => {
                     <li><strong>Savings Goal Tracker:</strong> Automatic goal creation, bulk editing, progress tracking, purchase management</li>
                     <li><strong>Historical Financial Data Tracking:</strong> 20+ metrics per year, year-over-year analysis, tax information</li>
                     <li><strong>Account Performance Tracker:</strong> Investment analytics, individual & joint accounts, return calculations</li>
-                    <li><strong>Contribution Optimizer:</strong> Analyze 401k/IRA/HSA strategy, identify unused contribution capacity</li>
+                    <li><strong>Contribution Analyzer:</strong> Analyze 401k/IRA/HSA strategy, identify unused contribution capacity</li>
                     <li><strong>Portfolio Data Manager:</strong> Update investment account values with tax classification and multi-user support</li>
                     <li><strong>Assets & Liabilities Tracker:</strong> Monitor homes, vehicles, debt balances for complete net worth picture</li>
                     <li><strong>Net Worth Dashboard:</strong> Interactive charts, growth analysis, asset allocation breakdowns</li>
@@ -345,11 +345,11 @@ const Welcome = () => {
             </div>
 
             <div className="calculator-card">
-              <Link to="/optimize" className="calculator-link">
+              <Link to="/contributions" className="calculator-link">
                 <div className="calculator-icon">⚡</div>
-                <h3>Contribution Optimizer</h3>
+                <h3>Contribution Analyzer</h3>
                 <p>
-                  Analyze your current contribution strategy and identify optimization opportunities across all tax-advantaged accounts. 
+                  Analyze your current contribution strategy and identify improvement opportunities across all tax-advantaged accounts. 
                   Track 401k, IRA, HSA contributions with remaining capacity and household-wide optimization analysis.
                 </p>
                 <div className="calculator-features">
@@ -488,8 +488,8 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">4</div>
                     <div className="step-content">
-                      <h4>Optimize Contributions</h4>
-                      <p>Analyze your 401k, IRA, and HSA contribution strategy. Identify unused capacity and optimization opportunities for maximum tax benefits.</p>
+                      <h4>Analyze Contributions</h4>
+                      <p>Analyze your 401k, IRA, and HSA contribution strategy. Identify unused capacity and improvement opportunities for maximum tax benefits.</p>
                     </div>
                   </div>
                   <div className="step">
@@ -523,8 +523,8 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">9</div>
                     <div className="step-content">
-                      <h4>Maintain & Optimize</h4>
-                      <p>Return to any tool as your situation changes. Export data for safekeeping, model scenarios, and maintain optimal financial planning.</p>
+                      <h4>Maintain & Improve</h4>
+                      <p>Return to any tool as your situation changes. Export data for safekeeping, model scenarios, and maintain effective financial planning.</p>
                     </div>
                   </div>
                 </div>
@@ -593,8 +593,8 @@ const Welcome = () => {
               <Link to="/savings" className="quick-start-button secondary">
                 Track Savings Goals
               </Link>
-              <Link to="/optimize" className="quick-start-button secondary">
-                Optimize Contributions
+              <Link to="/contributions" className="quick-start-button secondary">
+                Analyze Contributions
               </Link>
               <Link to="/portfolio" className="quick-start-button secondary">
                 Update Portfolio Values

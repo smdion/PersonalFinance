@@ -88,6 +88,7 @@ const Historical = () => {
           primaryKey="year"
           sortField="year"
           sortOrder="desc"
+          itemsPerPage={10}
         />
       </div>
     </>

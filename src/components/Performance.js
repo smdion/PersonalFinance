@@ -199,6 +199,7 @@ const Performance = () => {
           sortField="year"
           sortOrder="desc"
           customParseCSVRow={customParseCSVRow}
+          itemsPerPage={10}
         />
       </div>
     </>

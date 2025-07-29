@@ -12,12 +12,14 @@ import {
   calculateRemainingContributionRoom,
   calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
-import '../styles/optimize.css';
+import '../styles/contributions.css';
 
-const Optimize = () => {
+const Contributions = () => {
   const navigate = useNavigate();
   const [paycheckData, setPaycheckData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
+  const [activeTab, setActiveTab] = useState('standard');
+  const [activePersonTab, setActivePersonTab] = useState('standard');
 
   useEffect(() => {
     // Load paycheck and performance data
@@ -294,7 +296,7 @@ const Optimize = () => {
         
         // 401k breakdown
         const ytd401k = ytdContributions.total401k || 0;
-        const ytdEmployerMatch = ytdContributions.employerMatch || 0;
+        const ytdEmployerMatch = ytdContributions.totalEmployerMatch || 0;
         
         // Calculate remaining pay periods starting from next month
         const today = new Date();
@@ -616,17 +618,17 @@ const Optimize = () => {
 
   if (!contributionMetrics?.hasData) {
     return (
-      <div className="optimize-container">
+      <div className="contributions-container">
         <Navigation />
         <div className="app-container">
           <div className="header">
-            <div className="optimize-header-icon">⚡</div>
-            <h1>Optimize Your Contributions</h1>
-            <p>Analyze your contribution strategy and find optimization opportunities</p>
+            <div className="contributions-header-icon">⚡</div>
+            <h1>Analyze Your Contributions</h1>
+            <p>Analyze your contribution strategy and find improvement opportunities</p>
           </div>
-          <div className="optimize-no-data">
+          <div className="contributions-no-data">
             <h3>No paycheck data found</h3>
-            <p>Please set up your paycheck calculator first to see optimization recommendations.</p>
+            <p>Please set up your paycheck calculator first to see improvement recommendations.</p>
             <button 
               className="btn btn-primary"
               onClick={handleNavigateToPaycheck}
@@ -683,68 +685,68 @@ const Optimize = () => {
     const isHsaOverLimit = totals.totalHsa > totalHsaLimit;
 
     return (
-      <div className="optimize-household-breakdown">
+      <div className="contributions-household-breakdown">
         {/* 401k */}
-        <div className="optimize-household-section">
+        <div className="contributions-household-section">
           <h4>
             401(k) Contributions
-            {is401kOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+            {is401kOverLimit && <span className="contributions-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
           </h4>
-          <div className="optimize-household-grid">
-            <div className="optimize-household-item">
+          <div className="contributions-household-grid">
+            <div className="contributions-household-item">
               <span className="label">YTD Employee:</span>
               <span className="value">{formatCurrency(breakdownData.ytd401kEmployee || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">YTD Employer:</span>
               <span className="value">{formatCurrency(breakdownData.ytd401kEmployer || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">YTD Total:</span>
               <span className="value">{formatCurrency(breakdownData.ytd401kTotal || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">Projected Employee:</span>
               <span className="value">{formatCurrency(breakdownData.projected401kEmployee || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">Projected Employer:</span>
               <span className="value">{formatCurrency(breakdownData.projected401kEmployer || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">Projected Total:</span>
               <span className="value">{formatCurrency(breakdownData.projected401kTotal || 0)}</span>
             </div>
-            <div className="optimize-household-item total">
+            <div className="contributions-household-item total">
               <span className="label">Annual Total:</span>
-              <span className={`value ${is401kOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+              <span className={`value ${is401kOverLimit ? 'contributions-limit-exceeded' : ''}`}>
                 {formatCurrency(totals.total401k)}
-                {is401kOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                {is401kOverLimit && <span className="contributions-warning-icon">⚠️</span>}
               </span>
             </div>
           </div>
         </div>
 
         {/* IRA */}
-        <div className="optimize-household-section">
+        <div className="contributions-household-section">
           <h4>
             IRA Contributions
-            {isIraOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+            {isIraOverLimit && <span className="contributions-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
           </h4>
-          <div className="optimize-household-grid">
-            <div className="optimize-household-item">
+          <div className="contributions-household-grid">
+            <div className="contributions-household-item">
               <span className="label">YTD Total:</span>
               <span className="value">{formatCurrency(breakdownData.ytdIra || 0)}</span>
             </div>
-            <div className="optimize-household-item">
+            <div className="contributions-household-item">
               <span className="label">Projected Total:</span>
               <span className="value">{formatCurrency(breakdownData.projectedIra || 0)}</span>
             </div>
-            <div className="optimize-household-item total">
+            <div className="contributions-household-item total">
               <span className="label">Annual Total:</span>
-              <span className={`value ${isIraOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+              <span className={`value ${isIraOverLimit ? 'contributions-limit-exceeded' : ''}`}>
                 {formatCurrency(totals.totalIra)}
-                {isIraOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                {isIraOverLimit && <span className="contributions-warning-icon">⚠️</span>}
               </span>
             </div>
           </div>
@@ -752,33 +754,33 @@ const Optimize = () => {
 
         {/* HSA */}
         {totals.totalHsa > 0 && (
-          <div className="optimize-household-section">
+          <div className="contributions-household-section">
             <h4>
               HSA Contributions
-              {isHsaOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+              {isHsaOverLimit && <span className="contributions-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
             </h4>
-            <div className="optimize-household-grid">
-              <div className="optimize-household-item">
+            <div className="contributions-household-grid">
+              <div className="contributions-household-item">
                 <span className="label">YTD Employee:</span>
                 <span className="value">{formatCurrency(breakdownData.ytdHsaEmployee || 0)}</span>
               </div>
-              <div className="optimize-household-item">
+              <div className="contributions-household-item">
                 <span className="label">YTD Employer:</span>
                 <span className="value">{formatCurrency(breakdownData.ytdHsaEmployer || 0)}</span>
               </div>
-              <div className="optimize-household-item">
+              <div className="contributions-household-item">
                 <span className="label">Projected Employee:</span>
                 <span className="value">{formatCurrency(breakdownData.projectedHsaEmployee || 0)}</span>
               </div>
-              <div className="optimize-household-item">
+              <div className="contributions-household-item">
                 <span className="label">Projected Employer:</span>
                 <span className="value">{formatCurrency(breakdownData.projectedHsaEmployer || 0)}</span>
               </div>
-              <div className="optimize-household-item total">
+              <div className="contributions-household-item total">
                 <span className="label">Annual Total:</span>
-                <span className={`value ${isHsaOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                <span className={`value ${isHsaOverLimit ? 'contributions-limit-exceeded' : ''}`}>
                   {formatCurrency(totals.totalHsa)}
-                  {isHsaOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                  {isHsaOverLimit && <span className="contributions-warning-icon">⚠️</span>}
                 </span>
               </div>
             </div>
@@ -787,18 +789,18 @@ const Optimize = () => {
 
         {/* ESPP */}
         {totals.totalEspp > 0 && (
-          <div className="optimize-household-section">
+          <div className="contributions-household-section">
             <h4>ESPP Contributions</h4>
-            <div className="optimize-household-grid">
-              <div className="optimize-household-item">
+            <div className="contributions-household-grid">
+              <div className="contributions-household-item">
                 <span className="label">YTD Total:</span>
                 <span className="value">{formatCurrency(breakdownData.ytdEspp || 0)}</span>
               </div>
-              <div className="optimize-household-item">
+              <div className="contributions-household-item">
                 <span className="label">Projected Total:</span>
                 <span className="value">{formatCurrency(breakdownData.projectedEspp || 0)}</span>
               </div>
-              <div className="optimize-household-item total">
+              <div className="contributions-household-item total">
                 <span className="label">Annual Total:</span>
                 <span className="value">{formatCurrency(totals.totalEspp)}</span>
               </div>
@@ -808,18 +810,18 @@ const Optimize = () => {
 
         {/* Brokerage */}
         {totals.totalBrokerage > 0 && (
-          <div className="optimize-household-section">
+          <div className="contributions-household-section">
             <h4>Brokerage Contributions</h4>
-            <div className="optimize-household-grid">
-              <div className="optimize-household-item">
+            <div className="contributions-household-grid">
+              <div className="contributions-household-item">
                 <span className="label">YTD Total:</span>
                 <span className="value">{formatCurrency(breakdownData.ytdBrokerage || 0)}</span>
               </div>
-              <div className="optimize-household-item">
+              <div className="contributions-household-item">
                 <span className="label">Projected Total:</span>
                 <span className="value">{formatCurrency(breakdownData.projectedBrokerage || 0)}</span>
               </div>
-              <div className="optimize-household-item total">
+              <div className="contributions-household-item total">
                 <span className="label">Annual Total:</span>
                 <span className="value">{formatCurrency(totals.totalBrokerage)}</span>
               </div>
@@ -828,10 +830,10 @@ const Optimize = () => {
         )}
 
         {/* Grand Total */}
-        <div className="optimize-household-section">
+        <div className="contributions-household-section">
           <h4>Total Annual Contributions</h4>
-          <div className="optimize-household-grid">
-            <div className="optimize-household-item grand-total">
+          <div className="contributions-household-grid">
+            <div className="contributions-household-item grand-total">
               <span className="label">Combined Household Total:</span>
               <span className="value">{formatCurrency(totals.totalContributions)}</span>
             </div>
@@ -853,89 +855,89 @@ const Optimize = () => {
       const warningIcon = isOverLimit ? ' ⚠️' : '';
 
       return (
-        <div className="optimize-contribution-section">
+        <div className="contributions-contribution-section">
           <h4>
             {accountTypeName} Contributions
             <span className="contribution-mode-indicator">
               {` (${person.accountTypes[accountType]})`}
             </span>
-            {isOverLimit && <span className="optimize-warning-icon" title="Exceeds IRS annual limit">⚠️</span>}
+            {isOverLimit && <span className="contributions-warning-icon" title="Exceeds IRS annual limit">⚠️</span>}
           </h4>
-          <div className="optimize-contribution-grid breakdown-mode">
+          <div className="contributions-contribution-grid breakdown-mode">
             {/* YTD Contributions */}
-            <div className="optimize-contribution-header">YTD Contributions Made</div>
+            <div className="contributions-contribution-header">YTD Contributions Made</div>
             {breakdown.ytdEmployee !== undefined ? (
               <>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employee:</span>
                   <span className="value">{formatCurrency(breakdown.ytdEmployee)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employer:</span>
                   <span className="value">{formatCurrency(breakdown.ytdEmployer)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">YTD Total:</span>
                   <span className="value total">{formatCurrency(breakdown.ytdTotal)}</span>
                 </div>
               </>
             ) : (
-              <div className="optimize-contribution-item">
+              <div className="contributions-contribution-item">
                 <span className="label">YTD Total:</span>
                 <span className="value total">{formatCurrency(breakdown.ytd)}</span>
               </div>
             )}
 
             {/* Projected Remaining */}
-            <div className="optimize-contribution-header">Projected Remaining</div>
+            <div className="contributions-contribution-header">Projected Remaining</div>
             {breakdown.projectedEmployee !== undefined ? (
               <>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employee:</span>
                   <span className="value">{formatCurrency(breakdown.projectedEmployee)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employer:</span>
                   <span className="value">{formatCurrency(breakdown.projectedEmployer)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Projected Total:</span>
                   <span className="value total">{formatCurrency(breakdown.projectedTotal)}</span>
                 </div>
               </>
             ) : (
-              <div className="optimize-contribution-item">
+              <div className="contributions-contribution-item">
                 <span className="label">Projected Total:</span>
                 <span className="value total">{formatCurrency(breakdown.projected)}</span>
               </div>
             )}
 
             {/* Annual Total */}
-            <div className="optimize-contribution-header">Annual Total (YTD + Projected)</div>
+            <div className="contributions-contribution-header">Annual Total (YTD + Projected)</div>
             {breakdown.totalEmployee !== undefined ? (
               <>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employee:</span>
                   <span className="value">{formatCurrency(breakdown.totalEmployee)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Employer:</span>
                   <span className="value">{formatCurrency(breakdown.totalEmployer)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">Combined Total:</span>
-                  <span className={`value total highlight ${isOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                  <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
                     {formatCurrency(breakdown.totalCombined)}
-                    {isOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                    {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
                   </span>
                 </div>
               </>
             ) : (
-              <div className="optimize-contribution-item">
+              <div className="contributions-contribution-item">
                 <span className="label">Annual Total:</span>
-                <span className={`value total highlight ${isOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
                   {formatCurrency(breakdown.total)}
-                  {isOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                  {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
                 </span>
               </div>
             )}
@@ -943,23 +945,23 @@ const Optimize = () => {
             {/* IRS Limit */}
             {breakdown.limit && (
               <>
-                <div className="optimize-contribution-header">IRS Annual Limit</div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-header">IRS Annual Limit</div>
+                <div className="contributions-contribution-item">
                   <span className="label">Annual Limit:</span>
                   <span className="value">{formatCurrency(breakdown.limit)}</span>
                 </div>
-                <div className="optimize-contribution-item">
+                <div className="contributions-contribution-item">
                   <span className="label">{breakdown.remaining < 0 ? 'Over Contributed:' : 'Remaining Room:'}</span>
-                  <span className={`value ${breakdown.remaining > 0 ? 'opportunity' : breakdown.remaining < 0 ? 'optimize-limit-exceeded' : 'maxed'}`}>
+                  <span className={`value ${breakdown.remaining > 0 ? 'opportunity' : breakdown.remaining < 0 ? 'contributions-limit-exceeded' : 'maxed'}`}>
                     {breakdown.remaining < 0 ? formatCurrency(Math.abs(breakdown.remaining)) : formatCurrency(breakdown.remaining)}
-                    {breakdown.remaining < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                    {breakdown.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
                   </span>
                 </div>
                 
                 {/* Required to Max Out */}
                 {breakdown.remaining > 0 && (
                   <>
-                    <div className="optimize-contribution-header">Required to Max Out</div>
+                    <div className="contributions-contribution-header">Required to Max Out</div>
                     {(() => {
                       // Use appropriate max out amounts based on calculation mode
                       const maxOutData = calculationMode === 'ytd' ? person.maxOutAmounts : person.standardMaxOutAmounts;
@@ -970,24 +972,24 @@ const Optimize = () => {
                         <>
                           {accountType === 'k401' && (
                             <>
-                              <div className="optimize-contribution-item">
+                              <div className="contributions-contribution-item">
                                 <span className="label">Per Paycheck (Dollar):</span>
                                 <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.k401_perPaycheck.amount))}</span>
                               </div>
-                              <div className="optimize-contribution-item">
+                              <div className="contributions-contribution-item">
                                 <span className="label">Per Paycheck (Percent):</span>
                                 <span className="value opportunity">{Math.max(0, maxOutData.k401_perPaycheck.percent).toFixed(1)}%</span>
                               </div>
                             </>
                           )}
                           {accountType === 'ira' && (
-                            <div className="optimize-contribution-item">
+                            <div className="contributions-contribution-item">
                               <span className="label">Per Month:</span>
                               <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.ira_perMonth))}</span>
                             </div>
                           )}
                           {accountType === 'hsa' && (
-                            <div className="optimize-contribution-item">
+                            <div className="contributions-contribution-item">
                               <span className="label">Per Paycheck:</span>
                               <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.hsa_perPaycheck))}</span>
                             </div>
@@ -1005,29 +1007,41 @@ const Optimize = () => {
     };
 
     return (
-      <div className="optimize-person-card">
+      <div className="contributions-person-card">
         <h3>{person.name}</h3>
-        <div className="optimize-person-details">
-          <div className="optimize-salary">
+        <div className="contributions-person-details">
+          <div className="contributions-salary">
             <strong>Annual Salary:</strong> {formatCurrency(person.salary)}
           </div>
           {person.effectiveAGI !== person.salary && (
-            <div className="optimize-effective-agi">
+            <div className="contributions-effective-agi">
               <strong>Effective AGI (YTD + Projected):</strong> {formatCurrency(person.effectiveAGI)}
             </div>
           )}
-          <div className="optimize-age">
+          <div className="contributions-age">
             <strong>Age:</strong> {person.age}
           </div>
         </div>
 
-        <div className="optimize-contributions">
-          {/* Side by side comparison */}
-          <div className="optimize-person-comparison">
-            {/* Standard Calculation */}
-            <div className="optimize-person-column">
-              <h4 className="person-calculation-header standard">Standard Calculation</h4>
-              {person.standardBreakdown ? (
+        <div className="contributions-contributions">
+          <div className="contributions-person-comparison">
+            <div className="contributions-person-tab-navigation">
+              <button 
+                className={`contributions-person-tab-button ${activePersonTab === 'standard' ? 'active' : ''}`}
+                onClick={() => setActivePersonTab('standard')}
+              >
+                📊 Annual Settings View
+              </button>
+              <button 
+                className={`contributions-person-tab-button ${activePersonTab === 'ytd' ? 'active' : ''}`}
+                onClick={() => setActivePersonTab('ytd')}
+              >
+                📈 Progress + Forecast View
+              </button>
+            </div>
+            
+            <div className="contributions-person-tab-content">
+              {activePersonTab === 'standard' && person.standardBreakdown && (
                 <>
                   <ContributionBreakdown
                     accountType="k401"
@@ -1066,20 +1080,21 @@ const Optimize = () => {
                     />
                   )}
                 </>
-              ) : (
-                <div className="optimize-contribution-section">
-                  <h4>No standard data</h4>
+              )}
+              
+              {activePersonTab === 'standard' && !person.standardBreakdown && (
+                <div className="contributions-contribution-section">
+                  <h4>📊 No annual settings data available</h4>
                 </div>
               )}
-            </div>
 
-            {/* YTD + Projected Calculation */}
-            <div className="optimize-person-column">
-              <h4 className="person-calculation-header ytd">YTD + Projected Calculation</h4>
-              <div className="optimize-calculation-note">
-                <small>📅 Projected contributions start from next month</small>
-              </div>
-              {person.ytdBreakdown ? (
+              {activePersonTab === 'ytd' && (
+                <div className="contributions-calculation-note">
+                  <small>📈 Shows actual YTD contributions + projected remaining at current settings</small>
+                </div>
+              )}
+              
+              {activePersonTab === 'ytd' && person.ytdBreakdown && (
                 <>
                   <ContributionBreakdown
                     accountType="k401"
@@ -1118,9 +1133,11 @@ const Optimize = () => {
                     />
                   )}
                 </>
-              ) : (
-                <div className="optimize-contribution-section">
-                  <h4>No YTD data available</h4>
+              )}
+              
+              {activePersonTab === 'ytd' && !person.ytdBreakdown && (
+                <div className="contributions-contribution-section">
+                  <h4>📈 No progress data available</h4>
                 </div>
               )}
             </div>
@@ -1132,157 +1149,165 @@ const Optimize = () => {
 
 
   return (
-    <div className="optimize-container">
+    <div className="contributions-container">
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <div className="optimize-header-icon">⚡</div>
-          <h1>Optimize Your Contributions</h1>
-          <p>Analyze your current contribution strategy and identify optimization opportunities</p>
+          <div className="contributions-header-icon">⚡</div>
+          <h1>Analyze Your Contributions</h1>
+          <p>Analyze your current contribution strategy and identify improvement opportunities</p>
           
-          <p>Compare standard calculations with YTD + projected calculations side by side</p>
+          <p>Compare your Annual Settings View (full-year projections) with Progress + Forecast View (actual contributions + remaining forecast)</p>
         </div>
 
         {/* Household Summary */}
-        <div className="optimize-summary-card">
-          <h2>Household Summary - Side by Side Comparison</h2>
+        <div className="contributions-summary-card">
+          <h2>Household Summary</h2>
           
-          <div className="optimize-comparison-container">
-            {/* Standard Calculation */}
-            <div className="optimize-calculation-column">
-              <h3 className="calculation-header standard">Standard Calculation</h3>
-              <HouseholdBreakdownSection breakdownData={householdTotals.standardBreakdown} annualTotals={householdTotals.standardAnnualTotals} />
+          <div className="contributions-comparison-container">
+            <div className="contributions-tab-navigation">
+              <button 
+                className={`contributions-tab-button ${activeTab === 'standard' ? 'active' : ''}`}
+                onClick={() => setActiveTab('standard')}
+              >
+                📊 Annual Settings View
+              </button>
+              <button 
+                className={`contributions-tab-button ${activeTab === 'ytd' ? 'active' : ''}`}
+                onClick={() => setActiveTab('ytd')}
+              >
+                📈 Progress + Forecast View
+              </button>
             </div>
-
-            {/* YTD + Projected Calculation */}
-            <div className="optimize-calculation-column">
-              <h3 className="calculation-header ytd">YTD + Projected Calculation</h3>
-              <div className="optimize-calculation-note">
-                <small>📅 Projected contributions start from next month</small>
-              </div>
-              <HouseholdBreakdownSection breakdownData={householdTotals.ytdBreakdown} annualTotals={householdTotals.ytdAnnualTotals} />
+            
+            <div className="contributions-tab-content">
+              {activeTab === 'standard' && (
+                <div className="contributions-calculation-column">
+                  <h3 className="calculation-header standard">Annual Settings View</h3>
+                  <HouseholdBreakdownSection breakdownData={householdTotals.standardBreakdown} annualTotals={householdTotals.standardAnnualTotals} />
+                </div>
+              )}
+              
+              {activeTab === 'ytd' && (
+                <div className="contributions-calculation-column">
+                  <h3 className="calculation-header ytd">Progress + Forecast View</h3>
+                  <div className="contributions-calculation-note">
+                    <small>📈 Shows actual YTD contributions + projected remaining at current settings</small>
+                  </div>
+                  <HouseholdBreakdownSection breakdownData={householdTotals.ytdBreakdown} annualTotals={householdTotals.ytdAnnualTotals} />
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Optimization Analysis - Side by Side Comparison */}
-          <div className="optimize-opportunities">
-            <h3>Optimization Analysis - Side by Side Comparison</h3>
-            <div className="optimize-comparison-container">
-              {/* Standard Calculation Opportunities */}
-              <div className="optimize-calculation-column">
-                <h4 className="calculation-header standard">Standard Calculation</h4>
-                <div className="optimize-opportunities-grid">
+          {/* Contribution Analysis */}
+          <div className="contributions-opportunities">
+            <h3>🎯 Contribution Analysis</h3>
+            <div className="contributions-opportunities-grid">
+              {activeTab === 'standard' && (
+                <>
                   {householdTotals.remaining401k !== 0 && (
-                    <div className="optimize-opportunity">
+                    <div className="contributions-opportunity">
                       <span className="label">
-                        {householdTotals.remaining401k > 0 ? 'Additional 401(k) room:' : '401(k) Over Contributed:'}
+                        {householdTotals.remaining401k > 0 ? '💰 Additional 401(k) room:' : '⚠️ 401(k) Over Contributed:'}
                       </span>
-                      <span className={`value ${householdTotals.remaining401k > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                      <span className={`value ${householdTotals.remaining401k > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
                         {formatCurrency(Math.abs(householdTotals.remaining401k))}
-                        {householdTotals.remaining401k < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                        {householdTotals.remaining401k < 0 && <span className="contributions-warning-icon">⚠️</span>}
                       </span>
                     </div>
                   )}
                   {householdTotals.remainingIra !== 0 && (
-                    <div className="optimize-opportunity">
+                    <div className="contributions-opportunity">
                       <span className="label">
-                        {householdTotals.remainingIra > 0 ? 'Additional IRA room:' : 'IRA Over Contributed:'}
+                        {householdTotals.remainingIra > 0 ? '💰 Additional IRA room:' : '⚠️ IRA Over Contributed:'}
                       </span>
-                      <span className={`value ${householdTotals.remainingIra > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                      <span className={`value ${householdTotals.remainingIra > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
                         {formatCurrency(Math.abs(householdTotals.remainingIra))}
-                        {householdTotals.remainingIra < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                        {householdTotals.remainingIra < 0 && <span className="contributions-warning-icon">⚠️</span>}
                       </span>
                     </div>
                   )}
                   {householdTotals.remainingHsa !== 0 && (
-                    <div className="optimize-opportunity">
+                    <div className="contributions-opportunity">
                       <span className="label">
-                        {householdTotals.remainingHsa > 0 ? 'Additional HSA room:' : 'HSA Over Contributed:'}
+                        {householdTotals.remainingHsa > 0 ? '💰 Additional HSA room:' : '⚠️ HSA Over Contributed:'}
                       </span>
-                      <span className={`value ${householdTotals.remainingHsa > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                      <span className={`value ${householdTotals.remainingHsa > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
                         {formatCurrency(Math.abs(householdTotals.remainingHsa))}
-                        {householdTotals.remainingHsa < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                        {householdTotals.remainingHsa < 0 && <span className="contributions-warning-icon">⚠️</span>}
                       </span>
                     </div>
                   )}
+                </>
+              )}
+              
+              {activeTab === 'ytd' && householdTotals.ytdBreakdown && (
+                <>
+                  {(() => {
+                    const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
+                    const ytdRemaining401k = people.reduce((sum, p) => sum + (p.ytdBreakdown?.k401?.remaining || 0), 0);
+                    const ytdRemainingIra = people.reduce((sum, p) => {
+                      const isJoint = p.accountTypes && p.accountTypes.ira === 'Joint';
+                      if (isJoint && people.length > 1) {
+                        return (p.ytdBreakdown?.ira?.remaining || 0) * people.length;
+                      }
+                      return sum + (p.ytdBreakdown?.ira?.remaining || 0);
+                    }, 0);
+                    const ytdRemainingHsa = people.reduce((sum, p) => sum + (p.ytdBreakdown?.hsa?.remaining || 0), 0);
+                    
+                    return (
+                      <>
+                        {ytdRemaining401k !== 0 && (
+                          <div className="contributions-opportunity">
+                            <span className="label">
+                              {ytdRemaining401k > 0 ? '💰 Additional 401(k) room:' : '⚠️ 401(k) Over Contributed:'}
+                            </span>
+                            <span className={`value ${ytdRemaining401k > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
+                              {formatCurrency(Math.abs(ytdRemaining401k))}
+                              {ytdRemaining401k < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                            </span>
+                          </div>
+                        )}
+                        {ytdRemainingIra !== 0 && (
+                          <div className="contributions-opportunity">
+                            <span className="label">
+                              {ytdRemainingIra > 0 ? '💰 Additional IRA room:' : '⚠️ IRA Over Contributed:'}
+                            </span>
+                            <span className={`value ${ytdRemainingIra > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
+                              {formatCurrency(Math.abs(ytdRemainingIra))}
+                              {ytdRemainingIra < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                            </span>
+                          </div>
+                        )}
+                        {ytdRemainingHsa !== 0 && (
+                          <div className="contributions-opportunity">
+                            <span className="label">
+                              {ytdRemainingHsa > 0 ? '💰 Additional HSA room:' : '⚠️ HSA Over Contributed:'}
+                            </span>
+                            <span className={`value ${ytdRemainingHsa > 0 ? 'opportunity' : 'contributions-limit-exceeded'}`}>
+                              {formatCurrency(Math.abs(ytdRemainingHsa))}
+                              {ytdRemainingHsa < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                            </span>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
+                </>
+              )}
+              
+              {activeTab === 'ytd' && !householdTotals.ytdBreakdown && (
+                <div className="contributions-opportunity">
+                  <span className="label">📈 No progress data available</span>
                 </div>
-              </div>
-
-              {/* YTD + Projected Calculation Opportunities */}
-              <div className="optimize-calculation-column">
-                <h4 className="calculation-header ytd">YTD + Projected Calculation</h4>
-                <div className="optimize-calculation-note">
-                  <small>📅 Projected contributions start from next month</small>
-                </div>
-                <div className="optimize-opportunities-grid">
-                  {householdTotals.ytdBreakdown && (
-                    <>
-                      {/* Calculate YTD remaining values */}
-                      {(() => {
-                        const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
-                        const ytdRemaining401k = people.reduce((sum, p) => sum + (p.ytdBreakdown?.k401?.remaining || 0), 0);
-                        const ytdRemainingIra = people.reduce((sum, p) => {
-                          const isJoint = p.accountTypes && p.accountTypes.ira === 'Joint';
-                          if (isJoint && people.length > 1) {
-                            return (p.ytdBreakdown?.ira?.remaining || 0) * people.length;
-                          }
-                          return sum + (p.ytdBreakdown?.ira?.remaining || 0);
-                        }, 0);
-                        const ytdRemainingHsa = people.reduce((sum, p) => sum + (p.ytdBreakdown?.hsa?.remaining || 0), 0);
-                        
-                        return (
-                          <>
-                            {ytdRemaining401k !== 0 && (
-                              <div className="optimize-opportunity">
-                                <span className="label">
-                                  {ytdRemaining401k > 0 ? 'Additional 401(k) room:' : '401(k) Over Contributed:'}
-                                </span>
-                                <span className={`value ${ytdRemaining401k > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
-                                  {formatCurrency(Math.abs(ytdRemaining401k))}
-                                  {ytdRemaining401k < 0 && <span className="optimize-warning-icon">⚠️</span>}
-                                </span>
-                              </div>
-                            )}
-                            {ytdRemainingIra !== 0 && (
-                              <div className="optimize-opportunity">
-                                <span className="label">
-                                  {ytdRemainingIra > 0 ? 'Additional IRA room:' : 'IRA Over Contributed:'}
-                                </span>
-                                <span className={`value ${ytdRemainingIra > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
-                                  {formatCurrency(Math.abs(ytdRemainingIra))}
-                                  {ytdRemainingIra < 0 && <span className="optimize-warning-icon">⚠️</span>}
-                                </span>
-                              </div>
-                            )}
-                            {ytdRemainingHsa !== 0 && (
-                              <div className="optimize-opportunity">
-                                <span className="label">
-                                  {ytdRemainingHsa > 0 ? 'Additional HSA room:' : 'HSA Over Contributed:'}
-                                </span>
-                                <span className={`value ${ytdRemainingHsa > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
-                                  {formatCurrency(Math.abs(ytdRemainingHsa))}
-                                  {ytdRemainingHsa < 0 && <span className="optimize-warning-icon">⚠️</span>}
-                                </span>
-                              </div>
-                            )}
-                          </>
-                        );
-                      })()}
-                    </>
-                  )}
-                  {!householdTotals.ytdBreakdown && (
-                    <div className="optimize-opportunity">
-                      <span className="label">No YTD data available</span>
-                    </div>
-                  )}
-                </div>
-              </div>
+              )}
             </div>
           </div>
         </div>
 
         {/* Individual Breakdown */}
-        <div className="optimize-individuals">
+        <div className="contributions-individuals">
           <PersonContributionCard person={contributionMetrics.your} />
           {contributionMetrics.spouse && (
             <PersonContributionCard person={contributionMetrics.spouse} />
@@ -1290,7 +1315,7 @@ const Optimize = () => {
         </div>
 
         {/* Action Button */}
-        <div className="optimize-actions">
+        <div className="contributions-actions">
           <button 
             className="btn btn-primary"
             onClick={handleNavigateToPaycheck}
@@ -1303,4 +1328,4 @@ const Optimize = () => {
   );
 };
 
-export default Optimize;
+export default Contributions;
