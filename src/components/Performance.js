@@ -10,7 +10,6 @@ import {
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
-import DataAccuracyTracker from './DataAccuracyTracker';
 import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
 const Performance = () => {
@@ -167,7 +166,7 @@ const Performance = () => {
         name: 'financial',
         title: '💰 Financial Data',
         fields: [
-          { name: 'balance', label: 'Balance', format: 'currency', className: 'currency' },
+          { name: 'balance', label: 'Balance', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
           { name: 'contributions', label: 'Contributions', format: 'currency', className: 'currency' },
           { name: 'employerMatch', label: 'Employer Match', format: 'currency', className: 'currency' },
           { name: 'gains', label: 'Gains/Losses', format: 'currency', className: 'currency' },
@@ -187,7 +186,6 @@ const Performance = () => {
           <p>Track Investment Account Performance and Returns</p>
         </div>
 
-        <DataAccuracyTracker />
         
         <DataManager
           title="Performance Data"

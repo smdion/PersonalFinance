@@ -385,7 +385,7 @@ const Welcome = () => {
             <div className="calculator-card">
               <Link to="/other-assets" className="calculator-link">
                 <div className="calculator-icon">🏠</div>
-                <h3>Other Assets Tracker</h3>
+                <h3>Assets Tracker</h3>
                 <p>
                   Track and manage your non-investment assets including homes, vehicles, jewelry, and collectibles. 
                   Input current market values to maintain accurate net worth calculations with organized asset categories.
@@ -600,7 +600,7 @@ const Welcome = () => {
                 Update Portfolio Values
               </Link>
               <Link to="/other-assets" className="quick-start-button secondary">
-                Track Other Assets
+                Track Assets
               </Link>
               <Link to="/liabilities" className="quick-start-button secondary">
                 Track Liabilities

@@ -276,10 +276,12 @@
   font-size: 1.1rem;
   min-width: 1.5rem;
   text-align: center;
+  pointer-events: none;
 }
 
 .menu-item-label {
   flex: 1;
+  pointer-events: none;
 }
 
 /* Hamburger Menu Folders */

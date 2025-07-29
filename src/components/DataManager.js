@@ -1502,9 +1502,13 @@ const DataManager = ({
   const renderTableCell = (entry, field, rowKey) => {
     const fieldConfig = schema.sections.flatMap(s => s.fields).find(f => f.name === field);
     const value = entry[field];
+    const currentYear = new Date().getFullYear();
+    const isCurrentYear = entry.year === currentYear;
+    const isReadonly = fieldConfig?.readonly && isCurrentYear;
 
     if (
       allowEdit &&
+      !isReadonly &&
       editingCell &&
       editingCell.rowKey === rowKey &&
       editingCell.section === 'combined' &&
@@ -1539,13 +1543,22 @@ const DataManager = ({
       displayValue = value || '';
     }
 
+    const canEdit = allowEdit && !isReadonly;
+    const lockedMessage = isReadonly && fieldConfig?.lockedBy ? 
+      `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (current year only)` : 
+      (canEdit ? 'Click to edit' : undefined);
+
     return (
       <span
-        onClick={() => startEditCell(rowKey, 'combined', field)}
-        style={allowEdit ? { cursor: 'pointer' } : undefined}
-        title={allowEdit ? 'Click to edit' : undefined}
+        onClick={canEdit ? () => startEditCell(rowKey, 'combined', field) : undefined}
+        style={{
+          cursor: canEdit ? 'pointer' : (isReadonly ? 'not-allowed' : 'default'),
+          opacity: isReadonly ? 0.7 : 1,
+          color: isReadonly ? '#6b7280' : 'inherit'
+        }}
+        title={lockedMessage}
       >
-        {displayValue}
+        {isReadonly && '🔒 '}{displayValue}
       </span>
     );
   };
@@ -1556,10 +1569,14 @@ const DataManager = ({
     const fieldConfig = userSection?.fields.find(f => f.name === field);
     // Fix: Only access entry.users[userName] if it exists
     const value = entry.users && entry.users[userName] ? entry.users[userName][field] : undefined;
+    const currentYear = new Date().getFullYear();
+    const isCurrentYear = entry.year === currentYear;
+    const isReadonly = fieldConfig?.readonly && isCurrentYear;
 
     // Spreadsheet-like: if this cell is being edited, show input
     if (
       allowEdit &&
+      !isReadonly &&
       editingCell &&
       editingCell.rowKey === rowKey &&
       editingCell.section === 'users' &&
@@ -1586,13 +1603,22 @@ const DataManager = ({
     else if (fieldConfig.format === 'percentage') displayValue = `${((value || 0) * 100).toFixed(2)}%`;
     else displayValue = value || '-';
 
+    const canEdit = allowEdit && !isReadonly;
+    const lockedMessage = isReadonly && fieldConfig?.lockedBy ? 
+      `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (current year only)` : 
+      (canEdit ? 'Click to edit' : undefined);
+
     return (
       <span
-        onClick={() => startEditCell(rowKey, 'users', field, userName)}
-        style={allowEdit ? { cursor: 'pointer' } : undefined}
-        title={allowEdit ? 'Click to edit' : undefined}
+        onClick={canEdit ? () => startEditCell(rowKey, 'users', field, userName) : undefined}
+        style={{
+          cursor: canEdit ? 'pointer' : (isReadonly ? 'not-allowed' : 'default'),
+          opacity: isReadonly ? 0.7 : 1,
+          color: isReadonly ? '#6b7280' : 'inherit'
+        }}
+        title={lockedMessage}
       >
-        {displayValue}
+        {isReadonly && '🔒 '}{displayValue}
       </span>
     );
   };

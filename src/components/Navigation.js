@@ -24,7 +24,7 @@ const Navigation = () => {
       label: 'Data',
       icon: '📊',
       items: [
-        { path: '/other-assets', label: 'Other Assets', icon: '🏠' },
+        { path: '/other-assets', label: 'Assets', icon: '🏠' },
         { path: '/liabilities', label: 'Liabilities', icon: '💳' },
         { path: '/portfolio', label: 'Portfolio', icon: '📈' },
         { path: '/historical', label: 'Historical', icon: '📋' },
@@ -47,17 +47,30 @@ const Navigation = () => {
     return navFolders.flatMap(folder => folder.items);
   };
 
-  // Toggle folder open/closed state
+  // Toggle folder open/closed state - only allow one folder open at a time
   const toggleFolder = (folderLabel) => {
-    setOpenFolders(prev => ({
-      ...prev,
-      [folderLabel]: !prev[folderLabel]
-    }));
+    setOpenFolders(prev => {
+      const isCurrentlyOpen = prev[folderLabel];
+      
+      // If clicking on the currently open folder, close it
+      if (isCurrentlyOpen) {
+        return {};
+      }
+      
+      // Otherwise, close all folders and open only the clicked one
+      return { [folderLabel]: true };
+    });
   };
 
   // Handle click outside to close menus
   useEffect(() => {
     const handleClickOutside = (event) => {
+      // Don't close menus if clicking on navigation links - let them navigate first
+      if (event.target.classList.contains('hamburger-menu-item') || 
+          event.target.closest('.hamburger-menu-item')) {
+        return;
+      }
+      
       if (settingsMenuRef.current && !settingsMenuRef.current.contains(event.target)) {
         setShowSettingsMenu(false);
       }
@@ -281,15 +294,18 @@ const Navigation = () => {
                       {openFolders[folder.label] && (
                         <div className="hamburger-folder-items">
                           {folder.items.map((item) => (
-                            <Link
+                            <a
                               key={item.path}
-                              to={item.path}
+                              href={item.path}
                               className={`hamburger-menu-item ${location.pathname === item.path ? 'active' : ''}`}
-                              onClick={() => setShowHamburgerMenu(false)}
+                              onClick={() => {
+                                setShowHamburgerMenu(false);
+                                setOpenFolders({});
+                              }}
                             >
                               <span className="menu-item-icon">{item.icon}</span>
                               <span className="menu-item-label">{item.label}</span>
-                            </Link>
+                            </a>
                           ))}
                         </div>
                       )}

@@ -11,7 +11,7 @@ import NetWorth from './components/NetWorth';
 import Savings from './components/Savings';
 import Optimize from './components/Optimize';
 import Retirement from './components/Retirement';
-import OtherAssets from './components/OtherAssets';
+import Assets from './components/Assets';
 import Liabilities from './components/Liabilities';
 
 function App() {
@@ -29,7 +29,7 @@ function App() {
             <Route path="/performance" element={<Performance />} />
             <Route path="/networth" element={<NetWorth />} />
             <Route path="/retirement" element={<Retirement />} />
-            <Route path="/other-assets" element={<OtherAssets />} />
+            <Route path="/other-assets" element={<Assets />} />
             <Route path="/liabilities" element={<Liabilities />} />
             <Route path="/portfolio" element={<Portfolio />} />
           </Routes>

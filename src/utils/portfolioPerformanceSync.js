@@ -89,31 +89,6 @@ export const findMatchingPerformanceAccount = (portfolioAccount, performanceAcco
     portfolioDescription
   );
   
-  // Debug logging for matching
-  console.log('🔍 PORTFOLIO SYNC DEBUG - Finding match for portfolio account:', {
-    portfolioAccount: {
-      owner: portfolioAccount.owner,
-      accountType: portfolioAccount.accountType,
-      investmentCompany: portfolioAccount.investmentCompany,
-      description: portfolioAccount.description,
-      amount: portfolioAccount.amount
-    },
-    normalized: {
-      portfolioType,
-      portfolioCompany,
-      portfolioOwner,
-      portfolioDescription,
-      targetOwner,
-      expectedAccountName
-    },
-    availablePerformanceAccounts: performanceAccounts.map(acc => ({
-      owner: acc.owner,
-      accountName: acc.accountName,
-      accountType: acc.accountType,
-      investmentCompany: acc.investmentCompany
-    })),
-    totalPerformanceAccounts: performanceAccounts.length
-  });
   
   // Find best match from performance accounts
   // Priority 1: Try exact account name match first (includes description)
@@ -123,12 +98,6 @@ export const findMatchingPerformanceAccount = (portfolioAccount, performanceAcco
     
     // Check for exact account name match with correct owner
     if (perfAccountName === expectedAccountName && perfOwner === targetOwner.toLowerCase()) {
-      console.log('✅ MATCH FOUND (exact account name):', {
-        matchedAccount: perfAccount,
-        reason: 'exact account name match including description',
-        expectedAccountName,
-        actualAccountName: perfAccountName
-      });
       return perfAccount;
     }
   }
@@ -150,10 +119,6 @@ export const findMatchingPerformanceAccount = (portfolioAccount, performanceAcco
       
       // Only match if no description is provided (to avoid conflicts with exact name matching)
       if (typeMatch && !portfolioDescription) {
-        console.log('✅ MATCH FOUND (fallback):', {
-          matchedAccount: perfAccount,
-          reason: 'owner + type match (empty investment company fallback, no description)'
-        });
         return perfAccount;
       }
     } else {
@@ -163,30 +128,8 @@ export const findMatchingPerformanceAccount = (portfolioAccount, performanceAcco
       
       // All three must match and no description provided for a valid component-based match
       if (typeMatch && companyMatch && ownerMatch && !portfolioDescription) {
-        console.log('✅ MATCH FOUND (component-based):', {
-          matchedAccount: perfAccount,
-          reason: 'exact match on owner + type + company (no description)'
-        });
         return perfAccount;
       }
-      
-      console.log('❌ No match for this performance account:', {
-        perfAccount: {
-          owner: perfOwner,
-          accountType: perfType,
-          investmentCompany: perfCompany,
-          accountName: perfAccount.accountName
-        },
-        portfolioTarget: {
-          targetOwner: targetOwner,
-          portfolioType: portfolioType,
-          portfolioCompany: portfolioCompany,
-          portfolioDescription: portfolioDescription,
-          expectedAccountName: expectedAccountName
-        },
-        matches: { ownerMatch, typeMatch, companyMatch },
-        hasDescription: !!portfolioDescription
-      });
     }
   }
   
@@ -225,31 +168,17 @@ export const findPerformanceAccountByName = (accountName, performanceAccounts) =
 
 // Sync portfolio balance updates to performance using manual account groups
 export const syncPortfolioBalanceToPerformance = (portfolioData) => {
-  console.log('🚀 STARTING MANUAL PORTFOLIO → PERFORMANCE SYNC');
-  console.log('📦 Portfolio data to sync:', portfolioData.map(acc => ({
-    id: acc.id,
-    owner: acc.owner,
-    accountType: acc.accountType,
-    investmentCompany: acc.investmentCompany,
-    amount: acc.amount,
-    accountName: acc.accountName
-  })));
   
   const performanceData = getPerformanceData();
   const manualGroups = getManualAccountGroups();
   const currentYear = new Date().getFullYear();
   let hasChanges = false;
   
-  console.log('📋 Manual account groups:', Object.keys(manualGroups).length, 'groups found');
-  
   // Get ALL existing performance accounts from ALL current year entries for matching
   const existingPerformanceAccounts = [];
   const currentYearEntries = Object.entries(performanceData).filter(([_, entry]) => entry.year === currentYear);
   
-  console.log('📋 Found current year entries:', currentYearEntries.length);
-  
   currentYearEntries.forEach(([entryId, entry]) => {
-    console.log('📊 Processing entry:', { entryId, year: entry.year });
     Object.entries(entry.users || {}).forEach(([owner, userData]) => {
       // Include accounts that have accountType (even if accountName is empty)
       if (userData.accountType) {
@@ -263,16 +192,6 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
           entry: entry       // Reference to the parent entry
         };
         existingPerformanceAccounts.push(perfAccount);
-        console.log('  📌 Found account:', {
-          owner,
-          accountName: userData.accountName || '',
-          generatedAccountName: userData.generatedAccountName || '',
-          accountType: userData.accountType,
-          investmentCompany: userData.investmentCompany || '',
-          entryId,
-          hasEmptyName: !userData.accountName,
-          rawUserData: userData
-        });
       }
     });
   });
@@ -293,12 +212,9 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
   
   // If no manual groups exist, handle ungrouped accounts individually (fallback behavior)
   if (Object.keys(manualGroups).length === 0) {
-    console.log('⚠️ No manual groups found. Processing individual accounts as fallback.');
-    
     // Process each portfolio account individually
     portfolioData.forEach((account) => {
       if (!account.accountName || !account.accountType || !account.owner || !account.amount) {
-        console.log('⚠️ Skipping incomplete account:', account);
         return;
       }
       
@@ -307,21 +223,12 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
       
       if (matchingPerfAccount) {
         // Update existing performance account balance
-        console.log('🔄 UPDATING INDIVIDUAL ACCOUNT:', {
-          portfolioAccount: account.accountName,
-          performanceAccount: matchingPerfAccount.accountName,
-          oldBalance: matchingPerfAccount.userData.balance,
-          newBalance: parseFloat(account.amount)
-        });
-        
         matchingPerfAccount.userData.balance = parseFloat(account.amount);
         matchingPerfAccount.userData.balanceUpdatedFrom = 'portfolio-individual';
         matchingPerfAccount.userData.balanceUpdatedAt = new Date().toISOString();
         hasChanges = true;
       } else {
         // Create new performance account entry for ungrouped account
-        console.log('➕ CREATING NEW INDIVIDUAL ACCOUNT:', account.accountName);
-        
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         const newPerformanceEntry = {
           entryId: newEntryId,
@@ -352,15 +259,7 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
     const updatedGroups = { ...manualGroups };
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
-      console.log('📊 Processing manual group:', {
-        groupId,
-        groupName: group.name,
-        performanceAccountName: group.performanceAccountName,
-        portfolioAccountCount: group.portfolioAccounts.length
-      });
-      
       if (!group.performanceAccountName) {
-        console.log('⚠️ Skipping group without Performance account:', group.name);
         return;
       }
       
@@ -381,14 +280,6 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
       
       if (targetPerfAccount) {
         // Update existing Performance account balance
-        console.log('🔄 UPDATING MANUAL GROUP BALANCE:', {
-          groupName: group.name,
-          performanceAccount: group.performanceAccountName,
-          oldBalance: targetPerfAccount.userData.balance,
-          newBalance: totalBalance,
-          accountsInGroup: group.portfolioAccounts.length
-        });
-        
         const oldBalance = targetPerfAccount.userData.balance;
         targetPerfAccount.userData.balance = totalBalance;
         targetPerfAccount.userData.balanceUpdatedFrom = 'portfolio-manual-group';
@@ -398,13 +289,6 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
         hasChanges = true;
       } else {
         // Create new Performance account for this manual group
-        console.log('➕ CREATING NEW PERFORMANCE ACCOUNT FOR GROUP:', {
-          groupName: group.name,
-          performanceAccountName: group.performanceAccountName,
-          totalBalance,
-          owner: group.owner
-        });
-        
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         const newPerformanceEntry = {
           entryId: newEntryId,
@@ -459,14 +343,6 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
   // Summary of what happened
   const manualGroupCount = Object.keys(manualGroups).length;
   const portfolioAccountCount = portfolioData.length;
-  
-  console.log('📊 MANUAL SYNC SUMMARY:', {
-    portfolioAccountsProcessed: portfolioAccountCount,
-    manualGroupsProcessed: manualGroupCount,
-    hasChanges,
-    year: currentYear,
-    syncMethod: manualGroupCount > 0 ? 'manual-groups' : 'individual-fallback'
-  });
 
   return {
     hasChanges,

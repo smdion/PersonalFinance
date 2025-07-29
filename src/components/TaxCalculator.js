@@ -3,7 +3,7 @@ import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, updateNameMapping } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToHistorical } from '../utils/localStorage';
 import Navigation from './Navigation';
 
 const TaxCalculator = () => {
@@ -114,6 +114,9 @@ const TaxCalculator = () => {
   const [budgetImpacting, setBudgetImpacting] = useState(emptyDefaults.your.budgetImpacting);
   const [bonusMultiplier, setBonusMultiplier] = useState(emptyDefaults.your.bonusMultiplier);
   const [bonusTarget, setBonusTarget] = useState(emptyDefaults.your.bonusTarget);
+  const [overrideBonus, setOverrideBonus] = useState('');
+  const [remove401kFromBonus, setRemove401kFromBonus] = useState(false);
+  const [effectiveBonus, setEffectiveBonus] = useState(0);
   const [results, setResults] = useState(null);
   const [payWeekType, setPayWeekType] = useState('even');
 
@@ -132,6 +135,9 @@ const TaxCalculator = () => {
   const [spouseBudgetImpacting, setSpouseBudgetImpacting] = useState(emptyDefaults.spouse.budgetImpacting);
   const [spouseBonusMultiplier, setSpouseBonusMultiplier] = useState(emptyDefaults.spouse.bonusMultiplier);
   const [spouseBonusTarget, setSpouseBonusTarget] = useState(emptyDefaults.spouse.bonusTarget);
+  const [spouseOverrideBonus, setSpouseOverrideBonus] = useState('');
+  const [spouseRemove401kFromBonus, setSpouseRemove401kFromBonus] = useState(false);
+  const [spouseEffectiveBonus, setSpouseEffectiveBonus] = useState(0);
   const [spouseResults, setSpouseResults] = useState(null);
   const [spousePayWeekType, setSpousePayWeekType] = useState('even');
 
@@ -317,6 +323,9 @@ const TaxCalculator = () => {
           setBudgetImpacting(savedData.your.budgetImpacting || emptyDefaults.your.budgetImpacting);
           setBonusMultiplier(savedData.your.bonusMultiplier || 0);
           setBonusTarget(savedData.your.bonusTarget || 0);
+          setOverrideBonus(savedData.your.overrideBonus || '');
+          setRemove401kFromBonus(savedData.your.remove401kFromBonus || false);
+          setEffectiveBonus(savedData.your.effectiveBonus || 0);
           setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
           setPayWeekType(savedData.your.payWeekType || 'even');
         }
@@ -337,6 +346,9 @@ const TaxCalculator = () => {
           setSpouseBudgetImpacting(savedData.spouse.budgetImpacting || emptyDefaults.spouse.budgetImpacting);
           setSpouseBonusMultiplier(savedData.spouse.bonusMultiplier || 0);
           setSpouseBonusTarget(savedData.spouse.bonusTarget || 0);
+          setSpouseOverrideBonus(savedData.spouse.overrideBonus || '');
+          setSpouseRemove401kFromBonus(savedData.spouse.remove401kFromBonus || false);
+          setSpouseEffectiveBonus(savedData.spouse.effectiveBonus || 0);
           setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
           setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
         }
@@ -401,7 +413,7 @@ const TaxCalculator = () => {
       your: {
         name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
         retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
-        bonusMultiplier, bonusTarget, hsaCoverageType, payWeekType,
+        bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, payWeekType,
         netTakeHomePaycheck: results?.netTakeHomePaycheck || 0
       },
       spouse: {
@@ -410,7 +422,7 @@ const TaxCalculator = () => {
         w4Type: spouseW4Type, w4Options: spouseW4Options, retirementOptions: spouseRetirementOptions,
         medicalDeductions: spouseMedicalDeductions, esppDeductionPercent: spouseEsppDeductionPercent,
         budgetImpacting: spouseBudgetImpacting, bonusMultiplier: spouseBonusMultiplier,
-        bonusTarget: spouseBonusTarget, hsaCoverageType: spouseHsaCoverageType, payWeekType: spousePayWeekType,
+        bonusTarget: spouseBonusTarget, overrideBonus: spouseOverrideBonus, remove401kFromBonus: spouseRemove401kFromBonus, effectiveBonus: spouseEffectiveBonus, hsaCoverageType: spouseHsaCoverageType, payWeekType: spousePayWeekType,
         netTakeHomePaycheck: spouseResults?.netTakeHomePaycheck || 0
       },
       settings: {
@@ -420,6 +432,9 @@ const TaxCalculator = () => {
     
     setPaycheckData(dataToSave);
     
+    // Auto-sync salary, employer, and bonus to historical data
+    syncPaycheckToHistorical();
+    
     // Dispatch event to notify other components with delay to ensure save is complete
     setTimeout(() => {
       window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: dataToSave }));
@@ -427,11 +442,11 @@ const TaxCalculator = () => {
   }, [
     name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
     retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
-    bonusMultiplier, bonusTarget, hsaCoverageType, showSpouseCalculator, payWeekType,
+    bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, showSpouseCalculator, payWeekType,
     spouseName, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
     spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions,
     spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBudgetImpacting,
-    spouseBonusMultiplier, spouseBonusTarget, spouseHsaCoverageType, spousePayWeekType
+    spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType
     // REMOVED results and spouseResults from dependencies to prevent infinite loop
   ]);
 
@@ -463,6 +478,8 @@ const TaxCalculator = () => {
             case 'budgetImpacting': setBudgetImpacting(value); break;
             case 'bonusMultiplier': setBonusMultiplier(value); break;
             case 'bonusTarget': setBonusTarget(value); break;
+            case 'overrideBonus': setOverrideBonus(value); break;
+            case 'remove401kFromBonus': setRemove401kFromBonus(value); break;
           }
         });
         
@@ -482,6 +499,8 @@ const TaxCalculator = () => {
             case 'budgetImpacting': setSpouseBudgetImpacting(value); break;
             case 'bonusMultiplier': setSpouseBonusMultiplier(value); break;
             case 'bonusTarget': setSpouseBonusTarget(value); break;
+            case 'overrideBonus': setSpouseOverrideBonus(value); break;
+            case 'remove401kFromBonus': setSpouseRemove401kFromBonus(value); break;
           }
         });
         
@@ -557,6 +576,8 @@ const TaxCalculator = () => {
           case 'budgetImpacting': setBudgetImpacting(value); break;
           case 'bonusMultiplier': setBonusMultiplier(value); break;
           case 'bonusTarget': setBonusTarget(value); break;
+          case 'overrideBonus': setOverrideBonus(value); break;
+          case 'remove401kFromBonus': setRemove401kFromBonus(value); break;
         }
       });
       
@@ -576,6 +597,8 @@ const TaxCalculator = () => {
           case 'budgetImpacting': setSpouseBudgetImpacting(value); break;
           case 'bonusMultiplier': setSpouseBonusMultiplier(value); break;
           case 'bonusTarget': setSpouseBonusTarget(value); break;
+          case 'overrideBonus': setSpouseOverrideBonus(value); break;
+          case 'remove401kFromBonus': setSpouseRemove401kFromBonus(value); break;
         }
       });
       
@@ -707,6 +730,12 @@ const TaxCalculator = () => {
             setBonusMultiplier={setBonusMultiplier}
             bonusTarget={bonusTarget}
             setBonusTarget={setBonusTarget}
+            effectiveBonus={effectiveBonus}
+            overrideBonus={overrideBonus}
+            setOverrideBonus={setOverrideBonus}
+            remove401kFromBonus={remove401kFromBonus}
+            setRemove401kFromBonus={setRemove401kFromBonus}
+            setEffectiveBonus={setEffectiveBonus}
             payWeekType={payWeekType}
             setPayWeekType={setPayWeekType}
             hsaCoverageType={hsaCoverageType}
@@ -780,6 +809,12 @@ const TaxCalculator = () => {
               setBonusMultiplier={setSpouseBonusMultiplier}
               bonusTarget={spouseBonusTarget}
               setBonusTarget={setSpouseBonusTarget}
+              effectiveBonus={spouseEffectiveBonus}
+              overrideBonus={spouseOverrideBonus}
+              setOverrideBonus={setSpouseOverrideBonus}
+              remove401kFromBonus={spouseRemove401kFromBonus}
+              setRemove401kFromBonus={setSpouseRemove401kFromBonus}
+              setEffectiveBonus={setSpouseEffectiveBonus}
               payWeekType={spousePayWeekType}
               setPayWeekType={setSpousePayWeekType}
               hsaCoverageType={spouseHsaCoverageType}

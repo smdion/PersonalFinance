@@ -32,7 +32,10 @@ const PaycheckForm = ({
   onUpdateBrokerageAccount,
   onRemoveBrokerageAccount,
   bonusMultiplier, setBonusMultiplier, 
-  bonusTarget, setBonusTarget, 
+  bonusTarget, setBonusTarget,
+  overrideBonus, setOverrideBonus,
+  remove401kFromBonus, setRemove401kFromBonus,
+  effectiveBonus, setEffectiveBonus,
   onCalculate,
   results,
   globalSectionControl,
@@ -302,8 +305,6 @@ const PaycheckForm = ({
 
   const [isHsaOver55, setIsHsaOver55] = useState(false); // Add state for HSA age 55+ checkbox
   const [isIraOver50, setIsIraOver50] = useState(false); // Add state for IRA age 50+ checkbox
-  const [remove401kFromBonus, setRemove401kFromBonus] = useState(false); // Add state for the checkbox
-  const [overrideBonus, setOverrideBonus] = useState(''); // Add state for overriding bonus
   const [noBonusExpected, setNoBonusExpected] = useState(false); // Add state for no bonus checkbox
   const [showBudgetExplanation, setShowBudgetExplanation] = useState(false); // Add state for budget explanation
   const [showMonthlyView, setShowMonthlyView] = useState(true); // Add state for monthly/pay period toggle
@@ -331,15 +332,28 @@ const PaycheckForm = ({
     return !isNaN(overrideValue) && overrideValue > 0 ? overrideValue : calculateBonus();
   };
 
+  // Get the final bonus amount that should be saved to historical data
+  const getFinalBonusAmount = () => {
+    return remove401kFromBonus ? calculateBonusAfter401k() : getEffectiveBonus();
+  };
+
   const handleNoBonusToggle = (checked) => {
     setNoBonusExpected(checked);
     if (checked) {
       setBonusMultiplier(0);
       setBonusTarget(0);
-      setOverrideBonus('');
-      setRemove401kFromBonus(false);
+      if (setOverrideBonus) setOverrideBonus('');
+      if (setRemove401kFromBonus) setRemove401kFromBonus(false);
     }
   };
+
+  // Update effective bonus when any bonus-related values change
+  useEffect(() => {
+    if (setEffectiveBonus) {
+      const finalBonusAmount = getFinalBonusAmount();
+      setEffectiveBonus(finalBonusAmount);
+    }
+  }, [salary, bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, retirementOptions.traditional401kPercent, retirementOptions.roth401kPercent, setEffectiveBonus]);
 
   // Consolidated age-related effects
   useEffect(() => {
@@ -979,7 +993,7 @@ const PaycheckForm = ({
             title="🎁 Bonus Calculator" 
             section="bonus"
             subtitle="Expected Bonus Calculation"
-            badge={!noBonusExpected && getEffectiveBonus() > 0 ? formatCurrency(getEffectiveBonus()) : null}
+            badge={!noBonusExpected && getFinalBonusAmount() > 0 ? formatCurrency(getFinalBonusAmount()) : null}
           />
           
           {expandedSections.bonus && (
@@ -1035,7 +1049,7 @@ const PaycheckForm = ({
                       id={`overrideBonus-${personName}`}
                       className="form-input"
                       value={overrideBonus}
-                      onChange={(e) => setOverrideBonus(e.target.value)}
+                      onChange={(e) => setOverrideBonus && setOverrideBonus(e.target.value)}
                       placeholder="Enter custom bonus amount"
                     />
                   </div>
@@ -1045,7 +1059,7 @@ const PaycheckForm = ({
                       type="checkbox"
                       className="modern-checkbox"
                       checked={remove401kFromBonus}
-                      onChange={(e) => setRemove401kFromBonus(e.target.checked)}
+                      onChange={(e) => setRemove401kFromBonus && setRemove401kFromBonus(e.target.checked)}
                     />
                     <span className="form-label">Remove 401k Contributions from Bonus</span>
                   </div>

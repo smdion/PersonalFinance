@@ -602,7 +602,7 @@ const NetWorth = () => {
     const labelsWithYTD = years.map(year => {
       return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
     });
-    const categories = ['Portfolio', 'House Equity', 'Cash', 'Other Assets'];
+    const categories = ['Portfolio', 'House Equity', 'Cash', 'Assets'];
     const colors = [
       'rgba(59, 130, 246, 0.8)',
       'rgba(168, 85, 247, 0.8)',
