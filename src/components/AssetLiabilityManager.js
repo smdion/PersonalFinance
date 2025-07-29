@@ -7,6 +7,18 @@ import {
 } from '../utils/localStorage';
 import '../styles/portfolio.css';
 
+// Helper function to convert plural type to singular
+const getSingularType = (type) => {
+  if (type === 'Liabilities') {
+    return 'Liability';
+  }
+  if (type === 'Assets') {
+    return 'Asset';
+  }
+  // Default fallback (remove 's' from the end)
+  return type.slice(0, -1);
+};
+
 const AssetLiabilityManager = ({ 
   type, 
   title, 
@@ -187,7 +199,7 @@ const AssetLiabilityManager = ({
   };
 
   const deleteEntry = (index) => {
-    if (window.confirm(`Are you sure you want to delete this ${type.slice(0, -1).toLowerCase()} entry? This will permanently remove it from your records.`)) {
+    if (window.confirm(`Are you sure you want to delete this ${getSingularType(type).toLowerCase()} entry? This will permanently remove it from your records.`)) {
       const updatedInputs = inputs.filter((_, i) => i !== index);
       
       // Ensure at least one empty input remains
@@ -223,7 +235,7 @@ const AssetLiabilityManager = ({
       // Immediately save the changes to historical data
       saveUpdatedData(updatedInputs);
       
-      setSuccessMessage(`${type.slice(0, -1)} entry permanently deleted!`);
+      setSuccessMessage(`${getSingularType(type)} entry permanently deleted!`);
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
@@ -240,7 +252,7 @@ const AssetLiabilityManager = ({
     setEditingIndex(null);
     // Immediately save the changes to historical data
     saveUpdatedData(inputs);
-    setSuccessMessage(`${type.slice(0, -1)} entry updated!`);
+    setSuccessMessage(`${getSingularType(type)} entry updated!`);
     setTimeout(() => setSuccessMessage(''), 2000);
   };
 
@@ -347,7 +359,7 @@ const AssetLiabilityManager = ({
     );
 
     if (validInputs.length === 0) {
-      alert(`Please add at least one valid ${type.slice(0, -1).toLowerCase()} entry before saving.`);
+      alert(`Please add at least one valid ${getSingularType(type).toLowerCase()} entry before saving.`);
       return;
     }
 
@@ -421,7 +433,7 @@ const AssetLiabilityManager = ({
           {inputs.map((input, index) => (
             <div key={input.id} className="portfolio-input-row">
               <div className="input-header">
-                <h4>{type.slice(0, -1)} {index + 1}</h4>
+                <h4>{getSingularType(type)} {index + 1}</h4>
                 <div className="input-actions">
                   {editingIndex === index ? (
                     <>
@@ -514,7 +526,7 @@ const AssetLiabilityManager = ({
 
           <div className="form-actions">
             <button type="button" onClick={addInput} className="btn-secondary">
-              + Add Another {type.slice(0, -1)}
+              + Add Another {getSingularType(type)}
             </button>
             <button type="button" onClick={saveChanges} className="btn-primary">
               💾 Save Changes

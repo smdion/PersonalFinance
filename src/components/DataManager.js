@@ -2002,15 +2002,6 @@ const DataManager = ({
                     <option value={100}>100 per page</option>
                     <option value={200}>200 per page</option>
                   </select>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
-                    <input
-                      type="checkbox"
-                      checked={compactView}
-                      onChange={(e) => setCompactView(e.target.checked)}
-                      style={{ margin: 0 }}
-                    />
-                    <span style={{ fontSize: '0.8rem' }}>Compact view</span>
-                  </label>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <button

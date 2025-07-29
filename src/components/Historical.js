@@ -4,16 +4,18 @@ import {
   setHistoricalData, 
   STORAGE_KEYS,
   syncPaycheckToHistorical,
-  cleanupJointDataFromHistorical 
+  cleanupJointDataFromHistorical,
+  cleanupEmptyHistoricalEntries
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
 
 const Historical = () => {
-  // Sync paycheck data and cleanup joint data on component mount
+  // Sync paycheck data and cleanup on component mount
   useEffect(() => {
     syncPaycheckToHistorical();
     cleanupJointDataFromHistorical();
+    cleanupEmptyHistoricalEntries();
   }, []);
 
   // Schema configuration for DataManager
@@ -34,7 +36,7 @@ const Historical = () => {
         name: 'taxes',
         title: '💰 Tax Information',
         fields: [
-          { name: 'agi', label: 'AGI', format: 'currency', className: 'currency' },
+          { name: 'agi', label: 'AGI', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Paycheck Calculator' },
           { name: 'ssaEarnings', label: 'SSA Earnings', format: 'currency', className: 'currency' },
           { name: 'effectiveTaxRate', label: 'Effective Tax Rate', type: 'number', step: '0.001', className: 'percentage' },
           { name: 'taxPaid', label: 'Tax Paid', format: 'currency', className: 'currency' }

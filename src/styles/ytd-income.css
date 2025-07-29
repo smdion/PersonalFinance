@@ -1,0 +1,385 @@
+/* YTD Income Tracker Styles - Updated to match main form styling */
+
+.ytd-section {
+  margin: 0;
+}
+
+.ytd-section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.ytd-section h4 {
+  margin: 0;
+  font-size: 1rem;
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.ytd-empty-state {
+  padding: 24px;
+  text-align: center;
+  background: #f8fafc;
+  border: 2px dashed #e5e7eb;
+  border-radius: 12px;
+  color: #64748b;
+  font-style: italic;
+}
+
+.income-periods-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  width: 100%;
+}
+
+.income-period-card {
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  background: white;
+  width: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.income-period-card.collapsed {
+  padding: 0;
+}
+
+.income-period-card.expanded {
+  padding: 24px;
+}
+
+.income-period-card.has-errors {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.income-period-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 16px;
+  align-items: stretch;
+  width: 100%;
+  min-width: 0;
+}
+
+.income-period-field {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.income-period-field:last-child {
+  align-self: center;
+  margin-top: 10px;
+}
+
+/* Compact Summary View */
+.income-period-summary {
+  padding: 20px 24px;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  border-bottom: none;
+}
+
+.income-period-summary:hover {
+  background-color: #f8fafc;
+}
+
+.income-period-summary-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.income-period-summary-main {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex: 1;
+}
+
+.income-period-description {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.income-period-dates {
+  font-size: 0.9rem;
+  color: #64748b;
+}
+
+.income-period-salary {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #059669;
+}
+
+.income-period-toggle {
+  margin-left: 16px;
+}
+
+.toggle-icon {
+  font-size: 1.2rem;
+  color: #6b7280;
+  transition: transform 0.2s ease;
+}
+
+.income-period-summary-errors {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: #fecaca;
+  border: 1px solid #f87171;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  color: #dc2626;
+  font-weight: 500;
+}
+
+/* Expanded Edit View */
+.income-period-expanded {
+  padding-top: 16px;
+}
+
+.income-period-actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.income-period-field label {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+
+.income-period-field input {
+  padding: 16px 18px;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  font-size: 1rem;
+  transition: all 0.2s ease;
+  background: white;
+  min-width: 0;
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 50px;
+  line-height: 1.4;
+}
+
+.income-period-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.1);
+}
+
+.ytd-contributions-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+
+.ytd-contribution-field {
+  display: flex;
+  flex-direction: column;
+}
+
+.ytd-contribution-field label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.25rem;
+}
+
+.ytd-contribution-field input {
+  padding: 0.5rem;
+  border: 1px solid #d1d5db;
+  border-radius: 4px;
+  font-size: 0.875rem;
+}
+
+.ytd-contribution-field input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.ytd-contribution-display {
+  display: flex;
+  flex-direction: column;
+  padding: 0.75rem;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+}
+
+.ytd-contribution-display label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 0.5rem;
+}
+
+.ytd-value {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #059669;
+}
+
+.ytd-value.total {
+  color: #3b82f6;
+  font-size: 1.1rem;
+}
+
+.ytd-no-data {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #fef3cd;
+  border: 1px solid #fbbf24;
+  border-radius: 6px;
+  color: #92400e;
+  text-align: center;
+}
+
+.ytd-summary-section {
+  background: #f0f9ff;
+  padding: 1rem;
+  border-radius: 6px;
+  border: 1px solid #e0f2fe;
+}
+
+.ytd-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.ytd-summary-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+}
+
+.ytd-summary-item .label {
+  font-weight: 500;
+  color: #374151;
+}
+
+.ytd-summary-item .value {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.ytd-summary-item .value.positive {
+  color: #059669;
+}
+
+.ytd-summary-item .value.negative {
+  color: #dc2626;
+}
+
+.ytd-section .btn {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: auto;
+}
+
+.ytd-section .btn-sm {
+  padding: 8px 16px;
+  font-size: 0.875rem;
+}
+
+.ytd-section .btn-secondary {
+  background: #6b7280;
+  color: white;
+}
+
+.ytd-section .btn-secondary:hover {
+  background: #4b5563;
+}
+
+.ytd-section .btn-danger {
+  background: #dc2626;
+  color: white;
+}
+
+.ytd-section .btn-danger:hover {
+  background: #b91c1c;
+}
+
+/* Error styles */
+.income-period-errors {
+  margin-top: 16px;
+  padding: 12px;
+  background: #fecaca;
+  border: 1px solid #f87171;
+  border-radius: 8px;
+}
+
+.income-period-error {
+  color: #dc2626;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.income-period-error:last-child {
+  margin-bottom: 0;
+}
+
+/* Responsive Design */
+
+@media (max-width: 768px) {
+  .ytd-section-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+  
+  .income-period-card.expanded {
+    padding: 20px;
+  }
+  
+  .income-period-summary {
+    padding: 16px 20px;
+  }
+  
+  .income-period-summary-main {
+    gap: 6px;
+  }
+  
+  .income-period-description {
+    font-size: 1rem;
+  }
+  
+  .income-period-dates {
+    font-size: 0.85rem;
+  }
+  
+  .income-period-salary {
+    font-size: 0.95rem;
+  }
+  
+  .ytd-contributions-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .ytd-summary-grid {
+    grid-template-columns: 1fr;
+  }
+}

@@ -596,3 +596,374 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
   };
 };
 
+// YTD Income Calculation Helpers
+
+// Helper function to calculate number of pay periods between two dates
+const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
+  const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+  const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
+  const timeDifferenceMs = endDate - startDate;
+  const yearsSpanned = timeDifferenceMs / millisecondsInYear;
+  
+  return yearsSpanned * periodsPerYear;
+};
+
+// Calculate actual YTD income from income periods
+export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly', currentSalary = 0) => {
+  const currentYear = new Date().getFullYear();
+  
+  // If no income periods are defined, use current salary for entire year
+  if (!incomePeriodsData || incomePeriodsData.length === 0) {
+    return parseFloat(currentSalary) || 0;
+  }
+  
+  let ytdIncome = 0;
+  
+  incomePeriodsData.forEach(period => {
+    // Skip periods with missing or invalid dates
+    if (!period.startDate || !period.endDate) {
+      console.warn(`Skipping income period with missing dates:`, period);
+      return;
+    }
+    
+    // Parse dates in local timezone to avoid UTC issues
+    const startDateParts = period.startDate.split('-');
+    const endDateParts = period.endDate.split('-');
+    
+    // Validate date parts
+    if (startDateParts.length !== 3 || endDateParts.length !== 3) {
+      console.warn(`Skipping income period with invalid date format:`, period);
+      return;
+    }
+    
+    const startDate = new Date(parseInt(startDateParts[0]), parseInt(startDateParts[1]) - 1, parseInt(startDateParts[2]));
+    const endDate = new Date(parseInt(endDateParts[0]), parseInt(endDateParts[1]) - 1, parseInt(endDateParts[2]));
+    const grossSalary = parseFloat(period.grossSalary) || 0;
+    
+    // Validate that dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.warn(`Skipping income period with invalid dates:`, period);
+      return;
+    }
+    
+    // Check that dates are for current year only
+    if (startDate.getFullYear() !== currentYear || endDate.getFullYear() !== currentYear) {
+      console.warn(`Income period dates must be for current year (${currentYear}). Skipping period with dates ${period.startDate} to ${period.endDate}`);
+      return;
+    }
+    
+    // Check if this period covers the entire year
+    const isFullYear = startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                      endDate.getMonth() === 11 && endDate.getDate() === 31;
+    
+    if (isFullYear) {
+      // If it's a full year period, use the full salary directly
+      ytdIncome += grossSalary;
+    } else {
+      // Use the dates as specified in the income period
+      const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      const grossPayPerPaycheck = grossSalary / periodsPerYear;
+      
+      // Calculate pay periods between start and end date as specified
+      const payPeriodsWorked = calculatePayPeriodsBetweenDates(startDate, endDate, payPeriod);
+      
+      // Calculate income earned during this specific period
+      const periodIncome = grossPayPerPaycheck * payPeriodsWorked;
+      ytdIncome += periodIncome;
+    }
+  });
+  
+  return ytdIncome;
+};
+
+// Calculate projected annual income (YTD + future scheduled income + remaining income at current salary)
+export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary, payPeriod = 'biWeekly') => {
+  if (!incomePeriodsData || incomePeriodsData.length === 0) {
+    return parseFloat(currentSalary) || 0;
+  }
+  
+  const today = new Date();
+  const currentYear = today.getFullYear();
+  const endOfYear = new Date(currentYear, 11, 31);
+  let projectedIncome = 0;
+  
+  // Separate past/current and future income periods
+  const pastAndCurrentPeriods = [];
+  const futurePeriods = [];
+  
+  incomePeriodsData.forEach(period => {
+    if (!period.startDate || !period.endDate) return;
+    
+    const startDateParts = period.startDate.split('-');
+    const endDateParts = period.endDate.split('-');
+    
+    if (startDateParts.length !== 3 || endDateParts.length !== 3) return;
+    
+    const startDate = new Date(parseInt(startDateParts[0]), parseInt(startDateParts[1]) - 1, parseInt(startDateParts[2]));
+    const endDate = new Date(parseInt(endDateParts[0]), parseInt(endDateParts[1]) - 1, parseInt(endDateParts[2]));
+    
+    // Skip invalid dates or dates not in current year
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime()) || 
+        startDate.getFullYear() !== currentYear || endDate.getFullYear() !== currentYear) {
+      return;
+    }
+    
+    if (startDate <= today) {
+      pastAndCurrentPeriods.push(period);
+    } else {
+      futurePeriods.push(period);
+    }
+  });
+  
+  // Add YTD income from past/current periods
+  projectedIncome += calculateYTDIncome(pastAndCurrentPeriods, payPeriod);
+  
+  // Add income from future scheduled periods
+  futurePeriods.forEach(period => {
+    const grossSalary = parseFloat(period.grossSalary) || 0;
+    const startDate = new Date(period.startDate);
+    const endDate = new Date(period.endDate);
+    
+    // Check if this is a full year period
+    const isFullYear = startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                      endDate.getMonth() === 11 && endDate.getDate() === 31;
+    
+    if (isFullYear) {
+      projectedIncome += grossSalary;
+    } else {
+      const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      const grossPayPerPaycheck = grossSalary / periodsPerYear;
+      const payPeriodsInPeriod = calculatePayPeriodsBetweenDates(startDate, endDate, payPeriod);
+      projectedIncome += grossPayPerPaycheck * payPeriodsInPeriod;
+    }
+  });
+  
+  // Add remaining income for any gaps using current salary
+  const allPeriods = [...pastAndCurrentPeriods, ...futurePeriods];
+  if (allPeriods.length > 0) {
+    const lastPeriod = allPeriods.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
+    const lastEndDate = new Date(lastPeriod.endDate);
+    
+    if (lastEndDate < endOfYear) {
+      // Calculate remaining pay periods after the last scheduled period
+      const nextDay = new Date(lastEndDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      
+      const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      const grossPayPerPaycheck = (parseFloat(currentSalary) || 0) / periodsPerYear;
+      const remainingPayPeriods = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
+      
+      projectedIncome += grossPayPerPaycheck * remainingPayPeriods;
+    }
+  }
+  
+  return projectedIncome;
+};
+
+// Calculate YTD contributions for a person from Performance data
+export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear()) => {
+  const result = {
+    traditional401k: 0,
+    roth401k: 0,
+    traditionalIra: 0,
+    rothIra: 0,
+    hsa: 0,
+    espp: 0,
+    brokerage: 0,
+    total401k: 0,
+    totalIra: 0,
+    totalContributions: 0,
+    totalEmployerMatch: 0
+  };
+  
+  if (!performanceData || !userNames || userNames.length === 0) {
+    return result;
+  }
+  
+  // Performance data is organized by entryId, not by year directly
+  // We need to find all entries for the current year
+  const relevantUsers = [...userNames, 'Joint'];
+  
+  // Iterate through all performance entries
+  Object.values(performanceData).forEach(entry => {
+    // Check if this entry is for the current year
+    if (entry.year !== currentYear) return;
+    
+    // Check if this entry has users data
+    if (!entry.users) return;
+    
+    // Process each user in this entry
+    Object.keys(entry.users).forEach(userName => {
+      // Skip if this user is not relevant
+      if (!relevantUsers.includes(userName)) return;
+      
+      const account = entry.users[userName];
+      if (!account || !account.accountType) return;
+      
+      // Try user-level contributions first, then fall back to entry-level
+      let contributions = parseFloat(account.contributions) || 0;
+      let employerMatch = parseFloat(account.employerMatch) || 0;
+      
+      // If user-level is empty/zero, use entry-level data
+      if (contributions === 0 && entry.contributions) {
+        contributions = parseFloat(entry.contributions) || 0;
+      }
+      if (employerMatch === 0 && entry.employerMatch) {
+        employerMatch = parseFloat(entry.employerMatch) || 0;
+      }
+      
+      const accountType = account.accountType.toLowerCase();
+      
+      // Categorize by account type
+      if (accountType.includes('401k') || accountType.includes('401(k)')) {
+        if (accountType.includes('roth')) {
+          result.roth401k += contributions;
+        } else {
+          result.traditional401k += contributions;
+        }
+        result.totalEmployerMatch += employerMatch;
+      } else if (accountType.includes('ira')) {
+        if (accountType.includes('roth')) {
+          result.rothIra += contributions;
+        } else {
+          result.traditionalIra += contributions;
+        }
+      } else if (accountType.includes('hsa')) {
+        result.hsa += contributions;
+      } else if (accountType.includes('espp') || accountType.includes('employee stock')) {
+        result.espp += contributions;
+      } else if (accountType.includes('brokerage') || accountType.includes('taxable')) {
+        result.brokerage += contributions;
+      }
+      
+      result.totalContributions += contributions;
+    });
+  });
+  
+  // Calculate totals
+  result.total401k = result.traditional401k + result.roth401k;
+  result.totalIra = result.traditionalIra + result.rothIra;
+  
+  return result;
+};
+
+// Calculate remaining contribution room based on YTD contributions
+export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCoverage) => {
+  const isOver50 = age >= 50;
+  const isOver55 = age >= 55;
+  
+  // 401k limits
+  const max401k = isOver50 
+    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
+    : CONTRIBUTION_LIMITS_2025.k401_employee;
+  
+  // IRA limits
+  const maxIra = isOver50 
+    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
+    : CONTRIBUTION_LIMITS_2025.ira_self;
+  
+  // HSA limits
+  let maxHsa = 0;
+  if (hsaCoverage === 'self') {
+    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+  } else if (hsaCoverage === 'family') {
+    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+  }
+  
+  return {
+    k401_remaining: Math.max(0, max401k - ytdContributions.total401k),
+    ira_remaining: Math.max(0, maxIra - ytdContributions.totalIra),
+    hsa_remaining: Math.max(0, maxHsa - ytdContributions.hsa),
+    k401_max: max401k,
+    ira_max: maxIra,
+    hsa_max: maxHsa
+  };
+};
+
+// Calculate per-paycheck amounts needed to max out IRS contributions for remaining year
+export const calculateMaxOutPerPaycheckAmounts = (
+  remainingRoom,
+  incomePeriodsData,
+  currentSalary,
+  payPeriod = 'biWeekly',
+  age,
+  hsaCoverage = 'none'
+) => {
+  const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+  const today = new Date();
+  const endOfYear = new Date(today.getFullYear(), 11, 31);
+
+  // Calculate remaining paychecks in the year
+  let remainingPaychecks;
+  
+  if (incomePeriodsData && incomePeriodsData.length > 0) {
+    // Use income periods data to calculate precise remaining paychecks
+    const lastPeriod = incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
+    if (lastPeriod) {
+      const lastEndDate = new Date(lastPeriod.endDate);
+      if (lastEndDate < endOfYear) {
+        // If there's a gap after the last income period, we need to account for remaining time
+        const nextDay = new Date(lastEndDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+        remainingPaychecks = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
+      } else {
+        // Last period goes to end of year or beyond, no remaining paychecks
+        remainingPaychecks = 0;
+      }
+    } else {
+      // No income periods, use time-based calculation
+      const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
+      remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+    }
+  } else {
+    // Use time-based calculation for remaining year
+    const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
+    remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+  }
+
+  // If no remaining paychecks, return zeros
+  if (remainingPaychecks <= 0) {
+    return {
+      k401_perPaycheck: { amount: 0, percent: 0 },
+      ira_perMonth: 0,
+      hsa_perPaycheck: 0,
+      remainingPaychecks: 0,
+      remainingMonths: 0
+    };
+  }
+
+  // Calculate remaining months
+  const remainingMonths = Math.max(0, 12 - today.getMonth());
+
+  // Calculate current projected remaining income
+  let remainingIncome;
+  if (incomePeriodsData && incomePeriodsData.length > 0) {
+    const ytdIncome = calculateYTDIncome(incomePeriodsData, payPeriod, currentSalary);
+    const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriodsData, currentSalary, payPeriod);
+    remainingIncome = projectedAnnualIncome - ytdIncome;
+  } else {
+    remainingIncome = (parseFloat(currentSalary) || 0) * (remainingPaychecks / periodsPerYear);
+  }
+
+  const remainingIncomePerPaycheck = remainingPaychecks > 0 ? remainingIncome / remainingPaychecks : 0;
+
+  // Calculate per-paycheck amounts needed to max out each contribution type
+  const k401PerPaycheck = remainingPaychecks > 0 ? remainingRoom.k401_remaining / remainingPaychecks : 0;
+  const k401Percent = remainingIncomePerPaycheck > 0 ? (k401PerPaycheck / remainingIncomePerPaycheck) * 100 : 0;
+
+  const iraPerMonth = remainingMonths > 0 ? remainingRoom.ira_remaining / remainingMonths : 0;
+  
+  const hsaPerPaycheck = remainingPaychecks > 0 ? remainingRoom.hsa_remaining / remainingPaychecks : 0;
+
+  return {
+    k401_perPaycheck: {
+      amount: Math.max(0, k401PerPaycheck),
+      percent: Math.max(0, k401Percent)
+    },
+    ira_perMonth: Math.max(0, iraPerMonth),
+    hsa_perPaycheck: Math.max(0, hsaPerPaycheck),
+    remainingPaychecks: Math.round(remainingPaychecks * 10) / 10, // Round to 1 decimal
+    remainingMonths: Math.max(0, remainingMonths)
+  };
+};
+

@@ -151,6 +151,10 @@ const TaxCalculator = () => {
 
   const [formData, setFormData] = useState({}); // Keep empty initially
 
+  // YTD Income tracking state (contributions now come from Performance data)
+  const [incomePeriodsData, setIncomePeriodsData] = useState([]);
+  const [spouseIncomePeriodsData, setSpouseIncomePeriodsData] = useState([]);
+
   // Handle HSA coverage changes with synchronization
   const handleHsaCoverageChange = (type, isSpouse = false) => {
     if (isSpouse) {
@@ -328,6 +332,7 @@ const TaxCalculator = () => {
           setEffectiveBonus(savedData.your.effectiveBonus || 0);
           setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
           setPayWeekType(savedData.your.payWeekType || 'even');
+          setIncomePeriodsData(savedData.your.incomePeriodsData || []);
         }
         
         // Load spouse data
@@ -351,6 +356,7 @@ const TaxCalculator = () => {
           setSpouseEffectiveBonus(savedData.spouse.effectiveBonus || 0);
           setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
           setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
+          setSpouseIncomePeriodsData(savedData.spouse.incomePeriodsData || []);
         }
         
         // Load settings
@@ -414,7 +420,8 @@ const TaxCalculator = () => {
         name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
         retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
         bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, payWeekType,
-        netTakeHomePaycheck: results?.netTakeHomePaycheck || 0
+        netTakeHomePaycheck: results?.netTakeHomePaycheck || 0,
+        incomePeriodsData
       },
       spouse: {
         name: spouseName, employer: spouseEmployer, birthday: spouseBirthday, 
@@ -423,7 +430,8 @@ const TaxCalculator = () => {
         medicalDeductions: spouseMedicalDeductions, esppDeductionPercent: spouseEsppDeductionPercent,
         budgetImpacting: spouseBudgetImpacting, bonusMultiplier: spouseBonusMultiplier,
         bonusTarget: spouseBonusTarget, overrideBonus: spouseOverrideBonus, remove401kFromBonus: spouseRemove401kFromBonus, effectiveBonus: spouseEffectiveBonus, hsaCoverageType: spouseHsaCoverageType, payWeekType: spousePayWeekType,
-        netTakeHomePaycheck: spouseResults?.netTakeHomePaycheck || 0
+        netTakeHomePaycheck: spouseResults?.netTakeHomePaycheck || 0,
+        incomePeriodsData: spouseIncomePeriodsData
       },
       settings: {
         showSpouseCalculator
@@ -446,7 +454,8 @@ const TaxCalculator = () => {
     spouseName, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
     spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions,
     spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBudgetImpacting,
-    spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType
+    spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType,
+    incomePeriodsData, spouseIncomePeriodsData
     // REMOVED results and spouseResults from dependencies to prevent infinite loop
   ]);
 
@@ -743,6 +752,8 @@ const TaxCalculator = () => {
             globalSectionControl={globalSectionControl}
             onCalculate={handleCalculate}
             results={results}
+            incomePeriodsData={incomePeriodsData}
+            onUpdateIncomePeriods={setIncomePeriodsData}
           />
           
           {showSpouseCalculator && (
@@ -822,9 +833,12 @@ const TaxCalculator = () => {
               globalSectionControl={globalSectionControl}
               onCalculate={handleSpouseCalculate}
               results={spouseResults}
+              incomePeriodsData={spouseIncomePeriodsData}
+              onUpdateIncomePeriods={setSpouseIncomePeriodsData}
             />
           )}
         </div>
+
       </div>
     </>
   );

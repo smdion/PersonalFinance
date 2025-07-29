@@ -206,9 +206,17 @@ const Portfolio = () => {
       allUsers.push('User'); // Default user name
     }
     
-    // Add "Joint" as an additional owner option if not already present
+    // Add "Joint" as an additional owner option at the END (so individual users are first)
     const ownerOptions = [...allUsers];
     if (!ownerOptions.includes('Joint')) {
+      ownerOptions.push('Joint');
+    }
+    
+    // Ensure Joint is at the end, not first (for better UX when defaulting to users[0])
+    const jointIndex = ownerOptions.indexOf('Joint');
+    if (jointIndex !== -1 && jointIndex !== ownerOptions.length - 1) {
+      // Move Joint to end
+      ownerOptions.splice(jointIndex, 1);
       ownerOptions.push('Joint');
     }
     
