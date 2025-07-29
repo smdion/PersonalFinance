@@ -2,7 +2,6 @@ import React, { useState, useCallback, useContext, useEffect, useRef, useMemo } 
 import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
-import YTDIncomeTracker from './YTDIncomeTracker';
 import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToHistorical } from '../utils/localStorage';
 import Navigation from './Navigation';
@@ -753,6 +752,8 @@ const TaxCalculator = () => {
             globalSectionControl={globalSectionControl}
             onCalculate={handleCalculate}
             results={results}
+            incomePeriodsData={incomePeriodsData}
+            onUpdateIncomePeriods={setIncomePeriodsData}
           />
           
           {showSpouseCalculator && (
@@ -832,30 +833,12 @@ const TaxCalculator = () => {
               globalSectionControl={globalSectionControl}
               onCalculate={handleSpouseCalculate}
               results={spouseResults}
-            />
-          )}
-        </div>
-
-        {/* YTD Income Trackers */}
-        <div className="ytd-trackers-section">
-          <YTDIncomeTracker
-            personName={name || 'You'}
-            incomePeriodsData={incomePeriodsData}
-            onUpdateIncomePeriods={setIncomePeriodsData}
-            currentSalary={salary}
-            userNames={[name, spouseName].filter(n => n && n.trim())}
-          />
-
-          {showSpouseCalculator && (
-            <YTDIncomeTracker
-              personName={spouseName || 'Spouse'}
               incomePeriodsData={spouseIncomePeriodsData}
               onUpdateIncomePeriods={setSpouseIncomePeriodsData}
-              currentSalary={spouseSalary}
-              userNames={[name, spouseName].filter(n => n && n.trim())}
             />
           )}
         </div>
+
       </div>
     </>
   );

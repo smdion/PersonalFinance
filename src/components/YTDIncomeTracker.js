@@ -1,38 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { formatCurrency, calculateYTDIncome, calculateProjectedAnnualIncome, calculateYTDContributionsFromPerformance } from '../utils/calculationHelpers';
-import { getPerformanceData } from '../utils/localStorage';
+import { formatCurrency, calculateYTDIncome, calculateProjectedAnnualIncome } from '../utils/calculationHelpers';
 import '../styles/ytd-income.css';
 
 const YTDIncomeTracker = ({ 
   personName, 
   incomePeriodsData = [], 
   onUpdateIncomePeriods, 
-  currentSalary,
-  userNames = []
+  currentSalary
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [incomePeriods, setIncomePeriods] = useState(incomePeriodsData);
-  const [performanceData, setPerformanceData] = useState({});
 
   // Update local state when props change
   useEffect(() => {
     setIncomePeriods(incomePeriodsData);
   }, [incomePeriodsData]);
 
-  // Load performance data to calculate YTD contributions
-  useEffect(() => {
-    const data = getPerformanceData();
-    setPerformanceData(data);
-    
-    // Listen for performance data updates
-    const handlePerformanceUpdate = () => {
-      const updatedData = getPerformanceData();
-      setPerformanceData(updatedData);
-    };
-
-    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
-    return () => window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
-  }, []);
 
   const addIncomePeriod = () => {
     const currentYear = new Date().getFullYear();
@@ -65,9 +48,6 @@ const YTDIncomeTracker = ({
 
   const ytdIncome = calculateYTDIncome(incomePeriods);
   const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, currentSalary);
-  
-  // Calculate YTD contributions from Performance data
-  const ytdContributions = calculateYTDContributionsFromPerformance(performanceData, userNames);
 
   return (
     <div className="ytd-income-tracker">
@@ -153,71 +133,6 @@ const YTDIncomeTracker = ({
             )}
           </div>
 
-          {/* YTD Contributions Section (from Performance data) */}
-          <div className="ytd-section">
-            <h4>YTD Contributions (from Performance Tracker)</h4>
-            <div className="ytd-contributions-grid">
-              <div className="ytd-contribution-display">
-                <label>Traditional 401(k)</label>
-                <span className="ytd-value">{formatCurrency(ytdContributions.traditional401k)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>Roth 401(k)</label>
-                <span className="ytd-value">{formatCurrency(ytdContributions.roth401k)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>Traditional IRA</label>
-                <span className="ytd-value">{formatCurrency(ytdContributions.traditionalIra)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>Roth IRA</label>
-                <span className="ytd-value">{formatCurrency(ytdContributions.rothIra)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>HSA</label>
-                <span className="ytd-value">{formatCurrency(ytdContributions.hsa)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>Total Employee Contributions</label>
-                <span className="ytd-value total">{formatCurrency(ytdContributions.totalContributions)}</span>
-              </div>
-              <div className="ytd-contribution-display">
-                <label>Total Employer Match</label>
-                <span className="ytd-value total">{formatCurrency(ytdContributions.totalEmployerMatch)}</span>
-              </div>
-            </div>
-            
-            {ytdContributions.totalContributions === 0 && (
-              <div className="ytd-no-data">
-                <p>No YTD contribution data found. Add your account contributions in the Performance Tracker to see actual YTD amounts.</p>
-              </div>
-            )}
-          </div>
-
-          {/* Summary Section */}
-          <div className="ytd-section ytd-summary-section">
-            <h4>Income Summary</h4>
-            <div className="ytd-summary-grid">
-              <div className="ytd-summary-item">
-                <span className="label">YTD Income:</span>
-                <span className="value">{formatCurrency(ytdIncome)}</span>
-              </div>
-              <div className="ytd-summary-item">
-                <span className="label">Projected Annual Income:</span>
-                <span className="value">{formatCurrency(projectedAnnualIncome)}</span>
-              </div>
-              <div className="ytd-summary-item">
-                <span className="label">Current Calculator Salary:</span>
-                <span className="value">{formatCurrency(currentSalary || 0)}</span>
-              </div>
-              <div className="ytd-summary-item">
-                <span className="label">Difference:</span>
-                <span className={`value ${projectedAnnualIncome - (currentSalary || 0) >= 0 ? 'positive' : 'negative'}`}>
-                  {formatCurrency(projectedAnnualIncome - (currentSalary || 0))}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       )}
     </div>

@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { W4_CONFIGS, CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { getAppSettings, setAppSettings } from '../utils/localStorage';
+import '../styles/ytd-income.css';
 import { 
   calculatePercentageOfMax,
   formatCurrency,
@@ -11,7 +12,9 @@ import {
   calculateRequired401kPercentage,
   calculateRequiredIraContribution,
   calculateRequiredHsaContribution,
-  calculateRequiredHsaPerPaycheckContribution
+  calculateRequiredHsaPerPaycheckContribution,
+  calculateYTDIncome,
+  calculateProjectedAnnualIncome
 } from '../utils/calculationHelpers';
 
 const PaycheckForm = ({ 
@@ -40,7 +43,9 @@ const PaycheckForm = ({
   results,
   globalSectionControl,
   payWeekType, setPayWeekType,
-  hsaCoverageType, setHsaCoverageType
+  hsaCoverageType, setHsaCoverageType,
+  incomePeriodsData = [],
+  onUpdateIncomePeriods
 }) => {
 
   // State for collapsible sections
@@ -51,6 +56,7 @@ const PaycheckForm = ({
     postTax: false,
     w4: false,
     budget: false,
+    ytdIncome: false,
     bonus: false
   });
 
@@ -64,6 +70,7 @@ const PaycheckForm = ({
         postTax: true,
         w4: true,
         budget: true,
+        ytdIncome: true,
         bonus: true
       });
     } else if (globalSectionControl === 'collapse') {
@@ -74,6 +81,7 @@ const PaycheckForm = ({
         postTax: false,
         w4: false,
         budget: false,
+        ytdIncome: false,
         bonus: false
       });
     }
@@ -308,6 +316,7 @@ const PaycheckForm = ({
   const [noBonusExpected, setNoBonusExpected] = useState(false); // Add state for no bonus checkbox
   const [showBudgetExplanation, setShowBudgetExplanation] = useState(false); // Add state for budget explanation
   const [showMonthlyView, setShowMonthlyView] = useState(true); // Add state for monthly/pay period toggle
+  const [incomePeriods, setIncomePeriods] = useState(incomePeriodsData);
 
   const handleHsaCoverageToggle = (type) => {
     setHsaCoverageType(type);
@@ -360,6 +369,11 @@ const PaycheckForm = ({
     }
   }, [salary, bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, noBonusExpected, retirementOptions.traditional401kPercent, retirementOptions.roth401kPercent, setEffectiveBonus]);
 
+  // Update local income periods state when props change
+  useEffect(() => {
+    setIncomePeriods(incomePeriodsData);
+  }, [incomePeriodsData]);
+
   // Consolidated age-related effects
   useEffect(() => {
     const age = calculateAge(birthday);
@@ -404,6 +418,46 @@ const PaycheckForm = ({
     const brokerageTotal = (budgetImpacting.brokerageAccounts || []).reduce((sum, account) => sum + (account.monthlyAmount || 0), 0);
     return iraTotal + brokerageTotal;
   };
+
+  // YTD Income functions
+  const addIncomePeriod = () => {
+    const currentYear = new Date().getFullYear();
+    const newPeriod = {
+      id: Date.now(),
+      startDate: `${currentYear}-01-01`,
+      endDate: `${currentYear}-12-31`,
+      grossSalary: salary || 0,
+      description: 'Salary Period'
+    };
+    
+    const updatedPeriods = [...incomePeriods, newPeriod];
+    setIncomePeriods(updatedPeriods);
+    if (onUpdateIncomePeriods) {
+      onUpdateIncomePeriods(updatedPeriods);
+    }
+  };
+
+  const updateIncomePeriod = (id, field, value) => {
+    const updatedPeriods = incomePeriods.map(period => 
+      period.id === id ? { ...period, [field]: value } : period
+    );
+    setIncomePeriods(updatedPeriods);
+    if (onUpdateIncomePeriods) {
+      onUpdateIncomePeriods(updatedPeriods);
+    }
+  };
+
+  const removeIncomePeriod = (id) => {
+    const updatedPeriods = incomePeriods.filter(period => period.id !== id);
+    setIncomePeriods(updatedPeriods);
+    if (onUpdateIncomePeriods) {
+      onUpdateIncomePeriods(updatedPeriods);
+    }
+  };
+
+  const ytdIncome = calculateYTDIncome(incomePeriods);
+  const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, salary);
+
 
   return (
     <div className="calculator-card">
@@ -990,6 +1044,87 @@ const PaycheckForm = ({
                   <div>Required Monthly to Max Out: ${calculateRequiredIraContribution(isIraOver50)}</div>
                 </div>
               )}
+            </div>
+          )}
+        </div>
+
+        {/* YTD Income Section */}
+        <div>
+          <SectionHeader 
+            title="📈 YTD Income Tracker" 
+            section="ytdIncome"
+            subtitle="Year-to-Date Income Tracking"
+            badge={ytdIncome > 0 ? formatCurrency(ytdIncome) : null}
+          />
+          
+          {expandedSections.ytdIncome && (
+            <div className="section-content">
+              <div className="ytd-section">
+                <div className="ytd-section-header">
+                  <h4>Income Periods</h4>
+                  <button 
+                    className="btn btn-secondary btn-sm"
+                    onClick={addIncomePeriod}
+                  >
+                    + Add Period
+                  </button>
+                </div>
+
+                {incomePeriods.length === 0 ? (
+                  <div className="ytd-empty-state">
+                    <p>No income periods defined. Add periods to track actual vs projected income.</p>
+                  </div>
+                ) : (
+                  <div className="income-periods-list">
+                    {incomePeriods.map((period) => (
+                      <div key={period.id} className="income-period-card">
+                        <div className="income-period-row">
+                          <div className="income-period-field">
+                            <label>Description</label>
+                            <input
+                              type="text"
+                              value={period.description || ''}
+                              onChange={(e) => updateIncomePeriod(period.id, 'description', e.target.value)}
+                              placeholder="e.g., Base Salary, Promotion, New Job"
+                            />
+                          </div>
+                          <div className="income-period-field">
+                            <label>Start Date</label>
+                            <input
+                              type="date"
+                              value={period.startDate || ''}
+                              onChange={(e) => updateIncomePeriod(period.id, 'startDate', e.target.value)}
+                            />
+                          </div>
+                          <div className="income-period-field">
+                            <label>End Date</label>
+                            <input
+                              type="date"
+                              value={period.endDate || ''}
+                              onChange={(e) => updateIncomePeriod(period.id, 'endDate', e.target.value)}
+                            />
+                          </div>
+                          <div className="income-period-field">
+                            <label>Annual Gross Salary</label>
+                            <input
+                              type="number"
+                              value={period.grossSalary || ''}
+                              onChange={(e) => updateIncomePeriod(period.id, 'grossSalary', e.target.value)}
+                              placeholder="0"
+                            />
+                          </div>
+                          <button 
+                            className="btn btn-danger btn-sm"
+                            onClick={() => removeIncomePeriod(period.id)}
+                          >
+                            Remove
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
         </div>
