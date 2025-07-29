@@ -716,6 +716,8 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
     traditionalIra: 0,
     rothIra: 0,
     hsa: 0,
+    espp: 0,
+    brokerage: 0,
     total401k: 0,
     totalIra: 0,
     totalContributions: 0,
@@ -776,6 +778,10 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
         }
       } else if (accountType.includes('hsa')) {
         result.hsa += contributions;
+      } else if (accountType.includes('espp') || accountType.includes('employee stock')) {
+        result.espp += contributions;
+      } else if (accountType.includes('brokerage') || accountType.includes('taxable')) {
+        result.brokerage += contributions;
       }
       
       result.totalContributions += contributions;

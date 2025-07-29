@@ -413,6 +413,86 @@
   font-weight: 600;
 }
 
+/* Calculation Mode Indicator */
+.calculation-mode-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 1rem 0;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(34, 197, 94, 0.1) 0%, rgba(16, 185, 129, 0.1) 100%);
+  border: 2px solid #10b981;
+  border-radius: 8px;
+  color: #065f46;
+}
+
+.mode-indicator-icon {
+  font-size: 1.5rem;
+  min-width: 1.5rem;
+}
+
+.mode-indicator-text strong {
+  display: block;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #059669;
+  margin-bottom: 0.25rem;
+}
+
+.mode-indicator-description {
+  font-size: 0.875rem;
+  color: #047857;
+  opacity: 0.9;
+}
+
+/* Contribution Mode Indicators */
+.contribution-mode-indicator {
+  font-size: 0.8rem;
+  font-weight: 400;
+  color: #059669;
+  opacity: 0.9;
+}
+
+/* Household Summary Mode Indicator */
+.household-mode-indicator {
+  font-size: 0.9rem;
+  font-weight: 400;
+  color: #059669;
+  opacity: 0.8;
+}
+
+/* AGI Debug Display */
+.optimize-agi-debug {
+  background: #f0f9ff;
+  border: 1px solid #e0f2fe;
+  border-radius: 6px;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.agi-debug-item {
+  margin-bottom: 0.25rem;
+  color: #0369a1;
+}
+
+.agi-debug-item:last-child {
+  margin-bottom: 0;
+}
+
+.agi-debug-item strong {
+  color: #1e40af;
+}
+
+.agi-debug-note {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid #e0f2fe;
+  font-size: 0.8rem;
+  color: #0369a1;
+  font-style: italic;
+}
+
 /* Responsive adjustments for YTD sections */
 @media (max-width: 768px) {
   .optimize-ytd-grid,
@@ -428,5 +508,15 @@
   
   .agi-toggle input[type="checkbox"] {
     margin-right: 0;
+  }
+  
+  .calculation-mode-indicator {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .mode-indicator-icon {
+    align-self: center;
   }
 }
