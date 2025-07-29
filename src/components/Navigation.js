@@ -12,7 +12,7 @@ const Navigation = () => {
 
   const navFolders = [
     {
-      label: 'Basics and Dream',
+      label: 'Budget and Plan',
       icon: '💸',
       items: [
         { path: '/paycheck', label: 'Paycheck', icon: '💰' },
@@ -22,7 +22,7 @@ const Navigation = () => {
       ]
     },
     {
-      label: 'Input and Review',
+      label: 'Data and Review',
       icon: '📊',
       items: [
         { path: '/other-assets', label: 'Assets', icon: '🏠' },
@@ -33,7 +33,7 @@ const Navigation = () => {
       ]
     },
     {
-      label: 'Analyze and Visualize',
+      label: 'Optimize and Visualize',
       icon: '🔍',
       items: [
         { path: '/optimize', label: 'Optimize', icon: '⚡' },

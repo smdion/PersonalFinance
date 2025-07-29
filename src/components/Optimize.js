@@ -227,6 +227,18 @@ const Optimize = () => {
       let standardBreakdown = {};
       let ytdBreakdown = {};
       
+      // Calculate standard breakdown with max out amounts
+      const standardMaxOutAmounts = {
+        k401_perPaycheck: {
+          amount: periodsPerYear > 0 ? Math.max(0, (max401k - annual401k) / periodsPerYear) : 0,
+          percent: salary > 0 ? Math.max(0, ((max401k - annual401k) / salary) * 100) : 0
+        },
+        ira_perMonth: Math.max(0, (maxIra - annualIra) / 12),
+        hsa_perPaycheck: periodsPerYear > 0 ? Math.max(0, (maxHsa - hsaContributionAnnual) / periodsPerYear) : 0,
+        remainingPaychecks: periodsPerYear,
+        remainingMonths: 12
+      };
+
       // Always calculate standard breakdown
       standardBreakdown = {
         k401: {
@@ -240,14 +252,14 @@ const Optimize = () => {
           totalEmployer: annualEmployerMatch,
           totalCombined: annual401k + annualEmployerMatch,
           limit: max401k,
-          remaining: Math.max(0, max401k - annual401k)
+          remaining: max401k - annual401k
         },
         ira: {
           ytd: 0,
           projected: annualIra,
           total: annualIra,
           limit: maxIra,
-          remaining: Math.max(0, maxIra - annualIra)
+          remaining: maxIra - annualIra
         },
         hsa: {
           ytdEmployee: 0,
@@ -260,7 +272,7 @@ const Optimize = () => {
           totalEmployer: hsaEmployerContribution,
           totalCombined: hsaContributionAnnual + hsaEmployerContribution,
           limit: maxHsa,
-          remaining: Math.max(0, maxHsa - hsaContributionAnnual)
+          remaining: maxHsa - hsaContributionAnnual
         },
         espp: {
           ytd: 0,
@@ -284,8 +296,9 @@ const Optimize = () => {
         const ytd401k = ytdContributions.total401k || 0;
         const ytdEmployerMatch = ytdContributions.employerMatch || 0;
         
-        // Calculate remaining pay periods correctly using same logic as calculateMaxOutPerPaycheckAmounts
+        // Calculate remaining pay periods starting from next month
         const today = new Date();
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1); // Start of next month
         const endOfYear = new Date(today.getFullYear(), 11, 31);
         let remainingPaychecks;
         
@@ -299,26 +312,24 @@ const Optimize = () => {
         };
         
         if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use income periods data to calculate precise remaining paychecks
+          // Use income periods data to calculate precise remaining paychecks from next month
           const lastPeriod = person.incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
           if (lastPeriod) {
             const lastEndDate = new Date(lastPeriod.endDate);
             if (lastEndDate < endOfYear) {
-              // Calculate remaining pay periods after the last scheduled period
-              const nextDay = new Date(lastEndDate);
-              nextDay.setDate(nextDay.getDate() + 1);
-              remainingPaychecks = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
+              // Calculate remaining pay periods starting from next month or after last period, whichever is later
+              const startDate = lastEndDate > nextMonth ? new Date(lastEndDate.getTime() + 24*60*60*1000) : nextMonth;
+              remainingPaychecks = calculatePayPeriodsBetweenDates(startDate, endOfYear, payPeriod);
             } else {
               remainingPaychecks = 0;
             }
           } else {
-            const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
-            remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+            // Calculate from next month to end of year
+            remainingPaychecks = calculatePayPeriodsBetweenDates(nextMonth, endOfYear, payPeriod);
           }
         } else {
-          // Use time-based calculation for remaining year
-          const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
-          remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+          // Use time-based calculation from next month to end of year
+          remainingPaychecks = calculatePayPeriodsBetweenDates(nextMonth, endOfYear, payPeriod);
         }
         
         // Calculate projected contributions for remaining pay periods only
@@ -328,7 +339,7 @@ const Optimize = () => {
         
         // IRA breakdown
         const ytdIra = ytdContributions.totalIra || 0;
-        const monthsRemaining = Math.max(0, 12 - today.getMonth());
+        const monthsRemaining = Math.max(0, 12 - today.getMonth() - 1); // Start from next month
         const projectedIra = (traditionalIra + rothIra) * monthsRemaining;
         
         // HSA breakdown
@@ -357,14 +368,14 @@ const Optimize = () => {
             totalEmployer: ytdEmployerMatch + projectedEmployerMatch,
             totalCombined: ytd401k + projected401k + ytdEmployerMatch + projectedEmployerMatch,
             limit: max401k,
-            remaining: Math.max(0, max401k - (ytd401k + projected401k))
+            remaining: max401k - (ytd401k + projected401k)
           },
           ira: {
             ytd: ytdIra,
             projected: projectedIra,
             total: ytdIra + projectedIra,
             limit: maxIra,
-            remaining: Math.max(0, maxIra - (ytdIra + projectedIra))
+            remaining: maxIra - (ytdIra + projectedIra)
           },
           hsa: {
             ytdEmployee: ytdHsa,
@@ -377,7 +388,7 @@ const Optimize = () => {
             totalEmployer: hsaEmployerContribution, // Use annual employer amount
             totalCombined: ytdHsa + projectedHsa + hsaEmployerContribution,
             limit: maxHsa,
-            remaining: Math.max(0, maxHsa - (ytdHsa + projectedHsa))
+            remaining: maxHsa - (ytdHsa + projectedHsa)
           },
           espp: {
             ytd: ytdEspp,
@@ -402,6 +413,7 @@ const Optimize = () => {
         ytdContributions,
         remainingRoom,
         maxOutAmounts,
+        standardMaxOutAmounts,
         accountTypes,
         standardBreakdown,
         ytdBreakdown,
@@ -411,19 +423,19 @@ const Optimize = () => {
             employer: annualEmployerMatch,
             total: annual401k + annualEmployerMatch,
             max: max401k,
-            remaining: Math.max(0, max401k - annual401k)
+            remaining: max401k - annual401k
           },
           ira: {
             amount: annualIra,
             max: maxIra,
-            remaining: Math.max(0, maxIra - annualIra)
+            remaining: maxIra - annualIra
           },
           hsa: {
             employee: hsaContributionAnnual,
             employer: hsaEmployerContribution,
             total: hsaContributionAnnual + hsaEmployerContribution,
             max: maxHsa,
-            remaining: Math.max(0, maxHsa - hsaContributionAnnual)
+            remaining: maxHsa - hsaContributionAnnual
           },
           espp: {
             amount: annualEspp
@@ -491,6 +503,10 @@ const Optimize = () => {
     let standardBreakdownTotals = {};
     let ytdBreakdownTotals = {};
     
+    // Calculate separate annual totals for each calculation mode
+    let standardAnnualTotals = {};
+    let ytdAnnualTotals = {};
+    
     if (people.length > 0 && people[0].standardBreakdown) {
       // Standard breakdown totals
       standardBreakdownTotals.ytd401kEmployee = people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.ytdEmployee || 0), 0);
@@ -521,6 +537,19 @@ const Optimize = () => {
       const standardBrokerageProjectedAmounts = people.map(p => p.standardBreakdown.brokerage?.projected || 0);
       standardBreakdownTotals.ytdBrokerage = calculateJointTotal('brokerage', standardBrokerageYtdAmounts);
       standardBreakdownTotals.projectedBrokerage = calculateJointTotal('brokerage', standardBrokerageProjectedAmounts);
+      
+      // Calculate standard annual totals from breakdown data
+      const standardIraAmounts = people.map(p => p.standardBreakdown.ira?.total || 0);
+      const standardBrokerageAmounts = people.map(p => p.standardBreakdown.brokerage?.total || 0);
+      
+      standardAnnualTotals = {
+        total401k: people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.totalCombined || 0), 0),
+        totalIra: calculateJointTotal('ira', standardIraAmounts),
+        totalHsa: people.reduce((sum, p) => sum + (p.standardBreakdown.hsa?.totalCombined || 0), 0),
+        totalEspp: people.reduce((sum, p) => sum + (p.standardBreakdown.espp?.total || 0), 0),
+        totalBrokerage: calculateJointTotal('brokerage', standardBrokerageAmounts)
+      };
+      standardAnnualTotals.totalContributions = standardAnnualTotals.total401k + standardAnnualTotals.totalIra + standardAnnualTotals.totalHsa + standardAnnualTotals.totalEspp + standardAnnualTotals.totalBrokerage;
     }
     
     if (people.length > 0 && people[0].ytdBreakdown) {
@@ -553,6 +582,19 @@ const Optimize = () => {
       const ytdBrokerageProjectedAmounts = people.map(p => p.ytdBreakdown.brokerage?.projected || 0);
       ytdBreakdownTotals.ytdBrokerage = calculateJointTotal('brokerage', ytdBrokerageYtdAmounts);
       ytdBreakdownTotals.projectedBrokerage = calculateJointTotal('brokerage', ytdBrokerageProjectedAmounts);
+      
+      // Calculate YTD annual totals from breakdown data
+      const ytdIraAmounts = people.map(p => p.ytdBreakdown.ira?.total || 0);
+      const ytdBrokerageAmounts = people.map(p => p.ytdBreakdown.brokerage?.total || 0);
+      
+      ytdAnnualTotals = {
+        total401k: people.reduce((sum, p) => sum + (p.ytdBreakdown.k401?.totalCombined || 0), 0),
+        totalIra: calculateJointTotal('ira', ytdIraAmounts),
+        totalHsa: people.reduce((sum, p) => sum + (p.ytdBreakdown.hsa?.totalCombined || 0), 0),
+        totalEspp: people.reduce((sum, p) => sum + (p.ytdBreakdown.espp?.total || 0), 0),
+        totalBrokerage: calculateJointTotal('brokerage', ytdBrokerageAmounts)
+      };
+      ytdAnnualTotals.totalContributions = ytdAnnualTotals.total401k + ytdAnnualTotals.totalIra + ytdAnnualTotals.totalHsa + ytdAnnualTotals.totalEspp + ytdAnnualTotals.totalBrokerage;
     }
     
     return {
@@ -566,7 +608,9 @@ const Optimize = () => {
       remainingIra,
       remainingHsa: people.reduce((sum, p) => sum + p.contributions.hsa.remaining, 0),
       standardBreakdown: standardBreakdownTotals,
-      ytdBreakdown: ytdBreakdownTotals
+      ytdBreakdown: ytdBreakdownTotals,
+      standardAnnualTotals,
+      ytdAnnualTotals
     };
   }, [contributionMetrics]);
 
@@ -595,8 +639,11 @@ const Optimize = () => {
     );
   }
 
-  const HouseholdBreakdownSection = ({ breakdownData, title }) => {
+  const HouseholdBreakdownSection = ({ breakdownData, annualTotals }) => {
     if (!breakdownData) return null;
+    
+    // Use provided annual totals or fall back to legacy householdTotals
+    const totals = annualTotals || householdTotals;
 
     // Calculate if household totals exceed IRS limits using contributionMetrics data
     const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
@@ -631,9 +678,9 @@ const Optimize = () => {
       return sum;
     }, 0);
 
-    const is401kOverLimit = householdTotals.total401k > total401kLimit;
-    const isIraOverLimit = householdTotals.totalIra > totalIraLimit;
-    const isHsaOverLimit = householdTotals.totalHsa > totalHsaLimit;
+    const is401kOverLimit = totals.total401k > total401kLimit;
+    const isIraOverLimit = totals.totalIra > totalIraLimit;
+    const isHsaOverLimit = totals.totalHsa > totalHsaLimit;
 
     return (
       <div className="optimize-household-breakdown">
@@ -671,7 +718,7 @@ const Optimize = () => {
             <div className="optimize-household-item total">
               <span className="label">Annual Total:</span>
               <span className={`value ${is401kOverLimit ? 'optimize-limit-exceeded' : ''}`}>
-                {formatCurrency(householdTotals.total401k)}
+                {formatCurrency(totals.total401k)}
                 {is401kOverLimit && <span className="optimize-warning-icon">⚠️</span>}
               </span>
             </div>
@@ -696,7 +743,7 @@ const Optimize = () => {
             <div className="optimize-household-item total">
               <span className="label">Annual Total:</span>
               <span className={`value ${isIraOverLimit ? 'optimize-limit-exceeded' : ''}`}>
-                {formatCurrency(householdTotals.totalIra)}
+                {formatCurrency(totals.totalIra)}
                 {isIraOverLimit && <span className="optimize-warning-icon">⚠️</span>}
               </span>
             </div>
@@ -704,7 +751,7 @@ const Optimize = () => {
         </div>
 
         {/* HSA */}
-        {householdTotals.totalHsa > 0 && (
+        {totals.totalHsa > 0 && (
           <div className="optimize-household-section">
             <h4>
               HSA Contributions
@@ -730,7 +777,7 @@ const Optimize = () => {
               <div className="optimize-household-item total">
                 <span className="label">Annual Total:</span>
                 <span className={`value ${isHsaOverLimit ? 'optimize-limit-exceeded' : ''}`}>
-                  {formatCurrency(householdTotals.totalHsa)}
+                  {formatCurrency(totals.totalHsa)}
                   {isHsaOverLimit && <span className="optimize-warning-icon">⚠️</span>}
                 </span>
               </div>
@@ -739,7 +786,7 @@ const Optimize = () => {
         )}
 
         {/* ESPP */}
-        {householdTotals.totalEspp > 0 && (
+        {totals.totalEspp > 0 && (
           <div className="optimize-household-section">
             <h4>ESPP Contributions</h4>
             <div className="optimize-household-grid">
@@ -753,14 +800,14 @@ const Optimize = () => {
               </div>
               <div className="optimize-household-item total">
                 <span className="label">Annual Total:</span>
-                <span className="value">{formatCurrency(householdTotals.totalEspp)}</span>
+                <span className="value">{formatCurrency(totals.totalEspp)}</span>
               </div>
             </div>
           </div>
         )}
 
         {/* Brokerage */}
-        {householdTotals.totalBrokerage > 0 && (
+        {totals.totalBrokerage > 0 && (
           <div className="optimize-household-section">
             <h4>Brokerage Contributions</h4>
             <div className="optimize-household-grid">
@@ -774,7 +821,7 @@ const Optimize = () => {
               </div>
               <div className="optimize-household-item total">
                 <span className="label">Annual Total:</span>
-                <span className="value">{formatCurrency(householdTotals.totalBrokerage)}</span>
+                <span className="value">{formatCurrency(totals.totalBrokerage)}</span>
               </div>
             </div>
           </div>
@@ -786,7 +833,7 @@ const Optimize = () => {
           <div className="optimize-household-grid">
             <div className="optimize-household-item grand-total">
               <span className="label">Combined Household Total:</span>
-              <span className="value">{formatCurrency(householdTotals.totalContributions)}</span>
+              <span className="value">{formatCurrency(totals.totalContributions)}</span>
             </div>
           </div>
         </div>
@@ -798,7 +845,7 @@ const Optimize = () => {
     if (!person) return null;
 
     // Helper component for the 4-part breakdown display
-    const ContributionBreakdown = ({ accountType, breakdown, accountTypeName }) => {
+    const ContributionBreakdown = ({ accountType, breakdown, accountTypeName, calculationMode = 'standard' }) => {
       if (!breakdown) return null;
 
       // Check if annual total exceeds IRS limit
@@ -902,12 +949,54 @@ const Optimize = () => {
                   <span className="value">{formatCurrency(breakdown.limit)}</span>
                 </div>
                 <div className="optimize-contribution-item">
-                  <span className="label">Remaining Room:</span>
+                  <span className="label">{breakdown.remaining < 0 ? 'Over Contributed:' : 'Remaining Room:'}</span>
                   <span className={`value ${breakdown.remaining > 0 ? 'opportunity' : breakdown.remaining < 0 ? 'optimize-limit-exceeded' : 'maxed'}`}>
-                    {formatCurrency(breakdown.remaining)}
+                    {breakdown.remaining < 0 ? formatCurrency(Math.abs(breakdown.remaining)) : formatCurrency(breakdown.remaining)}
                     {breakdown.remaining < 0 && <span className="optimize-warning-icon">⚠️</span>}
                   </span>
                 </div>
+                
+                {/* Required to Max Out */}
+                {breakdown.remaining > 0 && (
+                  <>
+                    <div className="optimize-contribution-header">Required to Max Out</div>
+                    {(() => {
+                      // Use appropriate max out amounts based on calculation mode
+                      const maxOutData = calculationMode === 'ytd' ? person.maxOutAmounts : person.standardMaxOutAmounts;
+                      
+                      if (!maxOutData) return null;
+                      
+                      return (
+                        <>
+                          {accountType === 'k401' && (
+                            <>
+                              <div className="optimize-contribution-item">
+                                <span className="label">Per Paycheck (Dollar):</span>
+                                <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.k401_perPaycheck.amount))}</span>
+                              </div>
+                              <div className="optimize-contribution-item">
+                                <span className="label">Per Paycheck (Percent):</span>
+                                <span className="value opportunity">{Math.max(0, maxOutData.k401_perPaycheck.percent).toFixed(1)}%</span>
+                              </div>
+                            </>
+                          )}
+                          {accountType === 'ira' && (
+                            <div className="optimize-contribution-item">
+                              <span className="label">Per Month:</span>
+                              <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.ira_perMonth))}</span>
+                            </div>
+                          )}
+                          {accountType === 'hsa' && (
+                            <div className="optimize-contribution-item">
+                              <span className="label">Per Paycheck:</span>
+                              <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.hsa_perPaycheck))}</span>
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </>
+                )}
               </>
             )}
           </div>
@@ -944,17 +1033,20 @@ const Optimize = () => {
                     accountType="k401"
                     breakdown={person.standardBreakdown.k401}
                     accountTypeName="401(k)"
+                    calculationMode="standard"
                   />
                   <ContributionBreakdown
                     accountType="ira"
                     breakdown={person.standardBreakdown.ira}
                     accountTypeName="IRA"
+                    calculationMode="standard"
                   />
                   {person.standardBreakdown.hsa.limit > 0 && (
                     <ContributionBreakdown
                       accountType="hsa"
                       breakdown={person.standardBreakdown.hsa}
                       accountTypeName="HSA"
+                      calculationMode="standard"
                     />
                   )}
                   {person.standardBreakdown.espp.total > 0 && (
@@ -962,6 +1054,7 @@ const Optimize = () => {
                       accountType="espp"
                       breakdown={person.standardBreakdown.espp}
                       accountTypeName="ESPP"
+                      calculationMode="standard"
                     />
                   )}
                   {person.standardBreakdown.brokerage.total > 0 && (
@@ -969,6 +1062,7 @@ const Optimize = () => {
                       accountType="brokerage"
                       breakdown={person.standardBreakdown.brokerage}
                       accountTypeName="Brokerage"
+                      calculationMode="standard"
                     />
                   )}
                 </>
@@ -982,23 +1076,29 @@ const Optimize = () => {
             {/* YTD + Projected Calculation */}
             <div className="optimize-person-column">
               <h4 className="person-calculation-header ytd">YTD + Projected Calculation</h4>
+              <div className="optimize-calculation-note">
+                <small>📅 Projected contributions start from next month</small>
+              </div>
               {person.ytdBreakdown ? (
                 <>
                   <ContributionBreakdown
                     accountType="k401"
                     breakdown={person.ytdBreakdown.k401}
                     accountTypeName="401(k)"
+                    calculationMode="ytd"
                   />
                   <ContributionBreakdown
                     accountType="ira"
                     breakdown={person.ytdBreakdown.ira}
                     accountTypeName="IRA"
+                    calculationMode="ytd"
                   />
                   {person.ytdBreakdown.hsa.limit > 0 && (
                     <ContributionBreakdown
                       accountType="hsa"
                       breakdown={person.ytdBreakdown.hsa}
                       accountTypeName="HSA"
+                      calculationMode="ytd"
                     />
                   )}
                   {person.ytdBreakdown.espp.total > 0 && (
@@ -1006,6 +1106,7 @@ const Optimize = () => {
                       accountType="espp"
                       breakdown={person.ytdBreakdown.espp}
                       accountTypeName="ESPP"
+                      calculationMode="ytd"
                     />
                   )}
                   {person.ytdBreakdown.brokerage.total > 0 && (
@@ -1013,6 +1114,7 @@ const Optimize = () => {
                       accountType="brokerage"
                       breakdown={person.ytdBreakdown.brokerage}
                       accountTypeName="Brokerage"
+                      calculationMode="ytd"
                     />
                   )}
                 </>
@@ -1049,42 +1151,134 @@ const Optimize = () => {
             {/* Standard Calculation */}
             <div className="optimize-calculation-column">
               <h3 className="calculation-header standard">Standard Calculation</h3>
-              <HouseholdBreakdownSection breakdownData={householdTotals.standardBreakdown} />
+              <HouseholdBreakdownSection breakdownData={householdTotals.standardBreakdown} annualTotals={householdTotals.standardAnnualTotals} />
             </div>
 
             {/* YTD + Projected Calculation */}
             <div className="optimize-calculation-column">
               <h3 className="calculation-header ytd">YTD + Projected Calculation</h3>
-              <HouseholdBreakdownSection breakdownData={householdTotals.ytdBreakdown} />
+              <div className="optimize-calculation-note">
+                <small>📅 Projected contributions start from next month</small>
+              </div>
+              <HouseholdBreakdownSection breakdownData={householdTotals.ytdBreakdown} annualTotals={householdTotals.ytdAnnualTotals} />
             </div>
           </div>
 
-          {/* Optimization Opportunities */}
-          {(householdTotals.remaining401k > 0 || householdTotals.remainingIra > 0 || householdTotals.remainingHsa > 0) && (
-            <div className="optimize-opportunities">
-              <h3>Optimization Opportunities</h3>
-              <div className="optimize-opportunities-grid">
-                {householdTotals.remaining401k > 0 && (
-                  <div className="optimize-opportunity">
-                    <span className="label">Additional 401(k) room:</span>
-                    <span className="value opportunity">{formatCurrency(householdTotals.remaining401k)}</span>
-                  </div>
-                )}
-                {householdTotals.remainingIra > 0 && (
-                  <div className="optimize-opportunity">
-                    <span className="label">Additional IRA room:</span>
-                    <span className="value opportunity">{formatCurrency(householdTotals.remainingIra)}</span>
-                  </div>
-                )}
-                {householdTotals.remainingHsa > 0 && (
-                  <div className="optimize-opportunity">
-                    <span className="label">Additional HSA room:</span>
-                    <span className="value opportunity">{formatCurrency(householdTotals.remainingHsa)}</span>
-                  </div>
-                )}
+          {/* Optimization Analysis - Side by Side Comparison */}
+          <div className="optimize-opportunities">
+            <h3>Optimization Analysis - Side by Side Comparison</h3>
+            <div className="optimize-comparison-container">
+              {/* Standard Calculation Opportunities */}
+              <div className="optimize-calculation-column">
+                <h4 className="calculation-header standard">Standard Calculation</h4>
+                <div className="optimize-opportunities-grid">
+                  {householdTotals.remaining401k !== 0 && (
+                    <div className="optimize-opportunity">
+                      <span className="label">
+                        {householdTotals.remaining401k > 0 ? 'Additional 401(k) room:' : '401(k) Over Contributed:'}
+                      </span>
+                      <span className={`value ${householdTotals.remaining401k > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                        {formatCurrency(Math.abs(householdTotals.remaining401k))}
+                        {householdTotals.remaining401k < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                      </span>
+                    </div>
+                  )}
+                  {householdTotals.remainingIra !== 0 && (
+                    <div className="optimize-opportunity">
+                      <span className="label">
+                        {householdTotals.remainingIra > 0 ? 'Additional IRA room:' : 'IRA Over Contributed:'}
+                      </span>
+                      <span className={`value ${householdTotals.remainingIra > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                        {formatCurrency(Math.abs(householdTotals.remainingIra))}
+                        {householdTotals.remainingIra < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                      </span>
+                    </div>
+                  )}
+                  {householdTotals.remainingHsa !== 0 && (
+                    <div className="optimize-opportunity">
+                      <span className="label">
+                        {householdTotals.remainingHsa > 0 ? 'Additional HSA room:' : 'HSA Over Contributed:'}
+                      </span>
+                      <span className={`value ${householdTotals.remainingHsa > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                        {formatCurrency(Math.abs(householdTotals.remainingHsa))}
+                        {householdTotals.remainingHsa < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* YTD + Projected Calculation Opportunities */}
+              <div className="optimize-calculation-column">
+                <h4 className="calculation-header ytd">YTD + Projected Calculation</h4>
+                <div className="optimize-calculation-note">
+                  <small>📅 Projected contributions start from next month</small>
+                </div>
+                <div className="optimize-opportunities-grid">
+                  {householdTotals.ytdBreakdown && (
+                    <>
+                      {/* Calculate YTD remaining values */}
+                      {(() => {
+                        const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
+                        const ytdRemaining401k = people.reduce((sum, p) => sum + (p.ytdBreakdown?.k401?.remaining || 0), 0);
+                        const ytdRemainingIra = people.reduce((sum, p) => {
+                          const isJoint = p.accountTypes && p.accountTypes.ira === 'Joint';
+                          if (isJoint && people.length > 1) {
+                            return (p.ytdBreakdown?.ira?.remaining || 0) * people.length;
+                          }
+                          return sum + (p.ytdBreakdown?.ira?.remaining || 0);
+                        }, 0);
+                        const ytdRemainingHsa = people.reduce((sum, p) => sum + (p.ytdBreakdown?.hsa?.remaining || 0), 0);
+                        
+                        return (
+                          <>
+                            {ytdRemaining401k !== 0 && (
+                              <div className="optimize-opportunity">
+                                <span className="label">
+                                  {ytdRemaining401k > 0 ? 'Additional 401(k) room:' : '401(k) Over Contributed:'}
+                                </span>
+                                <span className={`value ${ytdRemaining401k > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                                  {formatCurrency(Math.abs(ytdRemaining401k))}
+                                  {ytdRemaining401k < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                                </span>
+                              </div>
+                            )}
+                            {ytdRemainingIra !== 0 && (
+                              <div className="optimize-opportunity">
+                                <span className="label">
+                                  {ytdRemainingIra > 0 ? 'Additional IRA room:' : 'IRA Over Contributed:'}
+                                </span>
+                                <span className={`value ${ytdRemainingIra > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                                  {formatCurrency(Math.abs(ytdRemainingIra))}
+                                  {ytdRemainingIra < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                                </span>
+                              </div>
+                            )}
+                            {ytdRemainingHsa !== 0 && (
+                              <div className="optimize-opportunity">
+                                <span className="label">
+                                  {ytdRemainingHsa > 0 ? 'Additional HSA room:' : 'HSA Over Contributed:'}
+                                </span>
+                                <span className={`value ${ytdRemainingHsa > 0 ? 'opportunity' : 'optimize-limit-exceeded'}`}>
+                                  {formatCurrency(Math.abs(ytdRemainingHsa))}
+                                  {ytdRemainingHsa < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        );
+                      })()}
+                    </>
+                  )}
+                  {!householdTotals.ytdBreakdown && (
+                    <div className="optimize-opportunity">
+                      <span className="label">No YTD data available</span>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
-          )}
+          </div>
         </div>
 
         {/* Individual Breakdown */}

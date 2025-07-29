@@ -871,9 +871,9 @@ export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCov
   }
   
   return {
-    k401_remaining: Math.max(0, max401k - ytdContributions.total401k),
-    ira_remaining: Math.max(0, maxIra - ytdContributions.totalIra),
-    hsa_remaining: Math.max(0, maxHsa - ytdContributions.hsa),
+    k401_remaining: max401k - ytdContributions.total401k,
+    ira_remaining: maxIra - ytdContributions.totalIra,
+    hsa_remaining: maxHsa - ytdContributions.hsa,
     k401_max: max401k,
     ira_max: maxIra,
     hsa_max: maxHsa
