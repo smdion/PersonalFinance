@@ -174,6 +174,7 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
   const currentYear = new Date().getFullYear();
   let hasChanges = false;
   
+  
   // Get ALL existing performance accounts from ALL current year entries for matching
   const existingPerformanceAccounts = [];
   const currentYearEntries = Object.entries(performanceData).filter(([_, entry]) => entry.year === currentYear);
@@ -224,6 +225,10 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
       if (matchingPerfAccount) {
         // Update existing performance account balance
         matchingPerfAccount.userData.balance = parseFloat(account.amount);
+        
+        // CRITICAL: Also update the entry-level balance field that DataManager displays
+        matchingPerfAccount.entry.balance = parseFloat(account.amount);
+        
         matchingPerfAccount.userData.balanceUpdatedFrom = 'portfolio-individual';
         matchingPerfAccount.userData.balanceUpdatedAt = new Date().toISOString();
         hasChanges = true;
@@ -233,6 +238,13 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
         const newPerformanceEntry = {
           entryId: newEntryId,
           year: currentYear,
+          // CRITICAL: Add entry-level balance that DataManager displays
+          balance: parseFloat(account.amount),
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: '',
           users: {
             [account.owner]: {
               accountName: account.accountName,
@@ -282,6 +294,10 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
         // Update existing Performance account balance
         const oldBalance = targetPerfAccount.userData.balance;
         targetPerfAccount.userData.balance = totalBalance;
+        
+        // CRITICAL: Also update the entry-level balance field that DataManager displays
+        // This matches the Historical data structure pattern
+        targetPerfAccount.entry.balance = totalBalance;
         targetPerfAccount.userData.balanceUpdatedFrom = 'portfolio-manual-group';
         targetPerfAccount.userData.balanceUpdatedAt = new Date().toISOString();
         targetPerfAccount.userData.manualGroupId = groupId;
@@ -293,6 +309,13 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
         const newPerformanceEntry = {
           entryId: newEntryId,
           year: currentYear,
+          // CRITICAL: Add entry-level balance that DataManager displays
+          balance: totalBalance,
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: '',
           users: {
             [group.owner]: {
               accountName: group.performanceAccountName,

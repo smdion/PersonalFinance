@@ -461,7 +461,7 @@ export const exportAllLocalStorageData = () => {
     }
     
     if (data !== null) {
-      allData[keyName.toLowerCase()] = data;
+      allData[storageKey] = data;
     }
   });
   
@@ -858,45 +858,77 @@ export const importAllData = (importData) => {
       throw new Error('Invalid import data format');
     }
     
-    // Clear any existing name mappings and localStorage to prevent conflicts
-    setNameMapping({});
-    localStorage.removeItem(NAME_MAPPING_KEY);
+    // Clear ALL existing data before importing new data
+    Object.values(STORAGE_KEYS).forEach(key => {
+      removeFromStorage(key);
+    });
+    
+    // Also clear name mapping
+    removeFromStorage(NAME_MAPPING_KEY);
+    
+    // Also clear any other potential storage keys that might exist
+    const keysToRemove = [
+      'budgetData',
+      'paycheckData', 
+      'formData',
+      'appSettings',
+      'historicalData',
+      'performanceData',
+      'networthSettings',
+      'retirementData',
+      'portfolioAccounts',
+      'portfolioRecords',
+      'portfolioInputs',
+      'sharedAccounts', 
+      'manualAccountGroups',
+      'savingsData',
+      'nameMapping',
+      'hasSeenBetaWelcome'
+    ];
+    
+    keysToRemove.forEach(key => {
+      try {
+        localStorage.removeItem(key);
+      } catch (error) {
+        // Ignore errors during cleanup
+      }
+    });
     
     // Clear the in-memory cache
     nameMapping = {};
     nameMappingLoaded = false;
     
-    // Import each section if it exists
-    if (importData.budgetData !== undefined) {
-      setBudgetData(importData.budgetData);
+    // Import each section if it exists (handle both camelCase and snake_case for backward compatibility)
+    if (importData.budgetData !== undefined || importData.budget_data !== undefined) {
+      setBudgetData(importData.budgetData || importData.budget_data);
       importedSections.push('Budget Data');
     }
     
-    if (importData.paycheckData !== undefined) {
-      setPaycheckData(importData.paycheckData);
+    if (importData.paycheckData !== undefined || importData.paycheck_data !== undefined) {
+      setPaycheckData(importData.paycheckData || importData.paycheck_data);
       importedSections.push('Paycheck Data');
     }
     
-    if (importData.formData !== undefined) {
-      setFormData(importData.formData);
+    if (importData.formData !== undefined || importData.form_data !== undefined) {
+      setFormData(importData.formData || importData.form_data);
       importedSections.push('Form Data');
     }
     
-    if (importData.appSettings !== undefined) {
-      setAppSettings(importData.appSettings);
+    if (importData.appSettings !== undefined || importData.app_settings !== undefined) {
+      setAppSettings(importData.appSettings || importData.app_settings);
       importedSections.push('App Settings');
     }
     
-    if (importData.historicalData !== undefined) {
+    if (importData.historicalData !== undefined || importData.historical_data !== undefined) {
       // Clean empty user data before importing
-      const cleanedHistoricalData = cleanEmptyUserData(importData.historicalData);
+      const cleanedHistoricalData = cleanEmptyUserData(importData.historicalData || importData.historical_data);
       setHistoricalData(cleanedHistoricalData);
       importedSections.push('Historical Data');
     }
     
-    if (importData.performanceData !== undefined) {
+    if (importData.performanceData !== undefined || importData.performance_data !== undefined) {
       // Handle both array and object formats during import
-      let performanceDataToImport = importData.performanceData;
+      let performanceDataToImport = importData.performanceData || importData.performance_data;
       if (Array.isArray(performanceDataToImport)) {
         // Convert array to object format
         performanceDataToImport = performanceDataToImport.reduce((acc, entry) => {
@@ -916,44 +948,44 @@ export const importAllData = (importData) => {
       }
     }
     
-    if (importData.retirementData !== undefined) {
-      setRetirementData(importData.retirementData);
+    if (importData.retirementData !== undefined || importData.retirement_data !== undefined) {
+      setRetirementData(importData.retirementData || importData.retirement_data);
       importedSections.push('Retirement Data');
     }
     
     // Import portfolio-related data
-    if (importData.networthSettings !== undefined) {
-      setNetWorthSettings(importData.networthSettings);
+    if (importData.networthSettings !== undefined || importData.networth_settings !== undefined) {
+      setNetWorthSettings(importData.networthSettings || importData.networth_settings);
       importedSections.push('Net Worth Settings');
     }
     
-    if (importData.savingsData !== undefined) {
-      setSavingsData(importData.savingsData);
+    if (importData.savingsData !== undefined || importData.savings_data !== undefined) {
+      setSavingsData(importData.savingsData || importData.savings_data);
       importedSections.push('Savings Data');
     }
     
-    if (importData.portfolioAccounts !== undefined) {
-      setPortfolioAccounts(importData.portfolioAccounts);
+    if (importData.portfolioAccounts !== undefined || importData.portfolio_accounts !== undefined) {
+      setPortfolioAccounts(importData.portfolioAccounts || importData.portfolio_accounts);
       importedSections.push('Portfolio Accounts');
     }
     
-    if (importData.portfolioRecords !== undefined) {
-      setPortfolioRecords(importData.portfolioRecords);
+    if (importData.portfolioRecords !== undefined || importData.portfolio_records !== undefined) {
+      setPortfolioRecords(importData.portfolioRecords || importData.portfolio_records);
       importedSections.push('Portfolio Records');
     }
     
-    if (importData.sharedAccounts !== undefined) {
-      setSharedAccounts(importData.sharedAccounts);
+    if (importData.sharedAccounts !== undefined || importData.shared_accounts !== undefined) {
+      setSharedAccounts(importData.sharedAccounts || importData.shared_accounts);
       importedSections.push('Shared Accounts');
     }
     
-    if (importData.portfolioInputs !== undefined) {
-      setPortfolioInputs(importData.portfolioInputs);
+    if (importData.portfolioInputs !== undefined || importData.portfolio_inputs !== undefined) {
+      setPortfolioInputs(importData.portfolioInputs || importData.portfolio_inputs);
       importedSections.push('Portfolio Inputs');
     }
     
-    if (importData.manualAccountGroups !== undefined) {
-      setManualAccountGroups(importData.manualAccountGroups);
+    if (importData.manualAccountGroups !== undefined || importData.manual_account_groups !== undefined) {
+      setManualAccountGroups(importData.manualAccountGroups || importData.manual_account_groups);
       importedSections.push('Manual Account Groups');
     }
     
@@ -1934,18 +1966,26 @@ export const getAvailablePerformanceAccounts = () => {
   Object.values(performanceData).forEach(entry => {
     if (entry.year === currentYear && entry.users) {
       Object.entries(entry.users).forEach(([owner, userData]) => {
-        // More lenient filtering - include accounts that have either accountName OR accountType
+        // Include accounts that have accountName or can generate one from accountType
         if ((userData.accountName && userData.accountName.trim()) || 
             (userData.accountType && userData.accountType.trim())) {
           
           // Use accountName if available, otherwise generate from accountType + company
           let displayAccountName = userData.accountName;
           if (!displayAccountName && userData.accountType) {
-            displayAccountName = `${owner}'s ${userData.investmentCompany || ''} ${userData.accountType}`.trim();
+            // Generate name more consistently with Portfolio naming
+            const companyPart = userData.investmentCompany ? ` ${userData.investmentCompany}` : '';
+            const ownerPrefix = owner.toLowerCase() !== 'joint' ? `${owner}'s` : 'Joint';
+            displayAccountName = `${ownerPrefix}${companyPart} ${userData.accountType}`.trim();
           }
           
-          // Create unique identifier for deduplication
-          const uniqueKey = `${displayAccountName}-${owner}-${userData.accountType || ''}-${userData.investmentCompany || ''}`;
+          // Skip if we still don't have a valid account name
+          if (!displayAccountName || displayAccountName.trim() === '') {
+            return;
+          }
+          
+          // Create unique identifier for deduplication based on the actual account name
+          const uniqueKey = `${displayAccountName.trim()}-${owner}`;
           
           // Only add if we haven't seen this account before
           if (!accountSet.has(uniqueKey)) {
