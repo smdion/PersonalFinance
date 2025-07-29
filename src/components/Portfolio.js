@@ -6,8 +6,6 @@ import {
   getPaycheckData,
   getPortfolioAccounts,
   addPortfolioAccount,
-  addPortfolioUpdateRecord,
-  getPortfolioUpdateHistory,
   getPortfolioRecords,
   addPortfolioRecord,
   deletePortfolioRecord,
@@ -54,8 +52,6 @@ const Portfolio = () => {
   const [users, setUsers] = useState([]);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const [updateHistory, setUpdateHistory] = useState([]);
-  const [showHistory, setShowHistory] = useState(false);
   const [portfolioRecords, setPortfolioRecords] = useState([]);
   const [showRecords, setShowRecords] = useState(false);
   const [sortRecordsNewestFirst, setSortRecordsNewestFirst] = useState(true);
@@ -73,7 +69,6 @@ const Portfolio = () => {
     initializeSharedAccounts();
     
     loadCurrentYearData();
-    loadUpdateHistory();
     loadPortfolioRecords();
     loadManualGroups();
     
@@ -94,12 +89,10 @@ const Portfolio = () => {
         description: ''
       }]);
       setCurrentYearData({});
-      setUpdateHistory([]);
-      setPortfolioRecords([]);
+            setPortfolioRecords([]);
       setErrors({});
       setSuccessMessage('');
-      setShowHistory(false);
-      setShowRecords(false);
+            setShowRecords(false);
       setManualGroups({});
       setShowManualGrouping(false);
       
@@ -144,10 +137,6 @@ const Portfolio = () => {
   // Portfolio account definitions are now saved manually when adding/removing accounts
   // Amount values are intentionally not persisted
 
-  const loadUpdateHistory = () => {
-    const history = getPortfolioUpdateHistory();
-    setUpdateHistory(history);
-  };
 
   const loadPortfolioRecords = () => {
     const records = getPortfolioRecords();
@@ -162,7 +151,6 @@ const Portfolio = () => {
   const loadPortfolioInputs = () => {
     const savedInputs = getPortfolioInputs();
     if (savedInputs.length > 0) {
-      console.log('📥 Loading saved portfolio inputs:', savedInputs.length, 'accounts');
       // Ensure loaded inputs have empty amount fields (not persisted)
       const inputsWithEmptyAmounts = savedInputs.map(input => ({
         id: input.id || generateUniqueId(),
@@ -176,25 +164,19 @@ const Portfolio = () => {
         ...input // Preserve any other fields, but amount will be overridden
       }));
       setPortfolioInputs(inputsWithEmptyAmounts);
-    } else {
-      console.log('📥 No saved portfolio inputs found');
     }
   };
 
   // Wrapper to avoid naming conflict with state setter
   // Excludes amount/balance values from persistence - only saves account definitions
   const savePortfolioInputsToStorage = (inputs) => {
-    console.log('💾 savePortfolioInputsToStorage called with:', inputs.length, 'inputs');
-    
     // Remove amount field before saving to localStorage
     const inputsWithoutAmounts = inputs.map(input => {
       const { amount, ...inputWithoutAmount } = input;
       return inputWithoutAmount;
     });
     
-    console.log('💾 Saving without amounts:', inputsWithoutAmounts.length, 'inputs');
     const result = savePortfolioInputsToLocalStorage(inputsWithoutAmounts);
-    console.log('💾 localStorage save result:', result);
     return result;
   };
 
@@ -287,7 +269,6 @@ const Portfolio = () => {
       // Check if we have saved portfolio inputs, if not initialize with empty form
       const savedInputs = getPortfolioInputs();
       if (savedInputs.length > 0) {
-        console.log('📥 Using saved portfolio inputs from localStorage');
         // Ensure loaded inputs have empty amount fields (not persisted)
         const inputsWithEmptyAmounts = savedInputs.map(input => ({
           id: input.id || generateUniqueId(),
@@ -303,7 +284,6 @@ const Portfolio = () => {
         setPortfolioInputs(inputsWithEmptyAmounts);
       } else if (portfolioInputs.length === 0) {
         // Initialize with empty form on first load
-        console.log('📝 Initializing with empty portfolio form');
         setPortfolioInputs([{
           id: generateUniqueId(),
           taxType: '',
@@ -443,7 +423,6 @@ const Portfolio = () => {
           accountToRemove.accountType,
           accountToRemove.owner
         );
-        console.log('Cleaned up shared accounts:', cleanupResult);
       }
       
       const updatedInputs = portfolioInputs.filter((_, i) => i !== index);
@@ -479,37 +458,6 @@ const Portfolio = () => {
       const currentYear = new Date().getFullYear();
       const historicalData = getHistoricalData();
       
-      // Start with existing balances to preserve accounts not being updated
-      const currentTotals = {
-        taxFree: historicalData[currentYear]?.taxFree || 0,
-        taxDeferred: historicalData[currentYear]?.taxDeferred || 0,
-        brokerage: historicalData[currentYear]?.brokerage || 0,
-        espp: historicalData[currentYear]?.espp || 0,
-        hsa: historicalData[currentYear]?.hsa || 0
-      };
-
-      // Track which account types are being updated so we can preserve others
-      const accountTypesBeingUpdated = new Set();
-      const taxTypesBeingUpdated = new Set();
-      
-      portfolioInputs.forEach(input => {
-        if (input.accountType === 'ESPP' || input.accountType === 'HSA') {
-          accountTypesBeingUpdated.add(input.accountType.toLowerCase());
-        } else {
-          switch (input.taxType) {
-            case 'Tax-Free':
-              taxTypesBeingUpdated.add('taxFree');
-              break;
-            case 'Tax-Deferred':
-              taxTypesBeingUpdated.add('taxDeferred');
-              break;
-            case 'After-Tax':
-            case 'Roth':
-              taxTypesBeingUpdated.add('brokerage');
-              break;
-          }
-        }
-      });
 
       // Calculate new totals from portfolio inputs
       const newAmounts = portfolioInputs.reduce((acc, input) => {
@@ -545,14 +493,8 @@ const Portfolio = () => {
         hsa: 0
       });
 
-      // Merge new amounts with existing, only updating categories that have portfolio inputs
-      const totals = {
-        taxFree: taxTypesBeingUpdated.has('taxFree') ? newAmounts.taxFree : currentTotals.taxFree,
-        taxDeferred: taxTypesBeingUpdated.has('taxDeferred') ? newAmounts.taxDeferred : currentTotals.taxDeferred,
-        brokerage: taxTypesBeingUpdated.has('brokerage') ? newAmounts.brokerage : currentTotals.brokerage,
-        espp: accountTypesBeingUpdated.has('espp') ? newAmounts.espp : currentTotals.espp,
-        hsa: accountTypesBeingUpdated.has('hsa') ? newAmounts.hsa : currentTotals.hsa
-      };
+      // Use new amounts directly
+      const totals = newAmounts;
 
       // Update current year entry
       if (!historicalData[currentYear]) {
@@ -599,59 +541,10 @@ const Portfolio = () => {
         return acc;
       }, {});
       
-      // Build final totals by owner, preserving existing values for non-updated categories
-      const totalsByOwner = {};
-      const allOwners = new Set([
-        ...Object.keys(newAmountsByOwner),
-        ...Object.keys(historicalData[currentYear]?.users || {})
-      ]);
-      
-      allOwners.forEach(owner => {
-        const existingUserData = historicalData[currentYear]?.users?.[owner] || {};
-        const newUserData = newAmountsByOwner[owner] || {};
-        
-        // Check which categories this owner has in current portfolio inputs
-        const ownerInputs = portfolioInputs.filter(input => input.owner === owner);
-        const ownerAccountTypes = new Set();
-        const ownerTaxTypes = new Set();
-        
-        ownerInputs.forEach(input => {
-          if (input.accountType === 'ESPP' || input.accountType === 'HSA') {
-            ownerAccountTypes.add(input.accountType.toLowerCase());
-          } else {
-            switch (input.taxType) {
-              case 'Tax-Free':
-                ownerTaxTypes.add('taxFree');
-                break;
-              case 'Tax-Deferred':
-                ownerTaxTypes.add('taxDeferred');
-                break;
-              case 'After-Tax':
-              case 'Roth':
-                ownerTaxTypes.add('brokerage');
-                break;
-            }
-          }
-        });
-        
-        totalsByOwner[owner] = {
-          taxFree: ownerTaxTypes.has('taxFree') ? newUserData.taxFree || 0 : existingUserData.taxFree || 0,
-          taxDeferred: ownerTaxTypes.has('taxDeferred') ? newUserData.taxDeferred || 0 : existingUserData.taxDeferred || 0,
-          brokerage: ownerTaxTypes.has('brokerage') ? newUserData.brokerage || 0 : existingUserData.brokerage || 0,
-          espp: ownerAccountTypes.has('espp') ? newUserData.espp || 0 : existingUserData.espp || 0,
-          hsa: ownerAccountTypes.has('hsa') ? newUserData.hsa || 0 : existingUserData.hsa || 0
-        };
-      });
+      // Use new amounts by owner directly
+      const totalsByOwner = newAmountsByOwner;
       
 
-      // Get previous totals for change tracking BEFORE updating
-      const previousTotals = {
-        taxFree: historicalData[currentYear].taxFree || 0,
-        taxDeferred: historicalData[currentYear].taxDeferred || 0,
-        brokerage: historicalData[currentYear].brokerage || 0,
-        espp: historicalData[currentYear].espp || 0,
-        hsa: historicalData[currentYear].hsa || 0
-      };
 
       // Update root-level investment data (this is how historical data is structured)
       historicalData[currentYear].taxFree = totals.taxFree;
@@ -660,10 +553,6 @@ const Portfolio = () => {
       historicalData[currentYear].espp = totals.espp;
       historicalData[currentYear].hsa = totals.hsa;
       
-      // Keep existing cash value or set to 0
-      if (historicalData[currentYear].cash === undefined) {
-        historicalData[currentYear].cash = 0;
-      }
 
       // Also store individual owner data in users object for reference
       Object.entries(totalsByOwner).forEach(([ownerName, ownerTotals]) => {
@@ -680,10 +569,6 @@ const Portfolio = () => {
         userData.espp = ownerTotals.espp;
         userData.hsa = ownerTotals.hsa;
         
-        // Keep existing cash value or set to 0
-        if (userData.cash === undefined) {
-          userData.cash = 0;
-        }
       });
       
       
@@ -749,19 +634,15 @@ const Portfolio = () => {
           )
         }));
         
-        // Add update record to history with change tracking
-        addPortfolioUpdateRecord(portfolioDataWithNames, totals, previousTotals);
         
         // Add portfolio record with current date (with generated names)
         addPortfolioRecord(portfolioDataWithNames);
         
         // Automatically sync portfolio balances to performance (background sync)
         const syncResult = syncPortfolioBalanceToPerformance(portfolioDataWithNames);
-        console.log('Portfolio->Performance sync result:', syncResult);
         
         // Also update performance accounts to only show latest portfolio accounts
         const performanceSyncResult = syncPerformanceAccountsFromLatestPortfolio();
-        console.log('Performance accounts sync result:', performanceSyncResult);
         
         // Repopulate portfolio inputs with all available accounts (including from Performance)
         loadCurrentYearData(true); // Force reload accounts from both sources after update
@@ -769,8 +650,7 @@ const Portfolio = () => {
         // Clear any validation errors
         setErrors({});
         
-        // Refresh history and records
-        loadUpdateHistory();
+        // Refresh records
         loadPortfolioRecords();
         
       } else {
@@ -962,34 +842,15 @@ const Portfolio = () => {
 
   const handleCSVImportSuccess = (parsed) => {
     // Replace current portfolio inputs with CSV data
-    console.log('📤 CSV Import: Setting portfolio inputs:', parsed.length, 'accounts');
-    console.log('📤 CSV Import: Parsed data:', parsed);
     setPortfolioInputs(parsed);
     
     // Explicitly save to localStorage after CSV import to ensure persistence
     if (parsed.length > 0) {
-      console.log('💾 CSV Import: Explicitly saving to localStorage');
       try {
         const saveResult = savePortfolioInputsToStorage(parsed);
-        console.log('💾 CSV Import: Save completed, result:', saveResult);
       } catch (error) {
-        console.error('❌ CSV Import: Save failed with error:', error);
+        // Handle save error silently
       }
-      
-      // Verify the data was saved by reading it back
-      setTimeout(() => {
-        try {
-          const savedData = getPortfolioInputs();
-          console.log('🔍 CSV Import: Verification - saved data length:', savedData.length);
-          console.log('🔍 CSV Import: Verification - saved data:', savedData);
-          
-          // Also check raw localStorage
-          const rawData = localStorage.getItem('portfolioInputs');
-          console.log('🔍 CSV Import: Raw localStorage data:', rawData);
-        } catch (error) {
-          console.error('❌ CSV Import: Verification failed with error:', error);
-        }
-      }, 100);
     }
     
     // Add portfolio records for each unique update date in the CSV
@@ -1045,12 +906,10 @@ const Portfolio = () => {
         description: ''
       }]);
       setCurrentYearData({});
-      setUpdateHistory([]);
-      setPortfolioRecords([]);
+            setPortfolioRecords([]);
       setErrors({});
       setSuccessMessage('');
-      setShowHistory(false);
-      setShowRecords(false);
+            setShowRecords(false);
       
       // Clear localStorage data related to portfolio
       const currentYear = new Date().getFullYear();
@@ -1196,7 +1055,7 @@ const Portfolio = () => {
         {/* Manual Account Grouping Section */}
         <div className="manual-grouping-section" style={{ marginBottom: '2rem', padding: '1rem', backgroundColor: '#f0f8ff', borderRadius: '8px', border: '1px solid #cce7ff' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
-            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#495057' }}>📋 Manual Account Grouping for Performance Sync</h3>
+            <h3 style={{ margin: 0, fontSize: '1.1rem', color: '#495057' }}>📋 Manual Account Grouping</h3>
             <button 
               type="button" 
               onClick={() => setShowManualGrouping(!showManualGrouping)}
@@ -1470,7 +1329,7 @@ const Portfolio = () => {
                         value={input.owner}
                         onChange={(e) => handleInputChange(index, 'owner', e.target.value)}
                         className={errors[index]?.owner ? 'error' : ''}
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
                       >
                         {users.map(user => (
                           <option key={user} value={user}>{user}</option>
@@ -1483,7 +1342,7 @@ const Portfolio = () => {
                         value={input.taxType}
                         onChange={(e) => handleInputChange(index, 'taxType', e.target.value)}
                         className={errors[index]?.taxType ? 'error' : ''}
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
                       >
                         <option value="">Select</option>
                         {TAX_TYPES.map(type => (
@@ -1497,7 +1356,7 @@ const Portfolio = () => {
                         value={input.accountType}
                         onChange={(e) => handleInputChange(index, 'accountType', e.target.value)}
                         className={errors[index]?.accountType ? 'error' : ''}
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
                       >
                         <option value="">Select</option>
                         {ACCOUNT_TYPES.map(type => (
@@ -1513,7 +1372,7 @@ const Portfolio = () => {
                         onChange={(e) => handleInputChange(index, 'investmentCompany', e.target.value)}
                         placeholder="e.g., Fidelity"
                         className={errors[index]?.investmentCompany ? 'error' : ''}
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
                       />
                       {errors[index]?.investmentCompany && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].investmentCompany}</div>}
                     </td>
@@ -1522,8 +1381,7 @@ const Portfolio = () => {
                         type="text"
                         value={input.description || ''}
                         onChange={(e) => handleInputChange(index, 'description', e.target.value)}
-                        placeholder="e.g., Rollover IRA, Main 401k"
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
                       />
                     </td>
                     <td>
@@ -1535,7 +1393,7 @@ const Portfolio = () => {
                         step="0.01"
                         min="0"
                         className={errors[index]?.amount ? 'error' : ''}
-                        style={{ width: '100%', border: 'none', background: 'transparent', padding: '0.5rem', textAlign: 'right' }}
+                        style={{ border: 'none', background: 'transparent', padding: '0.5rem', textAlign: 'right' }}
                       />
                       {errors[index]?.amount && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].amount}</div>}
                     </td>
@@ -1560,16 +1418,8 @@ const Portfolio = () => {
             <button type="button" onClick={addPortfolioInput} className="btn-secondary">
               + Add Another Account
             </button>
-            <button 
-              type="button" 
-              onClick={() => loadCurrentYearData(true)} 
-              className="btn-tertiary"
-              title="Load account definitions from your previous portfolio entries"
-            >
-              📋 Load Previous Accounts
-            </button>
             <button type="button" onClick={updateHistoricalData} className="btn-primary">
-              Update Historical Data
+              Update Perforamnce Data
             </button>
           </div>
 
@@ -1689,165 +1539,7 @@ const Portfolio = () => {
           </div>
         </div>
 
-        {/* Current Historical Data Display */}
-        {currentYearData && Object.keys(currentYearData).length > 0 && (
-          <div className="current-data-section">
-            <h2>Current {currentYear} Investment Data</h2>
-            {updateHistory.length > 0 && (
-              <p className="last-update-info">
-                Last updated: {formatDateTime(updateHistory[0].timestamp)}
-                {updateHistory[0].changes && updateHistory[0].changes.total !== 0 && (
-                  <span 
-                    className="last-update-change"
-                    style={{ color: formatChange(updateHistory[0].changes.total)?.color }}
-                  >
-                    {' '}({formatChange(updateHistory[0].changes.total)?.sign}{formatChange(updateHistory[0].changes.total)?.formatted} total change)
-                  </span>
-                )}
-              </p>
-            )}
-            <div className="current-data-cards">
-              <div className="user-data-card">
-                <h3>Combined Portfolio Total</h3>
-                <div className="investment-fields">
-                  <div>Tax-Free: {formatCurrency(currentYearData.taxFree || 0)}</div>
-                  <div>Tax-Deferred: {formatCurrency(currentYearData.taxDeferred || 0)}</div>
-                  <div>Brokerage: {formatCurrency(currentYearData.brokerage || 0)}</div>
-                  <div>ESPP: {formatCurrency(currentYearData.espp || 0)}</div>
-                  <div>HSA: {formatCurrency(currentYearData.hsa || 0)}</div>
-                  <div>Cash: {formatCurrency(currentYearData.cash || 0)}</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* Update History */}
-        {updateHistory.length > 0 && (
-          <div className="update-history-section">
-            <div className="update-history-header">
-              <h2>Update History</h2>
-              <button 
-                type="button" 
-                onClick={() => setShowHistory(!showHistory)}
-                className="btn-secondary"
-              >
-                {showHistory ? 'Hide History' : `Show History (${updateHistory.length})`}
-              </button>
-            </div>
-            
-            {showHistory && (
-              <div className="update-history-list">
-                {updateHistory.map(record => (
-                  <div key={record.id} className="update-record">
-                    <div className="update-record-header">
-                      <div className="update-timestamp">
-                        <strong>{formatDateTime(record.timestamp)}</strong>
-                        <span className="update-year">Year: {record.year}</span>
-                      </div>
-                      <div className="update-summary">
-                        <span>{record.accountsUpdated} accounts • {formatCurrency(record.totalAmount)} total</span>
-                      </div>
-                    </div>
-                    
-                    <div className="update-totals">
-                      <div className="update-totals-grid">
-                        <div className="update-total-item">
-                          <span className="total-label">Tax-Free:</span>
-                          <span className="total-amount">{formatCurrency(record.totals.taxFree)}</span>
-                          {record.changes && formatChange(record.changes.taxFree) && (
-                            <span 
-                              className="total-change" 
-                              style={{ color: formatChange(record.changes.taxFree).color }}
-                            >
-                              ({formatChange(record.changes.taxFree).sign}{formatChange(record.changes.taxFree).formatted})
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="update-total-item">
-                          <span className="total-label">Tax-Deferred:</span>
-                          <span className="total-amount">{formatCurrency(record.totals.taxDeferred)}</span>
-                          {record.changes && formatChange(record.changes.taxDeferred) && (
-                            <span 
-                              className="total-change" 
-                              style={{ color: formatChange(record.changes.taxDeferred).color }}
-                            >
-                              ({formatChange(record.changes.taxDeferred).sign}{formatChange(record.changes.taxDeferred).formatted})
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="update-total-item">
-                          <span className="total-label">Brokerage:</span>
-                          <span className="total-amount">{formatCurrency(record.totals.brokerage)}</span>
-                          {record.changes && formatChange(record.changes.brokerage) && (
-                            <span 
-                              className="total-change" 
-                              style={{ color: formatChange(record.changes.brokerage).color }}
-                            >
-                              ({formatChange(record.changes.brokerage).sign}{formatChange(record.changes.brokerage).formatted})
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="update-total-item">
-                          <span className="total-label">ESPP:</span>
-                          <span className="total-amount">{formatCurrency(record.totals.espp)}</span>
-                          {record.changes && formatChange(record.changes.espp) && (
-                            <span 
-                              className="total-change" 
-                              style={{ color: formatChange(record.changes.espp).color }}
-                            >
-                              ({formatChange(record.changes.espp).sign}{formatChange(record.changes.espp).formatted})
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="update-total-item">
-                          <span className="total-label">HSA:</span>
-                          <span className="total-amount">{formatCurrency(record.totals.hsa)}</span>
-                          {record.changes && formatChange(record.changes.hsa) && (
-                            <span 
-                              className="total-change" 
-                              style={{ color: formatChange(record.changes.hsa).color }}
-                            >
-                              ({formatChange(record.changes.hsa).sign}{formatChange(record.changes.hsa).formatted})
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {record.changes && record.changes.total !== 0 && (
-                        <div className="update-total-change-summary">
-                          <strong>
-                            Total Change: 
-                            <span 
-                              style={{ color: formatChange(record.changes.total).color, marginLeft: '0.5rem' }}
-                            >
-                              {formatChange(record.changes.total).sign}{formatChange(record.changes.total).formatted}
-                            </span>
-                          </strong>
-                        </div>
-                      )}
-                    </div>
-                    
-                    <details className="update-accounts-details">
-                      <summary>View Account Details ({record.accounts.length} accounts)</summary>
-                      <div className="update-accounts-list">
-                        {record.accounts.map((acc, idx) => (
-                          <div key={idx} className="update-account">
-                            <strong>{acc.accountName}</strong> ({acc.owner}) - {acc.taxType} - {formatCurrency(acc.amount)}
-                          </div>
-                        ))}
-                      </div>
-                    </details>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
 
         {/* Portfolio Records */}
         {portfolioRecords.length > 0 && (

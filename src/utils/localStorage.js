@@ -22,7 +22,6 @@ export const STORAGE_KEYS = {
   SAVINGS_DATA: 'savingsData',
   RETIREMENT_DATA: 'retirementData',
   PORTFOLIO_ACCOUNTS: 'portfolioAccounts',
-  PORTFOLIO_UPDATE_HISTORY: 'portfolioUpdateHistory',
   PORTFOLIO_RECORDS: 'portfolioRecords',
   PORTFOLIO_INPUTS: 'portfolioInputs',
   SHARED_ACCOUNTS: 'sharedAccounts',
@@ -47,14 +46,8 @@ export const getFromStorage = (key, defaultValue = null) => {
 
 export const setToStorage = (key, value) => {
   try {
-    console.log('🔧 setToStorage: Attempting to save key:', key);
-    console.log('🔧 setToStorage: Value type:', typeof value, 'length:', value?.length);
-    
     const jsonString = JSON.stringify(value);
-    console.log('🔧 setToStorage: JSON string length:', jsonString.length);
-    
     localStorage.setItem(key, jsonString);
-    console.log('🔧 setToStorage: Successfully saved to localStorage');
     return true;
   } catch (error) {
     console.error(`🔧 setToStorage: Error writing to localStorage (${key}):`, error);
@@ -571,7 +564,6 @@ export const exportAllData = () => {
     networthSettings: getNetWorthSettings(),
     savingsData: getSavingsData(),
     portfolioAccounts: getPortfolioAccounts(),
-    portfolioUpdateHistory: getPortfolioUpdateHistory(),
     portfolioRecords: getPortfolioRecords(),
     portfolioInputs: getPortfolioInputs(),
     sharedAccounts: getSharedAccounts(),
@@ -1012,7 +1004,6 @@ const transformImportKeys = (data) => {
     'networth_settings': 'networthSettings',
     'savings_data': 'savingsData',
     'portfolio_accounts': 'portfolioAccounts',
-    'portfolio_update_history': 'portfolioUpdateHistory',
     'portfolio_records': 'portfolioRecords',
     'portfolio_inputs': 'portfolioInputs',
     'shared_accounts': 'sharedAccounts',
@@ -1142,10 +1133,6 @@ export const importAllData = (importData) => {
       importedSections.push('Portfolio Accounts');
     }
     
-    if (transformedData.portfolioUpdateHistory !== undefined) {
-      setPortfolioUpdateHistory(transformedData.portfolioUpdateHistory);
-      importedSections.push('Portfolio Update History');
-    }
     
     if (transformedData.portfolioRecords !== undefined) {
       setPortfolioRecords(transformedData.portfolioRecords);
@@ -1315,7 +1302,6 @@ export const clearAllAppData = () => {
       'networthSettings',
       'retirementData',
       'portfolioAccounts',
-      'portfolioUpdateHistory',
       'portfolioRecords',
       'portfolioInputs',
       'sharedAccounts', 
@@ -1462,7 +1448,6 @@ export const resetAllAppData = () => {
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well
       setPortfolioAccounts([]); // Reset portfolio accounts
-      setPortfolioUpdateHistory([]); // Reset portfolio update history
       setPortfolioRecords([]); // Reset portfolio records
       clearPortfolioInputs(); // Reset portfolio inputs
       clearSharedAccounts(); // Reset shared accounts system
@@ -1530,6 +1515,44 @@ export const cleanupObsoleteFields = () => {
     }
   } catch (error) {
     console.error('Error cleaning up obsolete fields:', error);
+    return { success: false, message: error.message };
+  }
+};
+
+// Clean up joint data from historical storage since historical data should only track individual users
+export const cleanupJointDataFromHistorical = () => {
+  try {
+    const historicalData = getHistoricalData();
+    let hasChanges = false;
+    
+    const cleanedData = {};
+    Object.entries(historicalData).forEach(([year, yearData]) => {
+      if (yearData && yearData.users && yearData.users['Joint']) {
+        // Remove Joint data
+        const cleanedYearData = { ...yearData };
+        cleanedYearData.users = { ...yearData.users };
+        delete cleanedYearData.users['Joint'];
+        
+        // If users object is now empty, remove it entirely
+        if (Object.keys(cleanedYearData.users).length === 0) {
+          delete cleanedYearData.users;
+        }
+        
+        cleanedData[year] = cleanedYearData;
+        hasChanges = true;
+      } else {
+        cleanedData[year] = yearData;
+      }
+    });
+    
+    if (hasChanges) {
+      setHistoricalData(cleanedData);
+      return { success: true, message: 'Removed joint data from historical records' };
+    } else {
+      return { success: true, message: 'No joint data found in historical records' };
+    }
+  } catch (error) {
+    console.error('Error cleaning up joint data from historical:', error);
     return { success: false, message: error.message };
   }
 };
@@ -1609,70 +1632,6 @@ export const addPortfolioAccount = (accountName, taxType, accountType, owner) =>
   return newAccount;
 };
 
-// Portfolio update history utilities
-export const getPortfolioUpdateHistory = () => {
-  return getFromStorage(STORAGE_KEYS.PORTFOLIO_UPDATE_HISTORY, []);
-};
-
-export const setPortfolioUpdateHistory = (history) => {
-  return setToStorage(STORAGE_KEYS.PORTFOLIO_UPDATE_HISTORY, history);
-};
-
-export const addPortfolioUpdateRecord = (accounts, totals, previousTotals = null) => {
-  const history = getPortfolioUpdateHistory();
-  
-  // Calculate changes from previous update
-  const changes = {};
-  if (previousTotals) {
-    changes.taxFree = (totals.taxFree || 0) - (previousTotals.taxFree || 0);
-    changes.taxDeferred = (totals.taxDeferred || 0) - (previousTotals.taxDeferred || 0);
-    changes.brokerage = (totals.brokerage || 0) - (previousTotals.brokerage || 0);
-    changes.espp = (totals.espp || 0) - (previousTotals.espp || 0);
-    changes.hsa = (totals.hsa || 0) - (previousTotals.hsa || 0);
-    changes.total = Object.values(changes).reduce((sum, change) => sum + change, 0);
-  }
-  
-  const updateRecord = {
-    id: generateUniqueId(),
-    timestamp: new Date().toISOString(),
-    year: new Date().getFullYear(),
-    accountsUpdated: accounts.length,
-    accounts: accounts.map(acc => ({
-      accountName: acc.accountName,
-      owner: acc.owner,
-      taxType: acc.taxType,
-      accountType: acc.accountType,
-      amount: parseFloat(acc.amount) || 0
-    })),
-    totals: {
-      taxFree: totals.taxFree || 0,
-      taxDeferred: totals.taxDeferred || 0,
-      brokerage: totals.brokerage || 0,
-      espp: totals.espp || 0,
-      hsa: totals.hsa || 0
-    },
-    previousTotals: previousTotals ? {
-      taxFree: previousTotals.taxFree || 0,
-      taxDeferred: previousTotals.taxDeferred || 0,
-      brokerage: previousTotals.brokerage || 0,
-      espp: previousTotals.espp || 0,
-      hsa: previousTotals.hsa || 0
-    } : null,
-    changes: Object.keys(changes).length > 0 ? changes : null,
-    totalAmount: accounts.reduce((sum, acc) => sum + (parseFloat(acc.amount) || 0), 0)
-  };
-  
-  // Add to beginning of array to show most recent first
-  history.unshift(updateRecord);
-  
-  // Keep only last 50 updates to prevent excessive storage usage
-  if (history.length > 50) {
-    history.splice(50);
-  }
-  
-  setPortfolioUpdateHistory(history);
-  return updateRecord;
-};
 
 // Portfolio records utilities (comprehensive update tracking with dates)
 export const getPortfolioRecords = () => {
@@ -2300,4 +2259,64 @@ export const clearManualAccountGroups = () => {
     }, 50);
   }
   return result;
+};
+
+// Sync paycheck data to historical data for current year
+export const syncPaycheckToHistorical = () => {
+  try {
+    const paycheckData = getPaycheckData();
+    const historicalData = getHistoricalData();
+    const currentYear = new Date().getFullYear();
+
+    // Initialize current year data if it doesn't exist
+    if (!historicalData[currentYear]) {
+      historicalData[currentYear] = { users: {} };
+    }
+
+    // Get users from paycheck data
+    const users = [];
+    if (paycheckData?.your?.name?.trim()) {
+      users.push({
+        name: paycheckData.your.name.trim(),
+        data: paycheckData.your
+      });
+    }
+    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
+      users.push({
+        name: paycheckData.spouse.name.trim(),
+        data: paycheckData.spouse
+      });
+    }
+
+    // Update historical data for each user
+    users.forEach(user => {
+      if (!historicalData[currentYear].users[user.name]) {
+        historicalData[currentYear].users[user.name] = {};
+      }
+
+      const userData = historicalData[currentYear].users[user.name];
+      
+      // Sync salary, employer, and bonus from paycheck data
+      userData.employer = user.data.employer || '';
+      userData.salary = parseFloat(user.data.salary) || 0;
+      
+      // Use the effective bonus calculated by PaycheckForm (includes override and 401k removal logic)
+      userData.bonus = parseFloat(user.data.effectiveBonus) || 0;
+    });
+
+    // Save updated historical data
+    const saveResult = setHistoricalData(historicalData);
+    
+    if (saveResult) {
+      // Dispatch event to notify other components
+      setTimeout(() => {
+        dispatchGlobalEvent('historicalDataUpdated', historicalData);
+      }, 50);
+    }
+    
+    return saveResult;
+  } catch (error) {
+    console.error('Error syncing paycheck to historical data:', error);
+    return false;
+  }
 };

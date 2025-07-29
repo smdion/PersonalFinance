@@ -391,6 +391,9 @@
       },
       "bonusMultiplier": 0.1,
       "bonusTarget": 9500,
+      "overrideBonus": "",
+      "remove401kFromBonus": false,
+      "effectiveBonus": 9500,
       "payWeekType": "odd",
       "hsaCoverageType": "family"
     },
@@ -436,6 +439,9 @@
       },
       "bonusMultiplier": 0.05,
       "bonusTarget": 3350,
+      "overrideBonus": "",
+      "remove401kFromBonus": false,
+      "effectiveBonus": 3350,
       "payWeekType": "even",
       "hsaCoverageType": "self"
     }

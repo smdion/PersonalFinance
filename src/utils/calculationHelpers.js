@@ -500,7 +500,7 @@ export const generatePortfolioTaxLocationData = (filteredData) => {
 // Generate net worth location chart data
 export const generateNetWorthLocationData = (filteredData) => {
   const years = filteredData.map(d => d.year);
-  const categories = ['Portfolio', 'House Value', 'Cash', 'Other Assets', 'Liabilities'];
+  const categories = ['Portfolio', 'House Value', 'Cash', 'Assets', 'Liabilities'];
   const colors = [
     'rgba(59, 130, 246, 0.8)',
     'rgba(168, 85, 247, 0.8)',

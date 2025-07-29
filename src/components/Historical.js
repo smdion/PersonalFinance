@@ -1,13 +1,21 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { 
   getHistoricalData, 
   setHistoricalData, 
-  STORAGE_KEYS 
+  STORAGE_KEYS,
+  syncPaycheckToHistorical,
+  cleanupJointDataFromHistorical 
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
 
 const Historical = () => {
+  // Sync paycheck data and cleanup joint data on component mount
+  useEffect(() => {
+    syncPaycheckToHistorical();
+    cleanupJointDataFromHistorical();
+  }, []);
+
   // Schema configuration for DataManager
   const schema = {
     primaryKeyLabel: 'Year',
@@ -17,9 +25,9 @@ const Historical = () => {
         name: 'users',
         title: '👥 User Information',
         fields: [
-          { name: 'employer', label: 'Employer', type: 'text' },
-          { name: 'salary', label: 'Salary', format: 'currency', className: 'currency' },
-          { name: 'bonus', label: 'Bonus', format: 'currency', className: 'currency' }
+          { name: 'employer', label: 'Employer', type: 'text', readonly: true, lockedBy: 'Paycheck Calculator' },
+          { name: 'salary', label: 'Salary', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Paycheck Calculator' },
+          { name: 'bonus', label: 'Bonus', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Paycheck Calculator' }
         ]
       },
       {
@@ -36,11 +44,11 @@ const Historical = () => {
         name: 'investments',
         title: '📈 Investments',
         fields: [
-          { name: 'taxFree', label: 'Tax-Free', format: 'currency', className: 'currency' },
-          { name: 'taxDeferred', label: 'Tax-Deferred', format: 'currency', className: 'currency' },
-          { name: 'brokerage', label: 'Brokerage', format: 'currency', className: 'currency' },
-          { name: 'espp', label: 'ESPP', format: 'currency', className: 'currency' },
-          { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency' },
+          { name: 'taxFree', label: 'Tax-Free', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
+          { name: 'taxDeferred', label: 'Tax-Deferred', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
+          { name: 'brokerage', label: 'Brokerage', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
+          { name: 'espp', label: 'ESPP', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
+          { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
           { name: 'cash', label: 'Cash', format: 'currency', className: 'currency' }
         ]
       },
@@ -48,11 +56,11 @@ const Historical = () => {
         name: 'assets',
         title: '🏠 Assets & Liabilities',
         fields: [
-          { name: 'house', label: 'House Value', format: 'currency', className: 'currency' },
+          { name: 'house', label: 'House Value', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Asset Manager' },
           { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' },
-          { name: 'mortgage', label: 'Mortgage', format: 'currency', className: 'currency' },
-          { name: 'othAsset', label: 'Other Assets', format: 'currency', className: 'currency' },
-          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency' }
+          { name: 'mortgage', label: 'Mortgage', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liability Manager' },
+          { name: 'othAsset', label: 'Assets', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Asset Manager' },
+          { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liability Manager' }
         ]
       }
     ]
