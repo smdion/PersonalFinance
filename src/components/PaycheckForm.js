@@ -317,6 +317,8 @@ const PaycheckForm = ({
   const [showBudgetExplanation, setShowBudgetExplanation] = useState(false); // Add state for budget explanation
   const [showMonthlyView, setShowMonthlyView] = useState(true); // Add state for monthly/pay period toggle
   const [incomePeriods, setIncomePeriods] = useState(incomePeriodsData);
+  const [incomePeriodsErrors, setIncomePeriodsErrors] = useState([]);
+  const [expandedIncomePeriods, setExpandedIncomePeriods] = useState({});
 
   const handleHsaCoverageToggle = (type) => {
     setHsaCoverageType(type);
@@ -372,6 +374,7 @@ const PaycheckForm = ({
   // Update local income periods state when props change
   useEffect(() => {
     setIncomePeriods(incomePeriodsData);
+    setIncomePeriodsErrors(validateIncomePeriods(incomePeriodsData));
   }, [incomePeriodsData]);
 
   // Consolidated age-related effects
@@ -419,6 +422,57 @@ const PaycheckForm = ({
     return iraTotal + brokerageTotal;
   };
 
+  // YTD Income validation
+  const validateIncomePeriods = (periods) => {
+    const errors = [];
+    const currentYear = new Date().getFullYear();
+    
+    for (let i = 0; i < periods.length; i++) {
+      const period1 = periods[i];
+      if (!period1.startDate || !period1.endDate) continue;
+      
+      // Parse dates without timezone issues by extracting year directly
+      const start1Year = parseInt(period1.startDate.split('-')[0]);
+      const end1Year = parseInt(period1.endDate.split('-')[0]);
+      const start1 = new Date(period1.startDate + 'T00:00:00'); // Force local timezone
+      const end1 = new Date(period1.endDate + 'T00:00:00'); // Force local timezone
+      
+      // Check if dates are valid and in current year
+      if (start1Year !== currentYear || end1Year !== currentYear) {
+        errors.push({ id: period1.id, message: `Dates must be in ${currentYear}` });
+        continue;
+      }
+      
+      // Check if start date is before end date
+      if (start1 >= end1) {
+        errors.push({ id: period1.id, message: 'Start date must be before end date' });
+      }
+      
+      // Check for overlaps with other periods
+      for (let j = i + 1; j < periods.length; j++) {
+        const period2 = periods[j];
+        if (!period2.startDate || !period2.endDate) continue;
+        
+        const start2 = new Date(period2.startDate + 'T00:00:00'); // Force local timezone
+        const end2 = new Date(period2.endDate + 'T00:00:00'); // Force local timezone
+        
+        // Check if periods overlap
+        if ((start1 <= end2 && end1 >= start2)) {
+          errors.push({ 
+            id: period1.id, 
+            message: `Overlaps with another income period` 
+          });
+          errors.push({ 
+            id: period2.id, 
+            message: `Overlaps with another income period` 
+          });
+        }
+      }
+    }
+    
+    return errors;
+  };
+
   // YTD Income functions
   const addIncomePeriod = () => {
     const currentYear = new Date().getFullYear();
@@ -426,12 +480,13 @@ const PaycheckForm = ({
       id: Date.now(),
       startDate: `${currentYear}-01-01`,
       endDate: `${currentYear}-12-31`,
-      grossSalary: salary || 0,
+      grossSalary: parseFloat(salary) || 0,
       description: 'Salary Period'
     };
     
     const updatedPeriods = [...incomePeriods, newPeriod];
     setIncomePeriods(updatedPeriods);
+    setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
     if (onUpdateIncomePeriods) {
       onUpdateIncomePeriods(updatedPeriods);
     }
@@ -439,24 +494,43 @@ const PaycheckForm = ({
 
   const updateIncomePeriod = (id, field, value) => {
     const updatedPeriods = incomePeriods.map(period => 
-      period.id === id ? { ...period, [field]: value } : period
+      period.id === id ? { 
+        ...period, 
+        [field]: field === 'grossSalary' ? parseFloat(value) || 0 : value 
+      } : period
     );
     setIncomePeriods(updatedPeriods);
+    // Only validate on blur for date fields to avoid interrupting date picker
+    if (field !== 'startDate' && field !== 'endDate') {
+      setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+    }
     if (onUpdateIncomePeriods) {
       onUpdateIncomePeriods(updatedPeriods);
     }
+  };
+
+  const validateIncomePeriodOnBlur = (id) => {
+    setIncomePeriodsErrors(validateIncomePeriods(incomePeriods));
   };
 
   const removeIncomePeriod = (id) => {
     const updatedPeriods = incomePeriods.filter(period => period.id !== id);
     setIncomePeriods(updatedPeriods);
+    setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
     if (onUpdateIncomePeriods) {
       onUpdateIncomePeriods(updatedPeriods);
     }
   };
 
-  const ytdIncome = calculateYTDIncome(incomePeriods, payPeriod);
+  const ytdIncome = calculateYTDIncome(incomePeriods, payPeriod, salary);
   const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, salary, payPeriod);
+
+  const toggleIncomePeriod = (id) => {
+    setExpandedIncomePeriods(prev => ({
+      ...prev,
+      [id]: !prev[id]
+    }));
+  };
 
 
   return (
@@ -1076,52 +1150,115 @@ const PaycheckForm = ({
                   </div>
                 ) : (
                   <div className="income-periods-list">
-                    {incomePeriods.map((period) => (
-                      <div key={period.id} className="income-period-card">
-                        <div className="income-period-row">
-                          <div className="income-period-field">
-                            <label>Description</label>
-                            <input
-                              type="text"
-                              value={period.description || ''}
-                              onChange={(e) => updateIncomePeriod(period.id, 'description', e.target.value)}
-                              placeholder="e.g., Base Salary, Promotion, New Job"
-                            />
+                    {incomePeriods.map((period) => {
+                      const periodErrors = incomePeriodsErrors.filter(error => error.id === period.id);
+                      const hasErrors = periodErrors.length > 0;
+                      const isExpanded = expandedIncomePeriods[period.id];
+                      
+                      return (
+                      <div key={period.id} className={`income-period-card ${hasErrors ? 'has-errors' : ''} ${isExpanded ? 'expanded' : 'collapsed'}`}>
+                        {/* Compact Summary View */}
+                        <div className="income-period-summary" onClick={() => toggleIncomePeriod(period.id)}>
+                          <div className="income-period-summary-content">
+                            <div className="income-period-summary-main">
+                              <span className="income-period-description">
+                                {period.description || 'Untitled Period'}
+                              </span>
+                              <span className="income-period-dates">
+                                {period.startDate && period.endDate 
+                                  ? `${period.startDate} to ${period.endDate}`
+                                  : 'Dates not set'
+                                }
+                              </span>
+                              <span className="income-period-salary">
+                                {period.grossSalary ? `$${period.grossSalary.toLocaleString()}` : '$0'}
+                              </span>
+                            </div>
+                            <div className="income-period-toggle">
+                              <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
+                            </div>
                           </div>
-                          <div className="income-period-field">
-                            <label>Start Date</label>
-                            <input
-                              type="date"
-                              value={period.startDate || ''}
-                              onChange={(e) => updateIncomePeriod(period.id, 'startDate', e.target.value)}
-                            />
-                          </div>
-                          <div className="income-period-field">
-                            <label>End Date</label>
-                            <input
-                              type="date"
-                              value={period.endDate || ''}
-                              onChange={(e) => updateIncomePeriod(period.id, 'endDate', e.target.value)}
-                            />
-                          </div>
-                          <div className="income-period-field">
-                            <label>Annual Gross Salary</label>
-                            <input
-                              type="number"
-                              value={period.grossSalary || ''}
-                              onChange={(e) => updateIncomePeriod(period.id, 'grossSalary', e.target.value)}
-                              placeholder="0"
-                            />
-                          </div>
-                          <button 
-                            className="btn btn-danger btn-sm"
-                            onClick={() => removeIncomePeriod(period.id)}
-                          >
-                            Remove
-                          </button>
+                          {hasErrors && !isExpanded && (
+                            <div className="income-period-summary-errors">
+                              ⚠️ {periodErrors.length} error{periodErrors.length > 1 ? 's' : ''}
+                            </div>
+                          )}
                         </div>
+
+                        {/* Expanded Edit View */}
+                        {isExpanded && (
+                          <div className="income-period-expanded">
+                            <div className="income-period-row">
+                              <div className="income-period-field">
+                                <label>Description</label>
+                                <input
+                                  type="text"
+                                  value={period.description || ''}
+                                  onChange={(e) => updateIncomePeriod(period.id, 'description', e.target.value)}
+                                  placeholder="e.g., Base Salary, Promotion, New Job"
+                                />
+                              </div>
+                              <div className="income-period-field">
+                                <label>Start Date</label>
+                                <input
+                                  type="date"
+                                  value={period.startDate || ''}
+                                  onChange={(e) => updateIncomePeriod(period.id, 'startDate', e.target.value)}
+                                  onBlur={() => validateIncomePeriodOnBlur(period.id)}
+                                />
+                              </div>
+                              <div className="income-period-field">
+                                <label>End Date</label>
+                                <input
+                                  type="date"
+                                  value={period.endDate || ''}
+                                  onChange={(e) => updateIncomePeriod(period.id, 'endDate', e.target.value)}
+                                  onBlur={() => validateIncomePeriodOnBlur(period.id)}
+                                />
+                              </div>
+                              <div className="income-period-field">
+                                <label>Annual Gross Salary</label>
+                                <input
+                                  type="number"
+                                  value={period.grossSalary || ''}
+                                  onChange={(e) => updateIncomePeriod(period.id, 'grossSalary', e.target.value)}
+                                  placeholder="0"
+                                />
+                              </div>
+                              <div className="income-period-actions">
+                                <button 
+                                  className="btn btn-danger btn-sm"
+                                  onClick={() => removeIncomePeriod(period.id)}
+                                >
+                                  🗑️ Remove
+                                </button>
+                              </div>
+                            </div>
+                            
+                            {/* Error display */}
+                            {hasErrors && (
+                              <div className="income-period-errors">
+                                {periodErrors.map((error, errorIndex) => (
+                                  <div key={errorIndex} className="income-period-error">
+                                    {error.message}
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                    ))}
+                      );
+                    })}
+                  </div>
+                )}
+
+                {/* Income Summary */}
+                {(ytdIncome > 0 || projectedAnnualIncome > 0) && (
+                  <div className="calculation-hint">
+                    <div><strong>Income Summary:</strong></div>
+                    <div>YTD Income: {formatCurrency(ytdIncome)}</div>
+                    <div>Projected Annual Income: {formatCurrency(projectedAnnualIncome)}</div>
                   </div>
                 )}
               </div>

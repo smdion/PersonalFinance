@@ -598,35 +598,76 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 
 // YTD Income Calculation Helpers
 
-// Calculate actual YTD income from income periods
-export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly') => {
-  if (!incomePeriodsData || incomePeriodsData.length === 0) return 0;
+// Helper function to calculate number of pay periods between two dates
+const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
+  const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+  const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
+  const timeDifferenceMs = endDate - startDate;
+  const yearsSpanned = timeDifferenceMs / millisecondsInYear;
   
-  const today = new Date();
+  return yearsSpanned * periodsPerYear;
+};
+
+// Calculate actual YTD income from income periods
+export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly', currentSalary = 0) => {
+  const currentYear = new Date().getFullYear();
+  
+  // If no income periods are defined, use current salary for entire year
+  if (!incomePeriodsData || incomePeriodsData.length === 0) {
+    return parseFloat(currentSalary) || 0;
+  }
+  
   let ytdIncome = 0;
   
   incomePeriodsData.forEach(period => {
-    const startDate = new Date(period.startDate);
-    const endDate = new Date(period.endDate);
+    // Skip periods with missing or invalid dates
+    if (!period.startDate || !period.endDate) {
+      console.warn(`Skipping income period with missing dates:`, period);
+      return;
+    }
+    
+    // Parse dates in local timezone to avoid UTC issues
+    const startDateParts = period.startDate.split('-');
+    const endDateParts = period.endDate.split('-');
+    
+    // Validate date parts
+    if (startDateParts.length !== 3 || endDateParts.length !== 3) {
+      console.warn(`Skipping income period with invalid date format:`, period);
+      return;
+    }
+    
+    const startDate = new Date(parseInt(startDateParts[0]), parseInt(startDateParts[1]) - 1, parseInt(startDateParts[2]));
+    const endDate = new Date(parseInt(endDateParts[0]), parseInt(endDateParts[1]) - 1, parseInt(endDateParts[2]));
     const grossSalary = parseFloat(period.grossSalary) || 0;
     
-    // Only count periods that have started
-    if (startDate <= today) {
-      const periodEndDate = endDate <= today ? endDate : today;
-      
-      // Calculate number of pay periods that have occurred in this time frame
+    // Validate that dates are valid
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      console.warn(`Skipping income period with invalid dates:`, period);
+      return;
+    }
+    
+    // Check that dates are for current year only
+    if (startDate.getFullYear() !== currentYear || endDate.getFullYear() !== currentYear) {
+      console.warn(`Income period dates must be for current year (${currentYear}). Skipping period with dates ${period.startDate} to ${period.endDate}`);
+      return;
+    }
+    
+    // Check if this period covers the entire year
+    const isFullYear = startDate.getMonth() === 0 && startDate.getDate() === 1 &&
+                      endDate.getMonth() === 11 && endDate.getDate() === 31;
+    
+    if (isFullYear) {
+      // If it's a full year period, use the full salary directly
+      ytdIncome += grossSalary;
+    } else {
+      // Use the dates as specified in the income period
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = grossSalary / periodsPerYear;
       
-      // Calculate total days in the period and days worked
-      const totalDaysInPeriod = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
-      const daysWorked = Math.ceil((periodEndDate - startDate) / (1000 * 60 * 60 * 24)) + 1;
+      // Calculate pay periods between start and end date as specified
+      const payPeriodsWorked = calculatePayPeriodsBetweenDates(startDate, endDate, payPeriod);
       
-      // Calculate number of pay periods that have occurred
-      const totalPayPeriodsInPeriod = (totalDaysInPeriod / 365) * periodsPerYear;
-      const payPeriodsWorked = (daysWorked / 365) * periodsPerYear;
-      
-      // Calculate pro-rated income for this period
+      // Calculate income earned during this specific period
       const periodIncome = grossPayPerPaycheck * payPeriodsWorked;
       ytdIncome += periodIncome;
     }
@@ -657,8 +698,8 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = (parseFloat(currentSalary) || 0) / periodsPerYear;
       
-      const remainingDays = Math.ceil((endOfYear - lastEndDate) / (1000 * 60 * 60 * 24));
-      const remainingPayPeriods = (remainingDays / 365) * periodsPerYear;
+      // Calculate remaining pay periods between last period end and end of year
+      const remainingPayPeriods = calculatePayPeriodsBetweenDates(lastEndDate, endOfYear, payPeriod);
       
       projectedIncome += grossPayPerPaycheck * remainingPayPeriods;
     }
