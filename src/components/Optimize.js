@@ -9,7 +9,8 @@ import {
   calculateProjectedAnnualIncome,
   calculateYTDIncome,
   calculateYTDContributionsFromPerformance, 
-  calculateRemainingContributionRoom 
+  calculateRemainingContributionRoom,
+  calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
 import '../styles/optimize.css';
 
@@ -17,7 +18,6 @@ const Optimize = () => {
   const navigate = useNavigate();
   const [paycheckData, setPaycheckData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
-  const [useProjectedAGI, setUseProjectedAGI] = useState(false);
 
   useEffect(() => {
     // Load paycheck and performance data
@@ -50,7 +50,6 @@ const Optimize = () => {
   const contributionMetrics = useMemo(() => {
     if (!paycheckData?.your) return { hasData: false };
 
-
     const yourData = paycheckData.your;
     const spouseData = paycheckData.spouse || {};
     const showSpouse = paycheckData?.settings?.showSpouseCalculator ?? true;
@@ -64,15 +63,13 @@ const Optimize = () => {
       const isOver50 = age >= 50;
       const isOver55 = age >= 55;
 
-      // Calculate AGI based on toggle - use projected income from YTD data if available and toggle is on
+      // Calculate AGI - use projected income from YTD data if available for YTD calculations
       let effectiveAGI = salary;
-      if (useProjectedAGI && person.incomePeriodsData && person.incomePeriodsData.length > 0) {
+      if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
         effectiveAGI = calculateProjectedAnnualIncome(person.incomePeriodsData, salary);
       }
 
       // Get YTD contributions from Performance data 
-      // For individual accounts, only get this person's contributions
-      // For joint accounts, get all contributions and divide later
       const individualUserNames = [person.name].filter(n => n && n.trim());
       const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
       
@@ -83,7 +80,6 @@ const Optimize = () => {
       const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames);
       
       // Determine which accounts are joint and divide contributions evenly
-      // Don't count "Joint" as a user for division purposes - it represents shared accounts
       const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
       const numActualUsers = actualUsers.length;
       
@@ -93,7 +89,7 @@ const Optimize = () => {
       // Check for joint accounts in performance data
       const jointAccounts = {
         brokerage: false,
-        ira: false // IRA contributions are treated as joint in our math per requirements
+        ira: true // IRA contributions are treated as joint in our math per requirements
       };
       
       // Check performance data for actual joint accounts
@@ -111,18 +107,11 @@ const Optimize = () => {
                     (userNameLower === 'joint' || accountName.includes('joint'))) {
                   jointAccounts.brokerage = true;
                 }
-                // Add other joint account detection logic as needed
               }
             });
           }
         });
       }
-      
-      // Always treat IRA as joint per current requirements
-      // NOTE: IRA accounts are typically individual accounts in reality, but our current 
-      // contribution math and data structure treats them as joint accounts (shared between users).
-      // If we refactor in the future to make IRAs individual, this logic will need to be updated.
-      jointAccounts.ira = true;
       
       // For joint accounts, use the total contributions and divide evenly between actual users
       if (numActualUsers > 1) {
@@ -146,32 +135,21 @@ const Optimize = () => {
         }
       }
       
-      // Debug logging - basic info
-      if (useProjectedAGI) {
-        console.log(`${personName} - Joint Accounts:`, jointAccounts);
-        console.log(`${personName} - Individual YTD:`, individualYtdContributions);
-        console.log(`${personName} - All YTD:`, allYtdContributions);
-        console.log(`${personName} - Final YTD:`, ytdContributions);
-        
-        // Check what accounts we're finding (only for first user to avoid duplication)
-        if (personName === (yourData.name || 'You')) {
-          Object.values(performanceData).forEach((yearData, index) => {
-            if (yearData && yearData.users && index < 2) {
-              console.log(`Entry ${index} users:`, Object.keys(yearData.users));
-              Object.entries(yearData.users).forEach(([userName, account]) => {
-                if (account.accountType) {
-                  console.log(`  ${userName}: ${account.accountType} - ${account.accountName || 'no name'}`);
-                }
-              });
-            }
-          });
-        }
-      }
-      
       const remainingRoom = calculateRemainingContributionRoom(ytdContributions, age, person.hsaCoverageType);
 
       // Calculate YTD and projected contributions using actual pay periods
       const payPeriod = person.payPeriod || 'biWeekly';
+
+      // Calculate per-paycheck amounts needed to max out contributions for remaining year (for YTD mode)
+      const maxOutAmounts = ytdContributions ? 
+        calculateMaxOutPerPaycheckAmounts(
+          remainingRoom,
+          person.incomePeriodsData,
+          salary,
+          payPeriod,
+          age,
+          person.hsaCoverageType
+        ) : null;
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
 
       // 401k calculations - from retirementOptions
@@ -180,50 +158,10 @@ const Optimize = () => {
       const roth401k = parseFloat(retirementOptions.roth401kPercent) || 0;
       const total401kPercent = traditional401k + roth401k;
       
-      let annual401k, annualEmployerMatch;
-      if (useProjectedAGI && ytdContributions) {
-        // YTD + Projected calculation 
-        const ytd401k = ytdContributions.total401k || 0;
-        
-        // Calculate projected remaining 401k contributions
-        let projectedRemaining401k, projectedRemainingEmployerMatch;
-        
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use YTD income data if available
-          const ytdIncome = calculateYTDIncome(person.incomePeriodsData, payPeriod, salary);
-          const projectedRemainingIncome = effectiveAGI - ytdIncome;
-          projectedRemaining401k = projectedRemainingIncome * (total401kPercent / 100);
-          
-          const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
-          projectedRemainingEmployerMatch = projectedRemainingIncome * (employerMatch / 100);
-        } else {
-          // Use time-based calculation for remaining year
-          const today = new Date();
-          const endOfYear = new Date(today.getFullYear(), 11, 31);
-          const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
-          const remainingYearFactor = remainingDays / 365;
-          
-          const annualContribution = salary * (total401kPercent / 100);
-          projectedRemaining401k = annualContribution * remainingYearFactor;
-          
-          const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
-          const annualEmployerMatch = salary * (employerMatch / 100);
-          projectedRemainingEmployerMatch = annualEmployerMatch * remainingYearFactor;
-        }
-        
-        annual401k = ytd401k + projectedRemaining401k;
-        
-        const ytdEmployerMatch = ytdContributions.employerMatch || 0;
-        annualEmployerMatch = ytdEmployerMatch + projectedRemainingEmployerMatch;
-      } else {
-        // Standard calculation - use original salary if no income periods data
-        const calculationBase = (useProjectedAGI && (!person.incomePeriodsData || person.incomePeriodsData.length === 0)) 
-          ? salary 
-          : effectiveAGI;
-        annual401k = calculationBase * (total401kPercent / 100);
-        const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
-        annualEmployerMatch = calculationBase * (employerMatch / 100);
-      }
+      // Standard calculation (always calculate)
+      const annual401k = salary * (total401kPercent / 100);
+      const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
+      const annualEmployerMatch = salary * (employerMatch / 100);
       
       const max401k = isOver50 
         ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
@@ -234,28 +172,12 @@ const Optimize = () => {
       const traditionalIra = parseFloat(budgetImpacting.traditionalIraMonthly) || 0;
       const rothIra = parseFloat(budgetImpacting.rothIraMonthly) || 0;
       
-      let annualIra;
-      if (useProjectedAGI && ytdContributions) {
-        // YTD + Projected calculation: YTD contributions + projected remaining contributions
-        const ytdIra = ytdContributions.totalIra || 0;
-        
-        let projectedRemainingIra;
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use YTD income data if available (though IRA is typically fixed monthly amounts)
-          const today = new Date();
-          const monthsRemaining = 12 - today.getMonth();
-          projectedRemainingIra = (traditionalIra + rothIra) * monthsRemaining;
-        } else {
-          // Use time-based calculation for remaining year
-          const today = new Date();
-          const monthsRemaining = 12 - today.getMonth();
-          projectedRemainingIra = (traditionalIra + rothIra) * monthsRemaining;
-        }
-        
-        annualIra = ytdIra + projectedRemainingIra;
-      } else {
-        // Standard calculation
-        annualIra = (traditionalIra + rothIra) * 12;
+      // Standard calculation
+      let annualIra = (traditionalIra + rothIra) * 12;
+      
+      // For joint IRA accounts, divide by number of users to show individual allocation
+      if (jointAccounts.ira && numActualUsers > 1) {
+        annualIra = annualIra / numActualUsers;
       }
       
       const maxIra = isOver50 
@@ -267,41 +189,9 @@ const Optimize = () => {
       const hsaContributionPerPaycheck = parseFloat(medicalDeductions.hsa) || 0;
       const hsaEmployerAnnual = parseFloat(medicalDeductions.employerHsa) || 0;
       
-      let hsaContributionAnnual, hsaEmployerContribution;
-      if (useProjectedAGI && ytdContributions) {
-        // YTD + Projected calculation
-        const ytdHsa = ytdContributions.hsa || 0;
-        
-        let projectedRemainingHsa;
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use YTD income data if available
-          const ytdIncome = calculateYTDIncome(person.incomePeriodsData, payPeriod, salary);
-          const projectedRemainingIncome = effectiveAGI - ytdIncome;
-          const remainingPayPeriods = projectedRemainingIncome / (salary / periodsPerYear);
-          projectedRemainingHsa = hsaContributionPerPaycheck * remainingPayPeriods;
-        } else {
-          // Use time-based calculation for remaining year
-          const today = new Date();
-          const endOfYear = new Date(today.getFullYear(), 11, 31);
-          const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
-          const remainingYearFactor = remainingDays / 365;
-          
-          const annualContribution = hsaContributionPerPaycheck * periodsPerYear;
-          projectedRemainingHsa = annualContribution * remainingYearFactor;
-        }
-        
-        hsaContributionAnnual = ytdHsa + projectedRemainingHsa;
-        
-        // Employer HSA - typically a fixed annual amount, so prorate based on time remaining
-        const today = new Date();
-        const yearProgress = (today.getMonth() + 1) / 12;
-        const remainingYearFactor = 1 - yearProgress;
-        hsaEmployerContribution = hsaEmployerAnnual * yearProgress + hsaEmployerAnnual * remainingYearFactor;
-      } else {
-        // Standard calculation
-        hsaContributionAnnual = hsaContributionPerPaycheck * periodsPerYear;
-        hsaEmployerContribution = hsaEmployerAnnual;
-      }
+      // Standard calculation
+      const hsaContributionAnnual = hsaContributionPerPaycheck * periodsPerYear;
+      const hsaEmployerContribution = hsaEmployerAnnual;
       
       const hsaCoverage = person.hsaCoverageType || 'none';
       let maxHsa = 0;
@@ -313,98 +203,15 @@ const Optimize = () => {
 
       // ESPP calculations
       const esppPercent = parseFloat(person.esppDeductionPercent) || 0;
-      
-      // Debug ESPP info
-      if (useProjectedAGI) {
-        console.log(`${personName} - ESPP%:`, esppPercent, 'Effective AGI:', effectiveAGI);
-        console.log(`${personName} - Individual ESPP YTD:`, individualYtdContributions.espp);
-        console.log(`${personName} - All ESPP YTD:`, allYtdContributions.espp);
-        console.log(`${personName} - Final ESPP YTD:`, ytdContributions.espp);
-      }
-      
-      let annualEspp;
-      
-      // Debug condition check
-      if (useProjectedAGI) {
-        console.log(`${personName} - ESPP Condition Check:`);
-        console.log(`  useProjectedAGI: ${useProjectedAGI}`);
-        console.log(`  ytdContributions exists: ${!!ytdContributions}`);
-        console.log(`  incomePeriodsData exists: ${!!person.incomePeriodsData}`);
-        console.log(`  incomePeriodsData length: ${person.incomePeriodsData?.length || 0}`);
-      }
-      
-      if (useProjectedAGI && ytdContributions) {
-        // YTD + Projected calculation
-        // ESPP is individual account - use this person's individual YTD contributions
-        const ytdEspp = ytdContributions.espp || 0;
-        
-        let projectedRemainingEspp;
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use YTD income data if available
-          const ytdIncome = calculateYTDIncome(person.incomePeriodsData, payPeriod, salary);
-          const projectedRemainingIncome = effectiveAGI - ytdIncome;
-          projectedRemainingEspp = projectedRemainingIncome * (esppPercent / 100);
-        } else {
-          // Use time-based calculation for remaining year
-          const today = new Date();
-          const endOfYear = new Date(today.getFullYear(), 11, 31);
-          const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
-          const remainingYearFactor = remainingDays / 365;
-          
-          const annualContribution = salary * (esppPercent / 100);
-          projectedRemainingEspp = annualContribution * remainingYearFactor;
-        }
-        
-        annualEspp = ytdEspp + projectedRemainingEspp;
-        
-        // Debug ESPP calculation
-        if (useProjectedAGI) {
-          console.log(`${personName} - ESPP YTD Calculation:`);
-          console.log(`  YTD ESPP: ${ytdEspp}`);
-          console.log(`  Projected Remaining ESPP: ${projectedRemainingEspp}`);
-          console.log(`  Total Annual ESPP (YTD method): ${annualEspp}`);
-        }
-      } else {
-        // Standard calculation - use original salary if no income periods data
-        const calculationBase = (useProjectedAGI && (!person.incomePeriodsData || person.incomePeriodsData.length === 0)) 
-          ? salary 
-          : effectiveAGI;
-        annualEspp = calculationBase * (esppPercent / 100);
-        
-        // Debug standard calculation
-        if (useProjectedAGI) {
-          const reason = (!person.incomePeriodsData || person.incomePeriodsData.length === 0) 
-            ? "(no income periods - using original salary)" 
-            : "";
-          console.log(`${personName} - ESPP Standard Calculation ${reason}: ${calculationBase} * ${esppPercent}% = ${annualEspp}`);
-        }
-      }
+      const annualEspp = salary * (esppPercent / 100);
 
       // Brokerage calculations - from budgetImpacting
       const brokerageMonthly = (budgetImpacting.brokerageAccounts || []).reduce((sum, account) => sum + (account.monthlyAmount || 0), 0);
+      let annualBrokerage = brokerageMonthly * 12;
       
-      let annualBrokerage;
-      if (useProjectedAGI && ytdContributions) {
-        // YTD + Projected calculation: YTD contributions + projected remaining contributions
-        const ytdBrokerage = ytdContributions.brokerage || 0;
-        
-        let projectedRemainingBrokerage;
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use YTD income data if available (though brokerage is typically fixed monthly amounts)
-          const today = new Date();
-          const monthsRemaining = 12 - today.getMonth();
-          projectedRemainingBrokerage = brokerageMonthly * monthsRemaining;
-        } else {
-          // Use time-based calculation for remaining year
-          const today = new Date();
-          const monthsRemaining = 12 - today.getMonth();
-          projectedRemainingBrokerage = brokerageMonthly * monthsRemaining;
-        }
-        
-        annualBrokerage = ytdBrokerage + projectedRemainingBrokerage;
-      } else {
-        // Standard calculation
-        annualBrokerage = brokerageMonthly * 12;
+      // For joint brokerage accounts, divide by number of users to show individual allocation
+      if (jointAccounts.brokerage && numActualUsers > 1) {
+        annualBrokerage = annualBrokerage / numActualUsers;
       }
       
       // Determine account types (joint vs individual) from performance data
@@ -416,6 +223,176 @@ const Optimize = () => {
         brokerage: jointAccounts.brokerage ? 'Joint' : 'Individual' // Use the same detection logic
       };
 
+      // Calculate both standard and YTD breakdown for side-by-side comparison
+      let standardBreakdown = {};
+      let ytdBreakdown = {};
+      
+      // Always calculate standard breakdown
+      standardBreakdown = {
+        k401: {
+          ytdEmployee: 0, // No YTD data in standard mode
+          ytdEmployer: 0,
+          ytdTotal: 0,
+          projectedEmployee: annual401k, // All contribution is "projected" 
+          projectedEmployer: annualEmployerMatch,
+          projectedTotal: annual401k + annualEmployerMatch,
+          totalEmployee: annual401k,
+          totalEmployer: annualEmployerMatch,
+          totalCombined: annual401k + annualEmployerMatch,
+          limit: max401k,
+          remaining: Math.max(0, max401k - annual401k)
+        },
+        ira: {
+          ytd: 0,
+          projected: annualIra,
+          total: annualIra,
+          limit: maxIra,
+          remaining: Math.max(0, maxIra - annualIra)
+        },
+        hsa: {
+          ytdEmployee: 0,
+          ytdEmployer: 0,
+          ytdTotal: 0,
+          projectedEmployee: hsaContributionAnnual,
+          projectedEmployer: hsaEmployerContribution,
+          projectedTotal: hsaContributionAnnual + hsaEmployerContribution,
+          totalEmployee: hsaContributionAnnual,
+          totalEmployer: hsaEmployerContribution,
+          totalCombined: hsaContributionAnnual + hsaEmployerContribution,
+          limit: maxHsa,
+          remaining: Math.max(0, maxHsa - hsaContributionAnnual)
+        },
+        espp: {
+          ytd: 0,
+          projected: annualEspp,
+          total: annualEspp,
+          limit: null
+        },
+        brokerage: {
+          ytd: 0,
+          projected: annualBrokerage,
+          total: annualBrokerage,
+          limit: null
+        }
+      };
+      
+      // Calculate YTD breakdown if data is available
+      if (ytdContributions) {
+        // YTD mode - show the 4-part breakdown
+        
+        // 401k breakdown
+        const ytd401k = ytdContributions.total401k || 0;
+        const ytdEmployerMatch = ytdContributions.employerMatch || 0;
+        
+        // Calculate remaining pay periods correctly using same logic as calculateMaxOutPerPaycheckAmounts
+        const today = new Date();
+        const endOfYear = new Date(today.getFullYear(), 11, 31);
+        let remainingPaychecks;
+        
+        // Helper function to calculate pay periods between dates
+        const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
+          const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+          const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
+          const timeDifferenceMs = endDate - startDate;
+          const yearsSpanned = timeDifferenceMs / millisecondsInYear;
+          return yearsSpanned * periodsPerYear;
+        };
+        
+        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
+          // Use income periods data to calculate precise remaining paychecks
+          const lastPeriod = person.incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
+          if (lastPeriod) {
+            const lastEndDate = new Date(lastPeriod.endDate);
+            if (lastEndDate < endOfYear) {
+              // Calculate remaining pay periods after the last scheduled period
+              const nextDay = new Date(lastEndDate);
+              nextDay.setDate(nextDay.getDate() + 1);
+              remainingPaychecks = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
+            } else {
+              remainingPaychecks = 0;
+            }
+          } else {
+            const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
+            remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+          }
+        } else {
+          // Use time-based calculation for remaining year
+          const remainingDays = Math.max(0, (endOfYear - today) / (1000 * 60 * 60 * 24));
+          remainingPaychecks = (remainingDays / 365) * periodsPerYear;
+        }
+        
+        // Calculate projected contributions for remaining pay periods only
+        const grossPayPerPaycheck = salary / periodsPerYear;
+        const projected401k = grossPayPerPaycheck * remainingPaychecks * (total401kPercent / 100);
+        const projectedEmployerMatch = grossPayPerPaycheck * remainingPaychecks * (employerMatch / 100);
+        
+        // IRA breakdown
+        const ytdIra = ytdContributions.totalIra || 0;
+        const monthsRemaining = Math.max(0, 12 - today.getMonth());
+        const projectedIra = (traditionalIra + rothIra) * monthsRemaining;
+        
+        // HSA breakdown
+        const ytdHsa = ytdContributions.hsa || 0;
+        // Calculate projected HSA contributions for remaining pay periods only
+        const projectedHsa = hsaContributionPerPaycheck * remainingPaychecks;
+        
+        // ESPP breakdown
+        const ytdEspp = ytdContributions.espp || 0;
+        // Calculate projected ESPP contributions for remaining pay periods only
+        const projectedEspp = grossPayPerPaycheck * remainingPaychecks * (esppPercent / 100);
+        
+        // Brokerage breakdown
+        const ytdBrokerage = ytdContributions.brokerage || 0;
+        const projectedBrokerage = brokerageMonthly * monthsRemaining;
+        
+        ytdBreakdown = {
+          k401: {
+            ytdEmployee: ytd401k,
+            ytdEmployer: ytdEmployerMatch,
+            ytdTotal: ytd401k + ytdEmployerMatch,
+            projectedEmployee: projected401k,
+            projectedEmployer: projectedEmployerMatch,
+            projectedTotal: projected401k + projectedEmployerMatch,
+            totalEmployee: ytd401k + projected401k,
+            totalEmployer: ytdEmployerMatch + projectedEmployerMatch,
+            totalCombined: ytd401k + projected401k + ytdEmployerMatch + projectedEmployerMatch,
+            limit: max401k,
+            remaining: Math.max(0, max401k - (ytd401k + projected401k))
+          },
+          ira: {
+            ytd: ytdIra,
+            projected: projectedIra,
+            total: ytdIra + projectedIra,
+            limit: maxIra,
+            remaining: Math.max(0, maxIra - (ytdIra + projectedIra))
+          },
+          hsa: {
+            ytdEmployee: ytdHsa,
+            ytdEmployer: 0, // YTD employer HSA is complex, keeping simple for now
+            ytdTotal: ytdHsa,
+            projectedEmployee: projectedHsa,
+            projectedEmployer: 0, // Keeping simple for now
+            projectedTotal: projectedHsa,
+            totalEmployee: ytdHsa + projectedHsa,
+            totalEmployer: hsaEmployerContribution, // Use annual employer amount
+            totalCombined: ytdHsa + projectedHsa + hsaEmployerContribution,
+            limit: maxHsa,
+            remaining: Math.max(0, maxHsa - (ytdHsa + projectedHsa))
+          },
+          espp: {
+            ytd: ytdEspp,
+            projected: projectedEspp,
+            total: ytdEspp + projectedEspp,
+            limit: null // No IRS limit for ESPP
+          },
+          brokerage: {
+            ytd: ytdBrokerage,
+            projected: projectedBrokerage,
+            total: ytdBrokerage + projectedBrokerage,
+            limit: null // No IRS limit for brokerage
+          }
+        };
+      }
 
       return {
         name: personName,
@@ -424,7 +401,10 @@ const Optimize = () => {
         age,
         ytdContributions,
         remainingRoom,
+        maxOutAmounts,
         accountTypes,
+        standardBreakdown,
+        ytdBreakdown,
         contributions: {
           k401: {
             employee: annual401k,
@@ -465,7 +445,7 @@ const Optimize = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData, useProjectedAGI]);
+  }, [paycheckData, performanceData]);
 
   const handleNavigateToPaycheck = () => {
     navigate('/paycheck');
@@ -477,19 +457,116 @@ const Optimize = () => {
 
     const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
     
+    // Helper function to determine if we should sum or use original total for joint accounts
+    const calculateJointTotal = (accountType, individualAmounts) => {
+      // Check if this account type is joint for any person
+      const isJoint = people.some(p => p.accountTypes && p.accountTypes[accountType] === 'Joint');
+      
+      if (isJoint && people.length > 1) {
+        // For joint accounts, use the individual amount * number of people to get back to the original total
+        // Since joint amounts are already divided by number of users in calculatePersonMetrics
+        return individualAmounts[0] * people.length;
+      } else {
+        // For individual accounts or single person, sum normally
+        return individualAmounts.reduce((sum, amount) => sum + amount, 0);
+      }
+    };
+    
+    const iraAmounts = people.map(p => p.contributions.ira.amount);
+    const brokerageAmounts = people.map(p => p.contributions.brokerage.amount);
+    
+    const totalIra = calculateJointTotal('ira', iraAmounts);
+    const totalBrokerage = calculateJointTotal('brokerage', brokerageAmounts);
+    
+    // Individual accounts always sum normally
+    const total401k = people.reduce((sum, p) => sum + p.contributions.k401.total, 0);
+    const totalHsa = people.reduce((sum, p) => sum + p.contributions.hsa.total, 0);
+    const totalEspp = people.reduce((sum, p) => sum + p.contributions.espp.amount, 0);
+    
+    // For remaining room, joint accounts need special handling too
+    const iraRemainingAmounts = people.map(p => p.contributions.ira.remaining);
+    const remainingIra = calculateJointTotal('ira', iraRemainingAmounts);
+    
+    // Calculate breakdown totals for both modes
+    let standardBreakdownTotals = {};
+    let ytdBreakdownTotals = {};
+    
+    if (people.length > 0 && people[0].standardBreakdown) {
+      // Standard breakdown totals
+      standardBreakdownTotals.ytd401kEmployee = people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.ytdEmployee || 0), 0);
+      standardBreakdownTotals.ytd401kEmployer = people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.ytdEmployer || 0), 0);
+      standardBreakdownTotals.ytd401kTotal = standardBreakdownTotals.ytd401kEmployee + standardBreakdownTotals.ytd401kEmployer;
+      standardBreakdownTotals.projected401kEmployee = people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.projectedEmployee || 0), 0);
+      standardBreakdownTotals.projected401kEmployer = people.reduce((sum, p) => sum + (p.standardBreakdown.k401?.projectedEmployer || 0), 0);
+      standardBreakdownTotals.projected401kTotal = standardBreakdownTotals.projected401kEmployee + standardBreakdownTotals.projected401kEmployer;
+      
+      // IRA breakdown - handle joint accounts
+      const standardIraYtdAmounts = people.map(p => p.standardBreakdown.ira?.ytd || 0);
+      const standardIraProjectedAmounts = people.map(p => p.standardBreakdown.ira?.projected || 0);
+      standardBreakdownTotals.ytdIra = calculateJointTotal('ira', standardIraYtdAmounts);
+      standardBreakdownTotals.projectedIra = calculateJointTotal('ira', standardIraProjectedAmounts);
+      
+      // HSA breakdown
+      standardBreakdownTotals.ytdHsaEmployee = people.reduce((sum, p) => sum + (p.standardBreakdown.hsa?.ytdEmployee || 0), 0);
+      standardBreakdownTotals.ytdHsaEmployer = people.reduce((sum, p) => sum + (p.standardBreakdown.hsa?.ytdEmployer || 0), 0);
+      standardBreakdownTotals.projectedHsaEmployee = people.reduce((sum, p) => sum + (p.standardBreakdown.hsa?.projectedEmployee || 0), 0);
+      standardBreakdownTotals.projectedHsaEmployer = people.reduce((sum, p) => sum + (p.standardBreakdown.hsa?.projectedEmployer || 0), 0);
+      
+      // ESPP breakdown
+      standardBreakdownTotals.ytdEspp = people.reduce((sum, p) => sum + (p.standardBreakdown.espp?.ytd || 0), 0);
+      standardBreakdownTotals.projectedEspp = people.reduce((sum, p) => sum + (p.standardBreakdown.espp?.projected || 0), 0);
+      
+      // Brokerage breakdown - handle joint accounts
+      const standardBrokerageYtdAmounts = people.map(p => p.standardBreakdown.brokerage?.ytd || 0);
+      const standardBrokerageProjectedAmounts = people.map(p => p.standardBreakdown.brokerage?.projected || 0);
+      standardBreakdownTotals.ytdBrokerage = calculateJointTotal('brokerage', standardBrokerageYtdAmounts);
+      standardBreakdownTotals.projectedBrokerage = calculateJointTotal('brokerage', standardBrokerageProjectedAmounts);
+    }
+    
+    if (people.length > 0 && people[0].ytdBreakdown) {
+      // YTD breakdown totals
+      ytdBreakdownTotals.ytd401kEmployee = people.reduce((sum, p) => sum + (p.ytdBreakdown.k401?.ytdEmployee || 0), 0);
+      ytdBreakdownTotals.ytd401kEmployer = people.reduce((sum, p) => sum + (p.ytdBreakdown.k401?.ytdEmployer || 0), 0);
+      ytdBreakdownTotals.ytd401kTotal = ytdBreakdownTotals.ytd401kEmployee + ytdBreakdownTotals.ytd401kEmployer;
+      ytdBreakdownTotals.projected401kEmployee = people.reduce((sum, p) => sum + (p.ytdBreakdown.k401?.projectedEmployee || 0), 0);
+      ytdBreakdownTotals.projected401kEmployer = people.reduce((sum, p) => sum + (p.ytdBreakdown.k401?.projectedEmployer || 0), 0);
+      ytdBreakdownTotals.projected401kTotal = ytdBreakdownTotals.projected401kEmployee + ytdBreakdownTotals.projected401kEmployer;
+      
+      // IRA breakdown - handle joint accounts
+      const ytdIraYtdAmounts = people.map(p => p.ytdBreakdown.ira?.ytd || 0);
+      const ytdIraProjectedAmounts = people.map(p => p.ytdBreakdown.ira?.projected || 0);
+      ytdBreakdownTotals.ytdIra = calculateJointTotal('ira', ytdIraYtdAmounts);
+      ytdBreakdownTotals.projectedIra = calculateJointTotal('ira', ytdIraProjectedAmounts);
+      
+      // HSA breakdown
+      ytdBreakdownTotals.ytdHsaEmployee = people.reduce((sum, p) => sum + (p.ytdBreakdown.hsa?.ytdEmployee || 0), 0);
+      ytdBreakdownTotals.ytdHsaEmployer = people.reduce((sum, p) => sum + (p.ytdBreakdown.hsa?.ytdEmployer || 0), 0);
+      ytdBreakdownTotals.projectedHsaEmployee = people.reduce((sum, p) => sum + (p.ytdBreakdown.hsa?.projectedEmployee || 0), 0);
+      ytdBreakdownTotals.projectedHsaEmployer = people.reduce((sum, p) => sum + (p.ytdBreakdown.hsa?.projectedEmployer || 0), 0);
+      
+      // ESPP breakdown
+      ytdBreakdownTotals.ytdEspp = people.reduce((sum, p) => sum + (p.ytdBreakdown.espp?.ytd || 0), 0);
+      ytdBreakdownTotals.projectedEspp = people.reduce((sum, p) => sum + (p.ytdBreakdown.espp?.projected || 0), 0);
+      
+      // Brokerage breakdown - handle joint accounts
+      const ytdBrokerageYtdAmounts = people.map(p => p.ytdBreakdown.brokerage?.ytd || 0);
+      const ytdBrokerageProjectedAmounts = people.map(p => p.ytdBreakdown.brokerage?.projected || 0);
+      ytdBreakdownTotals.ytdBrokerage = calculateJointTotal('brokerage', ytdBrokerageYtdAmounts);
+      ytdBreakdownTotals.projectedBrokerage = calculateJointTotal('brokerage', ytdBrokerageProjectedAmounts);
+    }
+    
     return {
-      total401k: people.reduce((sum, p) => sum + p.contributions.k401.total, 0),
-      totalIra: people.reduce((sum, p) => sum + p.contributions.ira.amount, 0),
-      totalHsa: people.reduce((sum, p) => sum + p.contributions.hsa.total, 0),
-      totalEspp: people.reduce((sum, p) => sum + p.contributions.espp.amount, 0),
-      totalBrokerage: people.reduce((sum, p) => sum + p.contributions.brokerage.amount, 0),
-      totalContributions: people.reduce((sum, p) => 
-        sum + p.contributions.k401.total + p.contributions.ira.amount + 
-        p.contributions.hsa.total + p.contributions.espp.amount + p.contributions.brokerage.amount, 0
-      ),
+      total401k,
+      totalIra,
+      totalHsa,
+      totalEspp,
+      totalBrokerage,
+      totalContributions: total401k + totalIra + totalHsa + totalEspp + totalBrokerage,
       remaining401k: people.reduce((sum, p) => sum + p.contributions.k401.remaining, 0),
-      remainingIra: people.reduce((sum, p) => sum + p.contributions.ira.remaining, 0),
-      remainingHsa: people.reduce((sum, p) => sum + p.contributions.hsa.remaining, 0)
+      remainingIra,
+      remainingHsa: people.reduce((sum, p) => sum + p.contributions.hsa.remaining, 0),
+      standardBreakdown: standardBreakdownTotals,
+      ytdBreakdown: ytdBreakdownTotals
     };
   }, [contributionMetrics]);
 
@@ -518,8 +595,325 @@ const Optimize = () => {
     );
   }
 
+  const HouseholdBreakdownSection = ({ breakdownData, title }) => {
+    if (!breakdownData) return null;
+
+    // Calculate if household totals exceed IRS limits using contributionMetrics data
+    const people = [contributionMetrics.your, contributionMetrics.spouse].filter(Boolean);
+    const total401kLimit = people.reduce((sum, p) => {
+      const age = p.age || 0;
+      const isOver50 = age >= 50;
+      return sum + (isOver50 
+        ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
+        : CONTRIBUTION_LIMITS_2025.k401_employee);
+    }, 0);
+    
+    const totalIraLimit = people.reduce((sum, p) => {
+      const age = p.age || 0;
+      const isOver50 = age >= 50;
+      return sum + (isOver50 
+        ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
+        : CONTRIBUTION_LIMITS_2025.ira_self);
+    }, 0);
+    
+    // For HSA, we need to be careful about how we calculate household limits
+    // Each person has their own HSA limit based on their coverage type
+    const totalHsaLimit = people.reduce((sum, p) => {
+      const age = p.age || 0;
+      const isOver55 = age >= 55;
+      // Try to access hsaCoverageType from the person's data
+      const hsaCoverage = paycheckData[p.name === contributionMetrics.your?.name ? 'your' : 'spouse']?.hsaCoverageType || 'none';
+      if (hsaCoverage === 'self') {
+        return sum + CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+      } else if (hsaCoverage === 'family') {
+        return sum + CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+      }
+      return sum;
+    }, 0);
+
+    const is401kOverLimit = householdTotals.total401k > total401kLimit;
+    const isIraOverLimit = householdTotals.totalIra > totalIraLimit;
+    const isHsaOverLimit = householdTotals.totalHsa > totalHsaLimit;
+
+    return (
+      <div className="optimize-household-breakdown">
+        {/* 401k */}
+        <div className="optimize-household-section">
+          <h4>
+            401(k) Contributions
+            {is401kOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+          </h4>
+          <div className="optimize-household-grid">
+            <div className="optimize-household-item">
+              <span className="label">YTD Employee:</span>
+              <span className="value">{formatCurrency(breakdownData.ytd401kEmployee || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">YTD Employer:</span>
+              <span className="value">{formatCurrency(breakdownData.ytd401kEmployer || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">YTD Total:</span>
+              <span className="value">{formatCurrency(breakdownData.ytd401kTotal || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">Projected Employee:</span>
+              <span className="value">{formatCurrency(breakdownData.projected401kEmployee || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">Projected Employer:</span>
+              <span className="value">{formatCurrency(breakdownData.projected401kEmployer || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">Projected Total:</span>
+              <span className="value">{formatCurrency(breakdownData.projected401kTotal || 0)}</span>
+            </div>
+            <div className="optimize-household-item total">
+              <span className="label">Annual Total:</span>
+              <span className={`value ${is401kOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                {formatCurrency(householdTotals.total401k)}
+                {is401kOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* IRA */}
+        <div className="optimize-household-section">
+          <h4>
+            IRA Contributions
+            {isIraOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+          </h4>
+          <div className="optimize-household-grid">
+            <div className="optimize-household-item">
+              <span className="label">YTD Total:</span>
+              <span className="value">{formatCurrency(breakdownData.ytdIra || 0)}</span>
+            </div>
+            <div className="optimize-household-item">
+              <span className="label">Projected Total:</span>
+              <span className="value">{formatCurrency(breakdownData.projectedIra || 0)}</span>
+            </div>
+            <div className="optimize-household-item total">
+              <span className="label">Annual Total:</span>
+              <span className={`value ${isIraOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                {formatCurrency(householdTotals.totalIra)}
+                {isIraOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* HSA */}
+        {householdTotals.totalHsa > 0 && (
+          <div className="optimize-household-section">
+            <h4>
+              HSA Contributions
+              {isHsaOverLimit && <span className="optimize-warning-icon" title="Household total exceeds combined IRS limits">⚠️</span>}
+            </h4>
+            <div className="optimize-household-grid">
+              <div className="optimize-household-item">
+                <span className="label">YTD Employee:</span>
+                <span className="value">{formatCurrency(breakdownData.ytdHsaEmployee || 0)}</span>
+              </div>
+              <div className="optimize-household-item">
+                <span className="label">YTD Employer:</span>
+                <span className="value">{formatCurrency(breakdownData.ytdHsaEmployer || 0)}</span>
+              </div>
+              <div className="optimize-household-item">
+                <span className="label">Projected Employee:</span>
+                <span className="value">{formatCurrency(breakdownData.projectedHsaEmployee || 0)}</span>
+              </div>
+              <div className="optimize-household-item">
+                <span className="label">Projected Employer:</span>
+                <span className="value">{formatCurrency(breakdownData.projectedHsaEmployer || 0)}</span>
+              </div>
+              <div className="optimize-household-item total">
+                <span className="label">Annual Total:</span>
+                <span className={`value ${isHsaOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                  {formatCurrency(householdTotals.totalHsa)}
+                  {isHsaOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* ESPP */}
+        {householdTotals.totalEspp > 0 && (
+          <div className="optimize-household-section">
+            <h4>ESPP Contributions</h4>
+            <div className="optimize-household-grid">
+              <div className="optimize-household-item">
+                <span className="label">YTD Total:</span>
+                <span className="value">{formatCurrency(breakdownData.ytdEspp || 0)}</span>
+              </div>
+              <div className="optimize-household-item">
+                <span className="label">Projected Total:</span>
+                <span className="value">{formatCurrency(breakdownData.projectedEspp || 0)}</span>
+              </div>
+              <div className="optimize-household-item total">
+                <span className="label">Annual Total:</span>
+                <span className="value">{formatCurrency(householdTotals.totalEspp)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Brokerage */}
+        {householdTotals.totalBrokerage > 0 && (
+          <div className="optimize-household-section">
+            <h4>Brokerage Contributions</h4>
+            <div className="optimize-household-grid">
+              <div className="optimize-household-item">
+                <span className="label">YTD Total:</span>
+                <span className="value">{formatCurrency(breakdownData.ytdBrokerage || 0)}</span>
+              </div>
+              <div className="optimize-household-item">
+                <span className="label">Projected Total:</span>
+                <span className="value">{formatCurrency(breakdownData.projectedBrokerage || 0)}</span>
+              </div>
+              <div className="optimize-household-item total">
+                <span className="label">Annual Total:</span>
+                <span className="value">{formatCurrency(householdTotals.totalBrokerage)}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Grand Total */}
+        <div className="optimize-household-section">
+          <h4>Total Annual Contributions</h4>
+          <div className="optimize-household-grid">
+            <div className="optimize-household-item grand-total">
+              <span className="label">Combined Household Total:</span>
+              <span className="value">{formatCurrency(householdTotals.totalContributions)}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const PersonContributionCard = ({ person }) => {
     if (!person) return null;
+
+    // Helper component for the 4-part breakdown display
+    const ContributionBreakdown = ({ accountType, breakdown, accountTypeName }) => {
+      if (!breakdown) return null;
+
+      // Check if annual total exceeds IRS limit
+      const isOverLimit = breakdown.limit && (breakdown.totalCombined || breakdown.total) > breakdown.limit;
+      const warningIcon = isOverLimit ? ' ⚠️' : '';
+
+      return (
+        <div className="optimize-contribution-section">
+          <h4>
+            {accountTypeName} Contributions
+            <span className="contribution-mode-indicator">
+              {` (${person.accountTypes[accountType]})`}
+            </span>
+            {isOverLimit && <span className="optimize-warning-icon" title="Exceeds IRS annual limit">⚠️</span>}
+          </h4>
+          <div className="optimize-contribution-grid breakdown-mode">
+            {/* YTD Contributions */}
+            <div className="optimize-contribution-header">YTD Contributions Made</div>
+            {breakdown.ytdEmployee !== undefined ? (
+              <>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employee:</span>
+                  <span className="value">{formatCurrency(breakdown.ytdEmployee)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employer:</span>
+                  <span className="value">{formatCurrency(breakdown.ytdEmployer)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">YTD Total:</span>
+                  <span className="value total">{formatCurrency(breakdown.ytdTotal)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="optimize-contribution-item">
+                <span className="label">YTD Total:</span>
+                <span className="value total">{formatCurrency(breakdown.ytd)}</span>
+              </div>
+            )}
+
+            {/* Projected Remaining */}
+            <div className="optimize-contribution-header">Projected Remaining</div>
+            {breakdown.projectedEmployee !== undefined ? (
+              <>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employee:</span>
+                  <span className="value">{formatCurrency(breakdown.projectedEmployee)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employer:</span>
+                  <span className="value">{formatCurrency(breakdown.projectedEmployer)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Projected Total:</span>
+                  <span className="value total">{formatCurrency(breakdown.projectedTotal)}</span>
+                </div>
+              </>
+            ) : (
+              <div className="optimize-contribution-item">
+                <span className="label">Projected Total:</span>
+                <span className="value total">{formatCurrency(breakdown.projected)}</span>
+              </div>
+            )}
+
+            {/* Annual Total */}
+            <div className="optimize-contribution-header">Annual Total (YTD + Projected)</div>
+            {breakdown.totalEmployee !== undefined ? (
+              <>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employee:</span>
+                  <span className="value">{formatCurrency(breakdown.totalEmployee)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Employer:</span>
+                  <span className="value">{formatCurrency(breakdown.totalEmployer)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Combined Total:</span>
+                  <span className={`value total highlight ${isOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                    {formatCurrency(breakdown.totalCombined)}
+                    {isOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className="optimize-contribution-item">
+                <span className="label">Annual Total:</span>
+                <span className={`value total highlight ${isOverLimit ? 'optimize-limit-exceeded' : ''}`}>
+                  {formatCurrency(breakdown.total)}
+                  {isOverLimit && <span className="optimize-warning-icon">⚠️</span>}
+                </span>
+              </div>
+            )}
+
+            {/* IRS Limit */}
+            {breakdown.limit && (
+              <>
+                <div className="optimize-contribution-header">IRS Annual Limit</div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Annual Limit:</span>
+                  <span className="value">{formatCurrency(breakdown.limit)}</span>
+                </div>
+                <div className="optimize-contribution-item">
+                  <span className="label">Remaining Room:</span>
+                  <span className={`value ${breakdown.remaining > 0 ? 'opportunity' : breakdown.remaining < 0 ? 'optimize-limit-exceeded' : 'maxed'}`}>
+                    {formatCurrency(breakdown.remaining)}
+                    {breakdown.remaining < 0 && <span className="optimize-warning-icon">⚠️</span>}
+                  </span>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      );
+    };
 
     return (
       <div className="optimize-person-card">
@@ -528,7 +922,7 @@ const Optimize = () => {
           <div className="optimize-salary">
             <strong>Annual Salary:</strong> {formatCurrency(person.salary)}
           </div>
-          {useProjectedAGI && person.effectiveAGI !== person.salary && (
+          {person.effectiveAGI !== person.salary && (
             <div className="optimize-effective-agi">
               <strong>Effective AGI (YTD + Projected):</strong> {formatCurrency(person.effectiveAGI)}
             </div>
@@ -538,149 +932,97 @@ const Optimize = () => {
           </div>
         </div>
 
-
         <div className="optimize-contributions">
-          {/* 401k Section */}
-          <div className="optimize-contribution-section">
-            <h4>
-              401(k) Contributions
-              {useProjectedAGI && (
-                <span className="contribution-mode-indicator">
-                  {` (Per Paycheck Basis - ${person.accountTypes.k401})`}
-                </span>
+          {/* Side by side comparison */}
+          <div className="optimize-person-comparison">
+            {/* Standard Calculation */}
+            <div className="optimize-person-column">
+              <h4 className="person-calculation-header standard">Standard Calculation</h4>
+              {person.standardBreakdown ? (
+                <>
+                  <ContributionBreakdown
+                    accountType="k401"
+                    breakdown={person.standardBreakdown.k401}
+                    accountTypeName="401(k)"
+                  />
+                  <ContributionBreakdown
+                    accountType="ira"
+                    breakdown={person.standardBreakdown.ira}
+                    accountTypeName="IRA"
+                  />
+                  {person.standardBreakdown.hsa.limit > 0 && (
+                    <ContributionBreakdown
+                      accountType="hsa"
+                      breakdown={person.standardBreakdown.hsa}
+                      accountTypeName="HSA"
+                    />
+                  )}
+                  {person.standardBreakdown.espp.total > 0 && (
+                    <ContributionBreakdown
+                      accountType="espp"
+                      breakdown={person.standardBreakdown.espp}
+                      accountTypeName="ESPP"
+                    />
+                  )}
+                  {person.standardBreakdown.brokerage.total > 0 && (
+                    <ContributionBreakdown
+                      accountType="brokerage"
+                      breakdown={person.standardBreakdown.brokerage}
+                      accountTypeName="Brokerage"
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="optimize-contribution-section">
+                  <h4>No standard data</h4>
+                </div>
               )}
-            </h4>
-            <div className="optimize-contribution-grid">
-              <div className="optimize-contribution-item">
-                <span className="label">Employee Contribution:</span>
-                <span className="value">{formatCurrency(person.contributions.k401.employee)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Employer Match:</span>
-                <span className="value">{formatCurrency(person.contributions.k401.employer)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Total 401(k):</span>
-                <span className="value total">{formatCurrency(person.contributions.k401.total)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Annual Limit:</span>
-                <span className="value">{formatCurrency(person.contributions.k401.max)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Remaining Room:</span>
-                <span className={`value ${person.contributions.k401.remaining > 0 ? 'opportunity' : 'maxed'}`}>
-                  {formatCurrency(person.contributions.k401.remaining)}
-                </span>
-              </div>
+            </div>
+
+            {/* YTD + Projected Calculation */}
+            <div className="optimize-person-column">
+              <h4 className="person-calculation-header ytd">YTD + Projected Calculation</h4>
+              {person.ytdBreakdown ? (
+                <>
+                  <ContributionBreakdown
+                    accountType="k401"
+                    breakdown={person.ytdBreakdown.k401}
+                    accountTypeName="401(k)"
+                  />
+                  <ContributionBreakdown
+                    accountType="ira"
+                    breakdown={person.ytdBreakdown.ira}
+                    accountTypeName="IRA"
+                  />
+                  {person.ytdBreakdown.hsa.limit > 0 && (
+                    <ContributionBreakdown
+                      accountType="hsa"
+                      breakdown={person.ytdBreakdown.hsa}
+                      accountTypeName="HSA"
+                    />
+                  )}
+                  {person.ytdBreakdown.espp.total > 0 && (
+                    <ContributionBreakdown
+                      accountType="espp"
+                      breakdown={person.ytdBreakdown.espp}
+                      accountTypeName="ESPP"
+                    />
+                  )}
+                  {person.ytdBreakdown.brokerage.total > 0 && (
+                    <ContributionBreakdown
+                      accountType="brokerage"
+                      breakdown={person.ytdBreakdown.brokerage}
+                      accountTypeName="Brokerage"
+                    />
+                  )}
+                </>
+              ) : (
+                <div className="optimize-contribution-section">
+                  <h4>No YTD data available</h4>
+                </div>
+              )}
             </div>
           </div>
-
-          {/* IRA Section */}
-          <div className="optimize-contribution-section">
-            <h4>
-              IRA Contributions
-              {useProjectedAGI && (
-                <span className="contribution-mode-indicator">
-                  {` (Per Month Basis - ${person.accountTypes.ira})`}
-                </span>
-              )}
-            </h4>
-            <div className="optimize-contribution-grid">
-              <div className="optimize-contribution-item">
-                <span className="label">Annual IRA:</span>
-                <span className="value">{formatCurrency(person.contributions.ira.amount)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Annual Limit:</span>
-                <span className="value">{formatCurrency(person.contributions.ira.max)}</span>
-              </div>
-              <div className="optimize-contribution-item">
-                <span className="label">Remaining Room:</span>
-                <span className={`value ${person.contributions.ira.remaining > 0 ? 'opportunity' : 'maxed'}`}>
-                  {formatCurrency(person.contributions.ira.remaining)}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* HSA Section */}
-          {person.contributions.hsa.max > 0 && (
-            <div className="optimize-contribution-section">
-              <h4>
-                HSA Contributions
-                {useProjectedAGI && (
-                  <span className="contribution-mode-indicator">
-                    {` (Per Paycheck Basis - ${person.accountTypes.hsa})`}
-                  </span>
-                )}
-              </h4>
-              <div className="optimize-contribution-grid">
-                <div className="optimize-contribution-item">
-                  <span className="label">Employee Contribution:</span>
-                  <span className="value">{formatCurrency(person.contributions.hsa.employee)}</span>
-                </div>
-                <div className="optimize-contribution-item">
-                  <span className="label">Employer Contribution:</span>
-                  <span className="value">{formatCurrency(person.contributions.hsa.employer)}</span>
-                </div>
-                <div className="optimize-contribution-item">
-                  <span className="label">Total HSA:</span>
-                  <span className="value total">{formatCurrency(person.contributions.hsa.total)}</span>
-                </div>
-                <div className="optimize-contribution-item">
-                  <span className="label">Annual Limit:</span>
-                  <span className="value">{formatCurrency(person.contributions.hsa.max)}</span>
-                </div>
-                <div className="optimize-contribution-item">
-                  <span className="label">Remaining Room:</span>
-                  <span className={`value ${person.contributions.hsa.remaining > 0 ? 'opportunity' : 'maxed'}`}>
-                    {formatCurrency(person.contributions.hsa.remaining)}
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* ESPP Section */}
-          {person.contributions.espp.amount > 0 && (
-            <div className="optimize-contribution-section">
-              <h4>
-                ESPP Contributions
-                {useProjectedAGI && (
-                  <span className="contribution-mode-indicator">
-                    {` (Per Paycheck Basis - ${person.accountTypes.espp})`}
-                  </span>
-                )}
-              </h4>
-              <div className="optimize-contribution-grid">
-                <div className="optimize-contribution-item">
-                  <span className="label">Annual ESPP:</span>
-                  <span className="value">{formatCurrency(person.contributions.espp.amount)}</span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Brokerage Section */}
-          {person.contributions.brokerage.amount > 0 && (
-            <div className="optimize-contribution-section">
-              <h4>
-                Brokerage Contributions
-                {useProjectedAGI && (
-                  <span className="contribution-mode-indicator">
-                    {` (Per Month Basis - ${person.accountTypes.brokerage})`}
-                  </span>
-                )}
-              </h4>
-              <div className="optimize-contribution-grid">
-                <div className="optimize-contribution-item">
-                  <span className="label">Annual Brokerage:</span>
-                  <span className="value">{formatCurrency(person.contributions.brokerage.amount)}</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -696,81 +1038,24 @@ const Optimize = () => {
           <h1>Optimize Your Contributions</h1>
           <p>Analyze your current contribution strategy and identify optimization opportunities</p>
           
-          
-          {/* AGI Calculation Toggle */}
-          <div className="agi-toggle-section">
-            <label className="agi-toggle">
-              <input
-                type="checkbox"
-                checked={useProjectedAGI}
-                onChange={(e) => setUseProjectedAGI(e.target.checked)}
-              />
-              <span className="agi-toggle-text">
-                Use YTD + Projected AGI 
-                <span className="agi-toggle-description">
-                  (Instead of annual paycheck calculator salary)
-                </span>
-              </span>
-            </label>
-          </div>
+          <p>Compare standard calculations with YTD + projected calculations side by side</p>
         </div>
 
         {/* Household Summary */}
         <div className="optimize-summary-card">
-          <h2>
-            Household Summary
-            {useProjectedAGI && (
-              <span className="household-mode-indicator"> (YTD + Projected Calculations)</span>
-            )}
-          </h2>
-          {/* Debug info when YTD mode is active */}
-          {useProjectedAGI && (
-            <div className="optimize-agi-debug">
-              {contributionMetrics.your && (
-                <div className="agi-debug-item">
-                  <strong>{contributionMetrics.your.name}:</strong> 
-                  Salary: {formatCurrency(contributionMetrics.your.salary)} → 
-                  Effective AGI: {formatCurrency(contributionMetrics.your.effectiveAGI)}
-                </div>
-              )}
-              {contributionMetrics.spouse && (
-                <div className="agi-debug-item">
-                  <strong>{contributionMetrics.spouse.name}:</strong> 
-                  Salary: {formatCurrency(contributionMetrics.spouse.salary)} → 
-                  Effective AGI: {formatCurrency(contributionMetrics.spouse.effectiveAGI)}
-                </div>
-              )}
-              <div className="agi-debug-note">
-                <strong>Note:</strong> All contribution types now use YTD + projected calculations when toggle is active.
-                Percentage-based (401k, ESPP) scale with income changes. Fixed amounts (IRA, HSA, Brokerage) use YTD actual + remaining periods.
-              </div>
-            </div>
-          )}
+          <h2>Household Summary - Side by Side Comparison</h2>
           
-          <div className="optimize-summary-grid">
-            <div className="optimize-summary-item">
-              <span className="label">Total 401(k) (with match):</span>
-              <span className="value">{formatCurrency(householdTotals.total401k)}</span>
+          <div className="optimize-comparison-container">
+            {/* Standard Calculation */}
+            <div className="optimize-calculation-column">
+              <h3 className="calculation-header standard">Standard Calculation</h3>
+              <HouseholdBreakdownSection breakdownData={householdTotals.standardBreakdown} />
             </div>
-            <div className="optimize-summary-item">
-              <span className="label">Total IRA:</span>
-              <span className="value">{formatCurrency(householdTotals.totalIra)}</span>
-            </div>
-            <div className="optimize-summary-item">
-              <span className="label">Total HSA:</span>
-              <span className="value">{formatCurrency(householdTotals.totalHsa)}</span>
-            </div>
-            <div className="optimize-summary-item">
-              <span className="label">Total ESPP:</span>
-              <span className="value">{formatCurrency(householdTotals.totalEspp)}</span>
-            </div>
-            <div className="optimize-summary-item">
-              <span className="label">Total Brokerage:</span>
-              <span className="value">{formatCurrency(householdTotals.totalBrokerage)}</span>
-            </div>
-            <div className="optimize-summary-item total">
-              <span className="label">Total Annual Contributions:</span>
-              <span className="value">{formatCurrency(householdTotals.totalContributions)}</span>
+
+            {/* YTD + Projected Calculation */}
+            <div className="optimize-calculation-column">
+              <h3 className="calculation-header ytd">YTD + Projected Calculation</h3>
+              <HouseholdBreakdownSection breakdownData={householdTotals.ytdBreakdown} />
             </div>
           </div>
 
