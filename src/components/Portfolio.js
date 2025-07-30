@@ -59,10 +59,28 @@ const Portfolio = () => {
   // Manual account grouping state
   const [manualGroups, setManualGroups] = useState({});
   const [showManualGrouping, setShowManualGrouping] = useState(false);
+  const [showExpandedFields, setShowExpandedFields] = useState(false);
+  const [collapsedAccounts, setCollapsedAccounts] = useState(() => {
+    try {
+      const saved = localStorage.getItem('portfolioCollapsedAccounts');
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (error) {
+      return new Set();
+    }
+  });
 
   // Validation options
   const TAX_TYPES = ['Tax-Free', 'Tax-Deferred', 'After-Tax'];
   const ACCOUNT_TYPES = ['IRA', 'Brokerage', '401k', 'ESPP', 'HSA'];
+
+  // Save collapsed accounts state to localStorage whenever it changes
+  useEffect(() => {
+    try {
+      localStorage.setItem('portfolioCollapsedAccounts', JSON.stringify([...collapsedAccounts]));
+    } catch (error) {
+      console.error('Failed to save collapsed accounts state:', error);
+    }
+  }, [collapsedAccounts]);
 
   useEffect(() => {
     // Initialize shared accounts system on component mount
@@ -86,7 +104,12 @@ const Portfolio = () => {
         taxType: '',
         accountType: '',
         amount: '',
-        description: ''
+        description: '',
+        contributions: '',
+        employerMatch: '',
+        gains: '',
+        fees: '',
+        withdrawals: ''
       }]);
       setCurrentYearData({});
             setPortfolioRecords([]);
@@ -95,11 +118,13 @@ const Portfolio = () => {
             setShowRecords(false);
       setManualGroups({});
       setShowManualGrouping(false);
+      setCollapsedAccounts(new Set());
       
       // Also clear shared accounts, manual groups, and portfolio inputs when global reset happens
       clearSharedAccounts();
       clearManualAccountGroups();
       clearPortfolioInputs();
+      localStorage.removeItem('portfolioCollapsedAccounts');
     };
 
     // Listen for shared accounts updates from Performance component
@@ -161,6 +186,11 @@ const Portfolio = () => {
         investmentCompany: input.investmentCompany || '',
         description: input.description || '',
         amount: '', // Always start with empty amount - not persisted
+        contributions: input.contributions || '',
+        employerMatch: input.employerMatch || '',
+        gains: input.gains || '',
+        fees: input.fees || '',
+        withdrawals: input.withdrawals || '',
         ...input // Preserve any other fields, but amount will be overridden
       }));
       setPortfolioInputs(inputsWithEmptyAmounts);
@@ -253,6 +283,11 @@ const Portfolio = () => {
           investmentCompany: account.investmentCompany || '',
           amount: '', // Always start with empty amount for new updates
           description: '', // Initialize description field
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: '',
           source: account.source,
           // Show which systems this account appears in
           sources: account.sources || [account.source]
@@ -270,7 +305,12 @@ const Portfolio = () => {
           accountType: '',
           owner: ownerOptions[0] || 'User',
           investmentCompany: '',
-          description: ''
+          description: '',
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: ''
         }]);
       }
     } else {
@@ -287,6 +327,11 @@ const Portfolio = () => {
           investmentCompany: input.investmentCompany || '',
           description: input.description || '',
           amount: '', // Always start with empty amount - not persisted
+          contributions: input.contributions || '',
+          employerMatch: input.employerMatch || '',
+          gains: input.gains || '',
+          fees: input.fees || '',
+          withdrawals: input.withdrawals || '',
           ...input // Preserve any other fields, but amount will be overridden
         }));
         setPortfolioInputs(inputsWithEmptyAmounts);
@@ -299,7 +344,12 @@ const Portfolio = () => {
           accountType: '',
           owner: ownerOptions[0] || 'User',
           investmentCompany: '',
-          description: ''
+          description: '',
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: ''
         }]);
       }
     }
@@ -345,6 +395,16 @@ const Portfolio = () => {
       } else if (parseFloat(input.amount) < 0) {
         inputErrors.amount = 'Amount must be positive';
         hasErrors = true;
+      }
+
+      // Validate optional financial fields when expanded fields are shown
+      if (showExpandedFields) {
+        ['contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'].forEach(field => {
+          if (input[field] && input[field] !== '' && isNaN(parseFloat(input[field]))) {
+            inputErrors[field] = 'Must be a valid number';
+            hasErrors = true;
+          }
+        });
       }
 
       if (Object.keys(inputErrors).length > 0) {
@@ -405,7 +465,12 @@ const Portfolio = () => {
       accountType: '',
       owner: users[0] || 'User',
       investmentCompany: '',
-      description: ''
+      description: '',
+      contributions: '',
+      employerMatch: '',
+      gains: '',
+      fees: '',
+      withdrawals: ''
     }];
     setPortfolioInputs(newInputs);
     // Save account definitions (without amounts) when adding accounts
@@ -583,7 +648,8 @@ const Portfolio = () => {
       // Save updated historical data
       const saveResult = setHistoricalData(historicalData);
       if (saveResult) {
-        setSuccessMessage(`Successfully updated ${currentYear} investment data!`);
+        const updateTypeText = showExpandedFields ? 'detailed' : 'balance-only';
+        setSuccessMessage(`Successfully updated ${currentYear} investment data! (${updateTypeText} sync to Performance)`);
         setCurrentYearData(historicalData[currentYear]);
         
         // Clear success message after 3 seconds
@@ -647,7 +713,8 @@ const Portfolio = () => {
         addPortfolioRecord(portfolioDataWithNames);
         
         // Automatically sync portfolio balances to performance (background sync)
-        const syncResult = syncPortfolioBalanceToPerformance(portfolioDataWithNames);
+        const updateType = showExpandedFields ? 'detailed' : 'balance-only';
+        const syncResult = syncPortfolioBalanceToPerformance(portfolioDataWithNames, updateType);
         
         // Also update performance accounts to only show latest portfolio accounts
         const performanceSyncResult = syncPerformanceAccountsFromLatestPortfolio();
@@ -694,6 +761,28 @@ const Portfolio = () => {
   // Helper function to generate unique IDs
   const generateUniqueId = () => {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  };
+
+  // Helper functions for managing collapsed state
+  const toggleAccountCollapse = (accountId) => {
+    setCollapsedAccounts(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(accountId)) {
+        newSet.delete(accountId);
+      } else {
+        newSet.add(accountId);
+      }
+      return newSet;
+    });
+  };
+
+  const collapseAllAccounts = () => {
+    const allIds = new Set(portfolioInputs.map(input => input.id));
+    setCollapsedAccounts(allIds);
+  };
+
+  const expandAllAccounts = () => {
+    setCollapsedAccounts(new Set());
   };
 
   const handleSyncSettingChange = (setting, value) => {
@@ -753,20 +842,41 @@ const Portfolio = () => {
 
   // CSV Helper Functions for the reusable component
   const getCSVHeaders = () => {
-    return ['owner', 'taxType', 'accountType', 'investmentCompany', 'description', 'amount', 'updateDate'];
+    if (showExpandedFields) {
+      return ['owner', 'taxType', 'accountType', 'investmentCompany', 'description', 'amount', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals', 'updateDate'];
+    } else {
+      return ['owner', 'taxType', 'accountType', 'investmentCompany', 'description', 'amount', 'updateDate'];
+    }
   };
 
   const formatCSVRow = (input) => {
     const currentDate = new Date().toISOString().split('T')[0];
-    return [
-      input.owner || '',
-      input.taxType || '',
-      input.accountType || '',
-      input.investmentCompany || '',
-      input.description || '',
-      input.amount || '',
-      input.updateDate || currentDate
-    ];
+    if (showExpandedFields) {
+      return [
+        input.owner || '',
+        input.taxType || '',
+        input.accountType || '',
+        input.investmentCompany || '',
+        input.description || '',
+        input.amount || '',
+        input.contributions || '',
+        input.employerMatch || '',
+        input.gains || '',
+        input.fees || '',
+        input.withdrawals || '',
+        input.updateDate || currentDate
+      ];
+    } else {
+      return [
+        input.owner || '',
+        input.taxType || '',
+        input.accountType || '',
+        input.investmentCompany || '',
+        input.description || '',
+        input.amount || '',
+        input.updateDate || currentDate
+      ];
+    }
   };
 
   const parseCSVRow = (row) => {
@@ -776,6 +886,11 @@ const Portfolio = () => {
     const investmentCompany = row.investmentCompany || '';
     const description = row.description || '';
     const amount = row.amount || '';
+    const contributions = row.contributions || '';
+    const employerMatch = row.employerMatch || '';
+    const gains = row.gains || '';
+    const fees = row.fees || '';
+    const withdrawals = row.withdrawals || '';
     const updateDate = row.updateDate || '';
     
     // Validate required fields (no longer need accountName since it's auto-generated)
@@ -806,13 +921,18 @@ const Portfolio = () => {
       investmentCompany: investmentCompany.trim(),
       description: description.trim(),
       amount: amount ? amount.toString().trim() : '',
+      contributions: contributions ? contributions.toString().trim() : '',
+      employerMatch: employerMatch ? employerMatch.toString().trim() : '',
+      gains: gains ? gains.toString().trim() : '',
+      fees: fees ? fees.toString().trim() : '',
+      withdrawals: withdrawals ? withdrawals.toString().trim() : '',
       updateDate: updateDate ? updateDate.trim() : new Date().toISOString().split('T')[0]
     };
   };
 
   const generateTemplateData = () => {
     const currentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
-    return [
+    const baseData = [
       {
         owner: users[0] || 'User',
         taxType: 'Tax-Deferred',
@@ -846,6 +966,19 @@ const Portfolio = () => {
         updateDate: currentDate
       }
     ];
+
+    if (showExpandedFields) {
+      return baseData.map(item => ({
+        ...item,
+        contributions: '5000.00',
+        employerMatch: '2500.00',
+        gains: '3000.00',
+        fees: '50.00',
+        withdrawals: '0.00'
+      }));
+    }
+
+    return baseData;
   };
 
   const handleCSVImportSuccess = (parsed) => {
@@ -911,13 +1044,19 @@ const Portfolio = () => {
         accountType: '',
         investmentCompany: '',
         amount: '',
-        description: ''
+        description: '',
+        contributions: '',
+        employerMatch: '',
+        gains: '',
+        fees: '',
+        withdrawals: ''
       }]);
       setCurrentYearData({});
             setPortfolioRecords([]);
       setErrors({});
       setSuccessMessage('');
             setShowRecords(false);
+      setCollapsedAccounts(new Set());
       
       // Clear localStorage data related to portfolio
       const currentYear = new Date().getFullYear();
@@ -948,6 +1087,7 @@ const Portfolio = () => {
       clearSharedAccounts();
       clearManualAccountGroups();
       clearPortfolioInputs();
+      localStorage.removeItem('portfolioCollapsedAccounts');
       
       alert('Portfolio data has been reset successfully.');
     }
@@ -1301,125 +1441,426 @@ const Portfolio = () => {
 
         {/* Portfolio Accounts Table */}
         <div className="portfolio-accounts">
-          <h2>Portfolio Account Values</h2>
-          <p>Enter your current account values from investment websites:</p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+            <div>
+              <h2>Portfolio Account Values</h2>
+              <p>Enter your current account values from investment websites:</p>
+              {showExpandedFields ? (
+                <p style={{ fontSize: '0.9rem', color: '#28a745', margin: '0.5rem 0' }}>
+                  📊 <strong>Detailed Update Mode:</strong> Will sync balance + contributions, employer match, gains/losses, fees, and withdrawals
+                </p>
+              ) : (
+                <p style={{ fontSize: '0.9rem', color: '#007bff', margin: '0.5rem 0' }}>
+                  ⚡ <strong>Balance Only Mode:</strong> Will sync only account balances (preserves existing detailed data)
+                </p>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+              <button 
+                type="button" 
+                onClick={() => setShowExpandedFields(!showExpandedFields)}
+                className="btn-secondary"
+                style={{ height: 'fit-content' }}
+              >
+                {showExpandedFields ? '⚡ Switch to Balance Only' : '📊 Switch to Detailed Update'}
+              </button>
+            </div>
+          </div>
+
+          {/* Bulk Actions */}
+          {portfolioInputs.length > 1 && (
+            <div className="bulk-actions" style={{
+              padding: '0.75rem',
+              backgroundColor: '#f8f9fa',
+              borderRadius: '6px',
+              marginBottom: '1rem',
+              border: '1px solid #dee2e6'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+                <span style={{ fontSize: '0.9rem', fontWeight: 'bold', color: '#495057' }}>
+                  📁 Bulk Actions:
+                </span>
+                <button 
+                  type="button" 
+                  onClick={collapseAllAccounts}
+                  className="btn-tertiary"
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                >
+                  📌 Collapse All Setup Fields
+                </button>
+                <button 
+                  type="button" 
+                  onClick={expandAllAccounts}
+                  className="btn-tertiary"
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
+                >
+                  📋 Expand All Setup Fields
+                </button>
+                <span style={{ fontSize: '0.8rem', color: '#6c757d', marginLeft: 'auto' }}>
+                  {collapsedAccounts.size} of {portfolioInputs.length} accounts collapsed
+                </span>
+              </div>
+            </div>
+          )}
           
-          <div className="accounts-table">
-            <table>
-              <thead>
-                <tr>
-                  <th>Generated Account Name</th>
-                  <th>Owner</th>
-                  <th>Tax Type</th>
-                  <th>Account Type</th>
-                  <th>Investment Company</th>
-                  <th>Description (Optional)</th>
-                  <th>Balance</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {portfolioInputs.map((input, index) => (
-                  <tr key={input.id}>
-                    <td>
-                      <div style={{ padding: '0.5rem', fontStyle: 'italic', color: '#666' }}>
-                        {generateAccountName(
-                          input.owner,
-                          input.taxType,
-                          input.accountType,
-                          input.investmentCompany,
-                          input.description
-                        ) || 'Complete fields to see name'}
+          <div className="accounts-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {portfolioInputs.map((input, index) => {
+              const isCollapsed = collapsedAccounts.has(input.id);
+              const accountName = generateAccountName(input.owner, input.taxType, input.accountType, input.investmentCompany, input.description);
+              
+              return (
+                <div key={input.id} className="account-row" style={{
+                  border: '1px solid #ddd',
+                  borderRadius: '4px',
+                  padding: '0.5rem',
+                  backgroundColor: '#ffffff',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
+                }}>
+                  {/* Main Account Row - Account Name + Financial Data */}
+                  <div className="account-main-row" style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '1rem',
+                    minHeight: '2.5rem'
+                  }}>
+                    {/* Left: Account Info */}
+                    <div className="account-info" style={{ 
+                      display: 'flex', 
+                      alignItems: 'center', 
+                      gap: '0.5rem',
+                      minWidth: '300px'
+                    }}>
+                      <button 
+                        type="button" 
+                        onClick={() => toggleAccountCollapse(input.id)}
+                        className="btn-tertiary"
+                        style={{ 
+                          fontSize: '0.8rem', 
+                          padding: '0.2rem 0.4rem',
+                          minWidth: 'auto',
+                          background: isCollapsed ? '#e7f3ff' : '#f8f9fa',
+                          border: `1px solid ${isCollapsed ? '#007bff' : '#dee2e6'}`,
+                          flexShrink: 0
+                        }}
+                        title={isCollapsed ? 'Expand setup fields' : 'Collapse setup fields'}
+                      >
+                        {isCollapsed ? '👁️' : '📋'}
+                      </button>
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div style={{ 
+                          fontSize: '0.9rem',
+                          fontWeight: 'bold',
+                          color: '#333',
+                          fontStyle: accountName ? 'normal' : 'italic',
+                          wordWrap: 'break-word',
+                          lineHeight: '1.2'
+                        }}>
+                          {accountName || 'Complete setup fields →'}
+                        </div>
                       </div>
-                    </td>
-                    <td>
-                      <select
-                        value={input.owner}
-                        onChange={(e) => handleInputChange(index, 'owner', e.target.value)}
-                        className={errors[index]?.owner ? 'error' : ''}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
-                      >
-                        {users.map(user => (
-                          <option key={user} value={user}>{user}</option>
-                        ))}
-                      </select>
-                      {errors[index]?.owner && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].owner}</div>}
-                    </td>
-                    <td>
-                      <select
-                        value={input.taxType}
-                        onChange={(e) => handleInputChange(index, 'taxType', e.target.value)}
-                        className={errors[index]?.taxType ? 'error' : ''}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
-                      >
-                        <option value="">Select</option>
-                        {TAX_TYPES.map(type => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                      {errors[index]?.taxType && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].taxType}</div>}
-                    </td>
-                    <td>
-                      <select
-                        value={input.accountType}
-                        onChange={(e) => handleInputChange(index, 'accountType', e.target.value)}
-                        className={errors[index]?.accountType ? 'error' : ''}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
-                      >
-                        <option value="">Select</option>
-                        {ACCOUNT_TYPES.map(type => (
-                          <option key={type} value={type}>{type}</option>
-                        ))}
-                      </select>
-                      {errors[index]?.accountType && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].accountType}</div>}
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={input.investmentCompany || ''}
-                        onChange={(e) => handleInputChange(index, 'investmentCompany', e.target.value)}
-                        placeholder="e.g., Fidelity"
-                        className={errors[index]?.investmentCompany ? 'error' : ''}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
-                      />
-                      {errors[index]?.investmentCompany && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].investmentCompany}</div>}
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        value={input.description || ''}
-                        onChange={(e) => handleInputChange(index, 'description', e.target.value)}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem' }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="number"
-                        value={input.amount || ''}
-                        onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
-                        placeholder="0.00"
-                        step="0.01"
-                        min="0"
-                        className={errors[index]?.amount ? 'error' : ''}
-                        style={{ border: 'none', background: 'transparent', padding: '0.5rem', textAlign: 'right' }}
-                      />
-                      {errors[index]?.amount && <div className="error-text" style={{ fontSize: '0.7rem' }}>{errors[index].amount}</div>}
-                    </td>
-                    <td className="actions">
                       <button 
                         type="button" 
                         onClick={() => removePortfolioInput(index)}
                         className="btn-delete"
                         disabled={portfolioInputs.length === 1}
                         title="Delete account"
+                        style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem', flexShrink: 0 }}
                       >
                         🗑️
                       </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    </div>
+
+                    {/* Right: Financial Data */}
+                    <div className="financial-data" style={{ 
+                      flex: 1,
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.75rem',
+                      backgroundColor: '#f8fbff',
+                      padding: '0.5rem',
+                      borderRadius: '3px',
+                      border: '1px solid #e3f2fd'
+                    }}>
+                      {/* Balance - Always Visible */}
+                      <div className="balance-field" style={{ flex: '0 0 140px' }}>
+                        <label style={{ 
+                          display: 'block', 
+                          fontSize: '0.7rem', 
+                          fontWeight: 'bold', 
+                          marginBottom: '0.1rem', 
+                          color: '#007bff' 
+                        }}>
+                          Balance *
+                        </label>
+                        <input
+                          type="number"
+                          value={input.amount || ''}
+                          onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
+                          placeholder="0.00"
+                          step="0.01"
+                          min="0"
+                          className={errors[index]?.amount ? 'error' : ''}
+                          style={{ 
+                            width: '100%', 
+                            padding: '0.4rem', 
+                            border: '1px solid #007bff', 
+                            borderRadius: '3px', 
+                            textAlign: 'right',
+                            fontSize: '0.9rem',
+                            fontWeight: 'bold'
+                          }}
+                        />
+                        {errors[index]?.amount && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.1rem' }}>{errors[index].amount}</div>}
+                      </div>
+
+                      {/* Expanded Fields - Only in Detailed Mode */}
+                      {showExpandedFields && (
+                        <>
+                          <div className="financial-field" style={{ flex: '0 0 110px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.1rem', 
+                              color: '#28a745' 
+                            }}>
+                              Contributions
+                            </label>
+                            <input
+                              type="number"
+                              value={input.contributions || ''}
+                              onChange={(e) => handleInputChange(index, 'contributions', e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[index]?.contributions ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.3rem', 
+                                border: '1px solid #28a745', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.1rem', 
+                              color: '#28a745' 
+                            }}>
+                              Match
+                            </label>
+                            <input
+                              type="number"
+                              value={input.employerMatch || ''}
+                              onChange={(e) => handleInputChange(index, 'employerMatch', e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[index]?.employerMatch ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.3rem', 
+                                border: '1px solid #28a745', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.1rem', 
+                              color: '#17a2b8' 
+                            }}>
+                              Gains/Loss
+                            </label>
+                            <input
+                              type="number"
+                              value={input.gains || ''}
+                              onChange={(e) => handleInputChange(index, 'gains', e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[index]?.gains ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.3rem', 
+                                border: '1px solid #17a2b8', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 80px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.1rem', 
+                              color: '#dc3545' 
+                            }}>
+                              Fees
+                            </label>
+                            <input
+                              type="number"
+                              value={input.fees || ''}
+                              onChange={(e) => handleInputChange(index, 'fees', e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[index]?.fees ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.3rem', 
+                                border: '1px solid #dc3545', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.65rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.1rem', 
+                              color: '#fd7e14' 
+                            }}>
+                              Withdrawals
+                            </label>
+                            <input
+                              type="number"
+                              value={input.withdrawals || ''}
+                              onChange={(e) => handleInputChange(index, 'withdrawals', e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[index]?.withdrawals ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.3rem', 
+                                border: '1px solid #fd7e14', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.8rem'
+                              }}
+                            />
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Collapsible Setup Fields */}
+                  {!isCollapsed && (
+                    <div className="setup-fields" style={{
+                      marginTop: '0.5rem',
+                      padding: '0.5rem',
+                      backgroundColor: '#f8f9fa',
+                      borderRadius: '3px',
+                      border: '1px solid #e9ecef'
+                    }}>
+                      <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))',
+                        gap: '0.5rem',
+                        alignItems: 'end'
+                      }}>
+                        <div className="field-group-small">
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '0.1rem', color: '#495057' }}>
+                            Owner *
+                          </label>
+                          <select
+                            value={input.owner}
+                            onChange={(e) => handleInputChange(index, 'owner', e.target.value)}
+                            className={errors[index]?.owner ? 'error' : ''}
+                            style={{ width: '100%', padding: '0.3rem', border: '1px solid #ced4da', borderRadius: '3px', fontSize: '0.8rem' }}
+                          >
+                            {users.map(user => (
+                              <option key={user} value={user}>{user}</option>
+                            ))}
+                          </select>
+                          {errors[index]?.owner && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.05rem' }}>{errors[index].owner}</div>}
+                        </div>
+
+                        <div className="field-group-small">
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '0.1rem', color: '#495057' }}>
+                            Tax Type *
+                          </label>
+                          <select
+                            value={input.taxType}
+                            onChange={(e) => handleInputChange(index, 'taxType', e.target.value)}
+                            className={errors[index]?.taxType ? 'error' : ''}
+                            style={{ width: '100%', padding: '0.3rem', border: '1px solid #ced4da', borderRadius: '3px', fontSize: '0.8rem' }}
+                          >
+                            <option value="">Select</option>
+                            {TAX_TYPES.map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                          {errors[index]?.taxType && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.05rem' }}>{errors[index].taxType}</div>}
+                        </div>
+
+                        <div className="field-group-small">
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '0.1rem', color: '#495057' }}>
+                            Account Type *
+                          </label>
+                          <select
+                            value={input.accountType}
+                            onChange={(e) => handleInputChange(index, 'accountType', e.target.value)}
+                            className={errors[index]?.accountType ? 'error' : ''}
+                            style={{ width: '100%', padding: '0.3rem', border: '1px solid #ced4da', borderRadius: '3px', fontSize: '0.8rem' }}
+                          >
+                            <option value="">Select</option>
+                            {ACCOUNT_TYPES.map(type => (
+                              <option key={type} value={type}>{type}</option>
+                            ))}
+                          </select>
+                          {errors[index]?.accountType && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.05rem' }}>{errors[index].accountType}</div>}
+                        </div>
+
+                        <div className="field-group-small">
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '0.1rem', color: '#495057' }}>
+                            Company *
+                          </label>
+                          <input
+                            type="text"
+                            value={input.investmentCompany || ''}
+                            onChange={(e) => handleInputChange(index, 'investmentCompany', e.target.value)}
+                            placeholder="Fidelity"
+                            className={errors[index]?.investmentCompany ? 'error' : ''}
+                            style={{ width: '100%', padding: '0.3rem', border: '1px solid #ced4da', borderRadius: '3px', fontSize: '0.8rem' }}
+                          />
+                          {errors[index]?.investmentCompany && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.05rem' }}>{errors[index].investmentCompany}</div>}
+                        </div>
+
+                        <div className="field-group-small">
+                          <label style={{ display: 'block', fontSize: '0.7rem', fontWeight: 'bold', marginBottom: '0.1rem', color: '#495057' }}>
+                            Description
+                          </label>
+                          <input
+                            type="text"
+                            value={input.description || ''}
+                            onChange={(e) => handleInputChange(index, 'description', e.target.value)}
+                            placeholder="Optional"
+                            style={{ width: '100%', padding: '0.3rem', border: '1px solid #ced4da', borderRadius: '3px', fontSize: '0.8rem' }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="form-actions">
@@ -1427,7 +1868,7 @@ const Portfolio = () => {
               + Add Another Account
             </button>
             <button type="button" onClick={updateHistoricalData} className="btn-primary">
-              Update Perforamnce Data
+              {showExpandedFields ? 'Update Performance Data (Detailed)' : 'Update Performance Data (Balance Only)'}
             </button>
           </div>
 

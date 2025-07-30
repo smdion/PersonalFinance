@@ -4,12 +4,12 @@ import { FormProvider } from './context/FormContext';
 import Welcome from './components/Welcome';
 import BudgetForm from './components/BudgetForm';
 import TaxCalculator from './components/TaxCalculator';
-import Historical from './components/Historical';
-import Performance from './components/Performance';
+import RawData from './components/RawData';
 import Portfolio from './components/Portfolio';
 import NetWorth from './components/NetWorth';
+import Performance from './components/Performance';
 import Savings from './components/Savings';
-import Optimize from './components/Optimize';
+import Contributions from './components/Contributions';
 import Retirement from './components/Retirement';
 import Assets from './components/Assets';
 import Liabilities from './components/Liabilities';
@@ -24,10 +24,10 @@ function App() {
             <Route path="/paycheck" element={<TaxCalculator />} />
             <Route path="/budget" element={<BudgetForm />} />
             <Route path="/savings" element={<Savings />} />
-            <Route path="/optimize" element={<Optimize />} />
-            <Route path="/historical" element={<Historical />} />
-            <Route path="/performance" element={<Performance />} />
+            <Route path="/contributions" element={<Contributions />} />
+            <Route path="/raw-data" element={<RawData />} />
             <Route path="/networth" element={<NetWorth />} />
+            <Route path="/performance" element={<Performance />} />
             <Route path="/retirement" element={<Retirement />} />
             <Route path="/other-assets" element={<Assets />} />
             <Route path="/liabilities" element={<Liabilities />} />

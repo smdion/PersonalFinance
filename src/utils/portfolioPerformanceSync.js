@@ -167,7 +167,7 @@ export const findPerformanceAccountByName = (accountName, performanceAccounts) =
 };
 
 // Sync portfolio balance updates to performance using manual account groups
-export const syncPortfolioBalanceToPerformance = (portfolioData) => {
+export const syncPortfolioBalanceToPerformance = (portfolioData, updateType = 'detailed') => {
   
   const performanceData = getPerformanceData();
   const manualGroups = getManualAccountGroups();
@@ -223,41 +223,75 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
       const matchingPerfAccount = findMatchingPerformanceAccount(account, existingPerformanceAccounts);
       
       if (matchingPerfAccount) {
-        // Update existing performance account balance
+        // Always update balance
         matchingPerfAccount.userData.balance = parseFloat(account.amount);
         
         // CRITICAL: Also update the entry-level balance field that DataManager displays
         matchingPerfAccount.entry.balance = parseFloat(account.amount);
         
-        matchingPerfAccount.userData.balanceUpdatedFrom = 'portfolio-individual';
+        // Update additional financial fields only for detailed updates
+        if (updateType === 'detailed') {
+          if (account.contributions && account.contributions !== '') {
+            matchingPerfAccount.userData.contributions = parseFloat(account.contributions);
+            matchingPerfAccount.entry.contributions = parseFloat(account.contributions);
+          }
+          if (account.employerMatch && account.employerMatch !== '') {
+            matchingPerfAccount.userData.employerMatch = parseFloat(account.employerMatch);
+            matchingPerfAccount.entry.employerMatch = parseFloat(account.employerMatch);
+          }
+          if (account.gains && account.gains !== '') {
+            matchingPerfAccount.userData.gains = parseFloat(account.gains);
+            matchingPerfAccount.entry.gains = parseFloat(account.gains);
+          }
+          if (account.fees && account.fees !== '') {
+            matchingPerfAccount.userData.fees = parseFloat(account.fees);
+            matchingPerfAccount.entry.fees = parseFloat(account.fees);
+          }
+          if (account.withdrawals && account.withdrawals !== '') {
+            matchingPerfAccount.userData.withdrawals = parseFloat(account.withdrawals);
+            matchingPerfAccount.entry.withdrawals = parseFloat(account.withdrawals);
+          }
+          
+          // Track detailed update
+          matchingPerfAccount.userData.lastDetailedUpdate = new Date().toISOString();
+          matchingPerfAccount.userData.balanceUpdatedFrom = 'portfolio-individual-detailed';
+        } else {
+          // Track balance-only update (preserve existing detailed data)
+          matchingPerfAccount.userData.balanceUpdatedFrom = 'portfolio-individual-balance-only';
+        }
+        
         matchingPerfAccount.userData.balanceUpdatedAt = new Date().toISOString();
+        matchingPerfAccount.userData.lastUpdateType = updateType;
         hasChanges = true;
       } else {
         // Create new performance account entry for ungrouped account
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        // Only include detailed fields if this is a detailed update
         const newPerformanceEntry = {
           entryId: newEntryId,
           year: currentYear,
           // CRITICAL: Add entry-level balance that DataManager displays
           balance: parseFloat(account.amount),
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: '',
+          contributions: updateType === 'detailed' && account.contributions ? parseFloat(account.contributions) : '',
+          employerMatch: updateType === 'detailed' && account.employerMatch ? parseFloat(account.employerMatch) : '',
+          gains: updateType === 'detailed' && account.gains ? parseFloat(account.gains) : '',
+          fees: updateType === 'detailed' && account.fees ? parseFloat(account.fees) : '',
+          withdrawals: updateType === 'detailed' && account.withdrawals ? parseFloat(account.withdrawals) : '',
           users: {
             [account.owner]: {
               accountName: account.accountName,
               accountType: account.accountType,
               investmentCompany: account.investmentCompany || '',
               balance: parseFloat(account.amount),
-              contributions: '',
-              employerMatch: '',
-              gains: '',
-              fees: '',
-              withdrawals: '',
-              balanceUpdatedFrom: 'portfolio-individual',
-              balanceUpdatedAt: new Date().toISOString()
+              contributions: updateType === 'detailed' && account.contributions ? parseFloat(account.contributions) : '',
+              employerMatch: updateType === 'detailed' && account.employerMatch ? parseFloat(account.employerMatch) : '',
+              gains: updateType === 'detailed' && account.gains ? parseFloat(account.gains) : '',
+              fees: updateType === 'detailed' && account.fees ? parseFloat(account.fees) : '',
+              withdrawals: updateType === 'detailed' && account.withdrawals ? parseFloat(account.withdrawals) : '',
+              balanceUpdatedFrom: updateType === 'detailed' ? 'portfolio-individual-detailed' : 'portfolio-individual-balance-only',
+              balanceUpdatedAt: new Date().toISOString(),
+              lastUpdateType: updateType,
+              lastDetailedUpdate: updateType === 'detailed' ? new Date().toISOString() : undefined
             }
           }
         };
@@ -291,44 +325,98 @@ export const syncPortfolioBalanceToPerformance = (portfolioData) => {
       );
       
       if (targetPerfAccount) {
-        // Update existing Performance account balance
-        const oldBalance = targetPerfAccount.userData.balance;
+        // Always update balance
         targetPerfAccount.userData.balance = totalBalance;
         
         // CRITICAL: Also update the entry-level balance field that DataManager displays
         // This matches the Historical data structure pattern
         targetPerfAccount.entry.balance = totalBalance;
-        targetPerfAccount.userData.balanceUpdatedFrom = 'portfolio-manual-group';
+        
+        // Update additional financial fields only for detailed updates
+        if (updateType === 'detailed') {
+          // Calculate totals for combined fields from all accounts in group
+          const groupTotals = group.portfolioAccounts.reduce((totals, accountId) => {
+            const account = portfolioData.find(acc => acc.id === accountId);
+            if (account) {
+              totals.contributions += account.contributions ? parseFloat(account.contributions) : 0;
+              totals.employerMatch += account.employerMatch ? parseFloat(account.employerMatch) : 0;
+              totals.gains += account.gains ? parseFloat(account.gains) : 0;
+              totals.fees += account.fees ? parseFloat(account.fees) : 0;
+              totals.withdrawals += account.withdrawals ? parseFloat(account.withdrawals) : 0;
+            }
+            return totals;
+          }, { contributions: 0, employerMatch: 0, gains: 0, fees: 0, withdrawals: 0 });
+
+          // Update additional financial fields from combined group totals
+          targetPerfAccount.userData.contributions = groupTotals.contributions || '';
+          targetPerfAccount.entry.contributions = groupTotals.contributions || '';
+          targetPerfAccount.userData.employerMatch = groupTotals.employerMatch || '';
+          targetPerfAccount.entry.employerMatch = groupTotals.employerMatch || '';
+          targetPerfAccount.userData.gains = groupTotals.gains || '';
+          targetPerfAccount.entry.gains = groupTotals.gains || '';
+          targetPerfAccount.userData.fees = groupTotals.fees || '';
+          targetPerfAccount.entry.fees = groupTotals.fees || '';
+          targetPerfAccount.userData.withdrawals = groupTotals.withdrawals || '';
+          targetPerfAccount.entry.withdrawals = groupTotals.withdrawals || '';
+          
+          // Track detailed update
+          targetPerfAccount.userData.lastDetailedUpdate = new Date().toISOString();
+          targetPerfAccount.userData.balanceUpdatedFrom = 'portfolio-manual-group-detailed';
+        } else {
+          // Track balance-only update (preserve existing detailed data)
+          targetPerfAccount.userData.balanceUpdatedFrom = 'portfolio-manual-group-balance-only';
+        }
+        
         targetPerfAccount.userData.balanceUpdatedAt = new Date().toISOString();
+        targetPerfAccount.userData.lastUpdateType = updateType;
         targetPerfAccount.userData.manualGroupId = groupId;
         targetPerfAccount.userData.manualGroupName = group.name;
         hasChanges = true;
       } else {
         // Create new Performance account for this manual group
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
+        
+        // Calculate totals for combined fields from all accounts in group only for detailed updates
+        let groupTotals = { contributions: 0, employerMatch: 0, gains: 0, fees: 0, withdrawals: 0 };
+        if (updateType === 'detailed') {
+          groupTotals = group.portfolioAccounts.reduce((totals, accountId) => {
+            const account = portfolioData.find(acc => acc.id === accountId);
+            if (account) {
+              totals.contributions += account.contributions ? parseFloat(account.contributions) : 0;
+              totals.employerMatch += account.employerMatch ? parseFloat(account.employerMatch) : 0;
+              totals.gains += account.gains ? parseFloat(account.gains) : 0;
+              totals.fees += account.fees ? parseFloat(account.fees) : 0;
+              totals.withdrawals += account.withdrawals ? parseFloat(account.withdrawals) : 0;
+            }
+            return totals;
+          }, { contributions: 0, employerMatch: 0, gains: 0, fees: 0, withdrawals: 0 });
+        }
+
         const newPerformanceEntry = {
           entryId: newEntryId,
           year: currentYear,
           // CRITICAL: Add entry-level balance that DataManager displays
           balance: totalBalance,
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: '',
+          contributions: updateType === 'detailed' ? (groupTotals.contributions || '') : '',
+          employerMatch: updateType === 'detailed' ? (groupTotals.employerMatch || '') : '',
+          gains: updateType === 'detailed' ? (groupTotals.gains || '') : '',
+          fees: updateType === 'detailed' ? (groupTotals.fees || '') : '',
+          withdrawals: updateType === 'detailed' ? (groupTotals.withdrawals || '') : '',
           users: {
             [group.owner]: {
               accountName: group.performanceAccountName,
               accountType: 'Combined', // Generic type for manual groups
               investmentCompany: 'Multiple', // Generic company for combined accounts
               balance: totalBalance,
-              contributions: '',
-              employerMatch: '',
-              gains: '',
-              fees: '',
-              withdrawals: '',
-              balanceUpdatedFrom: 'portfolio-manual-group',
+              contributions: updateType === 'detailed' ? (groupTotals.contributions || '') : '',
+              employerMatch: updateType === 'detailed' ? (groupTotals.employerMatch || '') : '',
+              gains: updateType === 'detailed' ? (groupTotals.gains || '') : '',
+              fees: updateType === 'detailed' ? (groupTotals.fees || '') : '',
+              withdrawals: updateType === 'detailed' ? (groupTotals.withdrawals || '') : '',
+              balanceUpdatedFrom: updateType === 'detailed' ? 'portfolio-manual-group-detailed' : 'portfolio-manual-group-balance-only',
               balanceUpdatedAt: new Date().toISOString(),
+              lastUpdateType: updateType,
+              lastDetailedUpdate: updateType === 'detailed' ? new Date().toISOString() : undefined,
               manualGroupId: groupId,
               manualGroupName: group.name
             }

@@ -56,11 +56,11 @@ The Personal Finance Calculator Suite is designed to be your complete financial 
 - **Joint Account Support**: Handle both individual and joint investment accounts
 - **Historical Performance**: Multi-year tracking to analyze investment trends
 
-### ⚡ Contribution Optimizer
+### ⚡ Contribution Analyzer
 - **2025 Tax Strategy**: Analyze current contribution strategy using latest tax advantages
-- **Dual Income Optimization**: Household-wide view of 401k, IRA, HSA, and brokerage contributions
+- **Dual Income Analysis**: Household-wide view of 401k, IRA, HSA, and brokerage contributions
 - **Remaining Capacity**: Identify unused contribution room across all tax-advantaged accounts
-- **Real-time Analysis**: Live calculations from paycheck data with optimization opportunities
+- **Real-time Analysis**: Live calculations from paycheck data with improvement opportunities
 - **Strategic Planning**: Maximize tax benefits and retirement savings potential
 
 ### 🏠 Other Assets Tracker
@@ -239,7 +239,7 @@ src/
 - `Savings.js` - Savings goal tracking with bulk editing
 - `Historical.js` - Historical data tracker
 - `Performance.js` - Investment performance tracker
-- `Optimize.js` - Contribution optimization analyzer
+- `Contributions.js` - Contribution analysis tool
 - `OtherAssets.js` - Asset value tracking
 - `Portfolio.js` - Investment portfolio data manager
 - `Liabilities.js` - Debt and liability tracker

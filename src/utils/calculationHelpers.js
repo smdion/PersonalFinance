@@ -802,14 +802,20 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
       
       // Try user-level contributions first, then fall back to entry-level
       let contributions = parseFloat(account.contributions) || 0;
-      let employerMatch = parseFloat(account.employerMatch) || 0;
+      let employerMatch = parseFloat(account.employerMatch) || 
+                         parseFloat(account['employer match']) || 
+                         parseFloat(account.EmployerMatch) || 
+                         parseFloat(account['Employer Match']) || 0;
       
       // If user-level is empty/zero, use entry-level data
       if (contributions === 0 && entry.contributions) {
         contributions = parseFloat(entry.contributions) || 0;
       }
-      if (employerMatch === 0 && entry.employerMatch) {
-        employerMatch = parseFloat(entry.employerMatch) || 0;
+      if (employerMatch === 0) {
+        employerMatch = parseFloat(entry.employerMatch) || 
+                       parseFloat(entry['employer match']) || 
+                       parseFloat(entry.EmployerMatch) || 
+                       parseFloat(entry['Employer Match']) || 0;
       }
       
       const accountType = account.accountType.toLowerCase();
@@ -871,9 +877,9 @@ export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCov
   }
   
   return {
-    k401_remaining: Math.max(0, max401k - ytdContributions.total401k),
-    ira_remaining: Math.max(0, maxIra - ytdContributions.totalIra),
-    hsa_remaining: Math.max(0, maxHsa - ytdContributions.hsa),
+    k401_remaining: max401k - ytdContributions.total401k,
+    ira_remaining: maxIra - ytdContributions.totalIra,
+    hsa_remaining: maxHsa - ytdContributions.hsa,
     k401_max: max401k,
     ira_max: maxIra,
     hsa_max: maxHsa
