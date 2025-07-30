@@ -240,14 +240,36 @@ export const generateDataFilename = (dataType, userNames = [], fileExtension = '
 // Net Worth Dashboard Calculation Functions
 
 // Calculate house value based on mode (market value vs cost basis)
-export const calculateHouseValue = (year, historicalEntry, netWorthMode, historicalData) => {
+export const calculateHouseValue = (year, historicalEntry, netWorthMode, historicalData, assetLiabilityData) => {
   if (netWorthMode === 'market') {
     // Use online estimated value from historical data
     return historicalEntry.house || 0;
   } else {
-    // Cost basis: $315k purchase price + cumulative home improvements
-    const purchasePrice = 315000;
-    const purchaseYear = 2018;
+    // Cost basis: Get purchase price and year from assetLiabilityData primary home
+    if (!assetLiabilityData) {
+      // Fallback to market value if no asset liability data available
+      return historicalEntry.house || 0;
+    }
+    
+    const houseDetails = assetLiabilityData.houseDetails || [];
+    const primaryHome = houseDetails.find(asset => asset.type === 'Primary Home');
+    
+    if (!primaryHome) {
+      // Fallback if no primary home data is available
+      return historicalEntry.house || 0;
+    }
+    
+    // Extract purchase data from primary home
+    const purchasePrice = parseFloat(primaryHome.originalPurchasePrice) || 0;
+    const purchaseDate = primaryHome.purchaseDate;
+    
+    if (!purchaseDate || !purchasePrice) {
+      // Fallback to market value if purchase data is incomplete
+      return historicalEntry.house || 0;
+    }
+    
+    // Parse purchase year from date string (YYYY-MM-DD format)
+    const purchaseYear = parseInt(purchaseDate.split('-')[0]);
     
     if (year < purchaseYear) return 0;
     
@@ -309,7 +331,7 @@ export const getCumulativeEarnings = (targetYear, historicalData) => {
 };
 
 // Process net worth data with all calculations
-export const processNetWorthData = (historicalData, performanceData, paycheckData, netWorthMode) => {
+export const processNetWorthData = (historicalData, performanceData, paycheckData, netWorthMode, assetLiabilityData = null) => {
   const years = Object.keys(historicalData).map(year => parseInt(year)).sort();
   
   return years.map(year => {
@@ -330,7 +352,7 @@ export const processNetWorthData = (historicalData, performanceData, paycheckDat
     const retirement = taxFree + taxDeferred;
     
     // Calculate house value based on selected mode
-    const houseValue = calculateHouseValue(year, historicalEntry, netWorthMode, historicalData);
+    const houseValue = calculateHouseValue(year, historicalEntry, netWorthMode, historicalData, assetLiabilityData);
     
     // Cash and other assets
     const cash = historicalEntry.cash || 0;

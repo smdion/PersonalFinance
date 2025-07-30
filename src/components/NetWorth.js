@@ -14,7 +14,7 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
-import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings } from '../utils/localStorage';
+import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
 
 // Register Chart.js components
@@ -34,6 +34,7 @@ const NetWorth = () => {
   const [historicalData, setHistoricalData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
+  const [assetLiabilityData, setAssetLiabilityData] = useState({});
   const [selectedYears, setSelectedYears] = useState([]);
   const [netWorthMode, setNetWorthMode] = useState('market'); // 'market' or 'costBasis'
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'charts', 'analysis', 'scores'
@@ -129,11 +130,13 @@ const NetWorth = () => {
       const historical = getHistoricalData();
       const performance = getPerformanceData();
       const paycheck = getPaycheckData();
+      const assetLiability = getAssetLiabilityData();
       const savedSettings = getNetWorthSettings();
       
       setHistoricalData(historical);
       setPerformanceData(performance);
       setPaycheckData(paycheck);
+      setAssetLiabilityData(assetLiability);
       
       // Load saved settings
       setNetWorthMode(savedSettings.netWorthMode);
@@ -195,14 +198,20 @@ const NetWorth = () => {
       setPaycheckData(getPaycheckData());
     };
 
+    const handleAssetLiabilityUpdate = () => {
+      setAssetLiabilityData(getAssetLiabilityData());
+    };
+
     window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+    window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     
     return () => {
       window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+      window.removeEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     };
   }, []);
 
@@ -227,15 +236,32 @@ const NetWorth = () => {
     setNetWorthSettings(settings);
   }, [selectedYears, netWorthMode, activeTab, showAllYearsInChart, showAllYearsInPortfolioChart, showAllYearsInNetWorthBreakdownChart, showAllYearsInMoneyGuyChart, useThreeYearIncomeAverage, useReverseChronological, isCompactTable, isInitialized]);
 
-  // Calculate house value based on mode
+  // Calculate house value based on mode using dynamic data from assetLiabilityData
   const calculateHouseValue = (year, historicalEntry) => {
     if (netWorthMode === 'market') {
       // Use online estimated value from historical data
       return historicalEntry.house || 0;
     } else {
-      // Cost basis: $315k purchase price + cumulative home improvements
-      const purchasePrice = 315000;
-      const purchaseYear = 2018;
+      // Cost basis: Get purchase price and year from assetLiabilityData primary home
+      const houseDetails = assetLiabilityData.houseDetails || [];
+      const primaryHome = houseDetails.find(asset => asset.type === 'Primary Home');
+      
+      if (!primaryHome) {
+        // Fallback if no primary home data is available
+        return historicalEntry.house || 0;
+      }
+      
+      // Extract purchase data from primary home
+      const purchasePrice = parseFloat(primaryHome.originalPurchasePrice) || 0;
+      const purchaseDate = primaryHome.purchaseDate;
+      
+      if (!purchaseDate || !purchasePrice) {
+        // Fallback to market value if purchase data is incomplete
+        return historicalEntry.house || 0;
+      }
+      
+      // Parse purchase year from date string (YYYY-MM-DD format)
+      const purchaseYear = parseInt(purchaseDate.split('-')[0]);
       
       if (year < purchaseYear) return 0;
       
@@ -443,7 +469,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage]);
+  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {

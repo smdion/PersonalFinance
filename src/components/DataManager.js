@@ -1505,7 +1505,11 @@ const DataManager = ({
     const value = entry[field];
     const currentYear = new Date().getFullYear();
     const isCurrentYear = entry.year === currentYear;
-    const isReadonly = fieldConfig?.readonly && isCurrentYear;
+    
+    // Special case: homeImprovements should be readonly for ALL years since it's imported
+    const isReadonly = fieldConfig?.readonly && (
+      isCurrentYear || field === 'homeImprovements'
+    );
 
     if (
       allowEdit &&
@@ -1546,7 +1550,10 @@ const DataManager = ({
 
     const canEdit = allowEdit && !isReadonly;
     const lockedMessage = isReadonly && fieldConfig?.lockedBy ? 
-      `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (current year only)` : 
+      (field === 'homeImprovements' ? 
+        `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (all years)` :
+        `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (current year only)`
+      ) : 
       (canEdit ? 'Click to edit' : undefined);
 
     return (
