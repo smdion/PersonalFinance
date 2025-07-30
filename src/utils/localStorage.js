@@ -476,8 +476,42 @@ export const exportAllLocalStorageData = () => {
     }
   });
   
-  // Also export name mapping
-  allData.nameMapping = getNameMapping();
+  // Export additional localStorage keys not in STORAGE_KEYS
+  const additionalKeys = [
+    'nameMapping',
+    'hasSeenBetaWelcome'
+  ];
+  
+  additionalKeys.forEach(key => {
+    const data = getFromStorage(key, null);
+    if (data !== null) {
+      allData[key] = data;
+    }
+  });
+  
+  // Export ALL localStorage items (catch any we might have missed)
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !allData.hasOwnProperty(key)) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value) {
+            // Try to parse as JSON, if it fails store as string
+            try {
+              allData[key] = JSON.parse(value);
+            } catch {
+              allData[key] = value;
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not export localStorage key: ${key}`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Could not iterate through all localStorage keys:', error);
+  }
   
   return allData;
 };
@@ -877,27 +911,26 @@ export const importAllData = (importData) => {
     // Also clear name mapping
     removeFromStorage(NAME_MAPPING_KEY);
     
-    // Also clear any other potential storage keys that might exist
+    // Clear ALL localStorage items to ensure complete reset before import
     const keysToRemove = [
-      'budgetData',
-      'paycheckData', 
-      'formData',
-      'appSettings',
-      'historicalData',
-      'performanceData',
-      'networthSettings',
-      'retirementData',
-      'primaryHomeData',
-      'assetLiabilityData',
-      'portfolioAccounts',
-      'portfolioRecords',
-      'portfolioInputs',
-      'sharedAccounts', 
-      'manualAccountGroups',
-      'savingsData',
+      ...Object.values(STORAGE_KEYS),
       'nameMapping',
       'hasSeenBetaWelcome'
     ];
+    
+    // Also clear any other items that might exist in localStorage
+    try {
+      const allStorageKeys = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key) {
+          allStorageKeys.push(key);
+        }
+      }
+      keysToRemove.push(...allStorageKeys);
+    } catch (error) {
+      console.warn('Could not enumerate all localStorage keys for cleanup:', error);
+    }
     
     keysToRemove.forEach(key => {
       try {
@@ -1017,6 +1050,36 @@ export const importAllData = (importData) => {
       setNameMapping(importData.nameMapping);
       importedSections.push('Name Mapping');
     }
+    
+    // Import additional localStorage keys not in main data structure
+    const additionalKeys = ['hasSeenBetaWelcome'];
+    additionalKeys.forEach(key => {
+      if (importData[key] !== undefined) {
+        setToStorage(key, importData[key]);
+        importedSections.push(key);
+      }
+    });
+    
+    // Import any other localStorage items that were exported
+    const knownKeys = new Set([
+      ...Object.values(STORAGE_KEYS),
+      'nameMapping',
+      'exportedAt',
+      'version',
+      'dataSource',
+      ...additionalKeys
+    ]);
+    
+    Object.keys(importData).forEach(key => {
+      if (!knownKeys.has(key) && importData[key] !== undefined) {
+        try {
+          setToStorage(key, importData[key]);
+          importedSections.push(`Additional: ${key}`);
+        } catch (error) {
+          errors.push(`Failed to import ${key}: ${error.message}`);
+        }
+      }
+    });
 
     // Import completed successfully
     
@@ -1474,7 +1537,14 @@ export const setRetirementData = (data) => {
   return setToStorage(STORAGE_KEYS.RETIREMENT_DATA, data);
 };
 
-// Primary Home data uses standard localStorage pattern - no custom utilities needed
+// Primary Home data utilities
+export const getPrimaryHomeData = () => {
+  return getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {});
+};
+
+export const setPrimaryHomeData = (data) => {
+  return setToStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, data);
+};
 
 // Portfolio account names utilities
 export const getPortfolioAccounts = () => {
