@@ -1155,7 +1155,12 @@ const DataManager = ({
         }
       });
       
-      setUserFilters(initialFilters);
+      setUserFilters(prev => {
+        // Only update if filters have actually changed
+        const hasChanged = Object.keys(initialFilters).length !== Object.keys(prev).length ||
+                          Object.keys(initialFilters).some(key => prev[key] !== initialFilters[key]);
+        return hasChanged ? initialFilters : prev;
+      });
     }
   }, [usePaycheckUsers, userNames, entryData, paycheckData]);
 
@@ -1198,7 +1203,12 @@ const DataManager = ({
     if (years.length > 0) {
       const initial = {};
       years.forEach(y => { initial[y] = true; });
-      setYearFilters(initial);
+      setYearFilters(prev => {
+        // Only update if filters have actually changed
+        const hasChanged = years.some(y => prev[y] === undefined) || 
+                          Object.keys(prev).some(y => !years.includes(Number(y)));
+        return hasChanged ? initial : prev;
+      });
     }
   }, [entryData]);
 
@@ -1430,16 +1440,30 @@ const DataManager = ({
 
   // Reset to page 1 only when filters change (not when data changes)
   React.useEffect(() => {
-    setCurrentPage(1);
+    if (currentPage > 1) {
+      setCurrentPage(1);
+    }
   }, [userFilters, yearFilters, accountTypeFilters, combinedSectionFilters]);
 
   // Pagination controls
   const goToPage = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    const newPage = Math.max(1, Math.min(page, totalPages));
+    if (newPage !== currentPage) {
+      setCurrentPage(newPage);
+    }
   };
 
-  const nextPage = () => goToPage(currentPage + 1);
-  const prevPage = () => goToPage(currentPage - 1);
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
 
   // Column resizing functionality
   const handleMouseDown = useCallback((columnKey, e) => {
