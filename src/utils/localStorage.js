@@ -29,7 +29,8 @@ export const STORAGE_KEYS = {
   PORTFOLIO_INPUTS: 'portfolioInputs',
   SHARED_ACCOUNTS: 'sharedAccounts',
   MANUAL_ACCOUNT_GROUPS: 'manualAccountGroups',
-  PRIMARY_HOME_DATA: 'primaryHomeData'
+  PRIMARY_HOME_DATA: 'primaryHomeData',
+  ASSET_LIABILITY_DATA: 'assetLiabilityData'
 };
 
 // Helper function to generate unique IDs
@@ -51,7 +52,13 @@ export const getFromStorage = (key, defaultValue = null) => {
 export const setToStorage = (key, value) => {
   try {
     const jsonString = JSON.stringify(value);
+    console.log(`🔧 setToStorage: Writing to localStorage (${key}):`, value);
     localStorage.setItem(key, jsonString);
+    
+    // Verify the data was actually stored
+    const storedValue = localStorage.getItem(key);
+    console.log(`🔧 setToStorage: Verification - stored value for (${key}):`, storedValue ? JSON.parse(storedValue) : null);
+    
     return true;
   } catch (error) {
     console.error(`🔧 setToStorage: Error writing to localStorage (${key}):`, error);
@@ -422,7 +429,8 @@ export const exportAllData = () => {
     historicalData: getHistoricalData(),
     performanceData: getPerformanceData(),
     retirementData: getRetirementData(),
-    primaryHomeData: getPrimaryHomeData(),
+    primaryHomeData: getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {}),
+    assetLiabilityData: getAssetLiabilityData(),
     // New portfolio-related data
     networthSettings: getNetWorthSettings(),
     savingsData: getSavingsData(),
@@ -882,6 +890,7 @@ export const importAllData = (importData) => {
       'networthSettings',
       'retirementData',
       'primaryHomeData',
+      'assetLiabilityData',
       'portfolioAccounts',
       'portfolioRecords',
       'portfolioInputs',
@@ -962,6 +971,11 @@ export const importAllData = (importData) => {
     if (importData.primaryHomeData !== undefined || importData.primary_home_data !== undefined) {
       setPrimaryHomeData(importData.primaryHomeData || importData.primary_home_data);
       importedSections.push('Primary Home Data');
+    }
+    
+    if (importData.assetLiabilityData !== undefined || importData.asset_liability_data !== undefined) {
+      setAssetLiabilityData(importData.assetLiabilityData || importData.asset_liability_data);
+      importedSections.push('Asset Liability Data');
     }
     
     // Import portfolio-related data
@@ -1148,6 +1162,7 @@ export const clearAllAppData = () => {
       'networthSettings',
       'retirementData',
       'primaryHomeData',
+      'assetLiabilityData',
       'portfolioAccounts',
       'portfolioRecords',
       'portfolioInputs',
@@ -1296,6 +1311,7 @@ export const resetAllAppData = () => {
       clearPortfolioInputs(); // Reset portfolio inputs
       clearSharedAccounts(); // Reset shared accounts system
       clearManualAccountGroups(); // Reset manual account groups
+      setAssetLiabilityData({}); // Reset asset liability data
       
       // Reset the flag after a short delay to ensure all events are processed
       setTimeout(() => {
@@ -1457,44 +1473,7 @@ export const setRetirementData = (data) => {
   return setToStorage(STORAGE_KEYS.RETIREMENT_DATA, data);
 };
 
-// Primary Home data utilities
-export const getPrimaryHomeData = () => {
-  return getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {
-    homeData: {
-      propertyName: '',
-      currentValue: '',
-      originalPurchasePrice: '',
-      purchaseDate: '',
-      propertyType: 'Primary Home'
-    },
-    mortgageData: {
-      lenderName: '',
-      originalLoanAmount: '',
-      currentBalance: '',
-      interestRate: '',
-      loanTerm: '',
-      monthlyPayment: '',
-      principalAndInterest: '',
-      pmi: '',
-      escrow: '',
-      startDate: ''
-    },
-    amortizationSchedules: [],
-    lastUpdated: null
-  });
-};
-
-export const setPrimaryHomeData = (data) => {
-  const result = setToStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, data);
-  
-  if (result) {
-    // Dispatch update event to notify components
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent('primaryHomeDataUpdated', { detail: data }));
-    }, 50);
-  }
-  return result;
-};
+// Primary Home data uses standard localStorage pattern - no custom utilities needed
 
 // Portfolio account names utilities
 export const getPortfolioAccounts = () => {
@@ -2274,4 +2253,25 @@ export const syncPaycheckToHistorical = () => {
     console.error('Error syncing paycheck to historical data:', error);
     return false;
   }
+};
+
+// Asset Liability data utilities
+export const getAssetLiabilityData = () => {
+  const data = getFromStorage(STORAGE_KEYS.ASSET_LIABILITY_DATA, {});
+  console.log('📦 localStorage getAssetLiabilityData - Retrieved data:', data);
+  console.log('📦 localStorage getAssetLiabilityData - Storage key:', STORAGE_KEYS.ASSET_LIABILITY_DATA);
+  return data;
+};
+
+export const setAssetLiabilityData = (data) => {
+  console.log('📦 localStorage setAssetLiabilityData - Storing data:', data);
+  console.log('📦 localStorage setAssetLiabilityData - Storage key:', STORAGE_KEYS.ASSET_LIABILITY_DATA);
+  const result = setToStorage(STORAGE_KEYS.ASSET_LIABILITY_DATA, data);
+  console.log('📦 localStorage setAssetLiabilityData - Store result:', result);
+  if (result) {
+    setTimeout(() => {
+      dispatchGlobalEvent('assetLiabilityDataUpdated', data);
+    }, 50);
+  }
+  return result;
 };

@@ -22,7 +22,7 @@ const Navigation = () => {
       ]
     },
     {
-      label: 'Data and Review',
+      label: 'Update and Review',
       icon: '📊',
       subfolders: [
         {

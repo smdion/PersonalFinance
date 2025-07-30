@@ -51,6 +51,13 @@ const Performance = () => {
   const [showDetailsFilters, setShowDetailsFilters] = useState(false);
   const [detailsCurrentPage, setDetailsCurrentPage] = useState(1);
   const [detailsItemsPerPage, setDetailsItemsPerPage] = useState(10);
+  
+  // Advanced filters
+  const [filterAccountType, setFilterAccountType] = useState('all');
+  const [filterOwner, setFilterOwner] = useState('all');
+  const [filterYear, setFilterYear] = useState('all');
+  const [filterBalanceRange, setFilterBalanceRange] = useState({ min: '', max: '' });
+  const [filterReturnPerformance, setFilterReturnPerformance] = useState('all'); // 'all', 'positive', 'negative', 'breakeven'
 
   // Get current year for YTD indicators
   const currentYear = new Date().getFullYear();
@@ -115,6 +122,13 @@ const Performance = () => {
       setHideNoDataAccounts(savedSettings.hideNoDataAccounts || false);
       setShowDetailsFilters(savedSettings.showDetailsFilters || false);
       setDetailsItemsPerPage(savedSettings.detailsItemsPerPage || 10);
+      
+      // Advanced filter settings
+      setFilterAccountType(savedSettings.filterAccountType || 'all');
+      setFilterOwner(savedSettings.filterOwner || 'all');
+      setFilterYear(savedSettings.filterYear || 'all');
+      setFilterBalanceRange(savedSettings.filterBalanceRange || { min: '', max: '' });
+      setFilterReturnPerformance(savedSettings.filterReturnPerformance || 'all');
       
       // Get available years and accounts
       const availableYears = getAvailableYears(performance);
@@ -196,10 +210,17 @@ const Performance = () => {
       hideInactiveAccounts,
       hideNoDataAccounts,
       showDetailsFilters,
-      detailsItemsPerPage
+      detailsItemsPerPage,
+      
+      // Advanced filter settings
+      filterAccountType,
+      filterOwner,
+      filterYear,
+      filterBalanceRange,
+      filterReturnPerformance
     };
     setPerformanceSettings(settings);
-  }, [selectedYears, selectedAccounts, activeTab, showAllYearsInChart, showAllYearsInReturnsChart, useReverseChronological, isCompactTable, yoySort, detailsSort, detailsSortOrder, hideInactiveAccounts, hideNoDataAccounts, showDetailsFilters, detailsItemsPerPage, isInitialized]);
+  }, [selectedYears, selectedAccounts, activeTab, showAllYearsInChart, showAllYearsInReturnsChart, useReverseChronological, isCompactTable, yoySort, detailsSort, detailsSortOrder, hideInactiveAccounts, hideNoDataAccounts, showDetailsFilters, detailsItemsPerPage, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance, isInitialized]);
 
   // Helper functions to get available years and accounts
   const getAvailableYears = (data) => {
@@ -399,6 +420,17 @@ const Performance = () => {
     return showAllYearsInChart ? processedData : filteredData;
   }, [processedData, filteredData, showAllYearsInChart]);
 
+  // Get unique values for filter dropdowns
+  const availableAccountTypes = useMemo(() => {
+    const types = [...new Set(filteredData.map(item => item.accountType).filter(type => type))];
+    return types.sort();
+  }, [filteredData]);
+
+  const availableOwners = useMemo(() => {
+    const owners = [...new Set(filteredData.map(item => item.owner).filter(owner => owner))];
+    return owners.sort();
+  }, [filteredData]);
+
   // Filtered and sorted data for details tab
   const detailsFilteredData = useMemo(() => {
     let data = filteredData;
@@ -411,6 +443,52 @@ const Performance = () => {
     // Filter out accounts with no data if hideNoDataAccounts is true
     if (hideNoDataAccounts) {
       data = data.filter(item => item.hasData);
+    }
+    
+    // Advanced filters
+    
+    // Filter by account type
+    if (filterAccountType !== 'all') {
+      data = data.filter(item => item.accountType === filterAccountType);
+    }
+    
+    // Filter by owner
+    if (filterOwner !== 'all') {
+      data = data.filter(item => item.owner === filterOwner);
+    }
+    
+    // Filter by year
+    if (filterYear !== 'all') {
+      data = data.filter(item => item.year === parseInt(filterYear));
+    }
+    
+    // Filter by balance range
+    if (filterBalanceRange.min !== '' || filterBalanceRange.max !== '') {
+      data = data.filter(item => {
+        if (!item.hasData) return filterBalanceRange.min === '' && filterBalanceRange.max === '';
+        const balance = item.balance || 0;
+        const minBalance = filterBalanceRange.min !== '' ? parseFloat(filterBalanceRange.min) : -Infinity;
+        const maxBalance = filterBalanceRange.max !== '' ? parseFloat(filterBalanceRange.max) : Infinity;
+        return balance >= minBalance && balance <= maxBalance;
+      });
+    }
+    
+    // Filter by return performance
+    if (filterReturnPerformance !== 'all') {
+      data = data.filter(item => {
+        if (!item.hasData) return false;
+        const returnPercent = item.returnPercentage || 0;
+        switch (filterReturnPerformance) {
+          case 'positive':
+            return returnPercent > 0;
+          case 'negative':
+            return returnPercent < 0;
+          case 'breakeven':
+            return Math.abs(returnPercent) < 0.01; // Within 0.01% of zero
+          default:
+            return true;
+        }
+      });
     }
     
     // Sort the data
@@ -460,7 +538,7 @@ const Performance = () => {
     });
     
     return sortedData;
-  }, [filteredData, hideInactiveAccounts, hideNoDataAccounts, detailsSort, detailsSortOrder]);
+  }, [filteredData, hideInactiveAccounts, hideNoDataAccounts, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance, detailsSort, detailsSortOrder]);
 
   // Pagination for details tab
   const detailsTotalItems = detailsFilteredData.length;
@@ -472,7 +550,7 @@ const Performance = () => {
   // Reset details page when filters change
   useEffect(() => {
     setDetailsCurrentPage(1);
-  }, [hideInactiveAccounts, hideNoDataAccounts, detailsSort, detailsSortOrder, selectedYears, selectedAccounts]);
+  }, [hideInactiveAccounts, hideNoDataAccounts, detailsSort, detailsSortOrder, selectedYears, selectedAccounts, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance]);
 
   const returnsChartFilteredData = useMemo(() => {
     return showAllYearsInReturnsChart ? processedData : filteredData;
@@ -763,6 +841,24 @@ const Performance = () => {
   const selectAllAccounts = () => setSelectedAccounts(availableAccounts.map(acc => acc.id));
   const selectNoneAccounts = () => setSelectedAccounts([]);
 
+  // Filter reset functions
+  const resetAdvancedFilters = () => {
+    setFilterAccountType('all');
+    setFilterOwner('all');
+    setFilterYear('all');
+    setFilterBalanceRange({ min: '', max: '' });
+    setFilterReturnPerformance('all');
+  };
+
+  const hasActiveAdvancedFilters = () => {
+    return filterAccountType !== 'all' || 
+           filterOwner !== 'all' || 
+           filterYear !== 'all' ||
+           filterBalanceRange.min !== '' || 
+           filterBalanceRange.max !== '' ||
+           filterReturnPerformance !== 'all';
+  };
+
   if (availableYears.length === 0) {
     return (
       <>
@@ -994,9 +1090,9 @@ const Performance = () => {
 
         {/* Tab Navigation */}
         {selectedYears.length > 0 && selectedAccounts.length > 0 && (
-          <div className="performance-tabs">
-            <div className="performance-tab-border">
-              <div className="performance-tab-buttons">
+          <div className="networth-tabs">
+            <div className="networth-tab-border">
+              <div className="networth-tab-buttons">
                 {[
                   { id: 'overview', label: '📊 Overview & Balance Trends', icon: '📊' },
                   { id: 'returns', label: '💰 Returns Analysis', icon: '💰' },
@@ -1005,7 +1101,7 @@ const Performance = () => {
                   <button
                     key={tab.id}
                     onClick={() => setActiveTab(tab.id)}
-                    className={`performance-tab-button ${activeTab === tab.id ? 'active' : ''}`}
+                    className={`networth-tab-button ${activeTab === tab.id ? 'active' : ''}`}
                   >
                     {tab.label}
                   </button>
@@ -1201,8 +1297,8 @@ const Performance = () => {
                 </div>
 
                 {/* Additional Filter Controls (Collapsible) */}
-                {filteredData.length > 50 && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button
                       className="filter-toggle-btn"
                       onClick={() => setShowDetailsFilters(v => !v)}
@@ -1211,18 +1307,35 @@ const Performance = () => {
                         padding: '6px 12px',
                         borderRadius: '6px',
                         border: '1px solid #e2e8f0',
-                        background: '#f8fafc',
-                        color: '#0891b2',
+                        background: hasActiveAdvancedFilters() ? '#fef3c7' : '#f8fafc',
+                        color: hasActiveAdvancedFilters() ? '#92400e' : '#0891b2',
                         cursor: 'pointer'
                       }}
                     >
                       {showDetailsFilters ? 'Hide Advanced Filters ▲' : 'Show Advanced Filters ▼'}
+                      {hasActiveAdvancedFilters() && ' 🔍'}
                     </button>
                     <span style={{ fontSize: '0.9rem', color: '#6b7280' }}>
-                      Additional filtering options for large datasets
+                      {hasActiveAdvancedFilters() ? 'Advanced filters are active' : 'Additional filtering options'}
                     </span>
                   </div>
-                )}
+                  {hasActiveAdvancedFilters() && (
+                    <button
+                      onClick={resetAdvancedFilters}
+                      style={{
+                        fontSize: '0.85rem',
+                        padding: '4px 8px',
+                        borderRadius: '4px',
+                        border: '1px solid #dc2626',
+                        background: '#fee2e2',
+                        color: '#dc2626',
+                        cursor: 'pointer'
+                      }}
+                    >
+                      Clear Filters
+                    </button>
+                  )}
+                </div>
 
                 {/* Expandable Advanced Filter Section */}
                 {showDetailsFilters && (
@@ -1230,17 +1343,271 @@ const Performance = () => {
                     background: '#f0f9ff',
                     border: '1px solid #bae6fd',
                     borderRadius: '8px',
-                    padding: '16px',
+                    padding: '20px',
                     marginBottom: '20px'
                   }}>
-                    <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-                      <span style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1' }}>
-                        Advanced Filters:
-                      </span>
-                      <span style={{ fontSize: '0.9rem', color: '#64748b' }}>
-                        Future enhancements (account type, date range, etc.) will appear here
-                      </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+                      {/* Account Type Filter */}
+                      {availableAccountTypes.length > 1 && (
+                        <div>
+                          <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1', display: 'block', marginBottom: '12px' }}>
+                            Account Type:
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setFilterAccountType('all')}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #d1d5db',
+                                background: filterAccountType === 'all' ? '#3b82f6' : '#ffffff',
+                                color: filterAccountType === 'all' ? '#ffffff' : '#374151',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              All Types ({availableAccountTypes.length})
+                            </button>
+                            {availableAccountTypes.map(type => (
+                              <button
+                                key={type}
+                                onClick={() => setFilterAccountType(type)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #d1d5db',
+                                  background: filterAccountType === type ? '#3b82f6' : '#ffffff',
+                                  color: filterAccountType === type ? '#ffffff' : '#374151',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {type}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Owner Filter */}
+                      {availableOwners.length > 1 && (
+                        <div>
+                          <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1', display: 'block', marginBottom: '12px' }}>
+                            Owner:
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setFilterOwner('all')}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #d1d5db',
+                                background: filterOwner === 'all' ? '#3b82f6' : '#ffffff',
+                                color: filterOwner === 'all' ? '#ffffff' : '#374151',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              All Owners ({availableOwners.length})
+                            </button>
+                            {availableOwners.map(owner => (
+                              <button
+                                key={owner}
+                                onClick={() => setFilterOwner(owner)}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #d1d5db',
+                                  background: filterOwner === owner ? '#3b82f6' : '#ffffff',
+                                  color: filterOwner === owner ? '#ffffff' : '#374151',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {owner}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Return Performance Filter */}
+                      <div>
+                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1', display: 'block', marginBottom: '12px' }}>
+                          Return Performance:
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                          {[
+                            { value: 'all', label: 'All Performance' },
+                            { value: 'positive', label: 'Positive Returns (+)' },
+                            { value: 'negative', label: 'Negative Returns (-)' },
+                            { value: 'breakeven', label: 'Break-even (~0%)' }
+                          ].map(option => (
+                            <button
+                              key={option.value}
+                              onClick={() => setFilterReturnPerformance(option.value)}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #d1d5db',
+                                background: filterReturnPerformance === option.value ? '#3b82f6' : '#ffffff',
+                                color: filterReturnPerformance === option.value ? '#ffffff' : '#374151',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              {option.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Year Filter */}
+                      {availableYears.length > 1 && (
+                        <div>
+                          <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1', display: 'block', marginBottom: '12px' }}>
+                            Year:
+                          </label>
+                          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                            <button
+                              onClick={() => setFilterYear('all')}
+                              style={{
+                                padding: '6px 12px',
+                                borderRadius: '6px',
+                                border: '1px solid #d1d5db',
+                                background: filterYear === 'all' ? '#3b82f6' : '#ffffff',
+                                color: filterYear === 'all' ? '#ffffff' : '#374151',
+                                cursor: 'pointer',
+                                fontSize: '0.85rem',
+                                fontWeight: '500'
+                              }}
+                            >
+                              All Years ({availableYears.length})
+                            </button>
+                            {[...availableYears].sort((a, b) => b - a).map(year => (
+                              <button
+                                key={year}
+                                onClick={() => setFilterYear(year.toString())}
+                                style={{
+                                  padding: '6px 12px',
+                                  borderRadius: '6px',
+                                  border: '1px solid #d1d5db',
+                                  background: filterYear === year.toString() ? '#3b82f6' : '#ffffff',
+                                  color: filterYear === year.toString() ? '#ffffff' : '#374151',
+                                  cursor: 'pointer',
+                                  fontSize: '0.85rem',
+                                  fontWeight: '500'
+                                }}
+                              >
+                                {year}
+                                {isCurrentYear(year) && <span style={{ fontSize: '0.7rem', marginLeft: '4px' }}>YTD</span>}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Balance Range Filter */}
+                      <div>
+                        <label style={{ fontSize: '0.9rem', fontWeight: '600', color: '#0369a1', display: 'block', marginBottom: '12px' }}>
+                          Balance Range ($):
+                        </label>
+                        <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
+                          <input
+                            type="number"
+                            placeholder="Min Balance"
+                            value={filterBalanceRange.min}
+                            onChange={(e) => setFilterBalanceRange(prev => ({ ...prev, min: e.target.value }))}
+                            min="0"
+                            step="1000"
+                            style={{
+                              padding: '8px',
+                              borderRadius: '6px',
+                              border: '1px solid #d1d5db',
+                              fontSize: '0.85rem',
+                              width: '120px'
+                            }}
+                          />
+                          <span style={{ color: '#6b7280', fontSize: '0.85rem' }}>to</span>
+                          <input
+                            type="number"
+                            placeholder="Max Balance"
+                            value={filterBalanceRange.max}
+                            onChange={(e) => setFilterBalanceRange(prev => ({ ...prev, max: e.target.value }))}
+                            min="0"
+                            step="1000"
+                            style={{
+                              padding: '8px',
+                              borderRadius: '6px',
+                              border: '1px solid #d1d5db',
+                              fontSize: '0.85rem',
+                              width: '120px'
+                            }}
+                          />
+                          {(filterBalanceRange.min || filterBalanceRange.max) && (
+                            <button
+                              onClick={() => setFilterBalanceRange({ min: '', max: '' })}
+                              style={{
+                                padding: '4px 8px',
+                                borderRadius: '4px',
+                                border: '1px solid #dc2626',
+                                background: '#fee2e2',
+                                color: '#dc2626',
+                                cursor: 'pointer',
+                                fontSize: '0.75rem'
+                              }}
+                            >
+                              Clear
+                            </button>
+                          )}
+                        </div>
+                      </div>
                     </div>
+
+                    {/* Filter Summary */}
+                    {hasActiveAdvancedFilters() && (
+                      <div style={{ 
+                        marginTop: '20px', 
+                        padding: '12px', 
+                        background: '#fef3c7', 
+                        border: '1px solid #f59e0b', 
+                        borderRadius: '6px' 
+                      }}>
+                        <div style={{ fontSize: '0.85rem', color: '#92400e', fontWeight: '500' }}>
+                          <strong>Active Filters:</strong>
+                          {filterAccountType !== 'all' && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffffff', borderRadius: '4px' }}>
+                              Type: {filterAccountType}
+                            </span>
+                          )}
+                          {filterOwner !== 'all' && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffffff', borderRadius: '4px' }}>
+                              Owner: {filterOwner}
+                            </span>
+                          )}
+                          {filterReturnPerformance !== 'all' && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffffff', borderRadius: '4px' }}>
+                              Performance: {filterReturnPerformance}
+                            </span>
+                          )}
+                          {filterYear !== 'all' && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffffff', borderRadius: '4px' }}>
+                              Year: {filterYear}
+                            </span>
+                          )}
+                          {(filterBalanceRange.min || filterBalanceRange.max) && (
+                            <span style={{ marginLeft: '8px', padding: '2px 6px', background: '#ffffff', borderRadius: '4px' }}>
+                              Balance: ${filterBalanceRange.min || '0'}-${filterBalanceRange.max || '∞'}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
 

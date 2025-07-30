@@ -12,13 +12,104 @@ import {
   // Import shared account functions
   getSharedAccounts,
   addOrUpdateSharedAccount,
-  initializeSharedAccounts
+  initializeSharedAccounts,
+  // Import asset liability data functions
+  getAssetLiabilityData
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
 import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
 const RawData = () => {
+  // Function to sync ALL Asset Liability data to Historical data
+  const syncAssetLiabilityToHistorical = () => {
+    try {
+      const assetLiabilityData = getAssetLiabilityData();
+      const historicalData = getHistoricalData();
+      let hasChanges = false;
+
+      // Get current year for asset/liability values (they apply to current year only)
+      const currentYear = new Date().getFullYear().toString();
+
+      // Initialize current year entry if it doesn't exist
+      if (!historicalData[currentYear]) {
+        historicalData[currentYear] = {};
+      }
+
+      // Sync house value
+      if (assetLiabilityData.house && assetLiabilityData.house > 0) {
+        historicalData[currentYear].house = assetLiabilityData.house;
+        hasChanges = true;
+      }
+
+      // Sync mortgage
+      if (assetLiabilityData.mortgage && assetLiabilityData.mortgage > 0) {
+        historicalData[currentYear].mortgage = assetLiabilityData.mortgage;
+        hasChanges = true;
+      }
+
+      // Sync other assets
+      if (assetLiabilityData.othAsset && assetLiabilityData.othAsset > 0) {
+        historicalData[currentYear].othAsset = assetLiabilityData.othAsset;
+        hasChanges = true;
+      }
+
+      // Sync other liabilities
+      if (assetLiabilityData.othLia && assetLiabilityData.othLia > 0) {
+        historicalData[currentYear].othLia = assetLiabilityData.othLia;
+        hasChanges = true;
+      }
+
+      // Get home improvements from house details and sync for ALL years
+      const houseDetails = assetLiabilityData.houseDetails || [];
+      const primaryHome = houseDetails.find(house => house.type === 'Primary Home');
+      
+      if (primaryHome && primaryHome.homeImprovements && primaryHome.homeImprovements.length > 0) {
+        // Group improvements by year
+        const improvementsByYear = {};
+        primaryHome.homeImprovements.forEach((improvement) => {
+          const year = improvement.year?.toString();
+          if (year && !isNaN(parseInt(year))) {
+            if (!improvementsByYear[year]) {
+              improvementsByYear[year] = [];
+            }
+            improvementsByYear[year].push(improvement);
+          }
+        });
+
+        // Update historical data for each year that has improvements
+        Object.entries(improvementsByYear).forEach(([year, improvements]) => {
+          // Initialize year entry if it doesn't exist
+          if (!historicalData[year]) {
+            historicalData[year] = {};
+          }
+
+          // Calculate total home improvements value for this year
+          const totalValue = improvements.reduce((sum, improvement) => {
+            const value = parseFloat(improvement.valueAdded) || 0;
+            return sum + value;
+          }, 0);
+
+          // Only update if there's a meaningful value
+          if (totalValue > 0) {
+            historicalData[year].homeImprovements = totalValue;
+            hasChanges = true;
+          }
+        });
+      }
+
+      // Save changes if any were made
+      if (hasChanges) {
+        setHistoricalData(historicalData);
+      }
+
+      return hasChanges;
+    } catch (error) {
+      console.error('Error syncing asset liability data to historical data:', error);
+      return false;
+    }
+  };
+
   // Sync paycheck data and cleanup on component mount
   useEffect(() => {
     syncPaycheckToHistorical();
@@ -28,6 +119,21 @@ const RawData = () => {
     initializeSharedAccounts();
     // Sync to show only accounts from latest portfolio record
     syncPerformanceAccountsFromLatestPortfolio();
+    // Sync ALL asset liability data to historical data
+    syncAssetLiabilityToHistorical();
+  }, []);
+
+  // Listen for asset liability data updates to sync all asset liability data
+  useEffect(() => {
+    const handleAssetLiabilityUpdate = () => {
+      syncAssetLiabilityToHistorical();
+    };
+
+    window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
+    
+    return () => {
+      window.removeEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
+    };
   }, []);
 
   // Custom function to handle when Performance data is updated
@@ -192,7 +298,7 @@ const RawData = () => {
         title: '🏠 Assets & Liabilities',
         fields: [
           { name: 'house', label: 'House Value', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Asset Manager' },
-          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency' },
+          { name: 'homeImprovements', label: 'Home Improvements', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Primary Home' },
           { name: 'mortgage', label: 'Mortgage', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liability Manager' },
           { name: 'othAsset', label: 'Assets', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Asset Manager' },
           { name: 'othLia', label: 'Other Liabilities', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liability Manager' }
