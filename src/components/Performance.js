@@ -186,50 +186,13 @@ const Performance = () => {
       });
     };
 
-    const handleToggleDualCalculator = () => {
-      // Toggle the setting in paycheck data
-      const currentPaycheck = getPaycheckData();
-      const currentValue = currentPaycheck?.settings?.showSpouseCalculator ?? true;
-      const newValue = !currentValue;
-      
-      const updatedPaycheck = {
-        ...currentPaycheck,
-        settings: {
-          ...currentPaycheck.settings,
-          showSpouseCalculator: newValue
-        }
-      };
-      
-      // Save the updated setting
-      setPaycheckData(updatedPaycheck);
-      setPaycheckDataState(updatedPaycheck);
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedPaycheck }));
-      
-      // Re-evaluate available accounts after dual mode toggle
-      const performance = getPerformanceData();
-      const availableAccounts = getAvailableAccounts(performance);
-      
-      // Filter selected accounts based on new dual mode setting
-      if (!newValue) {
-        // If dual mode is disabled, only keep accounts from the first user and Joint accounts
-        const firstUserName = updatedPaycheck?.your?.name?.trim();
-        setSelectedAccounts(currentSelectedAccounts => 
-          currentSelectedAccounts.filter(accountId => {
-            const account = availableAccounts.find(acc => acc.id === accountId);
-            return account && (account.owner === firstUserName || account.owner === 'Joint');
-          })
-        );
-      }
-    };
+    // Let TaxCalculator handle the dual calculator toggle
+    // Performance will sync via paycheckDataUpdated event and re-evaluate accounts
 
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
     
     return () => {
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
     };
   }, []);
 

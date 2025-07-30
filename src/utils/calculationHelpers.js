@@ -623,11 +623,31 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 // Helper function to calculate number of pay periods between two dates
 const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
-  const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
-  const timeDifferenceMs = endDate - startDate;
-  const yearsSpanned = timeDifferenceMs / millisecondsInYear;
   
-  return yearsSpanned * periodsPerYear;
+  // Calculate the number of days between start and end dates (inclusive)
+  const timeDifferenceMs = endDate - startDate + (24 * 60 * 60 * 1000); // Add 1 day to make it inclusive
+  const daysInPeriod = timeDifferenceMs / (24 * 60 * 60 * 1000);
+  
+  // Calculate pay periods based on actual pay period frequency
+  let daysPerPayPeriod;
+  switch (payPeriod) {
+    case 'weekly':
+      daysPerPayPeriod = 7;
+      break;
+    case 'biWeekly':
+      daysPerPayPeriod = 14;
+      break;
+    case 'semiMonthly':
+      daysPerPayPeriod = 365.25 / 24; // ~15.22 days per semi-monthly period
+      break;
+    case 'monthly':
+      daysPerPayPeriod = 365.25 / 12; // ~30.44 days per monthly period
+      break;
+    default:
+      daysPerPayPeriod = 14; // Default to bi-weekly
+  }
+  
+  return daysInPeriod / daysPerPayPeriod;
 };
 
 // Calculate actual YTD income from income periods
@@ -782,8 +802,8 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
   return projectedIncome;
 };
 
-// Calculate YTD contributions for a person from Performance data
-export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear()) => {
+// Calculate YTD contributions for a person from Performance data and Historical data
+export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), historicalData = null) => {
   const result = {
     traditional401k: 0,
     roth401k: 0,
@@ -795,7 +815,8 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
     total401k: 0,
     totalIra: 0,
     totalContributions: 0,
-    totalEmployerMatch: 0
+    totalEmployerMatch: 0,
+    totalEmployerHsa: 0
   };
   
   if (!performanceData || !userNames || userNames.length === 0) {
@@ -871,6 +892,22 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
   // Calculate totals
   result.total401k = result.traditional401k + result.roth401k;
   result.totalIra = result.traditionalIra + result.rothIra;
+  
+  // Get HSA employer contributions from historical data if available
+  if (historicalData && historicalData[currentYear]) {
+    const yearData = historicalData[currentYear];
+    if (yearData.users) {
+      userNames.forEach(userName => {
+        if (yearData.users[userName] && yearData.users[userName].employerHsa) {
+          result.totalEmployerHsa += parseFloat(yearData.users[userName].employerHsa) || 0;
+        }
+      });
+    }
+    // Also check for employerHsa at the year level
+    if (yearData.employerHsa) {
+      result.totalEmployerHsa += parseFloat(yearData.employerHsa) || 0;
+    }
+  }
   
   return result;
 };

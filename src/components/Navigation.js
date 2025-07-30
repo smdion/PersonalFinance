@@ -8,7 +8,8 @@ const Navigation = () => {
   const [openFolders, setOpenFolders] = useState({});
   const [expandStates, setExpandStates] = useState({
     paycheck: false, // false = collapsed, true = expanded
-    budget: false
+    budget: false,
+    contributions: false
   });
   const settingsMenuRef = useRef(null);
   const hamburgerMenuRef = useRef(null);
@@ -396,13 +397,22 @@ const Navigation = () => {
                 </button>
               )}
               {location.pathname === '/contributions' && (
-                <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
-                  className="page-control-button dual-calc"
-                  title="Toggle dual calculator mode"
-                >
-                  👫
-                </button>
+                <>
+                  <button
+                    onClick={() => handleExpandCollapseToggle('contributions')}
+                    className={`page-control-button expand-collapse ${expandStates.contributions ? 'expanded' : 'collapsed'}`}
+                    title={expandStates.contributions ? 'Collapse all sections' : 'Expand all sections'}
+                  >
+                    {expandStates.contributions ? '📕' : '📖'}
+                  </button>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                    className="page-control-button dual-calc"
+                    title="Toggle dual calculator mode"
+                  >
+                    👫
+                  </button>
+                </>
               )}
               {location.pathname === '/raw-data' && (
                 <button

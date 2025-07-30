@@ -278,36 +278,8 @@ const Retirement = () => {
     };
   }, []);
 
-  // Event listener for navigation dual calculator toggle
-  useEffect(() => {
-    const handleToggleDualCalculator = () => {
-      setShowSpouseCalculator(prev => {
-        const newValue = !prev;
-        
-        // Update the paycheck data settings (master source)
-        const currentPaycheckData = getPaycheckData();
-        const updatedPaycheckData = {
-          ...currentPaycheckData,
-          settings: {
-            ...currentPaycheckData.settings,
-            showSpouseCalculator: newValue
-          }
-        };
-        
-        // Save to paycheck data and notify other components
-        setPaycheckData(updatedPaycheckData);
-        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedPaycheckData }));
-        
-        return newValue;
-      });
-    };
-
-    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
-
-    return () => {
-      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
-    };
-  }, [retirementDataState, saveRetirementData]);
+  // Let TaxCalculator handle the dual calculator toggle
+  // Retirement will sync via paycheckDataUpdated event
 
   return (
     <div className="calculator-page">

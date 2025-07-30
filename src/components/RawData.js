@@ -147,33 +147,13 @@ const RawData = () => {
       syncAssetLiabilityToHistorical();
     };
 
-    const handleToggleDualCalculator = () => {
-      // Toggle the setting in paycheck data
-      const currentPaycheck = getPaycheckData();
-      const currentValue = currentPaycheck?.settings?.showSpouseCalculator ?? true;
-      const newValue = !currentValue;
-      
-      const updatedPaycheck = {
-        ...currentPaycheck,
-        settings: {
-          ...currentPaycheck.settings,
-          showSpouseCalculator: newValue
-        }
-      };
-      
-      // Save the updated setting
-      setPaycheckData(updatedPaycheck);
-      
-      // Dispatch event to notify other components
-      window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedPaycheck }));
-    };
+    // Let TaxCalculator handle the dual calculator toggle
+    // RawData will sync via paycheckDataUpdated event
 
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
-    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
     
     return () => {
       window.removeEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
-      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
     };
   }, []);
 
