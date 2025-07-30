@@ -13,6 +13,7 @@ import Contributions from './components/Contributions';
 import Retirement from './components/Retirement';
 import Assets from './components/Assets';
 import Liabilities from './components/Liabilities';
+import PrimaryHome from './components/PrimaryHome';
 
 function App() {
   return (
@@ -31,6 +32,7 @@ function App() {
             <Route path="/retirement" element={<Retirement />} />
             <Route path="/other-assets" element={<Assets />} />
             <Route path="/liabilities" element={<Liabilities />} />
+            <Route path="/primary-home" element={<PrimaryHome />} />
             <Route path="/portfolio" element={<Portfolio />} />
           </Routes>
         </div>

@@ -28,7 +28,8 @@ export const STORAGE_KEYS = {
   PORTFOLIO_RECORDS: 'portfolioRecords',
   PORTFOLIO_INPUTS: 'portfolioInputs',
   SHARED_ACCOUNTS: 'sharedAccounts',
-  MANUAL_ACCOUNT_GROUPS: 'manualAccountGroups'
+  MANUAL_ACCOUNT_GROUPS: 'manualAccountGroups',
+  PRIMARY_HOME_DATA: 'primaryHomeData'
 };
 
 // Helper function to generate unique IDs
@@ -421,6 +422,7 @@ export const exportAllData = () => {
     historicalData: getHistoricalData(),
     performanceData: getPerformanceData(),
     retirementData: getRetirementData(),
+    primaryHomeData: getPrimaryHomeData(),
     // New portfolio-related data
     networthSettings: getNetWorthSettings(),
     savingsData: getSavingsData(),
@@ -879,6 +881,7 @@ export const importAllData = (importData) => {
       'performanceData',
       'networthSettings',
       'retirementData',
+      'primaryHomeData',
       'portfolioAccounts',
       'portfolioRecords',
       'portfolioInputs',
@@ -954,6 +957,11 @@ export const importAllData = (importData) => {
     if (importData.retirementData !== undefined || importData.retirement_data !== undefined) {
       setRetirementData(importData.retirementData || importData.retirement_data);
       importedSections.push('Retirement Data');
+    }
+    
+    if (importData.primaryHomeData !== undefined || importData.primary_home_data !== undefined) {
+      setPrimaryHomeData(importData.primaryHomeData || importData.primary_home_data);
+      importedSections.push('Primary Home Data');
     }
     
     // Import portfolio-related data
@@ -1139,6 +1147,7 @@ export const clearAllAppData = () => {
       'performanceData',
       'networthSettings',
       'retirementData',
+      'primaryHomeData',
       'portfolioAccounts',
       'portfolioRecords',
       'portfolioInputs',
@@ -1446,6 +1455,45 @@ export const getRetirementData = () => {
 
 export const setRetirementData = (data) => {
   return setToStorage(STORAGE_KEYS.RETIREMENT_DATA, data);
+};
+
+// Primary Home data utilities
+export const getPrimaryHomeData = () => {
+  return getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {
+    homeData: {
+      propertyName: '',
+      currentValue: '',
+      originalPurchasePrice: '',
+      purchaseDate: '',
+      propertyType: 'Primary Home'
+    },
+    mortgageData: {
+      lenderName: '',
+      originalLoanAmount: '',
+      currentBalance: '',
+      interestRate: '',
+      loanTerm: '',
+      monthlyPayment: '',
+      principalAndInterest: '',
+      pmi: '',
+      escrow: '',
+      startDate: ''
+    },
+    amortizationSchedules: [],
+    lastUpdated: null
+  });
+};
+
+export const setPrimaryHomeData = (data) => {
+  const result = setToStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, data);
+  
+  if (result) {
+    // Dispatch update event to notify components
+    setTimeout(() => {
+      window.dispatchEvent(new CustomEvent('primaryHomeDataUpdated', { detail: data }));
+    }, 50);
+  }
+  return result;
 };
 
 // Portfolio account names utilities
