@@ -5,6 +5,7 @@ import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
 import { getMostRecentPortfolioAccounts } from '../utils/portfolioPerformanceSync';
 import Navigation from './Navigation';
+import DataManager from './DataManager';
 
 // Tooltip component for contribution details
 const ContributionTooltip = ({ contributions, type, children }) => {
@@ -92,6 +93,101 @@ const ContributionTooltip = ({ contributions, type, children }) => {
   );
 };
 
+// Schema for retirement projections DataManager
+const retirementProjectionsSchema = {
+  primaryKeyLabel: 'Year',
+  sections: [
+    {
+      name: 'basic',
+      title: 'Basic Info',
+      fields: [
+        { name: 'year', label: 'Year', type: 'number', format: 'number' }
+      ]
+    },
+    {
+      name: 'users',
+      title: 'User Data',
+      fields: [
+        { name: 'age', label: 'Age', type: 'number', format: 'number' },
+        { name: 'salary', label: 'Salary', type: 'number', format: 'currency' },
+        { name: 'employeeContributions', label: 'Employee Contributions', type: 'number', format: 'currency' },
+        { name: 'employerMatch', label: 'Employer Match', type: 'number', format: 'currency' },
+        { name: 'totalContributions', label: 'Total Contributions', type: 'number', format: 'currency' },
+        { name: 'withdrawal', label: 'Withdrawal', type: 'number', format: 'currency' },
+        { name: 'taxFree', label: 'Tax-Free', type: 'number', format: 'currency' },
+        { name: 'taxDeferred', label: 'Tax-Deferred', type: 'number', format: 'currency' },
+        { name: 'afterTax', label: 'After-Tax', type: 'number', format: 'currency' },
+        { name: 'totalBalance', label: 'Total Balance', type: 'number', format: 'currency' },
+        { name: 'returnRate', label: 'Return Rate', type: 'number', format: 'percentage' }
+      ]
+    }
+  ]
+};
+
+// Transform retirement projections to DataManager format
+const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjections, paycheckData, currentYear, getActualEmployerMatchForYear) => {
+  const data = {};
+  
+  // Get the maximum length of projections
+  const maxLength = Math.max(yourProjections.length, spouseProjections.length);
+  
+  for (let i = 0; i < maxLength; i++) {
+    const yourProj = yourProjections[i];
+    const spouseProj = spouseProjections[i];
+    const year = yourProj?.year || spouseProj?.year;
+    
+    if (!year) continue;
+    
+    const entry = {
+      year: year,
+      users: {}
+    };
+    
+    // Add your data if available
+    if (yourProj) {
+      const yourName = paycheckData?.your?.name || 'Your';
+      
+      entry.users[yourName] = {
+        age: yourProj.age,
+        salary: yourProj.salary || 0,
+        employeeContributions: yourProj.contributions?.employee || 0,
+        employerMatch: yourProj.contributions?.employer || 0,
+        totalContributions: yourProj.contributions?.total || 0,
+        withdrawal: yourProj.withdrawal || 0,
+        taxFree: yourProj.balances?.taxFree || 0,
+        taxDeferred: yourProj.balances?.taxDeferred || 0,
+        afterTax: yourProj.balances?.afterTax || 0,
+        totalBalance: yourProj.totalBalance || 0,
+        returnRate: (yourProj.returnRate || 0) / 100
+      };
+    }
+    
+    // Add spouse data if available
+    if (spouseProj) {
+      const spouseName = paycheckData?.spouse?.name || 'Spouse';
+      
+      entry.users[spouseName] = {
+        age: spouseProj.age,
+        salary: spouseProj.salary || 0,
+        employeeContributions: spouseProj.contributions?.employee || 0,
+        employerMatch: spouseProj.contributions?.employer || 0,
+        totalContributions: spouseProj.contributions?.total || 0,
+        withdrawal: spouseProj.withdrawal || 0,
+        taxFree: spouseProj.balances?.taxFree || 0,
+        taxDeferred: spouseProj.balances?.taxDeferred || 0,
+        afterTax: spouseProj.balances?.afterTax || 0,
+        totalBalance: spouseProj.totalBalance || 0,
+        returnRate: (spouseProj.returnRate || 0) / 100
+      };
+    }
+    
+    data[`proj_${year}`] = entry;
+  }
+  
+  return data;
+};
+
+
 const Retirement = () => {
   const { formData: contextFormData } = useContext(FormContext);
 
@@ -103,6 +199,9 @@ const Retirement = () => {
   
   // Detailed mode for projections table
   const [showDetailedProjections, setShowDetailedProjections] = useState(false);
+  
+  // DataManager state for projections
+  const [projectionsData, setProjectionsData] = useState({});
 
   // Load existing retirement data
   const loadRetirementData = () => {
@@ -595,6 +694,22 @@ const Retirement = () => {
     [calculateRetirementProjections, showSpouseCalculator]
   );
 
+  // Transform projections data for DataManager
+  useEffect(() => {
+    if (yourProjections.length > 0 || spouseProjections.length > 0) {
+      const transformedData = transformProjectionsToDataManagerFormat(
+        yourProjections, 
+        spouseProjections, 
+        paycheckData, 
+        currentYear, 
+        getActualEmployerMatchForYear
+      );
+      setProjectionsData(transformedData);
+    } else {
+      setProjectionsData({});
+    }
+  }, [yourProjections, spouseProjections, paycheckData, currentYear, getActualEmployerMatchForYear]);
+
 
   // Dual calculator toggle is now handled by the shared hook
 
@@ -902,166 +1017,61 @@ const Retirement = () => {
 
           {activeTab === 'projections' && (
             <div className="tab-content">
-              <div className="projections-controls">
-                <label className="projections-toggle">
-                  <input
-                    type="checkbox"
-                    checked={showDetailedProjections}
-                    onChange={(e) => setShowDetailedProjections(e.target.checked)}
+              {Object.keys(projectionsData).length > 0 ? (
+                <>
+                  <DataManager
+                    title="Retirement Projections"
+                    subtitle="Year-by-year retirement savings projections based on your current settings"
+                    dataKey="retirementProjections"
+                    getData={() => projectionsData}
+                    setData={() => {}} // Read-only
+                    schema={retirementProjectionsSchema}
+                    usePaycheckUsers={true}
+                    primaryKey="year"
+                    sortField="year"
+                    sortOrder="asc"
+                    allowAdd={false}
+                    allowEdit={false}
+                    allowDelete={false}
+                    fieldCssClasses={{
+                      year: 'data-year-cell',
+                      age: 'data-text-cell',
+                      salary: 'data-currency-cell',
+                      employeeContributions: 'data-currency-cell',
+                      employerMatch: 'data-currency-cell',
+                      totalContributions: 'data-currency-cell',
+                      withdrawal: 'data-currency-cell',
+                      taxFree: 'data-currency-cell',
+                      taxDeferred: 'data-currency-cell',
+                      afterTax: 'data-currency-cell',
+                      totalBalance: 'data-currency-cell',
+                      returnRate: 'data-percentage-cell'
+                    }}
+                    customParseCSVRow={() => null} // Disable CSV import
+                    customFormatCSVRow={() => []} // Disable CSV export
+                    beforeCSVImport={() => false} // Disable CSV import
+                    itemsPerPage={25}
+                    disableReadOnly={true}
                   />
-                  <span className="projections-toggle-label">
-                    Show Detailed View
-                  </span>
-                </label>
-              </div>
-              
-            {(yourProjections.length > 0 || spouseProjections.length > 0) ? (
-              <>
-                <div className="table-responsive">
-                  <table className="projections-table">
-                    <thead>
-                      <tr>
-                        <th>Year</th>
-                        {yourProjections.length > 0 && (
-                          <>
-                            <th>{paycheckData?.your?.name || 'Your'} Age</th>
-                            {showDetailedProjections && (
-                              <>
-                                <th>Salary</th>
-                                <th>Employee Contributions</th>
-                                <th>Employer Match</th>
-                                <th>Total Contributions</th>
-                                <th>Withdrawal</th>
-                                <th>Tax-Free</th>
-                                <th>Tax-Deferred</th>
-                                <th>After-Tax</th>
-                              </>
-                            )}
-                            <th>Total Balance</th>
-                            {showDetailedProjections && <th>Return Rate</th>}
-                          </>
-                        )}
-                        {spouseProjections.length > 0 && (
-                          <>
-                            <th>{paycheckData?.spouse?.name || 'Spouse'} Age</th>
-                            {showDetailedProjections && (
-                              <>
-                                <th>Salary</th>
-                                <th>Employee Contributions</th>
-                                <th>Employer Match</th>
-                                <th>Total Contributions</th>
-                                <th>Withdrawal</th>
-                                <th>Tax-Free</th>
-                                <th>Tax-Deferred</th>
-                                <th>After-Tax</th>
-                              </>
-                            )}
-                            <th>Total Balance</th>
-                            {showDetailedProjections && <th>Return Rate</th>}
-                          </>
-                        )}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {Array.from({ length: Math.max(yourProjections.length, spouseProjections.length) }).map((_, index) => {
-                        const yourProj = yourProjections[index];
-                        const spouseProj = spouseProjections[index];
-                        const year = yourProj?.year || spouseProj?.year;
-                        
-                        return (
-                          <tr key={index} className={yourProj?.isRetired || spouseProj?.isRetired ? 'retirement-row' : ''}>
-                            <td>{year}</td>
-                            {yourProjections.length > 0 && (
-                              <>
-                                <td>{yourProj?.age || '-'}</td>
-                                {showDetailedProjections && (
-                                  <>
-                                    <td>{yourProj ? formatCurrency(yourProj.salary) : '-'}</td>
-                                    <td>
-                                      <ContributionTooltip contributions={yourProj?.contributions} type="employee">
-                                        {yourProj ? formatCurrency(yourProj.contributions?.employee || 0) : '-'}
-                                        {yourProj && year === currentYear && yourProj.contributions?.employee > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                      </ContributionTooltip>
-                                    </td>
-                                    <td>
-                                      <ContributionTooltip contributions={yourProj?.contributions} type="employer">
-                                        {yourProj ? formatCurrency(yourProj.contributions?.employer || 0) : '-'}
-                                        {yourProj && year === currentYear && yourProj.contributions?.employer > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                        {yourProj && getActualEmployerMatchForYear('your', year) !== null && <span style={{fontSize: '0.75em', color: '#0066cc', marginLeft: '4px'}}>📊</span>}
-                                      </ContributionTooltip>
-                                    </td>
-                                    <td>
-                                      {yourProj ? formatCurrency(yourProj.contributions?.total || 0) : '-'}
-                                      {yourProj && year === currentYear && yourProj.contributions?.total > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                    </td>
-                                    <td>{yourProj && yourProj.withdrawal > 0 ? formatCurrency(yourProj.withdrawal) : '-'}</td>
-                                    <td>{yourProj ? formatCurrency(yourProj.balances.taxFree) : '-'}</td>
-                                    <td>{yourProj ? formatCurrency(yourProj.balances.taxDeferred) : '-'}</td>
-                                    <td>{yourProj ? formatCurrency(yourProj.balances.afterTax) : '-'}</td>
-                                  </>
-                                )}
-                                <td className="total-balance">{yourProj ? formatCurrency(yourProj.totalBalance) : '-'}</td>
-                                {showDetailedProjections && <td>{yourProj ? `${yourProj.returnRate.toFixed(1)}%` : '-'}</td>}
-                              </>
-                            )}
-                            {spouseProjections.length > 0 && (
-                              <>
-                                <td>{spouseProj?.age || '-'}</td>
-                                {showDetailedProjections && (
-                                  <>
-                                    <td>{spouseProj ? formatCurrency(spouseProj.salary) : '-'}</td>
-                                    <td>
-                                      <ContributionTooltip contributions={spouseProj?.contributions} type="employee">
-                                        {spouseProj ? formatCurrency(spouseProj.contributions?.employee || 0) : '-'}
-                                        {spouseProj && year === currentYear && spouseProj.contributions?.employee > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                      </ContributionTooltip>
-                                    </td>
-                                    <td>
-                                      <ContributionTooltip contributions={spouseProj?.contributions} type="employer">
-                                        {spouseProj ? formatCurrency(spouseProj.contributions?.employer || 0) : '-'}
-                                        {spouseProj && year === currentYear && spouseProj.contributions?.employer > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                        {spouseProj && getActualEmployerMatchForYear('spouse', year) !== null && <span style={{fontSize: '0.75em', color: '#0066cc', marginLeft: '4px'}}>📊</span>}
-                                      </ContributionTooltip>
-                                    </td>
-                                    <td>
-                                      {spouseProj ? formatCurrency(spouseProj.contributions?.total || 0) : '-'}
-                                      {spouseProj && year === currentYear && spouseProj.contributions?.total > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
-                                    </td>
-                                    <td>{spouseProj && spouseProj.withdrawal > 0 ? formatCurrency(spouseProj.withdrawal) : '-'}</td>
-                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.taxFree) : '-'}</td>
-                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.taxDeferred) : '-'}</td>
-                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.afterTax) : '-'}</td>
-                                  </>
-                                )}
-                                <td className="total-balance">{spouseProj ? formatCurrency(spouseProj.totalBalance) : '-'}</td>
-                                {showDetailedProjections && <td>{spouseProj ? `${spouseProj.returnRate.toFixed(1)}%` : '-'}</td>}
-                              </>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                  
+                  {/* Footnote for current year contributions */}
+                  <div style={{marginTop: '16px', fontSize: '0.9em', color: '#666', fontStyle: 'italic'}}>
+                    <span>* {currentYear} contributions represent remaining contributions for the year based on current paycheck settings. Past contributions are already reflected in current balances.</span>
+                    <br />
+                    <span>📊 Employer match data from actual performance tracking (when available)</span>
+                  </div>
+                </>
+              ) : (
+                <div className="no-projections-message">
+                  <p>No projections available. Please ensure you have:</p>
+                  <ul>
+                    <li>Set up your paycheck calculator with your name, birthday, and salary</li>
+                    <li>Configured your retirement parameters above</li>
+                    <li>Added some historical data (optional but recommended)</li>
+                  </ul>
+                  <p>Once you have this information, your retirement projections will appear here automatically.</p>
                 </div>
-                
-                {/* Footnote for current year contributions */}
-                <div style={{marginTop: '16px', fontSize: '0.9em', color: '#666', fontStyle: 'italic'}}>
-                  <span>* {currentYear} contributions represent remaining contributions for the year based on current paycheck settings. Past contributions are already reflected in current balances.</span>
-                  <br />
-                  <span>📊 Employer match data from actual performance tracking (when available)</span>
-                </div>
-              </>
-            ) : (
-              <div className="no-projections-message">
-                <p>No projections available. Please ensure you have:</p>
-                <ul>
-                  <li>Set up your paycheck calculator with your name, birthday, and salary</li>
-                  <li>Configured your retirement parameters above</li>
-                  <li>Added some historical data (optional but recommended)</li>
-                </ul>
-                <p>Once you have this information, your retirement projections will appear here automatically.</p>
-              </div>
-            )}
+              )}
             </div>
           )}
         </div>
