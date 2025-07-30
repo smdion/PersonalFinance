@@ -167,11 +167,11 @@ const Performance = () => {
         title: '💰 Financial Data',
         fields: [
           { name: 'balance', label: 'Balance', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'contributions', label: 'Contributions', format: 'currency', className: 'currency' },
-          { name: 'employerMatch', label: 'Employer Match', format: 'currency', className: 'currency' },
-          { name: 'gains', label: 'Gains/Losses', format: 'currency', className: 'currency' },
-          { name: 'fees', label: 'Fees', format: 'currency', className: 'currency' },
-          { name: 'withdrawals', label: 'Withdrawals', format: 'currency', className: 'currency' }
+          { name: 'contributions', label: 'Contributions', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' },
+          { name: 'employerMatch', label: 'Employer Match', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' },
+          { name: 'gains', label: 'Gains/Losses', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' },
+          { name: 'fees', label: 'Fees', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' },
+          { name: 'withdrawals', label: 'Withdrawals', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' }
         ]
       }
     ]
