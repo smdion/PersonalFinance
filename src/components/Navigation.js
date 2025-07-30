@@ -38,7 +38,6 @@ const Navigation = () => {
           label: 'Review',
           icon: '📈',
           items: [
-            { path: '/performance', label: 'Performance', icon: '🎯' },
             { path: '/historical', label: 'Historical', icon: '📋' }
           ]
         }

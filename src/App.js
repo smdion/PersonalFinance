@@ -5,7 +5,6 @@ import Welcome from './components/Welcome';
 import BudgetForm from './components/BudgetForm';
 import TaxCalculator from './components/TaxCalculator';
 import Historical from './components/Historical';
-import Performance from './components/Performance';
 import Portfolio from './components/Portfolio';
 import NetWorth from './components/NetWorth';
 import Savings from './components/Savings';
@@ -26,7 +25,6 @@ function App() {
             <Route path="/savings" element={<Savings />} />
             <Route path="/contributions" element={<Contributions />} />
             <Route path="/historical" element={<Historical />} />
-            <Route path="/performance" element={<Performance />} />
             <Route path="/networth" element={<NetWorth />} />
             <Route path="/retirement" element={<Retirement />} />
             <Route path="/other-assets" element={<Assets />} />
