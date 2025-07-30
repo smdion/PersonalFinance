@@ -269,6 +269,7 @@ const Contributions = () => {
       } else if (hsaCoverage === 'family') {
         maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
       }
+      
 
       // ESPP calculations
       const esppPercent = parseFloat(person.esppDeductionPercent) || 0;
@@ -419,18 +420,23 @@ const Contributions = () => {
         
         // If no historical employer HSA data, calculate YTD based on current settings and elapsed time
         if (ytdHsaEmployer === 0 && hsaEmployerContribution > 0) {
-          // Calculate how much of the year has elapsed and estimate YTD employer contributions
-          const currentMonth = today.getMonth() + 1; // 1-12
-          const elapsedMonths = currentMonth - 1; // How many complete months have passed
-          ytdHsaEmployer = (hsaEmployerContribution * elapsedMonths) / 12;
+          // Calculate how much of the year has elapsed based on pay periods
+          const startOfYear = new Date(today.getFullYear(), 0, 1);
+          const elapsedPayPeriods = calculatePayPeriodsBetweenDates(startOfYear, today, payPeriod);
+          ytdHsaEmployer = (hsaEmployerContribution / periodsPerYear) * elapsedPayPeriods;
         }
         
         const ytdHsaTotal = ytdHsaEmployee + ytdHsaEmployer;
         
         // Calculate projected HSA contributions for remaining pay periods using settings
-        const projectedHsaEmployee = hsaContributionPerPaycheck * remainingPaychecks;
-        const projectedHsaEmployer = remainingPaychecks > 0 ? (hsaEmployerContribution * remainingPaychecks / periodsPerYear) : 0;
+        // To ensure YTD + Projected = Annual exactly, calculate projected as (Annual - YTD)
+        const expectedAnnualEmployee = hsaContributionPerPaycheck * periodsPerYear;
+        const expectedAnnualEmployer = hsaEmployerContribution;
+        
+        const projectedHsaEmployee = Math.max(0, expectedAnnualEmployee - ytdHsaEmployee);
+        const projectedHsaEmployer = Math.max(0, expectedAnnualEmployer - ytdHsaEmployer);
         const projectedHsaTotal = projectedHsaEmployee + projectedHsaEmployer;
+        
         
         // ESPP breakdown
         const ytdEspp = ytdContributions.espp || 0;
