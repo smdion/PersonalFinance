@@ -11,19 +11,45 @@
   background: #f8fafc;
 }
 
-.brokerage-accounts-header {
+/* Additional Medical Deductions Section */
+.additional-medical-deductions-section {
+  grid-column: 1 / -1;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  margin-top: 20px;
+}
+
+/* Additional Post-Tax Deductions Section */
+.additional-post-tax-deductions-section {
+  grid-column: 1 / -1;
+  border: 2px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px;
+  background: #f8fafc;
+  margin-top: 20px;
+}
+
+.brokerage-accounts-header,
+.additional-medical-deductions-header,
+.additional-post-tax-deductions-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 16px;
 }
 
-.brokerage-accounts-header .form-label {
+.brokerage-accounts-header .form-label,
+.additional-medical-deductions-header .form-label,
+.additional-post-tax-deductions-header .form-label {
   margin-bottom: 0;
   font-size: 1.1rem;
 }
 
-.brokerage-account-item {
+.brokerage-account-item,
+.additional-medical-deduction-item,
+.additional-post-tax-deduction-item {
   display: grid;
   grid-template-columns: 2fr 1fr auto;
   gap: 12px;
@@ -35,18 +61,24 @@
   border-radius: 8px;
 }
 
-.brokerage-account-item:last-child {
+.brokerage-account-item:last-child,
+.additional-medical-deduction-item:last-child,
+.additional-post-tax-deduction-item:last-child {
   margin-bottom: 0;
 }
 
-.no-brokerage-accounts {
+.no-brokerage-accounts,
+.no-additional-medical-deductions,
+.no-additional-post-tax-deductions {
   text-align: center;
   padding: 24px;
   color: #64748b;
   font-style: italic;
 }
 
-.no-brokerage-accounts p {
+.no-brokerage-accounts p,
+.no-additional-medical-deductions p,
+.no-additional-post-tax-deductions p {
   margin: 0;
 }
 
@@ -57,13 +89,17 @@
 }
 
 @media (max-width: 768px) {
-  .brokerage-accounts-header {
+  .brokerage-accounts-header,
+  .additional-medical-deductions-header,
+  .additional-post-tax-deductions-header {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
   }
   
-  .brokerage-account-item {
+  .brokerage-account-item,
+  .additional-medical-deduction-item,
+  .additional-post-tax-deduction-item {
     grid-template-columns: 1fr;
     gap: 8px;
   }

@@ -31,6 +31,12 @@ const PaycheckForm = ({
   onAddBrokerageAccount,
   onUpdateBrokerageAccount,
   onRemoveBrokerageAccount,
+  onAddMedicalDeduction,
+  onUpdateMedicalDeduction,
+  onRemoveMedicalDeduction,
+  onAddPostTaxDeduction,
+  onUpdatePostTaxDeduction,
+  onRemovePostTaxDeduction,
   bonusMultiplier, setBonusMultiplier, 
   bonusTarget, setBonusTarget,
   overrideBonus, setOverrideBonus,
@@ -239,6 +245,26 @@ const PaycheckForm = ({
         const fieldKey = `brokerage_${account.id}`;
         if (!currencyInputsFocused[fieldKey]) {
           newValues[fieldKey] = account.monthlyAmount ? formatCurrency(account.monthlyAmount) : '';
+        }
+      });
+    }
+
+    // Additional medical deduction fields (dynamic)
+    if (medicalDeductions.additionalMedicalDeductions) {
+      medicalDeductions.additionalMedicalDeductions.forEach(deduction => {
+        const fieldKey = `medical_${deduction.id}`;
+        if (!currencyInputsFocused[fieldKey]) {
+          newValues[fieldKey] = deduction.amount ? formatDeductionDisplay(deduction.amount) : '';
+        }
+      });
+    }
+
+    // Additional post-tax deduction fields (dynamic)
+    if (medicalDeductions.additionalPostTaxDeductions) {
+      medicalDeductions.additionalPostTaxDeductions.forEach(deduction => {
+        const fieldKey = `postTax_${deduction.id}`;
+        if (!currencyInputsFocused[fieldKey]) {
+          newValues[fieldKey] = deduction.amount ? formatDeductionDisplay(deduction.amount) : '';
         }
       });
     }
@@ -612,11 +638,16 @@ const PaycheckForm = ({
             section="medical"
             subtitle="Medical, Health Insurance & HSA"
             badge={(() => {
-              const nonHsaDeductions = Object.entries(medicalDeductions)
-                .filter(([key, value]) => key !== 'hsa' && key !== 'employerHsa' && value > 0)
+              const coreDeductions = Object.entries(medicalDeductions)
+                .filter(([key, value]) => 
+                  !['hsa', 'employerHsa', 'additionalMedicalDeductions'].includes(key) && value > 0
+                )
                 .reduce((sum, [, value]) => sum + value, 0);
+              const additionalDeductions = (medicalDeductions.additionalMedicalDeductions || []).reduce(
+                (sum, item) => sum + (item.amount || 0), 0
+              );
               const hsaDeductions = hsaCoverageType !== 'none' ? (medicalDeductions.hsa || 0) : 0;
-              const totalDeductions = nonHsaDeductions + hsaDeductions;
+              const totalDeductions = coreDeductions + additionalDeductions + hsaDeductions;
               return totalDeductions > 0 ? formatCurrency(totalDeductions) : null;
             })()}
           />
@@ -688,6 +719,70 @@ const PaycheckForm = ({
                     placeholder="$0.00"
                   />
                 </div>
+              </div>
+
+              {/* Dynamic Additional Medical Deductions */}
+              <div className="additional-medical-deductions-section">
+                <div className="additional-medical-deductions-header">
+                  <label className="form-label">Additional Medical Deductions (Per Paycheck):</label>
+                  <button 
+                    type="button"
+                    onClick={() => onAddMedicalDeduction(personName)}
+                    className="btn-secondary btn-sm"
+                  >
+                    ➕ Add Medical Deduction
+                  </button>
+                </div>
+                
+                {medicalDeductions.additionalMedicalDeductions && medicalDeductions.additionalMedicalDeductions.map((deduction, index) => (
+                  <div key={deduction.id} className="additional-medical-deduction-item">
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={deduction.name}
+                        onChange={(e) => onUpdateMedicalDeduction(personName, deduction.id, 'name', e.target.value)}
+                        placeholder="Deduction name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={currencyInputValues[`medical_${deduction.id}`] || ''}
+                        onChange={(e) => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          const rawValue = e.target.value.replace(/[$,]/g, '');
+                          setCurrencyInputValues(prev => ({ ...prev, [fieldKey]: e.target.value }));
+                          onUpdateMedicalDeduction(personName, deduction.id, 'amount', parseFloat(rawValue) || 0);
+                        }}
+                        onFocus={() => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          handleCurrencyInputFocus(fieldKey, { [fieldKey]: deduction.amount });
+                        }}
+                        onBlur={() => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          handleCurrencyInputBlur(fieldKey, { [fieldKey]: deduction.amount }, formatDeductionDisplay);
+                        }}
+                        placeholder="$0.00"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => onRemoveMedicalDeduction(personName, deduction.id)}
+                      className="btn-danger btn-sm"
+                      title="Remove this medical deduction"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                
+                {(!medicalDeductions.additionalMedicalDeductions || medicalDeductions.additionalMedicalDeductions.length === 0) && (
+                  <div className="no-additional-medical-deductions">
+                    <p>No additional medical deductions added. Click "Add Medical Deduction" to add your first one.</p>
+                  </div>
+                )}
               </div>
 
               {/* HSA Section with better readability */}
@@ -804,11 +899,16 @@ const PaycheckForm = ({
             title="💳 Other Post-Tax Deductions" 
             section="postTax"
             subtitle="After-Tax Deductions (ESPP, etc.)"
-            badge={
-              esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary))
-                ? `$${((parseFloat(salary) * (esppDeductionPercent / 100) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2))}`
-                : null
-            }
+            badge={(() => {
+              const esppTotal = esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary))
+                ? parseFloat(salary) * (esppDeductionPercent / 100) / PAY_PERIODS[payPeriod].periodsPerYear
+                : 0;
+              const additionalTotal = (medicalDeductions.additionalPostTaxDeductions || []).reduce(
+                (sum, item) => sum + (item.amount || 0), 0
+              );
+              const totalDeductions = esppTotal + additionalTotal;
+              return totalDeductions > 0 ? `$${totalDeductions.toFixed(2)}` : null;
+            })()}
           />
           
           {expandedSections.postTax && (
@@ -827,6 +927,70 @@ const PaycheckForm = ({
                   onBlur={() => handleCurrencyInputBlur('esppDeductionPercent', { esppDeductionPercent }, formatPercentageDisplay)}
                   placeholder="Enter ESPP percentage"
                 />
+              </div>
+
+              {/* Dynamic Additional Post-Tax Deductions */}
+              <div className="additional-post-tax-deductions-section">
+                <div className="additional-post-tax-deductions-header">
+                  <label className="form-label">Additional Post-Tax Deductions (Per Paycheck):</label>
+                  <button 
+                    type="button"
+                    onClick={() => onAddPostTaxDeduction(personName)}
+                    className="btn-secondary btn-sm"
+                  >
+                    ➕ Add Post-Tax Deduction
+                  </button>
+                </div>
+                
+                {medicalDeductions.additionalPostTaxDeductions && medicalDeductions.additionalPostTaxDeductions.map((deduction, index) => (
+                  <div key={deduction.id} className="additional-post-tax-deduction-item">
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={deduction.name}
+                        onChange={(e) => onUpdatePostTaxDeduction(personName, deduction.id, 'name', e.target.value)}
+                        placeholder="Deduction name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={currencyInputValues[`postTax_${deduction.id}`] || ''}
+                        onChange={(e) => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          const rawValue = e.target.value.replace(/[$,]/g, '');
+                          setCurrencyInputValues(prev => ({ ...prev, [fieldKey]: e.target.value }));
+                          onUpdatePostTaxDeduction(personName, deduction.id, 'amount', parseFloat(rawValue) || 0);
+                        }}
+                        onFocus={() => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          handleCurrencyInputFocus(fieldKey, { [fieldKey]: deduction.amount });
+                        }}
+                        onBlur={() => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          handleCurrencyInputBlur(fieldKey, { [fieldKey]: deduction.amount }, formatDeductionDisplay);
+                        }}
+                        placeholder="$0.00"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => onRemovePostTaxDeduction(personName, deduction.id)}
+                      className="btn-danger btn-sm"
+                      title="Remove this post-tax deduction"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                
+                {(!medicalDeductions.additionalPostTaxDeductions || medicalDeductions.additionalPostTaxDeductions.length === 0) && (
+                  <div className="no-additional-post-tax-deductions">
+                    <p>No additional post-tax deductions added. Click "Add Post-Tax Deduction" to add your first one.</p>
+                  </div>
+                )}
               </div>
 
               {esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary)) && (

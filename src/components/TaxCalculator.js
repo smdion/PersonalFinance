@@ -47,7 +47,9 @@ const TaxCalculator = () => {
         shortTermDisability: 0,
         longTermDisability: 0,
         hsa: 0,
-        employerHsa: 0
+        employerHsa: 0,
+        additionalMedicalDeductions: [],
+        additionalPostTaxDeductions: []
       },
       esppDeductionPercent: 0,
       budgetImpacting: {
@@ -86,7 +88,9 @@ const TaxCalculator = () => {
         shortTermDisability: 0,
         longTermDisability: 0,
         hsa: 0,
-        employerHsa: 0
+        employerHsa: 0,
+        additionalMedicalDeductions: [],
+        additionalPostTaxDeductions: []
       },
       esppDeductionPercent: 0,
       budgetImpacting: {
@@ -756,6 +760,66 @@ const TaxCalculator = () => {
                 brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
               }));
             }}
+            onAddMedicalDeduction={(person) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: [
+                  ...(prev.additionalMedicalDeductions || []),
+                  {
+                    id: Date.now() + Math.random(),
+                    name: 'New Medical Deduction',
+                    amount: 0
+                  }
+                ]
+              }));
+            }}
+            onUpdateMedicalDeduction={(person, deductionId, field, value) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).map(deduction =>
+                  deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                )
+              }));
+            }}
+            onRemoveMedicalDeduction={(person, deductionId) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).filter(deduction => deduction.id !== deductionId)
+              }));
+            }}
+            onAddPostTaxDeduction={(person) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: [
+                  ...(prev.additionalPostTaxDeductions || []),
+                  {
+                    id: Date.now() + Math.random(),
+                    name: 'New Post-Tax Deduction',
+                    amount: 0
+                  }
+                ]
+              }));
+            }}
+            onUpdatePostTaxDeduction={(person, deductionId, field, value) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).map(deduction =>
+                  deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                )
+              }));
+            }}
+            onRemovePostTaxDeduction={(person, deductionId) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).filter(deduction => deduction.id !== deductionId)
+              }));
+            }}
             bonusMultiplier={bonusMultiplier}
             setBonusMultiplier={setBonusMultiplier}
             bonusTarget={bonusTarget}
@@ -835,6 +899,66 @@ const TaxCalculator = () => {
                 setSpouseBudgetImpacting(prev => ({
                   ...prev,
                   brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
+                }));
+              }}
+              onAddMedicalDeduction={(person) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: [
+                    ...(prev.additionalMedicalDeductions || []),
+                    {
+                      id: Date.now() + Math.random(),
+                      name: 'New Medical Deduction',
+                      amount: 0
+                    }
+                  ]
+                }));
+              }}
+              onUpdateMedicalDeduction={(person, deductionId, field, value) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).map(deduction =>
+                    deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                  )
+                }));
+              }}
+              onRemoveMedicalDeduction={(person, deductionId) => {
+                // Update local state immediately  
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).filter(deduction => deduction.id !== deductionId)
+                }));
+              }}
+              onAddPostTaxDeduction={(person) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: [
+                    ...(prev.additionalPostTaxDeductions || []),
+                    {
+                      id: Date.now() + Math.random(),
+                      name: 'New Post-Tax Deduction',
+                      amount: 0
+                    }
+                  ]
+                }));
+              }}
+              onUpdatePostTaxDeduction={(person, deductionId, field, value) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).map(deduction =>
+                    deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                  )
+                }));
+              }}
+              onRemovePostTaxDeduction={(person, deductionId) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).filter(deduction => deduction.id !== deductionId)
                 }));
               }}
               bonusMultiplier={spouseBonusMultiplier}
