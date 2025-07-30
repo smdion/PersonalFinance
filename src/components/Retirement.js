@@ -158,7 +158,8 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
         taxDeferred: yourProj.balances?.taxDeferred || 0,
         afterTax: yourProj.balances?.afterTax || 0,
         totalBalance: yourProj.totalBalance || 0,
-        returnRate: (yourProj.returnRate || 0) / 100
+        returnRate: (yourProj.returnRate || 0) / 100,
+        contributions: yourProj.contributions // Include full contributions object with breakdown
       };
     }
     
@@ -177,7 +178,8 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
         taxDeferred: spouseProj.balances?.taxDeferred || 0,
         afterTax: spouseProj.balances?.afterTax || 0,
         totalBalance: spouseProj.totalBalance || 0,
-        returnRate: (spouseProj.returnRate || 0) / 100
+        returnRate: (spouseProj.returnRate || 0) / 100,
+        contributions: spouseProj.contributions // Include full contributions object with breakdown
       };
     }
     

@@ -1785,7 +1785,7 @@ export const setPortfolioRecords = (records) => {
   return setToStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, records);
 };
 
-export const addPortfolioRecord = (accounts, updateDate = null) => {
+export const addPortfolioRecord = (accounts, updateDate = null, syncMode = 'balance-only') => {
   const records = getPortfolioRecords();
   const recordDate = updateDate || new Date().toISOString().split('T')[0];
   
@@ -1799,12 +1799,22 @@ export const addPortfolioRecord = (accounts, updateDate = null) => {
     year: dateForTimestamp.getFullYear(),
     month: dateForTimestamp.getMonth() + 1,
     accountsCount: accounts.length,
+    syncMode: syncMode, // Track whether this was a detailed or balance-only sync
+    syncTimestamp: new Date().toISOString(),
     accounts: accounts.map(acc => ({
       accountName: acc.accountName,
       owner: acc.owner,
       taxType: acc.taxType,
       accountType: acc.accountType,
+      investmentCompany: acc.investmentCompany,
+      description: acc.description,
       amount: parseFloat(acc.amount) || 0,
+      // Include detailed fields if available
+      contributions: acc.contributions ? parseFloat(acc.contributions) : undefined,
+      employerMatch: acc.employerMatch ? parseFloat(acc.employerMatch) : undefined,
+      gains: acc.gains ? parseFloat(acc.gains) : undefined,
+      fees: acc.fees ? parseFloat(acc.fees) : undefined,
+      withdrawals: acc.withdrawals ? parseFloat(acc.withdrawals) : undefined,
       updateDate: recordDate
     })),
     totals: {

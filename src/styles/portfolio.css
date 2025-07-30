@@ -946,6 +946,32 @@
 .record-details {
   font-size: 0.85rem;
   color: #64748b;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.sync-mode-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 0.5rem;
+}
+
+.sync-mode-badge.detailed {
+  background: #dcfce7;
+  color: #166534;
+  border: 1px solid #bbf7d0;
+}
+
+.sync-mode-badge.balance-only {
+  background: #dbeafe;
+  color: #1e40af;
+  border: 1px solid #93c5fd;
 }
 
 .record-totals {
@@ -983,11 +1009,40 @@
 .record-account {
   font-size: 0.85rem;
   color: #374151;
-  padding: 0.25rem 0;
+  padding: 0.5rem 0;
   border-bottom: 1px solid #e5e7eb;
   display: flex;
-  justify-content: space-between;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.account-main-info {
+  display: flex;
   align-items: center;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.account-company,
+.account-description {
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.account-detailed-info {
+  display: flex;
+  gap: 1rem;
+  font-size: 0.75rem;
+  color: #059669;
+  padding: 0.25rem 0.5rem;
+  background: #f0fdf4;
+  border-radius: 4px;
+  border: 1px solid #bbf7d0;
+  flex-wrap: wrap;
+}
+
+.account-detailed-info span {
+  font-weight: 500;
 }
 
 .record-account:last-child {

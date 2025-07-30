@@ -138,9 +138,38 @@ const Portfolio = () => {
       loadManualGroups();
     };
 
-    // Listen for portfolio inputs updates (from imports)
+    // Listen for portfolio inputs updates but preserve current financial data
     const handlePortfolioInputsUpdated = () => {
+      const currentFinancialData = {};
+      portfolioInputs.forEach((input) => {
+        currentFinancialData[input.id] = {
+          amount: input.amount || '',
+          contributions: input.contributions || '',
+          employerMatch: input.employerMatch || '',
+          gains: input.gains || '',
+          fees: input.fees || '',
+          withdrawals: input.withdrawals || ''
+        };
+      });
+      
       loadPortfolioInputs();
+      
+      // Restore financial data after loading
+      setTimeout(() => {
+        setPortfolioInputs(currentInputs => 
+          currentInputs.map(input => ({
+            ...input,
+            ...currentFinancialData[input.id] || {
+              amount: '',
+              contributions: '',
+              employerMatch: '',
+              gains: '',
+              fees: '',
+              withdrawals: ''
+            }
+          }))
+        );
+      }, 0);
     };
 
     window.addEventListener('resetAllData', handleResetAllData);
@@ -176,37 +205,36 @@ const Portfolio = () => {
   const loadPortfolioInputs = () => {
     const savedInputs = getPortfolioInputs();
     if (savedInputs.length > 0) {
-      // Ensure loaded inputs have empty amount fields (not persisted)
-      const inputsWithEmptyAmounts = savedInputs.map(input => ({
+      // Load account setup fields but always start with empty financial data
+      const inputsWithEmptyFinancialData = savedInputs.map(input => ({
         id: input.id || generateUniqueId(),
-        accountName: input.accountName || '',
         owner: input.owner || '',
         taxType: input.taxType || '',
         accountType: input.accountType || '',
         investmentCompany: input.investmentCompany || '',
         description: input.description || '',
-        amount: '', // Always start with empty amount - not persisted
-        contributions: input.contributions || '',
-        employerMatch: input.employerMatch || '',
-        gains: input.gains || '',
-        fees: input.fees || '',
-        withdrawals: input.withdrawals || '',
-        ...input // Preserve any other fields, but amount will be overridden
+        // Financial data always starts empty - never persisted
+        amount: '',
+        contributions: '',
+        employerMatch: '',
+        gains: '',
+        fees: '',
+        withdrawals: ''
       }));
-      setPortfolioInputs(inputsWithEmptyAmounts);
+      setPortfolioInputs(inputsWithEmptyFinancialData);
     }
   };
 
   // Wrapper to avoid naming conflict with state setter
-  // Excludes amount/balance values from persistence - only saves account definitions
+  // Excludes all financial data from persistence - only saves account setup fields
   const savePortfolioInputsToStorage = (inputs) => {
-    // Remove amount field before saving to localStorage
-    const inputsWithoutAmounts = inputs.map(input => {
-      const { amount, ...inputWithoutAmount } = input;
-      return inputWithoutAmount;
+    // Remove all financial data fields before saving to localStorage
+    const inputsWithoutFinancialData = inputs.map(input => {
+      const { amount, contributions, employerMatch, gains, fees, withdrawals, ...inputWithoutFinancialData } = input;
+      return inputWithoutFinancialData;
     });
     
-    const result = savePortfolioInputsToLocalStorage(inputsWithoutAmounts);
+    const result = savePortfolioInputsToLocalStorage(inputsWithoutFinancialData);
     return result;
   };
 
@@ -314,27 +342,26 @@ const Portfolio = () => {
         }]);
       }
     } else {
-      // Check if we have saved portfolio inputs, if not initialize with empty form
+      // Load saved account setup fields, but keep financial data empty
       const savedInputs = getPortfolioInputs();
       if (savedInputs.length > 0) {
-        // Ensure loaded inputs have empty amount fields (not persisted)
-        const inputsWithEmptyAmounts = savedInputs.map(input => ({
+        // Load account setup fields but always start with empty financial data
+        const inputsWithEmptyFinancialData = savedInputs.map(input => ({
           id: input.id || generateUniqueId(),
-          accountName: input.accountName || '',
-          owner: input.owner || '',
+          owner: input.owner || ownerOptions[0] || 'User',
           taxType: input.taxType || '',
           accountType: input.accountType || '',
           investmentCompany: input.investmentCompany || '',
           description: input.description || '',
-          amount: '', // Always start with empty amount - not persisted
-          contributions: input.contributions || '',
-          employerMatch: input.employerMatch || '',
-          gains: input.gains || '',
-          fees: input.fees || '',
-          withdrawals: input.withdrawals || '',
-          ...input // Preserve any other fields, but amount will be overridden
+          // Financial data always starts empty - never persisted
+          amount: '',
+          contributions: '',
+          employerMatch: '',
+          gains: '',
+          fees: '',
+          withdrawals: ''
         }));
-        setPortfolioInputs(inputsWithEmptyAmounts);
+        setPortfolioInputs(inputsWithEmptyFinancialData);
       } else if (portfolioInputs.length === 0) {
         // Initialize with empty form on first load
         setPortfolioInputs([{
@@ -432,8 +459,8 @@ const Portfolio = () => {
     
     setPortfolioInputs(updatedInputs);
     
-    // Save account definitions when non-amount fields change
-    if (field !== 'amount') {
+    // Save account setup fields when non-financial fields change
+    if (['owner', 'taxType', 'accountType', 'investmentCompany', 'description'].includes(field)) {
       savePortfolioInputsToStorage(updatedInputs);
     }
     
@@ -473,7 +500,7 @@ const Portfolio = () => {
       withdrawals: ''
     }];
     setPortfolioInputs(newInputs);
-    // Save account definitions (without amounts) when adding accounts
+    // Save account setup fields when adding accounts
     savePortfolioInputsToStorage(newInputs);
   };
 
@@ -500,7 +527,7 @@ const Portfolio = () => {
       
       const updatedInputs = portfolioInputs.filter((_, i) => i !== index);
       setPortfolioInputs(updatedInputs);
-      // Save account definitions (without amounts) when removing accounts
+      // Save account setup fields when removing accounts
       savePortfolioInputsToStorage(updatedInputs);
       
       // Remove errors for this input
@@ -710,10 +737,10 @@ const Portfolio = () => {
         
         
         // Add portfolio record with current date (with generated names)
-        addPortfolioRecord(portfolioDataWithNames);
+        const updateType = showExpandedFields ? 'detailed' : 'balance-only';
+        addPortfolioRecord(portfolioDataWithNames, null, updateType);
         
         // Automatically sync portfolio balances to performance (background sync)
-        const updateType = showExpandedFields ? 'detailed' : 'balance-only';
         const syncResult = syncPortfolioBalanceToPerformance(portfolioDataWithNames, updateType);
         
         // Also update performance accounts to only show latest portfolio accounts
@@ -1006,7 +1033,8 @@ const Portfolio = () => {
     
     // Create records for each date group
     Object.entries(dateGroups).forEach(([date, accounts]) => {
-      addPortfolioRecord(accounts, date);
+      const importSyncMode = showExpandedFields ? 'detailed' : 'balance-only';
+      addPortfolioRecord(accounts, date, importSyncMode);
     });
     
     // Refresh records display
@@ -2031,6 +2059,11 @@ const Portfolio = () => {
                         <strong>{record.updateDate}</strong>
                         <span className="record-details">
                           {record.accountsCount} accounts • {formatCurrency(record.totalAmount)} total
+                          {record.syncMode && (
+                            <span className={`sync-mode-badge ${record.syncMode === 'detailed' ? 'detailed' : 'balance-only'}`}>
+                              {record.syncMode === 'detailed' ? '📊 Detailed' : '⚡ Balance Only'}
+                            </span>
+                          )}
                         </span>
                       </div>
                       <button 
@@ -2058,7 +2091,20 @@ const Portfolio = () => {
                       <div className="record-accounts-list">
                         {record.accounts.map((acc, idx) => (
                           <div key={idx} className="record-account">
-                            <strong>{acc.accountName}</strong> ({acc.owner}) - {acc.taxType} - {formatCurrency(acc.amount)}
+                            <div className="account-main-info">
+                              <strong>{acc.accountName}</strong> ({acc.owner}) - {acc.taxType} - {formatCurrency(acc.amount)}
+                              {acc.investmentCompany && <span className="account-company"> • {acc.investmentCompany}</span>}
+                              {acc.description && <span className="account-description"> • {acc.description}</span>}
+                            </div>
+                            {record.syncMode === 'detailed' && (acc.contributions || acc.employerMatch || acc.gains || acc.fees || acc.withdrawals) && (
+                              <div className="account-detailed-info">
+                                {acc.contributions && <span>Contributions: {formatCurrency(acc.contributions)}</span>}
+                                {acc.employerMatch && <span>Match: {formatCurrency(acc.employerMatch)}</span>}
+                                {acc.gains && <span>Gains: {formatCurrency(acc.gains)}</span>}
+                                {acc.fees && <span>Fees: {formatCurrency(acc.fees)}</span>}
+                                {acc.withdrawals && <span>Withdrawals: {formatCurrency(acc.withdrawals)}</span>}
+                              </div>
+                            )}
                             <span className="account-update-date">Updated: {acc.updateDate}</span>
                           </div>
                         ))}
