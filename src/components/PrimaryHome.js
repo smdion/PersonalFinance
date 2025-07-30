@@ -1161,15 +1161,6 @@ const PrimaryHome = () => {
           </div>
         )}
 
-        {/* Save Button */}
-        <div className="form-actions">
-          <button type="button" onClick={() => saveData(false)} className="btn-primary">
-            💾 Save Primary Home Data
-          </button>
-          <p style={{ fontSize: '12px', color: '#666', marginTop: '8px', textAlign: 'center' }}>
-            ✨ Auto-save enabled - Changes are automatically saved as you type
-          </p>
-        </div>
       </div>
     </>
   );

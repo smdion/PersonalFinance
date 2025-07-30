@@ -357,7 +357,7 @@ const Navigation = () => {
         {/* Mobile Menu Controls */}
         <div className="nav-controls">
           {/* Page Controls - only show on relevant pages */}
-          {(location.pathname === '/paycheck' || location.pathname === '/budget' || location.pathname === '/retirement' || location.pathname === '/contributions') && (
+          {(location.pathname === '/paycheck' || location.pathname === '/budget' || location.pathname === '/retirement' || location.pathname === '/contributions' || location.pathname === '/raw-data' || location.pathname === '/performance') && (
             <div className="page-controls">
               {location.pathname === '/paycheck' && (
                 <>
@@ -396,6 +396,24 @@ const Navigation = () => {
                 </button>
               )}
               {location.pathname === '/contributions' && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  className="page-control-button dual-calc"
+                  title="Toggle dual calculator mode"
+                >
+                  👫
+                </button>
+              )}
+              {location.pathname === '/raw-data' && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  className="page-control-button dual-calc"
+                  title="Toggle dual calculator mode"
+                >
+                  👫
+                </button>
+              )}
+              {location.pathname === '/performance' && (
                 <button
                   onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
                   className="page-control-button dual-calc"

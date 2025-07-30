@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo } from 'react';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, getHistoricalData, getRetirementData, setRetirementData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData } from '../utils/localStorage';
 import { formatCurrency, calculateAge } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
 
@@ -255,12 +255,27 @@ const Retirement = () => {
     saveRetirementData(newData);
   };
 
-  // Load spouse calculator setting from localStorage
+  // Load spouse calculator setting from paycheck data (master source)
   useEffect(() => {
-    const savedData = getRetirementData();
-    if (savedData?.settings?.showSpouseCalculator !== undefined) {
-      setShowSpouseCalculator(savedData.settings.showSpouseCalculator);
+    const paycheckData = getPaycheckData();
+    if (paycheckData?.settings?.showSpouseCalculator !== undefined) {
+      setShowSpouseCalculator(paycheckData.settings.showSpouseCalculator);
     }
+  }, []);
+
+  // Listen for paycheck data updates to sync spouse calculator toggle
+  useEffect(() => {
+    const handlePaycheckDataUpdate = (event) => {
+      const updatedData = event.detail || getPaycheckData();
+      if (updatedData?.settings?.showSpouseCalculator !== undefined) {
+        setShowSpouseCalculator(updatedData.settings.showSpouseCalculator);
+      }
+    };
+
+    window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+    return () => {
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
+    };
   }, []);
 
   // Event listener for navigation dual calculator toggle
@@ -268,15 +283,21 @@ const Retirement = () => {
     const handleToggleDualCalculator = () => {
       setShowSpouseCalculator(prev => {
         const newValue = !prev;
-        // Update the saved settings
-        const newData = {
-          ...retirementDataState,
+        
+        // Update the paycheck data settings (master source)
+        const currentPaycheckData = getPaycheckData();
+        const updatedPaycheckData = {
+          ...currentPaycheckData,
           settings: {
-            ...(retirementDataState.settings || {}),
+            ...currentPaycheckData.settings,
             showSpouseCalculator: newValue
           }
         };
-        saveRetirementData(newData);
+        
+        // Save to paycheck data and notify other components
+        setPaycheckData(updatedPaycheckData);
+        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedPaycheckData }));
+        
         return newValue;
       });
     };

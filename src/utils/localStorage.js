@@ -50,12 +50,7 @@ export const getFromStorage = (key, defaultValue = null) => {
 export const setToStorage = (key, value) => {
   try {
     const jsonString = JSON.stringify(value);
-    console.log(`🔧 setToStorage: Writing to localStorage (${key}):`, value);
     localStorage.setItem(key, jsonString);
-    
-    // Verify the data was actually stored
-    const storedValue = localStorage.getItem(key);
-    console.log(`🔧 setToStorage: Verification - stored value for (${key}):`, storedValue ? JSON.parse(storedValue) : null);
     
     return true;
   } catch (error) {
@@ -343,6 +338,28 @@ export const setPerformanceSyncSettings = (settings) => {
   return setAppSettings(updatedSettings);
 };
 
+// Read-only override settings utilities
+export const getReadOnlyOverrideSettings = () => {
+  const appSettings = getAppSettings();
+  return {
+    disableReadOnlyMode: appSettings.disableReadOnlyMode ?? false,
+    ...appSettings.readOnlyOverride
+  };
+};
+
+export const setReadOnlyOverrideSettings = (settings) => {
+  const appSettings = getAppSettings();
+  const updatedSettings = {
+    ...appSettings,
+    disableReadOnlyMode: settings.disableReadOnlyMode,
+    readOnlyOverride: {
+      ...appSettings.readOnlyOverride,
+      ...settings
+    }
+  };
+  return setAppSettings(updatedSettings);
+};
+
 export const getHistoricalDataWithNameMapping = () => {
   try {
     const data = getFromStorage(STORAGE_KEYS.HISTORICAL_DATA, {});
@@ -516,6 +533,148 @@ export const exportAllLocalStorageData = () => {
   return allData;
 };
 
+// Export all localStorage data with dual calculator filtering
+export const exportAllLocalStorageDataFiltered = () => {
+  const timestamp = new Date().toISOString();
+  const allData = {
+    exportedAt: timestamp,
+    version: '2.0.0',
+    dataSource: 'localStorage-filtered'
+  };
+  
+  // First, get paycheck data to check dual calculator setting
+  const paycheckData = getPaycheckData();
+  const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+  
+  // Get user names for filtering
+  const userNames = [];
+  if (paycheckData?.your?.name?.trim()) {
+    userNames.push(paycheckData.your.name.trim());
+  }
+  if (isDualMode && paycheckData?.spouse?.name?.trim()) {
+    userNames.push(paycheckData.spouse.name.trim());
+  }
+  
+  // Export all known storage keys with filtering
+  Object.entries(STORAGE_KEYS).forEach(([keyName, storageKey]) => {
+    let data = getFromStorage(storageKey, null);
+    
+    // Apply filtering to historical and performance data if dual mode is disabled
+    if (!isDualMode && data !== null) {
+      if (storageKey === 'historicalData') {
+        data = filterHistoricalDataForSingleMode(data, userNames[0]);
+      } else if (storageKey === 'performanceData') {
+        data = filterPerformanceDataForSingleMode(data, userNames[0]);
+      }
+    }
+    
+    if (data !== null) {
+      allData[storageKey] = data;
+    }
+  });
+  
+  // Export additional localStorage keys not in STORAGE_KEYS
+  const additionalKeys = [
+    'nameMapping',
+    'hasSeenBetaWelcome'
+  ];
+  
+  additionalKeys.forEach(key => {
+    const data = getFromStorage(key, null);
+    if (data !== null) {
+      allData[key] = data;
+    }
+  });
+  
+  // Export ALL localStorage items (catch any we might have missed)
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && !Object.values(STORAGE_KEYS).includes(key) && !additionalKeys.includes(key)) {
+        try {
+          const value = localStorage.getItem(key);
+          if (value) {
+            try {
+              allData[key] = JSON.parse(value);
+            } catch {
+              allData[key] = value;
+            }
+          }
+        } catch (error) {
+          console.warn(`Could not export localStorage key: ${key}`, error);
+        }
+      }
+    }
+  } catch (error) {
+    console.warn('Could not iterate through all localStorage keys:', error);
+  }
+  
+  return allData;
+};
+
+// Helper function to filter historical data for single mode
+const filterHistoricalDataForSingleMode = (historicalData, primaryUserName) => {
+  if (!historicalData || typeof historicalData !== 'object') return historicalData;
+  
+  const filteredData = {};
+  
+  Object.entries(historicalData).forEach(([year, yearData]) => {
+    if (yearData && typeof yearData === 'object' && yearData.users) {
+      // Filter out user data that isn't the primary user or Joint
+      const filteredUsers = {};
+      Object.entries(yearData.users).forEach(([userName, userData]) => {
+        if (userName === primaryUserName) {
+          filteredUsers[userName] = userData;
+        }
+        // Note: Joint data is excluded in single mode
+      });
+      
+      filteredData[year] = {
+        ...yearData,
+        users: filteredUsers
+      };
+    } else {
+      // Keep non-user data as-is
+      filteredData[year] = yearData;
+    }
+  });
+  
+  return filteredData;
+};
+
+// Helper function to filter performance data for single mode
+const filterPerformanceDataForSingleMode = (performanceData, primaryUserName) => {
+  if (!performanceData || typeof performanceData !== 'object') return performanceData;
+  
+  const filteredData = {};
+  
+  Object.entries(performanceData).forEach(([entryId, entry]) => {
+    if (entry && typeof entry === 'object' && entry.users) {
+      // Filter out user data that isn't the primary user or Joint
+      const filteredUsers = {};
+      Object.entries(entry.users).forEach(([userName, userData]) => {
+        if (userName === primaryUserName) {
+          filteredUsers[userName] = userData;
+        }
+        // Note: Joint data is excluded in single mode
+      });
+      
+      // Only include entries that have remaining user data
+      if (Object.keys(filteredUsers).length > 0) {
+        filteredData[entryId] = {
+          ...entry,
+          users: filteredUsers
+        };
+      }
+    } else {
+      // Keep non-user entries as-is
+      filteredData[entryId] = entry;
+    }
+  });
+  
+  return filteredData;
+};
+
 // Generate CSV export for specific data types
 export const generateDataCSV = (dataKey, customHeaders = null, customFormatter = null) => {
   const data = getFromStorage(dataKey, null);
@@ -620,13 +779,24 @@ export const exportAllAsCSV = () => {
     }
   }
   
-  // Performance Data CSV
+  // Performance Data CSV - filtered based on dual calculator setting
   const performanceData = getPerformanceData();
+  const paycheckData = getPaycheckData();
+  const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+  const primaryUserName = paycheckData?.your?.name?.trim();
+  
   if (Object.keys(performanceData).length > 0) {
     const performanceRows = [];
     Object.values(performanceData).forEach(entry => {
       if (entry.users) {
         Object.entries(entry.users).forEach(([owner, userData]) => {
+          // Filter users based on dual calculator setting
+          if (!isDualMode) {
+            // In single mode, only show primary user data
+            if (owner !== primaryUserName) {
+              return; // Skip this user
+            }
+          }
           performanceRows.push({
             year: entry.year || '',
             owner: owner,
@@ -668,7 +838,7 @@ export const exportAllAsCSV = () => {
     }
   }
   
-  // Historical Data CSV
+  // Historical Data CSV - filtered based on dual calculator setting
   const historicalData = getHistoricalData();
   if (Object.keys(historicalData).length > 0) {
     const historicalRows = [];
@@ -685,9 +855,16 @@ export const exportAllAsCSV = () => {
         cash: yearData.cash || 0
       });
       
-      // Add individual user rows
+      // Add individual user rows - filtered based on dual calculator setting
       if (yearData.users) {
         Object.entries(yearData.users).forEach(([owner, userData]) => {
+          // Filter users based on dual calculator setting
+          if (!isDualMode) {
+            // In single mode, only show primary user data
+            if (owner !== primaryUserName) {
+              return; // Skip this user
+            }
+          }
           historicalRows.push({
             year: year,
             owner: owner,
@@ -967,7 +1144,15 @@ export const importAllData = (importData) => {
     
     if (importData.historicalData !== undefined || importData.historical_data !== undefined) {
       // Clean empty user data before importing
-      const cleanedHistoricalData = cleanEmptyUserData(importData.historicalData || importData.historical_data);
+      let cleanedHistoricalData = cleanEmptyUserData(importData.historicalData || importData.historical_data);
+      
+      // Apply dual calculator filtering if single mode is enabled
+      const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
+      const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
+      if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
+        cleanedHistoricalData = filterHistoricalDataForSingleMode(cleanedHistoricalData, currentPaycheckData.your.name.trim());
+      }
+      
       setHistoricalData(cleanedHistoricalData);
       importedSections.push('Historical Data');
     }
@@ -984,7 +1169,14 @@ export const importAllData = (importData) => {
       }
       
       // Clean empty user data before importing
-      const cleanedPerformanceData = cleanEmptyUserData(performanceDataToImport);
+      let cleanedPerformanceData = cleanEmptyUserData(performanceDataToImport);
+      
+      // Apply dual calculator filtering if single mode is enabled
+      const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
+      const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
+      if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
+        cleanedPerformanceData = filterPerformanceDataForSingleMode(cleanedPerformanceData, currentPaycheckData.your.name.trim());
+      }
       
       const result = setPerformanceData(cleanedPerformanceData);
       if (result) {
@@ -1269,8 +1461,8 @@ import { generateDataFilename } from './calculationHelpers';
 // Export all data with descriptive timestamp filename
 export const exportAllDataWithTimestamp = () => {
   try {
-    // Use the comprehensive export function
-    const allData = exportAllLocalStorageData();
+    // Use the filtered export function that respects dual calculator toggle
+    const allData = exportAllLocalStorageDataFiltered();
 
     // Get user names from paycheck data for filename
     const paycheckData = getPaycheckData();

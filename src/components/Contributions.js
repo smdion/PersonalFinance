@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
-import { getPaycheckData, getPerformanceData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getPerformanceData } from '../utils/localStorage';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { 
   formatCurrency, 
@@ -28,11 +28,21 @@ const Contributions = () => {
     const performanceData = getPerformanceData();
     setPaycheckData(paycheckData);
     setPerformanceData(performanceData);
+    
+    // Load spouse calculator setting from paycheck data
+    if (paycheckData?.settings?.showSpouseCalculator !== undefined) {
+      setShowSpouseCalculator(paycheckData.settings.showSpouseCalculator);
+    }
 
     // Listen for data updates
-    const handlePaycheckUpdate = () => {
-      const updatedData = getPaycheckData();
+    const handlePaycheckUpdate = (event) => {
+      const updatedData = event.detail || getPaycheckData();
       setPaycheckData(updatedData);
+      
+      // Sync spouse calculator toggle
+      if (updatedData?.settings?.showSpouseCalculator !== undefined) {
+        setShowSpouseCalculator(updatedData.settings.showSpouseCalculator);
+      }
     };
 
     const handlePerformanceUpdate = () => {
@@ -52,7 +62,25 @@ const Contributions = () => {
   // Event listener for navigation dual calculator toggle
   useEffect(() => {
     const handleToggleDualCalculator = () => {
-      setShowSpouseCalculator(prev => !prev);
+      setShowSpouseCalculator(prev => {
+        const newValue = !prev;
+        
+        // Update the paycheck data settings (master source)
+        const currentPaycheckData = getPaycheckData();
+        const updatedPaycheckData = {
+          ...currentPaycheckData,
+          settings: {
+            ...currentPaycheckData.settings,
+            showSpouseCalculator: newValue
+          }
+        };
+        
+        // Save to paycheck data and notify other components
+        setPaycheckData(updatedPaycheckData);
+        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedPaycheckData }));
+        
+        return newValue;
+      });
     };
 
     window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
@@ -155,18 +183,10 @@ const Contributions = () => {
 
       // Calculate YTD and projected contributions using actual pay periods
       const payPeriod = person.payPeriod || 'biWeekly';
-
-      // Calculate per-paycheck amounts needed to max out contributions for remaining year (for YTD mode)
-      const maxOutAmounts = ytdContributions ? 
-        calculateMaxOutPerPaycheckAmounts(
-          remainingRoom,
-          person.incomePeriodsData,
-          salary,
-          payPeriod,
-          age,
-          person.hsaCoverageType
-        ) : null;
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+      
+      // Initialize maxOutAmounts at function scope
+      let maxOutAmounts = null;
 
       // 401k calculations - from retirementOptions
       const retirementOptions = person.retirementOptions || {};
@@ -312,65 +332,78 @@ const Contributions = () => {
         const ytd401k = ytdContributions.total401k || 0;
         const ytdEmployerMatch = ytdContributions.totalEmployerMatch || 0;
         
-        // Calculate remaining pay periods starting from next month
+        // Calculate remaining pay periods starting from now
         const today = new Date();
-        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, 1); // Start of next month
-        const endOfYear = new Date(today.getFullYear(), 11, 31);
+        const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59); // End of Dec 31st
         let remainingPaychecks;
         
         // Helper function to calculate pay periods between dates
         const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
           const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
-          const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
+          
+          // Simple day-based calculation
+          const millisecondsPerDay = 24 * 60 * 60 * 1000;
           const timeDifferenceMs = endDate - startDate;
-          const yearsSpanned = timeDifferenceMs / millisecondsInYear;
-          return yearsSpanned * periodsPerYear;
+          const daysDifference = timeDifferenceMs / millisecondsPerDay;
+          const daysPerPeriod = 365.25 / periodsPerYear; // Days per pay period
+          const result = daysDifference / daysPerPeriod;
+          
+          
+          return Math.max(0, result); // Ensure we don't return negative values
         };
         
-        if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-          // Use income periods data to calculate precise remaining paychecks from next month
-          const lastPeriod = person.incomePeriodsData.sort((a, b) => new Date(b.endDate) - new Date(a.endDate))[0];
-          if (lastPeriod) {
-            const lastEndDate = new Date(lastPeriod.endDate);
-            if (lastEndDate < endOfYear) {
-              // Calculate remaining pay periods starting from next month or after last period, whichever is later
-              const startDate = lastEndDate > nextMonth ? new Date(lastEndDate.getTime() + 24*60*60*1000) : nextMonth;
-              remainingPaychecks = calculatePayPeriodsBetweenDates(startDate, endOfYear, payPeriod);
-            } else {
-              remainingPaychecks = 0;
-            }
-          } else {
-            // Calculate from next month to end of year
-            remainingPaychecks = calculatePayPeriodsBetweenDates(nextMonth, endOfYear, payPeriod);
-          }
-        } else {
-          // Use time-based calculation from next month to end of year
-          remainingPaychecks = calculatePayPeriodsBetweenDates(nextMonth, endOfYear, payPeriod);
-        }
+        // Always calculate from today to end of year - simplify the logic
+        remainingPaychecks = calculatePayPeriodsBetweenDates(today, endOfYear, payPeriod);
         
         // Calculate projected contributions for remaining pay periods only
+        // Use the same settings as Annual Settings View (paycheck calculator settings)
         const grossPayPerPaycheck = salary / periodsPerYear;
         const projected401k = grossPayPerPaycheck * remainingPaychecks * (total401kPercent / 100);
         const projectedEmployerMatch = grossPayPerPaycheck * remainingPaychecks * (employerMatch / 100);
         
+        
         // IRA breakdown
         const ytdIra = ytdContributions.totalIra || 0;
-        const monthsRemaining = Math.max(0, 12 - today.getMonth() - 1); // Start from next month
+        // Calculate remaining months starting from beginning of next month
+        const monthsRemaining = Math.max(0, 12 - today.getMonth() - 1); // Remaining months starting next month
         const projectedIra = (traditionalIra + rothIra) * monthsRemaining;
+        
         
         // HSA breakdown
         const ytdHsa = ytdContributions.hsa || 0;
-        // Calculate projected HSA contributions for remaining pay periods only
+        // Calculate projected HSA contributions for remaining pay periods using settings
         const projectedHsa = hsaContributionPerPaycheck * remainingPaychecks;
         
         // ESPP breakdown
         const ytdEspp = ytdContributions.espp || 0;
-        // Calculate projected ESPP contributions for remaining pay periods only
+        // Calculate projected ESPP contributions for remaining pay periods using settings
         const projectedEspp = grossPayPerPaycheck * remainingPaychecks * (esppPercent / 100);
+        
         
         // Brokerage breakdown
         const ytdBrokerage = ytdContributions.brokerage || 0;
         const projectedBrokerage = brokerageMonthly * monthsRemaining;
+        
+        // Calculate per-paycheck amounts needed to max out contributions for remaining year (for YTD mode)
+        // Use the same logic as standardMaxOutAmounts but with YTD data
+        if (ytdContributions) {
+          // Calculate projected totals (YTD + remaining at current settings)
+          // For 401k, only count EMPLOYEE contributions towards IRS limit (not employer match)
+          const totalProjected401kEmployee = ytd401k + projected401k; // Only employee contributions
+          const totalProjectedIra = ytdIra + projectedIra;
+          const totalProjectedHsa = ytdHsa + projectedHsa;
+          
+          maxOutAmounts = {
+            k401_perPaycheck: {
+              amount: remainingPaychecks > 0 ? Math.max(0, (max401k - totalProjected401kEmployee) / remainingPaychecks) : 0,
+              percent: salary > 0 && remainingPaychecks > 0 ? Math.max(0, ((max401k - totalProjected401kEmployee) / remainingPaychecks) / (salary / periodsPerYear) * 100) : 0
+            },
+            ira_perMonth: monthsRemaining > 0 ? Math.max(0, (maxIra - totalProjectedIra) / monthsRemaining) : 0,
+            hsa_perPaycheck: remainingPaychecks > 0 ? Math.max(0, (maxHsa - totalProjectedHsa) / remainingPaychecks) : 0,
+            remainingPaychecks: remainingPaychecks,
+            remainingMonths: monthsRemaining
+          };
+        }
         
         ytdBreakdown = {
           k401: {
@@ -384,7 +417,7 @@ const Contributions = () => {
             totalEmployer: ytdEmployerMatch + projectedEmployerMatch,
             totalCombined: ytd401k + projected401k + ytdEmployerMatch + projectedEmployerMatch,
             limit: max401k,
-            remaining: max401k - (ytd401k + projected401k)
+            remaining: max401k - (ytd401k + projected401k) // Only employee contributions count towards IRS limit
           },
           ira: {
             ytd: ytdIra,
@@ -844,7 +877,7 @@ const Contributions = () => {
         )}
 
         {/* Grand Total */}
-        <div className="contributions-household-section">
+        <div className="contributions-household-section contributions-grand-total-section">
           <h4>Total Annual Contributions</h4>
           <div className="contributions-household-grid">
             <div className="contributions-household-item grand-total">
@@ -878,32 +911,38 @@ const Contributions = () => {
             {isOverLimit && <span className="contributions-warning-icon" title="Exceeds IRS annual limit">⚠️</span>}
           </h4>
           <div className="contributions-contribution-grid breakdown-mode">
-            {/* YTD Contributions */}
-            <div className="contributions-contribution-header">YTD Contributions Made</div>
-            {breakdown.ytdEmployee !== undefined ? (
+            {/* YTD Contributions - only show in Progress + Forecast View */}
+            {calculationMode === 'ytd' && (
               <>
-                <div className="contributions-contribution-item">
-                  <span className="label">Employee:</span>
-                  <span className="value">{formatCurrency(breakdown.ytdEmployee)}</span>
-                </div>
-                <div className="contributions-contribution-item">
-                  <span className="label">Employer:</span>
-                  <span className="value">{formatCurrency(breakdown.ytdEmployer)}</span>
-                </div>
-                <div className="contributions-contribution-item">
-                  <span className="label">YTD Total:</span>
-                  <span className="value total">{formatCurrency(breakdown.ytdTotal)}</span>
-                </div>
+                <div className="contributions-contribution-header">YTD Contributions Made</div>
+                {breakdown.ytdEmployee !== undefined ? (
+                  <>
+                    <div className="contributions-contribution-item">
+                      <span className="label">Employee:</span>
+                      <span className="value">{formatCurrency(breakdown.ytdEmployee)}</span>
+                    </div>
+                    <div className="contributions-contribution-item">
+                      <span className="label">Employer:</span>
+                      <span className="value">{formatCurrency(breakdown.ytdEmployer)}</span>
+                    </div>
+                    <div className="contributions-contribution-item">
+                      <span className="label">YTD Total:</span>
+                      <span className="value total">{formatCurrency(breakdown.ytdTotal)}</span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="contributions-contribution-item">
+                    <span className="label">YTD Total:</span>
+                    <span className="value total">{formatCurrency(breakdown.ytd)}</span>
+                  </div>
+                )}
               </>
-            ) : (
-              <div className="contributions-contribution-item">
-                <span className="label">YTD Total:</span>
-                <span className="value total">{formatCurrency(breakdown.ytd)}</span>
-              </div>
             )}
 
             {/* Projected Remaining */}
-            <div className="contributions-contribution-header">Projected Remaining</div>
+            <div className="contributions-contribution-header">
+              {calculationMode === 'ytd' ? 'Projected Remaining' : 'Annual Projection'}
+            </div>
             {breakdown.projectedEmployee !== undefined ? (
               <>
                 <div className="contributions-contribution-item">
@@ -926,34 +965,38 @@ const Contributions = () => {
               </div>
             )}
 
-            {/* Annual Total */}
-            <div className="contributions-contribution-header">Annual Total (YTD + Projected)</div>
-            {breakdown.totalEmployee !== undefined ? (
+            {/* Annual Total - only show in Progress + Forecast View */}
+            {calculationMode === 'ytd' && (
               <>
-                <div className="contributions-contribution-item">
-                  <span className="label">Employee:</span>
-                  <span className="value">{formatCurrency(breakdown.totalEmployee)}</span>
-                </div>
-                <div className="contributions-contribution-item">
-                  <span className="label">Employer:</span>
-                  <span className="value">{formatCurrency(breakdown.totalEmployer)}</span>
-                </div>
-                <div className="contributions-contribution-item">
-                  <span className="label">Combined Total:</span>
-                  <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
-                    {formatCurrency(breakdown.totalCombined)}
-                    {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
-                  </span>
-                </div>
+                <div className="contributions-contribution-header">Annual Total (Progress + Forecast)</div>
+                {breakdown.totalEmployee !== undefined ? (
+                  <>
+                    <div className="contributions-contribution-item">
+                      <span className="label">Employee:</span>
+                      <span className="value">{formatCurrency(breakdown.totalEmployee)}</span>
+                    </div>
+                    <div className="contributions-contribution-item">
+                      <span className="label">Employer:</span>
+                      <span className="value">{formatCurrency(breakdown.totalEmployer)}</span>
+                    </div>
+                    <div className="contributions-contribution-item">
+                      <span className="label">Combined Total:</span>
+                      <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
+                        {formatCurrency(breakdown.totalCombined)}
+                        {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className="contributions-contribution-item">
+                    <span className="label">Annual Total:</span>
+                    <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
+                      {formatCurrency(breakdown.total)}
+                      {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
+                    </span>
+                  </div>
+                )}
               </>
-            ) : (
-              <div className="contributions-contribution-item">
-                <span className="label">Annual Total:</span>
-                <span className={`value total highlight ${isOverLimit ? 'contributions-limit-exceeded' : ''}`}>
-                  {formatCurrency(breakdown.total)}
-                  {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
-                </span>
-              </div>
             )}
 
             {/* IRS Limit */}
@@ -987,26 +1030,66 @@ const Contributions = () => {
                           {accountType === 'k401' && (
                             <>
                               <div className="contributions-contribution-item">
-                                <span className="label">Per Paycheck (Dollar):</span>
-                                <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.k401_perPaycheck.amount))}</span>
+                                <span className="label">Add (Percent):</span>
+                                <span className="value opportunity">{Math.max(0, maxOutData.k401_perPaycheck.percent).toFixed(1)}%</span>
                               </div>
                               <div className="contributions-contribution-item">
-                                <span className="label">Per Paycheck (Percent):</span>
-                                <span className="value opportunity">{Math.max(0, maxOutData.k401_perPaycheck.percent).toFixed(1)}%</span>
+                                <span className="label">Total Needed (Percent):</span>
+                                <span className="value opportunity">{(() => {
+                                  // Calculate current percent from the breakdown data
+                                  const currentAnnual401k = calculationMode === 'ytd' ? 
+                                    (breakdown.totalEmployee || 0) : 
+                                    (breakdown.projectedEmployee || breakdown.total || 0);
+                                  const currentPercent = person.salary > 0 ? (currentAnnual401k / person.salary) * 100 : 0;
+                                  const totalNeededPercent = currentPercent + Math.max(0, maxOutData.k401_perPaycheck.percent);
+                                  
+                                  return totalNeededPercent.toFixed(1);
+                                })()}%</span>
                               </div>
                             </>
                           )}
                           {accountType === 'ira' && (
-                            <div className="contributions-contribution-item">
-                              <span className="label">Per Month:</span>
-                              <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.ira_perMonth))}</span>
-                            </div>
+                            <>
+                              <div className="contributions-contribution-item">
+                                <span className="label">Add Per Month:</span>
+                                <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.ira_perMonth))}</span>
+                              </div>
+                              <div className="contributions-contribution-item">
+                                <span className="label">Total Needed Per Month:</span>
+                                <span className="value opportunity">{(() => {
+                                  // Calculate current monthly from the breakdown data
+                                  const currentAnnualIra = calculationMode === 'ytd' ? 
+                                    (breakdown.totalEmployee || breakdown.total || 0) : 
+                                    (breakdown.projected || breakdown.total || 0);
+                                  const currentMonthly = currentAnnualIra / 12;
+                                  const totalNeeded = currentMonthly + Math.max(0, maxOutData.ira_perMonth);
+                                  
+                                  return formatCurrency(totalNeeded);
+                                })()}</span>
+                              </div>
+                            </>
                           )}
                           {accountType === 'hsa' && (
-                            <div className="contributions-contribution-item">
-                              <span className="label">Per Paycheck:</span>
-                              <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.hsa_perPaycheck))}</span>
-                            </div>
+                            <>
+                              <div className="contributions-contribution-item">
+                                <span className="label">Add Per Paycheck:</span>
+                                <span className="value opportunity">{formatCurrency(Math.max(0, maxOutData.hsa_perPaycheck))}</span>
+                              </div>
+                              <div className="contributions-contribution-item">
+                                <span className="label">Total Needed Per Paycheck:</span>
+                                <span className="value opportunity">{(() => {
+                                  // Calculate current per-paycheck from the breakdown data
+                                  const currentAnnualHsa = calculationMode === 'ytd' ? 
+                                    (breakdown.totalEmployee || breakdown.total || 0) : 
+                                    (breakdown.projected || breakdown.total || 0);
+                                  const periodsPerYear = PAY_PERIODS[person.payPeriod || 'biWeekly'].periodsPerYear;
+                                  const currentPerPaycheck = currentAnnualHsa / periodsPerYear;
+                                  const totalNeeded = currentPerPaycheck + Math.max(0, maxOutData.hsa_perPaycheck);
+                                  
+                                  return formatCurrency(totalNeeded);
+                                })()}</span>
+                              </div>
+                            </>
                           )}
                         </>
                       );
@@ -1025,13 +1108,9 @@ const Contributions = () => {
         <h3>{person.name}</h3>
         <div className="contributions-person-details">
           <div className="contributions-salary">
-            <strong>Annual Salary:</strong> {formatCurrency(person.salary)}
+            <strong>Annual Salary:</strong> {activePersonTab === 'ytd' && person.effectiveAGI !== person.salary ? formatCurrency(person.effectiveAGI) : formatCurrency(person.salary)}
+            {activePersonTab === 'ytd' && person.effectiveAGI !== person.salary && <span className="contributions-agi-note"> (Progress + Forecast)</span>}
           </div>
-          {person.effectiveAGI !== person.salary && (
-            <div className="contributions-effective-agi">
-              <strong>Effective AGI (YTD + Projected):</strong> {formatCurrency(person.effectiveAGI)}
-            </div>
-          )}
           <div className="contributions-age">
             <strong>Age:</strong> {person.age}
           </div>
@@ -1174,6 +1253,30 @@ const Contributions = () => {
           <p>Compare your Annual Settings View (full-year projections) with Progress + Forecast View (actual contributions + remaining forecast)</p>
         </div>
 
+        {/* Floating Tab Navigation */}
+        <div className="contributions-floating-nav">
+          <div className="contributions-floating-tab-navigation">
+            <button 
+              className={`contributions-floating-tab-button ${activeTab === 'standard' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('standard');
+                setActivePersonTab('standard');
+              }}
+            >
+              📊 Annual Settings View
+            </button>
+            <button 
+              className={`contributions-floating-tab-button ${activeTab === 'ytd' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('ytd');
+                setActivePersonTab('ytd');
+              }}
+            >
+              📈 Progress + Forecast View
+            </button>
+          </div>
+        </div>
+
         {/* Household Summary */}
         <div className="contributions-summary-card">
           <h2>Household Summary</h2>
@@ -1182,13 +1285,19 @@ const Contributions = () => {
             <div className="contributions-tab-navigation">
               <button 
                 className={`contributions-tab-button ${activeTab === 'standard' ? 'active' : ''}`}
-                onClick={() => setActiveTab('standard')}
+                onClick={() => {
+                  setActiveTab('standard');
+                  setActivePersonTab('standard');
+                }}
               >
                 📊 Annual Settings View
               </button>
               <button 
                 className={`contributions-tab-button ${activeTab === 'ytd' ? 'active' : ''}`}
-                onClick={() => setActiveTab('ytd')}
+                onClick={() => {
+                  setActiveTab('ytd');
+                  setActivePersonTab('ytd');
+                }}
               >
                 📈 Progress + Forecast View
               </button>

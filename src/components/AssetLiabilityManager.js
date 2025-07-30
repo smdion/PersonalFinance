@@ -230,6 +230,12 @@ const AssetLiabilityManager = ({
       }
       setErrors(newErrors);
     }
+    
+    // Auto-save after a short delay
+    setTimeout(() => {
+      console.log(`🏠 Auto-save triggered by ${field} change in ${type}`);
+      autoSaveData(updatedInputs, true);
+    }, 1000);
   };
 
   const addInput = () => {
@@ -258,7 +264,14 @@ const AssetLiabilityManager = ({
       baseInput.startDate = '';
     }
 
-    setInputs([...inputs, baseInput]);
+    const updatedInputs = [...inputs, baseInput];
+    setInputs(updatedInputs);
+    
+    // Auto-save after adding
+    setTimeout(() => {
+      console.log(`🏠 Auto-save triggered by adding new ${getSingularType(type).toLowerCase()}`);
+      autoSaveData(updatedInputs, true);
+    }, 100);
   };
 
   const removeInput = (index) => {
@@ -282,6 +295,12 @@ const AssetLiabilityManager = ({
       });
       
       setErrors(reindexedErrors);
+      
+      // Auto-save immediately when removing
+      setTimeout(() => {
+        console.log(`🏠 Auto-save triggered by removing ${getSingularType(type).toLowerCase()}`);
+        autoSaveData(updatedInputs, true);
+      }, 100);
     }
   };
 
@@ -362,7 +381,22 @@ const AssetLiabilityManager = ({
     setTimeout(() => setSuccessMessage(''), 2000);
   };
 
-  const saveUpdatedData = (inputsToSave) => {
+  const autoSaveData = (inputsToSave, isAutoSave = false) => {
+    // For auto-save, skip if there's no meaningful data to save
+    if (isAutoSave) {
+      const hasValidData = inputsToSave.some(input => 
+        input.name.trim() && input.type && input.amount && !isNaN(parseFloat(input.amount))
+      );
+      if (!hasValidData) {
+        console.log(`🏠 Auto-save skipped for ${type}, no valid data`);
+        return;
+      }
+    }
+    
+    saveUpdatedData(inputsToSave, isAutoSave);
+  };
+
+  const saveUpdatedData = (inputsToSave, isAutoSave = false) => {
     try {
       const assetLiabilityData = getAssetLiabilityData();
       
@@ -472,6 +506,7 @@ const AssetLiabilityManager = ({
         setTimeout(() => {
           window.dispatchEvent(new CustomEvent('assetLiabilityDataUpdated', { detail: assetLiabilityData }));
         }, 50);
+        
       }
       
     } catch (error) {
@@ -491,7 +526,7 @@ const AssetLiabilityManager = ({
     }
 
     try {
-      saveUpdatedData(inputs);
+      saveUpdatedData(inputs, false);
       
       const totalAmount = validInputs.reduce((acc, input) => {
         return acc + (parseFloat(input.amount) || 0);
@@ -669,7 +704,7 @@ const AssetLiabilityManager = ({
       }
 
       setInputs([baseInput]);
-      saveUpdatedData([]);
+      saveUpdatedData([], false);
       setSuccessMessage(`All ${type.toLowerCase()} data has been reset!`);
       setTimeout(() => setSuccessMessage(''), 3000);
     }
@@ -691,6 +726,7 @@ const AssetLiabilityManager = ({
             {successMessage}
           </div>
         )}
+
 
         {/* Live Total Display */}
         <div className="live-total-section">
@@ -956,9 +992,6 @@ const AssetLiabilityManager = ({
           <div className="form-actions">
             <button type="button" onClick={addInput} className="btn-secondary">
               + Add Another {getSingularType(type)}
-            </button>
-            <button type="button" onClick={saveChanges} className="btn-primary">
-              💾 Save Changes
             </button>
           </div>
         </div>

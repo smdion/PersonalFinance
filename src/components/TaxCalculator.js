@@ -653,7 +653,27 @@ const TaxCalculator = () => {
         detail: { page: 'paycheck', expanded: false } 
       }));
     };
-    const handleToggleDualCalculator = () => setShowSpouseCalculator(prev => !prev);
+    const handleToggleDualCalculator = () => {
+      setShowSpouseCalculator(prev => {
+        const newValue = !prev;
+        
+        // Immediately update the paycheck data with the new setting
+        const currentData = getPaycheckData();
+        const updatedData = {
+          ...currentData,
+          settings: {
+            ...currentData.settings,
+            showSpouseCalculator: newValue
+          }
+        };
+        setPaycheckData(updatedData);
+        
+        // Dispatch event to notify other components about the change
+        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedData }));
+        
+        return newValue;
+      });
+    };
 
     window.addEventListener('expandAllSections', handleExpandAll);
     window.addEventListener('collapseAllSections', handleCollapseAll);
