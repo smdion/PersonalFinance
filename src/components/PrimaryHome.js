@@ -3,8 +3,8 @@ import Navigation from './Navigation';
 import { 
   getHistoricalData, 
   setHistoricalData,
-  getFromStorage,
-  setToStorage
+  getPrimaryHomeData,
+  setPrimaryHomeData
 } from '../utils/localStorage';
 import '../styles/portfolio.css';
 
@@ -41,18 +41,33 @@ const PrimaryHome = () => {
   const loadExistingData = () => {
     const currentYear = new Date().getFullYear();
     const historicalData = getHistoricalData();
-    const savedHomeData = getFromStorage('primaryHomeData', {});
+    const savedPrimaryHomeData = getPrimaryHomeData();
 
-    // Load property data from Assets if available
+    // Start with saved localStorage data as base
+    let mergedHomeData = { ...homeData };
+    let mergedMortgageData = { ...mortgageData };
+
+    // First, load any saved Primary Home specific data
+    if (savedPrimaryHomeData.homeData) {
+      mergedHomeData = { ...mergedHomeData, ...savedPrimaryHomeData.homeData };
+    }
+    if (savedPrimaryHomeData.mortgageData) {
+      mergedMortgageData = { ...mergedMortgageData, ...savedPrimaryHomeData.mortgageData };
+    }
+    if (savedPrimaryHomeData.amortizationSchedules) {
+      setAmortizationSchedules(savedPrimaryHomeData.amortizationSchedules);
+    }
+
+    // Then, overlay with current Assets/Liabilities data (this takes precedence for basic fields)
     const houseDetails = historicalData[currentYear]?.houseDetails || [];
     const primaryHomeAsset = houseDetails.find(asset => asset.type === 'Primary Home');
 
     if (primaryHomeAsset) {
-      setHomeData(prev => ({
-        ...prev,
-        propertyName: primaryHomeAsset.name || '',
-        currentValue: primaryHomeAsset.amount?.toString() || ''
-      }));
+      mergedHomeData = {
+        ...mergedHomeData,
+        propertyName: primaryHomeAsset.name || mergedHomeData.propertyName,
+        currentValue: primaryHomeAsset.amount?.toString() || mergedHomeData.currentValue
+      };
     }
 
     // Load mortgage data from Liabilities if available
@@ -60,23 +75,16 @@ const PrimaryHome = () => {
     const primaryMortgage = mortgageDetails.find(mortgage => mortgage.type === 'Mortgage');
 
     if (primaryMortgage) {
-      setMortgageData(prev => ({
-        ...prev,
-        lenderName: primaryMortgage.name || '',
-        currentBalance: primaryMortgage.amount?.toString() || ''
-      }));
+      mergedMortgageData = {
+        ...mergedMortgageData,
+        lenderName: primaryMortgage.name || mergedMortgageData.lenderName,
+        currentBalance: primaryMortgage.amount?.toString() || mergedMortgageData.currentBalance
+      };
     }
 
-    // Load additional data from localStorage
-    if (savedHomeData.homeData) {
-      setHomeData(prev => ({ ...prev, ...savedHomeData.homeData }));
-    }
-    if (savedHomeData.mortgageData) {
-      setMortgageData(prev => ({ ...prev, ...savedHomeData.mortgageData }));
-    }
-    if (savedHomeData.amortizationSchedules) {
-      setAmortizationSchedules(savedHomeData.amortizationSchedules);
-    }
+    // Apply the merged data
+    setHomeData(mergedHomeData);
+    setMortgageData(mergedMortgageData);
   };
 
   const handleHomeDataChange = (field, value) => {
@@ -167,14 +175,14 @@ const PrimaryHome = () => {
     }
 
     try {
-      // Save to localStorage for Primary Home specific data
+      // Save to localStorage for Primary Home specific data using proper utility function
       const primaryHomeData = {
         homeData,
         mortgageData,
         amortizationSchedules,
         lastUpdated: new Date().toISOString()
       };
-      setToStorage('primaryHomeData', primaryHomeData);
+      setPrimaryHomeData(primaryHomeData);
 
       // Update historical data for integration with other components
       const currentYear = new Date().getFullYear();
@@ -267,6 +275,9 @@ const PrimaryHome = () => {
         {/* Property Information Section */}
         <div className="portfolio-form-section">
           <h2>Property Information</h2>
+          <div className="import-notice">
+            <p><strong>📥 Data Import:</strong> Property name and current value are automatically imported from your <strong>Assets</strong> page. Any changes here will update your Assets data.</p>
+          </div>
           
           <div className="form-row">
             <div className="form-field">
@@ -323,6 +334,9 @@ const PrimaryHome = () => {
         {/* Mortgage Information Section */}
         <div className="portfolio-form-section">
           <h2>Mortgage Information</h2>
+          <div className="import-notice">
+            <p><strong>📥 Data Import:</strong> Lender name and current balance are automatically imported from your <strong>Liabilities</strong> page. Any changes here will update your Liabilities data.</p>
+          </div>
           
           <div className="form-row">
             <div className="form-field">

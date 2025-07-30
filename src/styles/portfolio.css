@@ -56,6 +56,21 @@
   padding-top: 1rem;
 }
 
+/* Import Notice Styles */
+.import-notice {
+  background: #e3f2fd;
+  border: 1px solid #90caf9;
+  border-radius: 8px;
+  padding: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.import-notice p {
+  margin: 0;
+  color: #1565c0;
+  font-size: 0.9rem;
+}
+
 .input-actions {
   display: flex;
   gap: 8px;
