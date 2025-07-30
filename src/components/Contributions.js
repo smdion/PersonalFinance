@@ -20,6 +20,7 @@ const Contributions = () => {
   const [performanceData, setPerformanceData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
+  const [showSpouseCalculator, setShowSpouseCalculator] = useState(true);
 
   useEffect(() => {
     // Load paycheck and performance data
@@ -48,13 +49,26 @@ const Contributions = () => {
     };
   }, []);
 
+  // Event listener for navigation dual calculator toggle
+  useEffect(() => {
+    const handleToggleDualCalculator = () => {
+      setShowSpouseCalculator(prev => !prev);
+    };
+
+    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
+
+    return () => {
+      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
+    };
+  }, []);
+
   // Calculate contribution metrics
   const contributionMetrics = useMemo(() => {
     if (!paycheckData?.your) return { hasData: false };
 
     const yourData = paycheckData.your;
     const spouseData = paycheckData.spouse || {};
-    const showSpouse = paycheckData?.settings?.showSpouseCalculator ?? true;
+    const showSpouse = showSpouseCalculator;
 
     // Helper function to calculate person's metrics
     const calculatePersonMetrics = (person, personName) => {
@@ -459,7 +473,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData]);
+  }, [paycheckData, performanceData, showSpouseCalculator]);
 
   const handleNavigateToPaycheck = () => {
     navigate('/paycheck');
@@ -1309,7 +1323,7 @@ const Contributions = () => {
         {/* Individual Breakdown */}
         <div className="contributions-individuals">
           <PersonContributionCard person={contributionMetrics.your} />
-          {contributionMetrics.spouse && (
+          {showSpouseCalculator && contributionMetrics.spouse && (
             <PersonContributionCard person={contributionMetrics.spouse} />
           )}
         </div>

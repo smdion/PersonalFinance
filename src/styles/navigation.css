@@ -648,3 +648,66 @@
     animation: none;
   }
 }
+
+/* Page Controls */
+.page-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-right: 0.5rem;
+}
+
+.page-control-button {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1.2rem;
+  padding: 0;
+  color: white;
+}
+
+.page-control-button:hover {
+  background: rgba(255, 255, 255, 0.15);
+  transform: translateY(-1px);
+}
+
+.page-control-button:active {
+  transform: translateY(0);
+}
+
+.page-control-button.expand-collapse:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+.page-control-button.expand-collapse.expanded:hover {
+  transform: translateY(-1px) scale(0.95);
+}
+
+.page-control-button.expand-collapse.collapsed:hover {
+  transform: translateY(-1px) scale(1.15);
+}
+
+.page-control-button.dual-calc:hover {
+  transform: translateY(-1px) scale(1.05);
+}
+
+/* Mobile responsiveness for page controls */
+@media (max-width: 768px) {
+  .page-controls {
+    gap: 0.25rem;
+    margin-right: 0.25rem;
+  }
+  
+  .page-control-button {
+    width: 40px;
+    height: 40px;
+    font-size: 1rem;
+  }
+}

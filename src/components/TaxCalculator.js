@@ -637,6 +637,35 @@ const TaxCalculator = () => {
     }
   };
 
+  // Event listeners for navigation controls
+  useEffect(() => {
+    const handleExpandAll = () => {
+      expandAllSectionsGlobal();
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'paycheck', expanded: true } 
+      }));
+    };
+    const handleCollapseAll = () => {
+      collapseAllSectionsGlobal();
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'paycheck', expanded: false } 
+      }));
+    };
+    const handleToggleDualCalculator = () => setShowSpouseCalculator(prev => !prev);
+
+    window.addEventListener('expandAllSections', handleExpandAll);
+    window.addEventListener('collapseAllSections', handleCollapseAll);
+    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
+
+    return () => {
+      window.removeEventListener('expandAllSections', handleExpandAll);
+      window.removeEventListener('collapseAllSections', handleCollapseAll);
+      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
+    };
+  }, []);
+
   return (
     <>
       <Navigation />
@@ -645,34 +674,6 @@ const TaxCalculator = () => {
           <h1>💼 {showSpouseCalculator ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
           <p>Calculate Your Net Pay With Precision And Plan Your Financial Future</p>
           
-          {/* Add toggle for spouse calculator directly in header */}
-          <div className="header-controls">
-            <div className="paycheck-control-buttons">
-              <button
-                onClick={expandAllSectionsGlobal}
-                className="paycheck-control-button expand"
-                title="Expand all paycheck sections"
-              >
-                📖 Expand All
-              </button>
-              <button
-                onClick={collapseAllSectionsGlobal}
-                className="paycheck-control-button collapse"
-                title="Collapse all paycheck sections"
-              >
-                📕 Collapse All
-              </button>
-            </div>
-            <label className="header-toggle">
-              <input
-                type="checkbox"
-                className="modern-checkbox"
-                checked={showSpouseCalculator}
-                onChange={(e) => setShowSpouseCalculator(e.target.checked)}
-              />
-              <span>Dual Calculator Mode</span>
-            </label>
-          </div>
         </div>
 
         <div className="calculators-grid">

@@ -484,6 +484,34 @@ const BudgetForm = () => {
     }
   };
 
+  // Event listeners for navigation controls
+  useEffect(() => {
+    const handleExpandAllCategories = () => {
+      setCollapsedCategories(new Set());
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'budget', expanded: true } 
+      }));
+    };
+    
+    const handleCollapseAllCategories = () => {
+      const allCategoryIds = new Set(budgetCategories.map(cat => cat.id));
+      setCollapsedCategories(allCategoryIds);
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'budget', expanded: false } 
+      }));
+    };
+
+    window.addEventListener('expandAllCategories', handleExpandAllCategories);
+    window.addEventListener('collapseAllCategories', handleCollapseAllCategories);
+
+    return () => {
+      window.removeEventListener('expandAllCategories', handleExpandAllCategories);
+      window.removeEventListener('collapseAllCategories', handleCollapseAllCategories);
+    };
+  }, [budgetCategories]);
+
   return (
     <>
       <Navigation />
@@ -654,22 +682,6 @@ const BudgetForm = () => {
           <div className="budget-categories-header">
             <h2>📂 Budgets</h2>
             <div className="categories-header-actions">
-              <div className="budget-control-buttons">
-                <button
-                  onClick={expandAllCategories}
-                  className="budget-control-button expand"
-                  title="Expand all budget categories"
-                >
-                  📖 Expand All
-                </button>
-                <button
-                  onClick={collapseAllCategories}
-                  className="budget-control-button collapse"
-                  title="Collapse all budget categories"
-                >
-                  📕 Collapse All
-                </button>
-              </div>
               <div className="drag-hint">💡 Drag categories to reorder</div>
               <button
                 onClick={() => setShowAddCategory(true)}

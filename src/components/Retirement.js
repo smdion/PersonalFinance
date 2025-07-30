@@ -263,6 +263,31 @@ const Retirement = () => {
     }
   }, []);
 
+  // Event listener for navigation dual calculator toggle
+  useEffect(() => {
+    const handleToggleDualCalculator = () => {
+      setShowSpouseCalculator(prev => {
+        const newValue = !prev;
+        // Update the saved settings
+        const newData = {
+          ...retirementDataState,
+          settings: {
+            ...(retirementDataState.settings || {}),
+            showSpouseCalculator: newValue
+          }
+        };
+        saveRetirementData(newData);
+        return newValue;
+      });
+    };
+
+    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
+
+    return () => {
+      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
+    };
+  }, [retirementDataState, saveRetirementData]);
+
   return (
     <div className="calculator-page">
       <Navigation />
@@ -272,15 +297,6 @@ const Retirement = () => {
           <div className="retirement-header-icon">🏖️</div>
           <h1>Retirement Planner</h1>
           <p>Project your retirement savings and plan for financial independence</p>
-          <div className="header-controls">
-            <button
-              onClick={toggleSpouseCalculator}
-              className={`dual-calculator-toggle ${showSpouseCalculator ? 'active' : ''}`}
-              title={showSpouseCalculator ? 'Hide spouse calculator' : 'Show spouse calculator'}
-            >
-              {showSpouseCalculator ? '👥 Dual Calculator' : '👤 Single Calculator'}
-            </button>
-          </div>
         </div>
 
         <div className="calculator-content">
