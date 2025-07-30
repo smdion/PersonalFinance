@@ -17,7 +17,7 @@ const Navigation = () => {
       items: [
         { path: '/paycheck', label: 'Paycheck', icon: '💰' },
         { path: '/budget', label: 'Budget', icon: '💵' },
-        { path: '/savings', label: 'Savings', icon: '🎯' },
+        { path: '/savings', label: 'Saving Goals', icon: '🎯' },
         { path: '/retirement', label: 'Retirement', icon: '🏖️' }
       ]
     },
