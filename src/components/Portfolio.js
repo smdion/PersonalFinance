@@ -1447,7 +1447,7 @@ const Portfolio = () => {
               <p>Enter your current account values from investment websites:</p>
               {showExpandedFields ? (
                 <p style={{ fontSize: '0.9rem', color: '#28a745', margin: '0.5rem 0' }}>
-                  📊 <strong>Detailed Update Mode:</strong> Will sync balance + contributions, employer match, gains/losses, fees, and withdrawals
+                  📊 <strong>Detailed Update Mode:</strong> Will sync balance + employee contributions, employer match, gains/losses, fees, and withdrawals
                 </p>
               ) : (
                 <p style={{ fontSize: '0.9rem', color: '#007bff', margin: '0.5rem 0' }}>
@@ -1624,7 +1624,7 @@ const Portfolio = () => {
                               marginBottom: '0.1rem', 
                               color: '#28a745' 
                             }}>
-                              Contributions
+                              Employee Contributions
                             </label>
                             <input
                               type="number"

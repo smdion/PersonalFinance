@@ -86,9 +86,14 @@ export function calculateTakeHomePay(
   const actualRoth401kPaycheck = actualRoth401kAnnual / periodsPerYear;
   
   // Calculate Total Medical Deductions (Pre-Tax) Per Paycheck, Excluding Employer HSA Contribution
-  const totalMedicalDeductionsPaycheck = Object.entries(medicalDeductions || {})
-    .filter(([key]) => key !== 'employerHsa')
+  const coreMedicalDeductionsPaycheck = Object.entries(medicalDeductions || {})
+    .filter(([key]) => !['employerHsa', 'additionalMedicalDeductions', 'additionalPostTaxDeductions'].includes(key))
     .reduce((sum, [, value]) => sum + (value || 0), 0);
+  
+  const additionalMedicalDeductionsPaycheck = (medicalDeductions.additionalMedicalDeductions || [])
+    .reduce((sum, deduction) => sum + (deduction.amount || 0), 0);
+  
+  const totalMedicalDeductionsPaycheck = coreMedicalDeductionsPaycheck + additionalMedicalDeductionsPaycheck;
 
   const totalMedicalDeductionsAnnual = totalMedicalDeductionsPaycheck * periodsPerYear;
 
@@ -109,6 +114,14 @@ export function calculateTakeHomePay(
   // Calculate ESPP Deduction (Percentage Of Salary)
   const esppPaycheck = grossPay * (esppDeductionPercent / 100);
   const esppAnnual = esppPaycheck * periodsPerYear;
+  
+  // Calculate Additional Post-Tax Deductions Per Paycheck
+  const additionalPostTaxDeductionsPaycheck = (medicalDeductions.additionalPostTaxDeductions || [])
+    .reduce((sum, deduction) => sum + (deduction.amount || 0), 0);
+  const additionalPostTaxDeductionsAnnual = additionalPostTaxDeductionsPaycheck * periodsPerYear;
+  
+  const totalPostTaxDeductionsPaycheck = esppPaycheck + additionalPostTaxDeductionsPaycheck;
+  const totalPostTaxDeductionsAnnual = esppAnnual + additionalPostTaxDeductionsAnnual;
   
   // Apply Traditional 401k And Medical Deductions (Pre-Tax)
   const adjustedGrossPay = grossPay - actualTraditional401kPaycheck - totalMedicalDeductionsPaycheck;
@@ -165,7 +178,7 @@ export function calculateTakeHomePay(
   const totalTaxesPaycheck = federalTaxPaycheck + socialSecurityTaxPaycheck + medicareTaxPaycheck;
   const totalTaxesAnnual = federalTaxAnnual + payrollTaxes.total;
   
-  const netTakeHomePaycheck = grossPay - totalTaxesPaycheck - actualTraditional401kPaycheck - actualRoth401kPaycheck - totalMedicalDeductionsPaycheck - esppPaycheck;
+  const netTakeHomePaycheck = grossPay - totalTaxesPaycheck - actualTraditional401kPaycheck - actualRoth401kPaycheck - totalMedicalDeductionsPaycheck - totalPostTaxDeductionsPaycheck;
   const netTakeHomeAnnual = netTakeHomePaycheck * periodsPerYear;
   
   const taxableIncome = Math.max(0, adjustedGrossIncome - standardDeduction);
@@ -186,6 +199,10 @@ export function calculateTakeHomePay(
     medicalDeductions,
     esppPaycheck,
     esppAnnual,
+    additionalPostTaxDeductionsPaycheck,
+    additionalPostTaxDeductionsAnnual,
+    totalPostTaxDeductionsPaycheck,
+    totalPostTaxDeductionsAnnual,
     adjustedGrossPay,
     adjustedGrossIncome,
     standardDeduction,

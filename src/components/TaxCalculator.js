@@ -47,7 +47,9 @@ const TaxCalculator = () => {
         shortTermDisability: 0,
         longTermDisability: 0,
         hsa: 0,
-        employerHsa: 0
+        employerHsa: 0,
+        additionalMedicalDeductions: [],
+        additionalPostTaxDeductions: []
       },
       esppDeductionPercent: 0,
       budgetImpacting: {
@@ -86,7 +88,9 @@ const TaxCalculator = () => {
         shortTermDisability: 0,
         longTermDisability: 0,
         hsa: 0,
-        employerHsa: 0
+        employerHsa: 0,
+        additionalMedicalDeductions: [],
+        additionalPostTaxDeductions: []
       },
       esppDeductionPercent: 0,
       budgetImpacting: {
@@ -637,6 +641,55 @@ const TaxCalculator = () => {
     }
   };
 
+  // Event listeners for navigation controls
+  useEffect(() => {
+    const handleExpandAll = () => {
+      expandAllSectionsGlobal();
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'paycheck', expanded: true } 
+      }));
+    };
+    const handleCollapseAll = () => {
+      collapseAllSectionsGlobal();
+      // Notify navigation of state change
+      window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
+        detail: { page: 'paycheck', expanded: false } 
+      }));
+    };
+    const handleToggleDualCalculator = () => {
+      setShowSpouseCalculator(prev => {
+        const newValue = !prev;
+        
+        // Immediately update the paycheck data with the new setting
+        const currentData = getPaycheckData();
+        const updatedData = {
+          ...currentData,
+          settings: {
+            ...currentData.settings,
+            showSpouseCalculator: newValue
+          }
+        };
+        setPaycheckData(updatedData);
+        
+        // Dispatch event to notify other components about the change
+        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedData }));
+        
+        return newValue;
+      });
+    };
+
+    window.addEventListener('expandAllSections', handleExpandAll);
+    window.addEventListener('collapseAllSections', handleCollapseAll);
+    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
+
+    return () => {
+      window.removeEventListener('expandAllSections', handleExpandAll);
+      window.removeEventListener('collapseAllSections', handleCollapseAll);
+      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
+    };
+  }, []);
+
   return (
     <>
       <Navigation />
@@ -645,34 +698,6 @@ const TaxCalculator = () => {
           <h1>💼 {showSpouseCalculator ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
           <p>Calculate Your Net Pay With Precision And Plan Your Financial Future</p>
           
-          {/* Add toggle for spouse calculator directly in header */}
-          <div className="header-controls">
-            <div className="paycheck-control-buttons">
-              <button
-                onClick={expandAllSectionsGlobal}
-                className="paycheck-control-button expand"
-                title="Expand all paycheck sections"
-              >
-                📖 Expand All
-              </button>
-              <button
-                onClick={collapseAllSectionsGlobal}
-                className="paycheck-control-button collapse"
-                title="Collapse all paycheck sections"
-              >
-                📕 Collapse All
-              </button>
-            </div>
-            <label className="header-toggle">
-              <input
-                type="checkbox"
-                className="modern-checkbox"
-                checked={showSpouseCalculator}
-                onChange={(e) => setShowSpouseCalculator(e.target.checked)}
-              />
-              <span>Dual Calculator Mode</span>
-            </label>
-          </div>
         </div>
 
         <div className="calculators-grid">
@@ -733,6 +758,66 @@ const TaxCalculator = () => {
               setBudgetImpacting(prev => ({
                 ...prev,
                 brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
+              }));
+            }}
+            onAddMedicalDeduction={(person) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: [
+                  ...(prev.additionalMedicalDeductions || []),
+                  {
+                    id: Date.now() + Math.random(),
+                    name: 'New Medical Deduction',
+                    amount: 0
+                  }
+                ]
+              }));
+            }}
+            onUpdateMedicalDeduction={(person, deductionId, field, value) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).map(deduction =>
+                  deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                )
+              }));
+            }}
+            onRemoveMedicalDeduction={(person, deductionId) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).filter(deduction => deduction.id !== deductionId)
+              }));
+            }}
+            onAddPostTaxDeduction={(person) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: [
+                  ...(prev.additionalPostTaxDeductions || []),
+                  {
+                    id: Date.now() + Math.random(),
+                    name: 'New Post-Tax Deduction',
+                    amount: 0
+                  }
+                ]
+              }));
+            }}
+            onUpdatePostTaxDeduction={(person, deductionId, field, value) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).map(deduction =>
+                  deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                )
+              }));
+            }}
+            onRemovePostTaxDeduction={(person, deductionId) => {
+              // Update local state immediately
+              setMedicalDeductions(prev => ({
+                ...prev,
+                additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).filter(deduction => deduction.id !== deductionId)
               }));
             }}
             bonusMultiplier={bonusMultiplier}
@@ -814,6 +899,66 @@ const TaxCalculator = () => {
                 setSpouseBudgetImpacting(prev => ({
                   ...prev,
                   brokerageAccounts: (prev.brokerageAccounts || []).filter(account => account.id !== accountId)
+                }));
+              }}
+              onAddMedicalDeduction={(person) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: [
+                    ...(prev.additionalMedicalDeductions || []),
+                    {
+                      id: Date.now() + Math.random(),
+                      name: 'New Medical Deduction',
+                      amount: 0
+                    }
+                  ]
+                }));
+              }}
+              onUpdateMedicalDeduction={(person, deductionId, field, value) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).map(deduction =>
+                    deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                  )
+                }));
+              }}
+              onRemoveMedicalDeduction={(person, deductionId) => {
+                // Update local state immediately  
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalMedicalDeductions: (prev.additionalMedicalDeductions || []).filter(deduction => deduction.id !== deductionId)
+                }));
+              }}
+              onAddPostTaxDeduction={(person) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: [
+                    ...(prev.additionalPostTaxDeductions || []),
+                    {
+                      id: Date.now() + Math.random(),
+                      name: 'New Post-Tax Deduction',
+                      amount: 0
+                    }
+                  ]
+                }));
+              }}
+              onUpdatePostTaxDeduction={(person, deductionId, field, value) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).map(deduction =>
+                    deduction.id === deductionId ? { ...deduction, [field]: value } : deduction
+                  )
+                }));
+              }}
+              onRemovePostTaxDeduction={(person, deductionId) => {
+                // Update local state immediately
+                setSpouseMedicalDeductions(prev => ({
+                  ...prev,
+                  additionalPostTaxDeductions: (prev.additionalPostTaxDeductions || []).filter(deduction => deduction.id !== deductionId)
                 }));
               }}
               bonusMultiplier={spouseBonusMultiplier}

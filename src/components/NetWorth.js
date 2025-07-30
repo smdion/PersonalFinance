@@ -15,6 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
+import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency } from '../utils/calculationHelpers';
 
 // Register Chart.js components
@@ -34,6 +35,7 @@ const NetWorth = () => {
   const [historicalData, setHistoricalData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
+  const showSpouseCalculator = useDualCalculator(); // Use shared dual calculator hook
   const [assetLiabilityData, setAssetLiabilityData] = useState({});
   const [selectedYears, setSelectedYears] = useState([]);
   const [netWorthMode, setNetWorthMode] = useState('market'); // 'market' or 'costBasis'
@@ -415,7 +417,21 @@ const NetWorth = () => {
       const wealthScore = cumulativeEarnings > 0 ? (netWorth / cumulativeEarnings) * 100 : null;
       
       // Calculate contribution rates from performance data
-      const yearPerformanceEntries = Object.values(performanceData).filter(entry => entry.year === year);
+      let yearPerformanceEntries = Object.values(performanceData).filter(entry => entry.year === year);
+      
+      // Filter performance entries based on dual calculator mode
+      if (!showSpouseCalculator && paycheckData?.your?.name?.trim()) {
+        const firstUserName = paycheckData.your.name.trim();
+        yearPerformanceEntries = yearPerformanceEntries.filter(entry => {
+          // Include entries for the primary user or Joint accounts
+          if (entry.users) {
+            return Object.keys(entry.users).some(owner => owner === firstUserName || owner === 'Joint');
+          }
+          // For entries without user data, include them (backward compatibility)
+          return true;
+        });
+      }
+      
       const totalContributions = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.contributions || 0), 0);
       const totalEmployerMatch = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.employerMatch || 0), 0);
       
@@ -469,7 +485,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData]);
+  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -1416,6 +1432,11 @@ const NetWorth = () => {
                 {filteredData.length > 0 && (
                   <div className="networth-summary">
                     <h2 className="networth-summary-title">📊 Quick Summary</h2>
+                    {!showSpouseCalculator && (
+                      <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '16px', fontStyle: 'italic' }}>
+                        📊 Dual calculator mode disabled - showing primary user data only
+                      </div>
+                    )}
                     <div className="networth-summary-grid">
                       {(() => {
                         const latest = filteredData[filteredData.length - 1];

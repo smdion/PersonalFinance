@@ -6,6 +6,11 @@ const Navigation = () => {
   const [showSettingsMenu, setShowSettingsMenu] = useState(false);
   const [showHamburgerMenu, setShowHamburgerMenu] = useState(false);
   const [openFolders, setOpenFolders] = useState({});
+  const [expandStates, setExpandStates] = useState({
+    paycheck: false, // false = collapsed, true = expanded
+    budget: false,
+    contributions: false
+  });
   const settingsMenuRef = useRef(null);
   const hamburgerMenuRef = useRef(null);
   const desktopNavRef = useRef(null);
@@ -17,7 +22,7 @@ const Navigation = () => {
       items: [
         { path: '/paycheck', label: 'Paycheck', icon: '💰' },
         { path: '/budget', label: 'Budget', icon: '💵' },
-        { path: '/savings', label: 'Savings', icon: '🎯' },
+        { path: '/savings', label: 'Saving Goals', icon: '🎯' },
         { path: '/retirement', label: 'Retirement', icon: '🏖️' }
       ]
     },
@@ -77,6 +82,26 @@ const Navigation = () => {
     });
   };
 
+  // Handle expand/collapse toggle for pages
+  const handleExpandCollapseToggle = (page) => {
+    const currentState = expandStates[page];
+    const newState = !currentState;
+    
+    setExpandStates(prev => ({
+      ...prev,
+      [page]: newState
+    }));
+    
+    // Dispatch appropriate events based on page and new state
+    if (page === 'paycheck') {
+      window.dispatchEvent(new CustomEvent(newState ? 'expandAllSections' : 'collapseAllSections'));
+    } else if (page === 'budget') {
+      window.dispatchEvent(new CustomEvent(newState ? 'expandAllCategories' : 'collapseAllCategories'));
+    } else if (page === 'contributions') {
+      window.dispatchEvent(new CustomEvent(newState ? 'expandAllSections' : 'collapseAllSections'));
+    }
+  };
+
   // Toggle folder open/closed state - only allow one folder open at a time
   const toggleFolder = (folderLabel) => {
     setOpenFolders(prev => {
@@ -91,6 +116,23 @@ const Navigation = () => {
       return { [folderLabel]: true };
     });
   };
+
+  // Listen for expand state updates from page components
+  useEffect(() => {
+    const handleExpandStateUpdate = (event) => {
+      const { page, expanded } = event.detail;
+      setExpandStates(prev => ({
+        ...prev,
+        [page]: expanded
+      }));
+    };
+
+    window.addEventListener('updateNavigationExpandState', handleExpandStateUpdate);
+
+    return () => {
+      window.removeEventListener('updateNavigationExpandState', handleExpandStateUpdate);
+    };
+  }, []);
 
   // Handle click outside to close menus
   useEffect(() => {
@@ -317,6 +359,84 @@ const Navigation = () => {
 
         {/* Mobile Menu Controls */}
         <div className="nav-controls">
+          {/* Page Controls - only show on relevant pages */}
+          {(location.pathname === '/paycheck' || location.pathname === '/budget' || location.pathname === '/retirement' || location.pathname === '/contributions' || location.pathname === '/raw-data' || location.pathname === '/performance') && (
+            <div className="page-controls">
+              {location.pathname === '/paycheck' && (
+                <>
+                  <button
+                    onClick={() => handleExpandCollapseToggle('paycheck')}
+                    className={`page-control-button expand-collapse ${expandStates.paycheck ? 'expanded' : 'collapsed'}`}
+                    title={expandStates.paycheck ? 'Collapse all sections' : 'Expand all sections'}
+                  >
+                    {expandStates.paycheck ? '📕' : '📖'}
+                  </button>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                    className="page-control-button dual-calc"
+                    title="Toggle dual calculator mode"
+                  >
+                    👫
+                  </button>
+                </>
+              )}
+              {location.pathname === '/budget' && (
+                <button
+                  onClick={() => handleExpandCollapseToggle('budget')}
+                  className={`page-control-button expand-collapse ${expandStates.budget ? 'expanded' : 'collapsed'}`}
+                  title={expandStates.budget ? 'Collapse all categories' : 'Expand all categories'}
+                >
+                  {expandStates.budget ? '📕' : '📖'}
+                </button>
+              )}
+              {location.pathname === '/retirement' && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  className="page-control-button dual-calc"
+                  title="Toggle dual calculator mode"
+                >
+                  👫
+                </button>
+              )}
+              {location.pathname === '/contributions' && (
+                <>
+                  <button
+                    onClick={() => handleExpandCollapseToggle('contributions')}
+                    className={`page-control-button expand-collapse ${expandStates.contributions ? 'expanded' : 'collapsed'}`}
+                    title={expandStates.contributions ? 'Collapse all sections' : 'Expand all sections'}
+                  >
+                    {expandStates.contributions ? '📕' : '📖'}
+                  </button>
+                  <button
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                    className="page-control-button dual-calc"
+                    title="Toggle dual calculator mode"
+                  >
+                    👫
+                  </button>
+                </>
+              )}
+              {location.pathname === '/raw-data' && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  className="page-control-button dual-calc"
+                  title="Toggle dual calculator mode"
+                >
+                  👫
+                </button>
+              )}
+              {location.pathname === '/performance' && (
+                <button
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  className="page-control-button dual-calc"
+                  title="Toggle dual calculator mode"
+                >
+                  👫
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Hamburger Menu Button */}
           <div className="hamburger-menu" ref={hamburgerMenuRef}>
             <button

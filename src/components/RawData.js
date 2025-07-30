@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { 
   getHistoricalData, 
   setHistoricalData, 
@@ -14,13 +14,31 @@ import {
   addOrUpdateSharedAccount,
   initializeSharedAccounts,
   // Import asset liability data functions
-  getAssetLiabilityData
+  getAssetLiabilityData,
+  // Import read-only override functions
+  getReadOnlyOverrideSettings,
+  setReadOnlyOverrideSettings,
+  // Import paycheck data functions for dual calculator toggle
+  getPaycheckData,
+  setPaycheckData
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
 import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
 const RawData = () => {
+  // State for read-only override
+  const [readOnlyOverrideSettings, setReadOnlyOverrideSettingsState] = useState({
+    disableReadOnlyMode: false
+  });
+  const [showReadOnlyWarning, setShowReadOnlyWarning] = useState(false);
+
+  // Load read-only override settings on component mount
+  useEffect(() => {
+    const settings = getReadOnlyOverrideSettings();
+    setReadOnlyOverrideSettingsState(settings);
+  }, []);
+
   // Function to sync ALL Asset Liability data to Historical data
   const syncAssetLiabilityToHistorical = () => {
     try {
@@ -128,6 +146,9 @@ const RawData = () => {
     const handleAssetLiabilityUpdate = () => {
       syncAssetLiabilityToHistorical();
     };
+
+    // Let TaxCalculator handle the dual calculator toggle
+    // RawData will sync via paycheckDataUpdated event
 
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     
@@ -343,6 +364,43 @@ const RawData = () => {
     ]
   };
 
+  // Handle read-only override toggle
+  const handleReadOnlyToggle = (enabled) => {
+    if (enabled && !showReadOnlyWarning) {
+      setShowReadOnlyWarning(true);
+      return;
+    }
+    
+    const newSettings = {
+      ...readOnlyOverrideSettings,
+      disableReadOnlyMode: enabled
+    };
+    
+    // Update both localStorage and local state immediately
+    setReadOnlyOverrideSettings(newSettings);
+    setReadOnlyOverrideSettingsState(newSettings);
+    
+    if (!enabled) {
+      setShowReadOnlyWarning(false);
+    }
+  };
+
+  const confirmReadOnlyOverride = () => {
+    const newSettings = {
+      ...readOnlyOverrideSettings,
+      disableReadOnlyMode: true
+    };
+    
+    // Update both localStorage and local state immediately
+    setReadOnlyOverrideSettings(newSettings);
+    setReadOnlyOverrideSettingsState(newSettings);
+    setShowReadOnlyWarning(false);
+  };
+
+  const cancelReadOnlyOverride = () => {
+    setShowReadOnlyWarning(false);
+  };
+
   return (
     <>
       <Navigation />
@@ -352,7 +410,159 @@ const RawData = () => {
           <p>Track Your Financial Journey and Account Performance Over Time</p>
         </div>
 
+        {/* Read-Only Override Controls */}
+        <div style={{
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          borderRadius: '8px',
+          padding: '16px',
+          marginBottom: '24px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+              <span style={{ fontSize: '0.95rem', fontWeight: '600', color: '#374151' }}>
+                🔒 Data Protection Settings
+              </span>
+              <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                Historical and Performance data are read-only by default
+              </span>
+            </div>
+            <label style={{ 
+              display: 'flex', 
+              alignItems: 'center', 
+              gap: '8px', 
+              cursor: 'pointer',
+              padding: '8px 12px',
+              borderRadius: '6px',
+              border: '1px solid #d1d5db',
+              background: readOnlyOverrideSettings.disableReadOnlyMode ? '#fef2f2' : '#f9fafb'
+            }}>
+              <input
+                type="checkbox"
+                checked={readOnlyOverrideSettings.disableReadOnlyMode}
+                onChange={(e) => handleReadOnlyToggle(e.target.checked)}
+                style={{ margin: 0 }}
+              />
+              <span style={{ 
+                fontSize: '0.9rem', 
+                fontWeight: '500',
+                color: readOnlyOverrideSettings.disableReadOnlyMode ? '#dc2626' : '#374151'
+              }}>
+                {readOnlyOverrideSettings.disableReadOnlyMode ? '⚠️ Read-Only Protection Disabled' : 'Enable Read-Only Override'}
+              </span>
+            </label>
+          </div>
+          
+          {readOnlyOverrideSettings.disableReadOnlyMode && (
+            <div style={{
+              marginTop: '12px',
+              padding: '12px',
+              background: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '6px'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '8px' }}>
+                <span style={{ fontSize: '1rem' }}>⚠️</span>
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: '600', color: '#dc2626', marginBottom: '4px' }}>
+                    Warning: Read-Only Protection is Disabled
+                  </div>
+                  <div style={{ fontSize: '0.85rem', color: '#7f1d1d', lineHeight: '1.4' }}>
+                    You can now edit Historical and Performance data directly. Most updates should be made through 
+                    the Paycheck Calculator, Portfolio, Asset Manager, and other source components to maintain data consistency.
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Warning Modal */}
+        {showReadOnlyWarning && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: 'rgba(0, 0, 0, 0.5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: 'white',
+              borderRadius: '12px',
+              padding: '24px',
+              maxWidth: '500px',
+              margin: '16px',
+              boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px', marginBottom: '16px' }}>
+                <span style={{ fontSize: '1.5rem' }}>⚠️</span>
+                <div>
+                  <h3 style={{ margin: '0 0 8px 0', fontSize: '1.1rem', fontWeight: '600', color: '#dc2626' }}>
+                    Disable Read-Only Protection?
+                  </h3>
+                  <p style={{ margin: 0, fontSize: '0.9rem', color: '#374151', lineHeight: '1.5' }}>
+                    Historical and Performance data are normally read-only because they're automatically updated 
+                    from other components (Paycheck Calculator, Portfolio, Asset Manager, etc.).
+                  </p>
+                </div>
+              </div>
+              
+              <div style={{ 
+                background: '#fef3c7', 
+                border: '1px solid #f59e0b', 
+                borderRadius: '6px', 
+                padding: '12px', 
+                marginBottom: '20px' 
+              }}>
+                <div style={{ fontSize: '0.85rem', color: '#92400e', lineHeight: '1.4' }}>
+                  <strong>Important:</strong> Manually editing this data may cause inconsistencies. 
+                  Most changes should be made through the source components to ensure data integrity 
+                  and proper synchronization across the application.
+                </div>
+              </div>
+              
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'flex-end' }}>
+                <button
+                  onClick={cancelReadOnlyOverride}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid #d1d5db',
+                    background: '#f9fafb',
+                    color: '#374151',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem'
+                  }}
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmReadOnlyOverride}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: '6px',
+                    border: '1px solid #dc2626',
+                    background: '#dc2626',
+                    color: 'white',
+                    cursor: 'pointer',
+                    fontSize: '0.9rem',
+                    fontWeight: '500'
+                  }}
+                >
+                  I Understand, Disable Protection
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <DataManager
+          key={`historical-${readOnlyOverrideSettings.disableReadOnlyMode}`}
           title="Annual Data"
           subtitle="Add your first year of data to start tracking your financial progress"
           dataKey={STORAGE_KEYS.HISTORICAL_DATA}
@@ -364,9 +574,11 @@ const RawData = () => {
           sortField="year"
           sortOrder="desc"
           itemsPerPage={10}
+          disableReadOnly={readOnlyOverrideSettings.disableReadOnlyMode}
         />
 
         <DataManager
+          key={`performance-${readOnlyOverrideSettings.disableReadOnlyMode}`}
           title="Account Data"
           subtitle="Account performance data synced from Portfolio component"
           dataKey={STORAGE_KEYS.PERFORMANCE_DATA}
@@ -379,6 +591,7 @@ const RawData = () => {
           sortOrder="desc"
           customParseCSVRow={customParseCSVRow}
           itemsPerPage={10}
+          disableReadOnly={readOnlyOverrideSettings.disableReadOnlyMode}
         />
       </div>
     </>

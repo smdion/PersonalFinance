@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import { W4_CONFIGS, CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { getAppSettings, setAppSettings } from '../utils/localStorage';
-import '../styles/ytd-income.css';
 import { 
   calculatePercentageOfMax,
   formatCurrency,
@@ -13,8 +12,6 @@ import {
   calculateRequiredIraContribution,
   calculateRequiredHsaContribution,
   calculateRequiredHsaPerPaycheckContribution,
-  calculateYTDIncome,
-  calculateProjectedAnnualIncome
 } from '../utils/calculationHelpers';
 
 const PaycheckForm = ({ 
@@ -34,6 +31,12 @@ const PaycheckForm = ({
   onAddBrokerageAccount,
   onUpdateBrokerageAccount,
   onRemoveBrokerageAccount,
+  onAddMedicalDeduction,
+  onUpdateMedicalDeduction,
+  onRemoveMedicalDeduction,
+  onAddPostTaxDeduction,
+  onUpdatePostTaxDeduction,
+  onRemovePostTaxDeduction,
   bonusMultiplier, setBonusMultiplier, 
   bonusTarget, setBonusTarget,
   overrideBonus, setOverrideBonus,
@@ -43,9 +46,7 @@ const PaycheckForm = ({
   results,
   globalSectionControl,
   payWeekType, setPayWeekType,
-  hsaCoverageType, setHsaCoverageType,
-  incomePeriodsData = [],
-  onUpdateIncomePeriods
+  hsaCoverageType, setHsaCoverageType
 }) => {
 
   // State for collapsible sections
@@ -56,7 +57,6 @@ const PaycheckForm = ({
     postTax: false,
     w4: false,
     budget: false,
-    ytdIncome: false,
     bonus: false
   });
 
@@ -70,7 +70,6 @@ const PaycheckForm = ({
         postTax: true,
         w4: true,
         budget: true,
-        ytdIncome: true,
         bonus: true
       });
     } else if (globalSectionControl === 'collapse') {
@@ -81,7 +80,6 @@ const PaycheckForm = ({
         postTax: false,
         w4: false,
         budget: false,
-        ytdIncome: false,
         bonus: false
       });
     }
@@ -251,6 +249,26 @@ const PaycheckForm = ({
       });
     }
 
+    // Additional medical deduction fields (dynamic)
+    if (medicalDeductions.additionalMedicalDeductions) {
+      medicalDeductions.additionalMedicalDeductions.forEach(deduction => {
+        const fieldKey = `medical_${deduction.id}`;
+        if (!currencyInputsFocused[fieldKey]) {
+          newValues[fieldKey] = deduction.amount ? formatDeductionDisplay(deduction.amount) : '';
+        }
+      });
+    }
+
+    // Additional post-tax deduction fields (dynamic)
+    if (medicalDeductions.additionalPostTaxDeductions) {
+      medicalDeductions.additionalPostTaxDeductions.forEach(deduction => {
+        const fieldKey = `postTax_${deduction.id}`;
+        if (!currencyInputsFocused[fieldKey]) {
+          newValues[fieldKey] = deduction.amount ? formatDeductionDisplay(deduction.amount) : '';
+        }
+      });
+    }
+
     // Percentage fields
     ['traditional401kPercent', 'roth401kPercent'].forEach(field => {
       if (!currencyInputsFocused[field]) {
@@ -316,9 +334,6 @@ const PaycheckForm = ({
   const [noBonusExpected, setNoBonusExpected] = useState(false); // Add state for no bonus checkbox
   const [showBudgetExplanation, setShowBudgetExplanation] = useState(false); // Add state for budget explanation
   const [showMonthlyView, setShowMonthlyView] = useState(true); // Add state for monthly/pay period toggle
-  const [incomePeriods, setIncomePeriods] = useState(incomePeriodsData);
-  const [incomePeriodsErrors, setIncomePeriodsErrors] = useState([]);
-  const [expandedIncomePeriods, setExpandedIncomePeriods] = useState({});
 
   const handleHsaCoverageToggle = (type) => {
     setHsaCoverageType(type);
@@ -371,11 +386,6 @@ const PaycheckForm = ({
     }
   }, [salary, bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, noBonusExpected, retirementOptions.traditional401kPercent, retirementOptions.roth401kPercent, setEffectiveBonus]);
 
-  // Update local income periods state when props change
-  useEffect(() => {
-    setIncomePeriods(incomePeriodsData);
-    setIncomePeriodsErrors(validateIncomePeriods(incomePeriodsData));
-  }, [incomePeriodsData]);
 
   // Consolidated age-related effects
   useEffect(() => {
@@ -422,115 +432,7 @@ const PaycheckForm = ({
     return iraTotal + brokerageTotal;
   };
 
-  // YTD Income validation
-  const validateIncomePeriods = (periods) => {
-    const errors = [];
-    const currentYear = new Date().getFullYear();
-    
-    for (let i = 0; i < periods.length; i++) {
-      const period1 = periods[i];
-      if (!period1.startDate || !period1.endDate) continue;
-      
-      // Parse dates without timezone issues by extracting year directly
-      const start1Year = parseInt(period1.startDate.split('-')[0]);
-      const end1Year = parseInt(period1.endDate.split('-')[0]);
-      const start1 = new Date(period1.startDate + 'T00:00:00'); // Force local timezone
-      const end1 = new Date(period1.endDate + 'T00:00:00'); // Force local timezone
-      
-      // Check if dates are valid and in current year
-      if (start1Year !== currentYear || end1Year !== currentYear) {
-        errors.push({ id: period1.id, message: `Dates must be in ${currentYear}` });
-        continue;
-      }
-      
-      // Check if start date is before end date
-      if (start1 >= end1) {
-        errors.push({ id: period1.id, message: 'Start date must be before end date' });
-      }
-      
-      // Check for overlaps with other periods
-      for (let j = i + 1; j < periods.length; j++) {
-        const period2 = periods[j];
-        if (!period2.startDate || !period2.endDate) continue;
-        
-        const start2 = new Date(period2.startDate + 'T00:00:00'); // Force local timezone
-        const end2 = new Date(period2.endDate + 'T00:00:00'); // Force local timezone
-        
-        // Check if periods overlap
-        if ((start1 <= end2 && end1 >= start2)) {
-          errors.push({ 
-            id: period1.id, 
-            message: `Overlaps with another income period` 
-          });
-          errors.push({ 
-            id: period2.id, 
-            message: `Overlaps with another income period` 
-          });
-        }
-      }
-    }
-    
-    return errors;
-  };
 
-  // YTD Income functions
-  const addIncomePeriod = () => {
-    const currentYear = new Date().getFullYear();
-    const newPeriod = {
-      id: Date.now(),
-      startDate: `${currentYear}-01-01`,
-      endDate: `${currentYear}-12-31`,
-      grossSalary: parseFloat(salary) || 0,
-      description: 'Salary Period'
-    };
-    
-    const updatedPeriods = [...incomePeriods, newPeriod];
-    setIncomePeriods(updatedPeriods);
-    setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
-    if (onUpdateIncomePeriods) {
-      onUpdateIncomePeriods(updatedPeriods);
-    }
-  };
-
-  const updateIncomePeriod = (id, field, value) => {
-    const updatedPeriods = incomePeriods.map(period => 
-      period.id === id ? { 
-        ...period, 
-        [field]: field === 'grossSalary' ? parseFloat(value) || 0 : value 
-      } : period
-    );
-    setIncomePeriods(updatedPeriods);
-    // Only validate on blur for date fields to avoid interrupting date picker
-    if (field !== 'startDate' && field !== 'endDate') {
-      setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
-    }
-    if (onUpdateIncomePeriods) {
-      onUpdateIncomePeriods(updatedPeriods);
-    }
-  };
-
-  const validateIncomePeriodOnBlur = (id) => {
-    setIncomePeriodsErrors(validateIncomePeriods(incomePeriods));
-  };
-
-  const removeIncomePeriod = (id) => {
-    const updatedPeriods = incomePeriods.filter(period => period.id !== id);
-    setIncomePeriods(updatedPeriods);
-    setIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
-    if (onUpdateIncomePeriods) {
-      onUpdateIncomePeriods(updatedPeriods);
-    }
-  };
-
-  const ytdIncome = calculateYTDIncome(incomePeriods, payPeriod, salary);
-  const projectedAnnualIncome = calculateProjectedAnnualIncome(incomePeriods, salary, payPeriod);
-
-  const toggleIncomePeriod = (id) => {
-    setExpandedIncomePeriods(prev => ({
-      ...prev,
-      [id]: !prev[id]
-    }));
-  };
 
 
   return (
@@ -736,11 +638,16 @@ const PaycheckForm = ({
             section="medical"
             subtitle="Medical, Health Insurance & HSA"
             badge={(() => {
-              const nonHsaDeductions = Object.entries(medicalDeductions)
-                .filter(([key, value]) => key !== 'hsa' && key !== 'employerHsa' && value > 0)
+              const coreDeductions = Object.entries(medicalDeductions)
+                .filter(([key, value]) => 
+                  !['hsa', 'employerHsa', 'additionalMedicalDeductions'].includes(key) && value > 0
+                )
                 .reduce((sum, [, value]) => sum + value, 0);
+              const additionalDeductions = (medicalDeductions.additionalMedicalDeductions || []).reduce(
+                (sum, item) => sum + (item.amount || 0), 0
+              );
               const hsaDeductions = hsaCoverageType !== 'none' ? (medicalDeductions.hsa || 0) : 0;
-              const totalDeductions = nonHsaDeductions + hsaDeductions;
+              const totalDeductions = coreDeductions + additionalDeductions + hsaDeductions;
               return totalDeductions > 0 ? formatCurrency(totalDeductions) : null;
             })()}
           />
@@ -812,6 +719,70 @@ const PaycheckForm = ({
                     placeholder="$0.00"
                   />
                 </div>
+              </div>
+
+              {/* Dynamic Additional Medical Deductions */}
+              <div className="additional-medical-deductions-section">
+                <div className="additional-medical-deductions-header">
+                  <label className="form-label">Additional Medical Deductions (Per Paycheck):</label>
+                  <button 
+                    type="button"
+                    onClick={() => onAddMedicalDeduction(personName)}
+                    className="btn-secondary btn-sm"
+                  >
+                    ➕ Add Medical Deduction
+                  </button>
+                </div>
+                
+                {medicalDeductions.additionalMedicalDeductions && medicalDeductions.additionalMedicalDeductions.map((deduction, index) => (
+                  <div key={deduction.id} className="additional-medical-deduction-item">
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={deduction.name}
+                        onChange={(e) => onUpdateMedicalDeduction(personName, deduction.id, 'name', e.target.value)}
+                        placeholder="Deduction name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={currencyInputValues[`medical_${deduction.id}`] || ''}
+                        onChange={(e) => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          const rawValue = e.target.value.replace(/[$,]/g, '');
+                          setCurrencyInputValues(prev => ({ ...prev, [fieldKey]: e.target.value }));
+                          onUpdateMedicalDeduction(personName, deduction.id, 'amount', parseFloat(rawValue) || 0);
+                        }}
+                        onFocus={() => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          handleCurrencyInputFocus(fieldKey, { [fieldKey]: deduction.amount });
+                        }}
+                        onBlur={() => {
+                          const fieldKey = `medical_${deduction.id}`;
+                          handleCurrencyInputBlur(fieldKey, { [fieldKey]: deduction.amount }, formatDeductionDisplay);
+                        }}
+                        placeholder="$0.00"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => onRemoveMedicalDeduction(personName, deduction.id)}
+                      className="btn-danger btn-sm"
+                      title="Remove this medical deduction"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                
+                {(!medicalDeductions.additionalMedicalDeductions || medicalDeductions.additionalMedicalDeductions.length === 0) && (
+                  <div className="no-additional-medical-deductions">
+                    <p>No additional medical deductions added. Click "Add Medical Deduction" to add your first one.</p>
+                  </div>
+                )}
               </div>
 
               {/* HSA Section with better readability */}
@@ -928,11 +899,16 @@ const PaycheckForm = ({
             title="💳 Other Post-Tax Deductions" 
             section="postTax"
             subtitle="After-Tax Deductions (ESPP, etc.)"
-            badge={
-              esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary))
-                ? `$${((parseFloat(salary) * (esppDeductionPercent / 100) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2))}`
-                : null
-            }
+            badge={(() => {
+              const esppTotal = esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary))
+                ? parseFloat(salary) * (esppDeductionPercent / 100) / PAY_PERIODS[payPeriod].periodsPerYear
+                : 0;
+              const additionalTotal = (medicalDeductions.additionalPostTaxDeductions || []).reduce(
+                (sum, item) => sum + (item.amount || 0), 0
+              );
+              const totalDeductions = esppTotal + additionalTotal;
+              return totalDeductions > 0 ? `$${totalDeductions.toFixed(2)}` : null;
+            })()}
           />
           
           {expandedSections.postTax && (
@@ -951,6 +927,70 @@ const PaycheckForm = ({
                   onBlur={() => handleCurrencyInputBlur('esppDeductionPercent', { esppDeductionPercent }, formatPercentageDisplay)}
                   placeholder="Enter ESPP percentage"
                 />
+              </div>
+
+              {/* Dynamic Additional Post-Tax Deductions */}
+              <div className="additional-post-tax-deductions-section">
+                <div className="additional-post-tax-deductions-header">
+                  <label className="form-label">Additional Post-Tax Deductions (Per Paycheck):</label>
+                  <button 
+                    type="button"
+                    onClick={() => onAddPostTaxDeduction(personName)}
+                    className="btn-secondary btn-sm"
+                  >
+                    ➕ Add Post-Tax Deduction
+                  </button>
+                </div>
+                
+                {medicalDeductions.additionalPostTaxDeductions && medicalDeductions.additionalPostTaxDeductions.map((deduction, index) => (
+                  <div key={deduction.id} className="additional-post-tax-deduction-item">
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={deduction.name}
+                        onChange={(e) => onUpdatePostTaxDeduction(personName, deduction.id, 'name', e.target.value)}
+                        placeholder="Deduction name"
+                      />
+                    </div>
+                    <div className="form-group">
+                      <input
+                        type="text"
+                        className="form-input"
+                        value={currencyInputValues[`postTax_${deduction.id}`] || ''}
+                        onChange={(e) => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          const rawValue = e.target.value.replace(/[$,]/g, '');
+                          setCurrencyInputValues(prev => ({ ...prev, [fieldKey]: e.target.value }));
+                          onUpdatePostTaxDeduction(personName, deduction.id, 'amount', parseFloat(rawValue) || 0);
+                        }}
+                        onFocus={() => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          handleCurrencyInputFocus(fieldKey, { [fieldKey]: deduction.amount });
+                        }}
+                        onBlur={() => {
+                          const fieldKey = `postTax_${deduction.id}`;
+                          handleCurrencyInputBlur(fieldKey, { [fieldKey]: deduction.amount }, formatDeductionDisplay);
+                        }}
+                        placeholder="$0.00"
+                      />
+                    </div>
+                    <button 
+                      type="button"
+                      onClick={() => onRemovePostTaxDeduction(personName, deduction.id)}
+                      className="btn-danger btn-sm"
+                      title="Remove this post-tax deduction"
+                    >
+                      🗑️
+                    </button>
+                  </div>
+                ))}
+                
+                {(!medicalDeductions.additionalPostTaxDeductions || medicalDeductions.additionalPostTaxDeductions.length === 0) && (
+                  <div className="no-additional-post-tax-deductions">
+                    <p>No additional post-tax deductions added. Click "Add Post-Tax Deduction" to add your first one.</p>
+                  </div>
+                )}
               </div>
 
               {esppDeductionPercent > 0 && salary && !isNaN(parseFloat(salary)) && (
@@ -1122,149 +1162,6 @@ const PaycheckForm = ({
           )}
         </div>
 
-        {/* YTD Income Section */}
-        <div>
-          <SectionHeader 
-            title="📈 YTD Income Tracker" 
-            section="ytdIncome"
-            subtitle="Year-to-Date Income Tracking"
-            badge={ytdIncome > 0 ? formatCurrency(ytdIncome) : null}
-          />
-          
-          {expandedSections.ytdIncome && (
-            <div className="section-content">
-              <div className="ytd-section">
-                <div className="ytd-section-header">
-                  <h4>Income Periods</h4>
-                  <button 
-                    className="btn btn-secondary btn-sm"
-                    onClick={addIncomePeriod}
-                  >
-                    + Add Period
-                  </button>
-                </div>
-
-                {incomePeriods.length === 0 ? (
-                  <div className="ytd-empty-state">
-                    <p>No income periods defined. Add periods to track actual vs projected income.</p>
-                  </div>
-                ) : (
-                  <div className="income-periods-list">
-                    {incomePeriods.map((period) => {
-                      const periodErrors = incomePeriodsErrors.filter(error => error.id === period.id);
-                      const hasErrors = periodErrors.length > 0;
-                      const isExpanded = expandedIncomePeriods[period.id];
-                      
-                      return (
-                      <div key={period.id} className={`income-period-card ${hasErrors ? 'has-errors' : ''} ${isExpanded ? 'expanded' : 'collapsed'}`}>
-                        {/* Compact Summary View */}
-                        <div className="income-period-summary" onClick={() => toggleIncomePeriod(period.id)}>
-                          <div className="income-period-summary-content">
-                            <div className="income-period-summary-main">
-                              <span className="income-period-description">
-                                {period.description || 'Untitled Period'}
-                              </span>
-                              <span className="income-period-dates">
-                                {period.startDate && period.endDate 
-                                  ? `${period.startDate} to ${period.endDate}`
-                                  : 'Dates not set'
-                                }
-                              </span>
-                              <span className="income-period-salary">
-                                {period.grossSalary ? `$${period.grossSalary.toLocaleString()}` : '$0'}
-                              </span>
-                            </div>
-                            <div className="income-period-toggle">
-                              <span className="toggle-icon">{isExpanded ? '▼' : '▶'}</span>
-                            </div>
-                          </div>
-                          {hasErrors && !isExpanded && (
-                            <div className="income-period-summary-errors">
-                              ⚠️ {periodErrors.length} error{periodErrors.length > 1 ? 's' : ''}
-                            </div>
-                          )}
-                        </div>
-
-                        {/* Expanded Edit View */}
-                        {isExpanded && (
-                          <div className="income-period-expanded">
-                            <div className="income-period-row">
-                              <div className="income-period-field">
-                                <label>Description</label>
-                                <input
-                                  type="text"
-                                  value={period.description || ''}
-                                  onChange={(e) => updateIncomePeriod(period.id, 'description', e.target.value)}
-                                  placeholder="e.g., Base Salary, Promotion, New Job"
-                                />
-                              </div>
-                              <div className="income-period-field">
-                                <label>Start Date</label>
-                                <input
-                                  type="date"
-                                  value={period.startDate || ''}
-                                  onChange={(e) => updateIncomePeriod(period.id, 'startDate', e.target.value)}
-                                  onBlur={() => validateIncomePeriodOnBlur(period.id)}
-                                />
-                              </div>
-                              <div className="income-period-field">
-                                <label>End Date</label>
-                                <input
-                                  type="date"
-                                  value={period.endDate || ''}
-                                  onChange={(e) => updateIncomePeriod(period.id, 'endDate', e.target.value)}
-                                  onBlur={() => validateIncomePeriodOnBlur(period.id)}
-                                />
-                              </div>
-                              <div className="income-period-field">
-                                <label>Annual Gross Salary</label>
-                                <input
-                                  type="number"
-                                  value={period.grossSalary || ''}
-                                  onChange={(e) => updateIncomePeriod(period.id, 'grossSalary', e.target.value)}
-                                  placeholder="0"
-                                />
-                              </div>
-                              <div className="income-period-actions">
-                                <button 
-                                  className="btn btn-danger btn-sm"
-                                  onClick={() => removeIncomePeriod(period.id)}
-                                >
-                                  🗑️ Remove
-                                </button>
-                              </div>
-                            </div>
-                            
-                            {/* Error display */}
-                            {hasErrors && (
-                              <div className="income-period-errors">
-                                {periodErrors.map((error, errorIndex) => (
-                                  <div key={errorIndex} className="income-period-error">
-                                    {error.message}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {/* Income Summary */}
-                {(ytdIncome > 0 || projectedAnnualIncome > 0) && (
-                  <div className="calculation-hint">
-                    <div><strong>Income Summary:</strong></div>
-                    <div>YTD Income: {formatCurrency(ytdIncome)}</div>
-                    <div>Projected Annual Income: {formatCurrency(projectedAnnualIncome)}</div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
 
         {/* Bonus Section */}
         <div>

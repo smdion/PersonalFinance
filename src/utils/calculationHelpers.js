@@ -623,11 +623,31 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 // Helper function to calculate number of pay periods between two dates
 const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
-  const millisecondsInYear = 365.25 * 24 * 60 * 60 * 1000; // Account for leap years
-  const timeDifferenceMs = endDate - startDate;
-  const yearsSpanned = timeDifferenceMs / millisecondsInYear;
   
-  return yearsSpanned * periodsPerYear;
+  // Calculate the number of days between start and end dates (inclusive)
+  const timeDifferenceMs = endDate - startDate + (24 * 60 * 60 * 1000); // Add 1 day to make it inclusive
+  const daysInPeriod = timeDifferenceMs / (24 * 60 * 60 * 1000);
+  
+  // Calculate pay periods based on actual pay period frequency
+  let daysPerPayPeriod;
+  switch (payPeriod) {
+    case 'weekly':
+      daysPerPayPeriod = 7;
+      break;
+    case 'biWeekly':
+      daysPerPayPeriod = 14;
+      break;
+    case 'semiMonthly':
+      daysPerPayPeriod = 365.25 / 24; // ~15.22 days per semi-monthly period
+      break;
+    case 'monthly':
+      daysPerPayPeriod = 365.25 / 12; // ~30.44 days per monthly period
+      break;
+    default:
+      daysPerPayPeriod = 14; // Default to bi-weekly
+  }
+  
+  return daysInPeriod / daysPerPayPeriod;
 };
 
 // Calculate actual YTD income from income periods
@@ -782,8 +802,8 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
   return projectedIncome;
 };
 
-// Calculate YTD contributions for a person from Performance data
-export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear()) => {
+// Calculate YTD contributions for a person from Performance data and Historical data
+export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), historicalData = null) => {
   const result = {
     traditional401k: 0,
     roth401k: 0,
@@ -795,7 +815,8 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
     total401k: 0,
     totalIra: 0,
     totalContributions: 0,
-    totalEmployerMatch: 0
+    totalEmployerMatch: 0,
+    totalEmployerHsa: 0
   };
   
   if (!performanceData || !userNames || userNames.length === 0) {
@@ -871,6 +892,22 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
   // Calculate totals
   result.total401k = result.traditional401k + result.roth401k;
   result.totalIra = result.traditionalIra + result.rothIra;
+  
+  // Get HSA employer contributions from historical data if available
+  if (historicalData && historicalData[currentYear]) {
+    const yearData = historicalData[currentYear];
+    if (yearData.users) {
+      userNames.forEach(userName => {
+        if (yearData.users[userName] && yearData.users[userName].employerHsa) {
+          result.totalEmployerHsa += parseFloat(yearData.users[userName].employerHsa) || 0;
+        }
+      });
+    }
+    // Also check for employerHsa at the year level
+    if (yearData.employerHsa) {
+      result.totalEmployerHsa += parseFloat(yearData.employerHsa) || 0;
+    }
+  }
   
   return result;
 };
@@ -992,6 +1029,77 @@ export const calculateMaxOutPerPaycheckAmounts = (
     hsa_perPaycheck: Math.max(0, hsaPerPaycheck),
     remainingPaychecks: Math.round(remainingPaychecks * 10) / 10, // Round to 1 decimal
     remainingMonths: Math.max(0, remainingMonths)
+  };
+};
+
+// Calculate projected remaining contributions for current year (used in retirement planning)
+export const calculateProjectedRemainingContributions = (paycheckUser, employerMatchPercent = 4, employeeContributionForMatchPercent = 4) => {
+  if (!paycheckUser || !paycheckUser.salary) {
+    return {
+      traditional401k: 0,
+      roth401k: 0,
+      employerMatch: 0,
+      traditionalIra: 0,
+      rothIra: 0,
+      brokerage: 0
+    };
+  }
+
+  const salary = parseFloat(paycheckUser.salary) || 0;
+  const payPeriod = paycheckUser.payPeriod || 'biWeekly';
+  const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
+
+  // Calculate remaining pay periods from today to end of year
+  const today = new Date();
+  const endOfYear = new Date(today.getFullYear(), 11, 31, 23, 59, 59);
+  const timeDifferenceMs = endOfYear - today;
+  const daysDifference = timeDifferenceMs / (24 * 60 * 60 * 1000);
+  const daysPerPeriod = 365.25 / periodsPerYear;
+  const remainingPaychecks = Math.max(0, daysDifference / daysPerPeriod);
+
+  // Calculate remaining months starting from beginning of next month
+  const monthsRemaining = Math.max(0, 12 - today.getMonth() - 1);
+
+  // Calculate projected contributions
+  const grossPayPerPaycheck = salary / periodsPerYear;
+  
+  // 401k contributions
+  const traditional401kPercent = parseFloat(paycheckUser.retirementOptions?.traditional401kPercent) || 0;
+  const roth401kPercent = parseFloat(paycheckUser.retirementOptions?.roth401kPercent) || 0;
+  const total401kPercent = traditional401kPercent + roth401kPercent;
+  
+  const projectedTraditional401k = grossPayPerPaycheck * remainingPaychecks * (traditional401kPercent / 100);
+  const projectedRoth401k = grossPayPerPaycheck * remainingPaychecks * (roth401kPercent / 100);
+  
+  // Employer match calculation: 
+  // Employee must contribute at least the threshold to get any match
+  // If employee contributes >= threshold, employer matches up to the match percentage
+  let projectedEmployerMatch = 0;
+  if (total401kPercent >= employeeContributionForMatchPercent) {
+    // Employee meets threshold, so employer provides full match on remaining salary
+    const remainingSalary = grossPayPerPaycheck * remainingPaychecks;
+    projectedEmployerMatch = remainingSalary * (employerMatchPercent / 100);
+  }
+
+  // IRA contributions (monthly)
+  const traditionalIraMonthly = parseFloat(paycheckUser.budgetImpacting?.traditionalIraMonthly) || 0;
+  const rothIraMonthly = parseFloat(paycheckUser.budgetImpacting?.rothIraMonthly) || 0;
+  
+  const projectedTraditionalIra = traditionalIraMonthly * monthsRemaining;
+  const projectedRothIra = rothIraMonthly * monthsRemaining;
+
+  // Brokerage contributions (monthly)
+  const brokerageMonthly = (paycheckUser.budgetImpacting?.brokerageAccounts || []).reduce((sum, account) => 
+    sum + (parseFloat(account.monthlyAmount) || 0), 0);
+  const projectedBrokerage = brokerageMonthly * monthsRemaining;
+
+  return {
+    traditional401k: projectedTraditional401k,
+    roth401k: projectedRoth401k,
+    employerMatch: projectedEmployerMatch,
+    traditionalIra: projectedTraditionalIra,
+    rothIra: projectedRothIra,
+    brokerage: projectedBrokerage
   };
 };
 

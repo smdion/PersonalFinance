@@ -75,7 +75,8 @@ const DataTableRow = memo(({
   renderTableCell,
   compactView,
   rowIndex,
-  columnWidths
+  columnWidths,
+  disableReadOnly
 }) => {
   const isEvenRow = rowIndex % 2 === 0;
   
@@ -247,7 +248,8 @@ const DataManager = ({
   beforeCSVImport,
   customFormatCSVRow,
   customParseCSVRow,
-  itemsPerPage: initialItemsPerPage = 50
+  itemsPerPage: initialItemsPerPage = 50,
+  disableReadOnly = false // New prop to override read-only mode
 }) => {
   // Initialize all state variables first
   const [entryData, setEntryData] = useState({});
@@ -861,16 +863,30 @@ const DataManager = ({
       window.dispatchEvent(new CustomEvent('collapseAllSections'));
     };
 
+    const handleToggleDualCalculator = () => {
+      // Force re-evaluation of user filters when dual calculator mode is toggled
+      // This will trigger the useEffect that sets up the user filters
+      if (usePaycheckUsers && paycheckData) {
+        // Small delay to allow the paycheck data to be updated with the new dual mode setting
+        setTimeout(() => {
+          const updatedPaycheckData = getPaycheckData();
+          setPaycheckDataState(updatedPaycheckData);
+        }, 100);
+      }
+    };
+
     window.addEventListener('resetAllData', handleResetAll);
     window.addEventListener('expandAllSections', handleExpandAll);
     window.addEventListener('collapseAllSections', handleCollapseAll);
+    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
 
     return () => {
       window.removeEventListener('resetAllData', handleResetAll);
       window.removeEventListener('expandAllSections', handleExpandAll);
       window.removeEventListener('collapseAllSections', handleCollapseAll);
+      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
     };
-  }, []);
+  }, [usePaycheckUsers, paycheckData]);
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({
@@ -1132,8 +1148,10 @@ const DataManager = ({
       // Include any other users found in data that aren't in userNames (legacy data)
       allUsersInData.forEach(user => {
         if (!userNames.includes(user) && user !== 'Joint') {
-          // Only show legacy users if they're not spouse-related or if dual mode is enabled
-          initialFilters[user] = true;
+          // Only show legacy users if dual mode is enabled (assume all legacy users are spouse-related)
+          if (isDualMode) {
+            initialFilters[user] = true;
+          }
         }
       });
       
@@ -1334,11 +1352,14 @@ const DataManager = ({
     }
     
     // Add any other users found in data that aren't already included (legacy data)
-    allUsersInData.forEach(user => {
-      if (!options.includes(user)) {
-        options.push(user);
-      }
-    });
+    // Only show legacy users if dual mode is enabled (assume all legacy users are spouse-related)
+    if (isDualMode) {
+      allUsersInData.forEach(user => {
+        if (!options.includes(user)) {
+          options.push(user);
+        }
+      });
+    }
     
     return options;
   }, [entryData, userNames, paycheckData?.settings?.showSpouseCalculator]);
@@ -1507,7 +1528,7 @@ const DataManager = ({
     const isCurrentYear = entry.year === currentYear;
     
     // Special case: homeImprovements should be readonly for ALL years since it's imported
-    const isReadonly = fieldConfig?.readonly && (
+    const isReadonly = !disableReadOnly && fieldConfig?.readonly && (
       isCurrentYear || field === 'homeImprovements'
     );
 
@@ -1579,7 +1600,7 @@ const DataManager = ({
     const value = entry.users && entry.users[userName] ? entry.users[userName][field] : undefined;
     const currentYear = new Date().getFullYear();
     const isCurrentYear = entry.year === currentYear;
-    const isReadonly = fieldConfig?.readonly && isCurrentYear;
+    const isReadonly = !disableReadOnly && fieldConfig?.readonly && isCurrentYear;
 
     // Spreadsheet-like: if this cell is being edited, show input
     if (
@@ -2225,6 +2246,7 @@ const DataManager = ({
                         renderTableCell={renderTableCell}
                         compactView={compactView}
                         columnWidths={columnWidths || {}}
+                        disableReadOnly={disableReadOnly}
                       />
                     );
                   })}

@@ -14,7 +14,7 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
-import { getPerformanceData, getPerformanceSettings, setPerformanceSettings } from '../utils/localStorage';
+import { getPerformanceData, getPerformanceSettings, setPerformanceSettings, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
 
 // Register Chart.js components
@@ -32,6 +32,7 @@ ChartJS.register(
 
 const Performance = () => {
   const [performanceData, setPerformanceDataState] = useState({});
+  const [paycheckData, setPaycheckDataState] = useState(null);
   const [selectedYears, setSelectedYears] = useState([]);
   const [selectedAccounts, setSelectedAccounts] = useState([]);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'returns', 'details'
@@ -103,9 +104,11 @@ const Performance = () => {
   useEffect(() => {
     const loadData = () => {
       const performance = getPerformanceData();
+      const paycheck = getPaycheckData();
       const savedSettings = getPerformanceSettings();
       
       setPerformanceDataState(performance);
+      setPaycheckDataState(paycheck);
       
       // Load saved settings
       setActiveTab(savedSettings.activeTab);
@@ -183,10 +186,18 @@ const Performance = () => {
       });
     };
 
+    // Listen for paycheck data updates to sync dual calculator state
+    const handlePaycheckUpdate = () => {
+      const paycheck = getPaycheckData();
+      setPaycheckDataState(paycheck);
+    };
+
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     
     return () => {
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     };
   }, []);
 
@@ -890,7 +901,7 @@ const Performance = () => {
                   <div className="performance-step-number">2</div>
                   <div className="performance-step-content">
                     <strong>Track Key Metrics</strong>
-                    <p>Include account balances, contributions, employer matches, gains, fees, and withdrawals</p>
+                    <p>Include account balances, employee contributions, employer matches, gains, fees, and withdrawals</p>
                   </div>
                 </div>
                 
@@ -926,7 +937,7 @@ const Performance = () => {
                     <div className="performance-feature-icon">📈</div>
                     <div className="performance-feature-text">
                       <strong>Contribution Tracking</strong>
-                      <p>Monitor your contributions, employer matches, and net cash flows</p>
+                      <p>Monitor your employee contributions, employer matches, and net cash flows</p>
                     </div>
                   </div>
                   
@@ -1065,7 +1076,15 @@ const Performance = () => {
 
               <div className="performance-account-selection">
                 <div className="performance-account-checkboxes">
-                  {availableAccounts.map(account => (
+                  {availableAccounts.filter(account => {
+                    // If dual calculator mode is disabled, only show first user and Joint accounts
+                    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+                    if (!isDualMode) {
+                      const firstUserName = paycheckData?.your?.name?.trim();
+                      return account.owner === firstUserName || account.owner === 'Joint';
+                    }
+                    return true;
+                  }).map(account => (
                     <label key={account.id} className={`performance-account-checkbox ${selectedAccounts.includes(account.id) ? 'selected' : ''} ${!account.isActive ? 'inactive' : ''}`}>
                       <input
                         type="checkbox"
@@ -1081,7 +1100,19 @@ const Performance = () => {
                   ))}
                 </div>
                 <div className="performance-account-summary">
-                  {selectedAccounts.length} of {availableAccounts.length} accounts selected
+                  {(() => {
+                    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+                    const visibleAccounts = isDualMode ? availableAccounts : availableAccounts.filter(account => {
+                      const firstUserName = paycheckData?.your?.name?.trim();
+                      return account.owner === firstUserName || account.owner === 'Joint';
+                    });
+                    return `${selectedAccounts.length} of ${visibleAccounts.length} accounts selected`;
+                  })()}
+                  {paycheckData?.settings?.showSpouseCalculator === false && (
+                    <span style={{ fontSize: '0.8rem', color: '#6b7280', display: 'block', marginTop: '4px' }}>
+                      (Dual calculator mode disabled - showing primary user accounts only)
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
@@ -1738,7 +1769,7 @@ const Performance = () => {
                             <th className="sticky">Owner</th>
                             <th className="sticky">Year</th>
                             <th>Balance</th>
-                            <th>Contributions</th>
+                            <th>Employee Contributions</th>
                             <th>Employer Match</th>
                             <th>Gains</th>
                             <th>Fees</th>
@@ -1760,7 +1791,7 @@ const Performance = () => {
                                 {getYTDIndicator(data.year, 'table')}
                               </td>
                               <td className="performance-table-currency">{data.hasData ? formatCurrency(data.balance) : 'No Data'}</td>
-                              <td className="performance-table-currency">{data.hasData ? formatCurrency(data.contributions) : 'No Data'}</td>
+                              <td className="performance-table-currency" title="Employee contributions only">{data.hasData ? formatCurrency(data.contributions) : 'No Data'}</td>
                               <td className="performance-table-currency">{data.hasData ? formatCurrency(data.employerMatch) : 'No Data'}</td>
                               <td className="performance-table-currency">{data.hasData ? formatCurrency(data.gains) : 'No Data'}</td>
                               <td className="performance-table-currency negative">{data.hasData ? formatCurrency(data.fees) : 'No Data'}</td>
