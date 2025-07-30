@@ -1,0 +1,960 @@
+/* ===================================================================
+   PERFORMANCE DASHBOARD STYLES
+   Dedicated styles for the Performance component
+   ================================================================ */
+
+/* YTD Indicators */
+.performance-ytd-indicator {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-left: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  vertical-align: middle;
+  cursor: help;
+  animation: ytd-pulse 2s ease-in-out infinite;
+}
+
+.performance-ytd-indicator.table {
+  font-size: 0.6rem;
+  padding: 1px 3px;
+  margin-left: 4px;
+  display: block;
+  margin-top: 2px;
+}
+
+@keyframes ytd-pulse {
+  0%, 100% {
+    background: #fef2f2;
+    border-color: #fecaca;
+  }
+  50% {
+    background: #fee2e2;
+    border-color: #f87171;
+  }
+}
+
+/* ===================================================================
+   EMPTY STATE STYLES
+   ================================================================ */
+
+.performance-empty-state {
+  padding: 3rem 2rem;
+  text-align: center;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 2px dashed #e2e8f0;
+  margin: 2rem 0;
+}
+
+.performance-empty-state-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.performance-empty-state-icon {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  opacity: 0.8;
+}
+
+.performance-empty-state h2 {
+  color: #1e293b;
+  font-size: 1.875rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+}
+
+.performance-empty-state-description {
+  color: #64748b;
+  font-size: 1.125rem;
+  line-height: 1.7;
+  margin-bottom: 2.5rem;
+}
+
+.performance-empty-state-steps {
+  text-align: left;
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-empty-state-steps h3 {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.performance-step {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
+}
+
+.performance-step:last-child {
+  margin-bottom: 0;
+}
+
+.performance-step-number {
+  background: #3b82f6;
+  color: white;
+  font-weight: 700;
+  font-size: 0.875rem;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.performance-step-content {
+  flex: 1;
+}
+
+.performance-step-content strong {
+  color: #1e293b;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.performance-step-content p {
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.performance-empty-state-features {
+  background: #fff;
+  border-radius: 8px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-empty-state-features h3 {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin-bottom: 1.5rem;
+  text-align: center;
+}
+
+.performance-features-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1.5rem;
+}
+
+.performance-feature {
+  display: flex;
+  align-items: flex-start;
+}
+
+.performance-feature-icon {
+  font-size: 2rem;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.performance-feature-text strong {
+  color: #1e293b;
+  font-size: 1rem;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.performance-feature-text p {
+  color: #64748b;
+  margin: 0;
+  line-height: 1.6;
+}
+
+.performance-empty-state-cta {
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 2rem;
+}
+
+.performance-empty-state-cta p {
+  color: #1e40af;
+  margin: 0.5rem 0;
+  line-height: 1.6;
+}
+
+.performance-portfolio-link {
+  color: #2563eb;
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s ease;
+}
+
+.performance-portfolio-link:hover {
+  border-bottom-color: #2563eb;
+}
+
+/* ===================================================================
+   FLOATING CONTROLS
+   ================================================================ */
+
+.performance-floating-controls {
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  padding: 1rem;
+  z-index: 1000;
+  max-width: 300px;
+  font-size: 0.875rem;
+}
+
+.performance-floating-controls-content {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.performance-floating-control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.performance-floating-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.performance-floating-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.performance-floating-button {
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  border-radius: 4px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.performance-floating-button:hover {
+  background: #f3f4f6;
+}
+
+.performance-floating-button.btn-primary {
+  background: #3b82f6;
+  border-color: #3b82f6;
+  color: white;
+}
+
+.performance-floating-button.btn-primary:hover {
+  background: #2563eb;
+}
+
+/* ===================================================================
+   CONTROLS SECTION
+   ================================================================ */
+
+.performance-controls {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 1.5rem 0;
+}
+
+.performance-control-panel {
+  background: white;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-control-panel:last-child {
+  margin-bottom: 0;
+}
+
+.performance-control-panel-title {
+  color: #1e293b;
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0 0 1rem 0;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.performance-control-items {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.performance-control-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.performance-control-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.performance-control-label {
+  font-weight: 600;
+  color: #374151;
+  font-size: 0.9rem;
+}
+
+.performance-mode-buttons {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.performance-mode-button {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+/* Year and Account Selection */
+.performance-year-controls,
+.performance-account-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.performance-year-actions,
+.performance-account-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.performance-year-action-btn,
+.performance-account-action-btn {
+  padding: 0.375rem 0.75rem;
+  font-size: 0.8rem;
+  border-radius: 4px;
+}
+
+.performance-year-selection,
+.performance-account-selection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.performance-year-checkboxes,
+.performance-account-checkboxes {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.performance-year-checkbox,
+.performance-account-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+}
+
+.performance-year-checkbox:hover,
+.performance-account-checkbox:hover {
+  background: #f3f4f6;
+  border-color: #d1d5db;
+}
+
+.performance-year-checkbox.selected,
+.performance-account-checkbox.selected {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+.performance-year-checkbox input,
+.performance-account-checkbox input {
+  margin: 0;
+}
+
+.performance-account-name {
+  font-weight: 500;
+}
+
+.performance-account-owner {
+  color: #6b7280;
+  font-size: 0.8rem;
+  margin-left: 0.25rem;
+}
+
+.performance-account-checkbox.inactive {
+  opacity: 0.7;
+}
+
+.performance-account-checkbox.inactive .performance-account-name {
+  color: #9ca3af;
+}
+
+.performance-account-status {
+  font-size: 0.75rem;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.performance-year-summary,
+.performance-account-summary {
+  font-size: 0.875rem;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* ===================================================================
+   TABS
+   ================================================================ */
+
+.performance-tabs {
+  margin: 2rem 0 1rem 0;
+}
+
+.performance-tab-border {
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.performance-tab-buttons {
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+  padding-bottom: 0;
+}
+
+.performance-tab-button {
+  background: none;
+  border: none;
+  padding: 1rem 1.5rem;
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: #64748b;
+  cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+  position: relative;
+}
+
+.performance-tab-button:hover {
+  color: #1e293b;
+  background: #f8fafc;
+}
+
+.performance-tab-button.active {
+  color: #3b82f6;
+  border-bottom-color: #3b82f6;
+  background: #f8fafc;
+}
+
+/* ===================================================================
+   SUMMARY SECTION
+   ================================================================ */
+
+.performance-summary {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-summary-title {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.performance-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.performance-summary-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.performance-summary-label {
+  color: #64748b;
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.performance-summary-value {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.performance-summary-change {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.performance-summary-change.positive {
+  color: #059669;
+}
+
+.performance-summary-change.negative {
+  color: #dc2626;
+}
+
+/* ===================================================================
+   CHARTS
+   ================================================================ */
+
+.performance-chart-container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-chart-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.performance-chart-title {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.performance-chart-controls {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.performance-chart-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #374151;
+  cursor: pointer;
+}
+
+.performance-chart-toggle input[type="checkbox"] {
+  margin: 0;
+}
+
+.performance-chart-toggle-label {
+  font-weight: 500;
+  user-select: none;
+}
+
+.performance-chart-wrapper {
+  position: relative;
+  height: 400px;
+}
+
+.performance-chart-wrapper.medium {
+  height: 350px;
+}
+
+/* ===================================================================
+   YEAR-OVER-YEAR ANALYSIS
+   ================================================================ */
+
+.performance-yoy-analysis {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 2rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-yoy-title {
+  color: #1e293b;
+  font-size: 1.25rem;
+  font-weight: 600;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.performance-yoy-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+  gap: 1rem;
+}
+
+.performance-yoy-card {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 1.5rem;
+}
+
+.performance-yoy-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.performance-yoy-header h4 {
+  color: #1e293b;
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.performance-yoy-years {
+  color: #3b82f6;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: #eff6ff;
+  padding: 0.25rem 0.75rem;
+  border-radius: 12px;
+}
+
+.performance-yoy-metrics {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.performance-yoy-metric {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.performance-yoy-metric:last-child {
+  border-bottom: none;
+}
+
+.performance-yoy-label {
+  color: #6b7280;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.performance-yoy-value {
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-align: right;
+}
+
+.performance-yoy-value.positive {
+  color: #059669;
+}
+
+.performance-yoy-value.negative {
+  color: #dc2626;
+}
+
+
+/* ===================================================================
+   TABLE STYLES
+   ================================================================ */
+
+.performance-table-container {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin: 2rem 0;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.performance-table-title {
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin: 0 0 1.5rem 0;
+  text-align: center;
+}
+
+.performance-table-wrapper {
+  overflow-x: auto;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.performance-table-scroll {
+  overflow-x: auto;
+}
+
+.performance-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.performance-table th {
+  background: #f8fafc;
+  color: #374151;
+  font-weight: 600;
+  text-align: left;
+  padding: 0.75rem;
+  border-bottom: 2px solid #e2e8f0;
+  white-space: nowrap;
+}
+
+.performance-table th.sticky {
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  background: #f8fafc;
+  border-right: 1px solid #e2e8f0;
+}
+
+.performance-table td {
+  padding: 0.75rem;
+  border-bottom: 1px solid #f1f5f9;
+  color: #374151;
+}
+
+.performance-table tr:hover {
+  background: #f8fafc;
+}
+
+.performance-table-account {
+  font-weight: 600;
+  color: #1e293b;
+  min-width: 150px;
+}
+
+.performance-table-owner {
+  color: #6b7280;
+  font-size: 0.8rem;
+  min-width: 80px;
+}
+
+.performance-table-year {
+  font-weight: 500;
+  color: #3b82f6;
+  min-width: 60px;
+}
+
+.performance-table-currency {
+  text-align: right;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-weight: 500;
+  min-width: 100px;
+}
+
+.performance-table-percent {
+  text-align: right;
+  font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', monospace;
+  font-weight: 600;
+  min-width: 80px;
+}
+
+.performance-table-currency.positive,
+.performance-table-percent.positive {
+  color: #059669;
+}
+
+.performance-table-currency.negative,
+.performance-table-percent.negative {
+  color: #dc2626;
+}
+
+.performance-table tr.no-data {
+  background: #f9fafb;
+  opacity: 0.7;
+}
+
+.performance-table tr.no-data td {
+  color: #9ca3af;
+  font-style: italic;
+}
+
+.performance-inactive-badge {
+  font-size: 0.7rem;
+  color: #ef4444;
+  font-weight: 500;
+  margin-left: 0.5rem;
+  padding: 0.125rem 0.375rem;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 4px;
+}
+
+.performance-table.compact-mode th,
+.performance-table.compact-mode td {
+  padding: 0.5rem;
+  font-size: 0.8rem;
+}
+
+/* ===================================================================
+   RESPONSIVE DESIGN
+   ================================================================ */
+
+@media (max-width: 768px) {
+  .performance-controls {
+    margin: 1rem 0;
+    padding: 1rem;
+  }
+  
+  .performance-control-panel {
+    padding: 1rem;
+  }
+  
+  .performance-control-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .performance-year-checkboxes,
+  .performance-account-checkboxes {
+    gap: 0.5rem;
+  }
+  
+  .performance-year-checkbox,
+  .performance-account-checkbox {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.8rem;
+  }
+  
+  .performance-tab-buttons {
+    justify-content: flex-start;
+  }
+  
+  .performance-tab-button {
+    padding: 0.75rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .performance-summary-grid {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+  
+  .performance-summary-card {
+    padding: 1rem;
+  }
+  
+  .performance-chart-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .performance-chart-wrapper {
+    height: 300px;
+  }
+  
+  .performance-yoy-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .performance-floating-controls {
+    display: none;
+  }
+  
+  .performance-table-container {
+    padding: 1rem;
+  }
+  
+  .performance-table {
+    font-size: 0.8rem;
+  }
+  
+  .performance-table th,
+  .performance-table td {
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .performance-summary-value {
+    font-size: 1.25rem;
+  }
+  
+  .performance-chart-wrapper {
+    height: 250px;
+  }
+  
+  .performance-empty-state {
+    padding: 2rem 1rem;
+  }
+  
+  .performance-empty-state-icon {
+    font-size: 3rem;
+  }
+  
+  .performance-empty-state h2 {
+    font-size: 1.5rem;
+  }
+  
+  .performance-features-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+}

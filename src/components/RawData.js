@@ -18,7 +18,7 @@ import DataManager from './DataManager';
 import Navigation from './Navigation';
 import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
-const Historical = () => {
+const RawData = () => {
   // Sync paycheck data and cleanup on component mount
   useEffect(() => {
     syncPaycheckToHistorical();
@@ -242,12 +242,12 @@ const Historical = () => {
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <h1>📈 Historical Data Tracker</h1>
-          <p>Track Your Financial Journey Over Time</p>
+          <h1>📈 Annual & Account Data</h1>
+          <p>Track Your Financial Journey and Account Performance Over Time</p>
         </div>
 
         <DataManager
-          title="Historical Data"
+          title="Annual Data"
           subtitle="Add your first year of data to start tracking your financial progress"
           dataKey={STORAGE_KEYS.HISTORICAL_DATA}
           getData={getHistoricalData}
@@ -261,7 +261,7 @@ const Historical = () => {
         />
 
         <DataManager
-          title="Performance Data"
+          title="Account Data"
           subtitle="Account performance data synced from Portfolio component"
           dataKey={STORAGE_KEYS.PERFORMANCE_DATA}
           getData={getPerformanceData}
@@ -279,4 +279,4 @@ const Historical = () => {
   );
 };
 
-export default Historical;
+export default RawData;

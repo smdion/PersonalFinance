@@ -26,7 +26,7 @@ const Navigation = () => {
       icon: '📊',
       subfolders: [
         {
-          label: 'Data',
+          label: 'Data Input',
           icon: '💾',
           items: [
             { path: '/other-assets', label: 'Assets', icon: '🏠' },
@@ -38,7 +38,7 @@ const Navigation = () => {
           label: 'Review',
           icon: '📈',
           items: [
-            { path: '/historical', label: 'Historical', icon: '📋' }
+            { path: '/raw-data', label: 'Raw Data', icon: '📊' }
           ]
         }
       ]
@@ -58,7 +58,8 @@ const Navigation = () => {
           label: 'Visualize',
           icon: '💎',
           items: [
-            { path: '/networth', label: 'Net Worth', icon: '💎' }
+            { path: '/networth', label: 'Net Worth', icon: '💎' },
+            { path: '/performance', label: 'Performance', icon: '📈' }
           ]
         }
       ]

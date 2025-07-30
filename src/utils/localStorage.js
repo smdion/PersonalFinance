@@ -19,6 +19,7 @@ export const STORAGE_KEYS = {
   HISTORICAL_DATA: 'historicalData',
   PERFORMANCE_DATA: 'performanceData',
   NETWORTH_SETTINGS: 'networthSettings',
+  PERFORMANCE_SETTINGS: 'performanceSettings',
   SAVINGS_DATA: 'savingsData',
   RETIREMENT_DATA: 'retirementData',
   PORTFOLIO_ACCOUNTS: 'portfolioAccounts',
@@ -1411,6 +1412,23 @@ export const getNetWorthSettings = () => {
 
 export const setNetWorthSettings = (settings) => {
   return setToStorage(STORAGE_KEYS.NETWORTH_SETTINGS, settings);
+};
+
+// Performance settings utilities
+export const getPerformanceSettings = () => {
+  return getFromStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, {
+    selectedYears: [],
+    selectedAccounts: [],
+    activeTab: 'overview',
+    showAllYearsInChart: false,
+    showAllYearsInReturnsChart: false,
+    useReverseChronological: false,
+    isCompactTable: false
+  });
+};
+
+export const setPerformanceSettings = (settings) => {
+  return setToStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, settings);
 };
 
 // Savings data utilities
