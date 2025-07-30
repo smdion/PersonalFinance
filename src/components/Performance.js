@@ -37,12 +37,12 @@ const Performance = () => {
   const [selectedAccounts, setSelectedAccounts] = useState([]);
   const [activeTab, setActiveTab] = useState('overview'); // 'overview', 'returns', 'details'
   const [showAllYearsInChart, setShowAllYearsInChart] = useState(false);
-  const [showAllYearsInReturnsChart, setShowAllYearsInReturnsChart] = useState(false);
   const [useReverseChronological, setUseReverseChronological] = useState(false);
   const [isInitialized, setIsInitialized] = useState(false);
   const [showFloatingControls, setShowFloatingControls] = useState(false);
   const [isCompactTable, setIsCompactTable] = useState(false);
   const [yoySort, setYoySort] = useState('year');
+  const [includeContributionsInReturns, setIncludeContributionsInReturns] = useState(false);
   
   // Details tab filtering and sorting
   const [detailsSort, setDetailsSort] = useState('year');
@@ -113,10 +113,10 @@ const Performance = () => {
       // Load saved settings
       setActiveTab(savedSettings.activeTab);
       setShowAllYearsInChart(savedSettings.showAllYearsInChart || false);
-      setShowAllYearsInReturnsChart(savedSettings.showAllYearsInReturnsChart || false);
       setUseReverseChronological(savedSettings.useReverseChronological !== undefined ? savedSettings.useReverseChronological : false);
       setIsCompactTable(savedSettings.isCompactTable || false);
       setYoySort(savedSettings.yoySort || 'year');
+      setIncludeContributionsInReturns(savedSettings.includeContributionsInReturns || false);
       
       // Details tab settings
       setDetailsSort(savedSettings.detailsSort || 'year');
@@ -210,10 +210,10 @@ const Performance = () => {
       selectedAccounts,
       activeTab,
       showAllYearsInChart,
-      showAllYearsInReturnsChart,
       useReverseChronological,
       isCompactTable,
       yoySort,
+      includeContributionsInReturns,
       
       // Details tab settings
       detailsSort,
@@ -231,7 +231,7 @@ const Performance = () => {
       filterReturnPerformance
     };
     setPerformanceSettings(settings);
-  }, [selectedYears, selectedAccounts, activeTab, showAllYearsInChart, showAllYearsInReturnsChart, useReverseChronological, isCompactTable, yoySort, detailsSort, detailsSortOrder, hideInactiveAccounts, hideNoDataAccounts, showDetailsFilters, detailsItemsPerPage, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance, isInitialized]);
+  }, [selectedYears, selectedAccounts, activeTab, showAllYearsInChart, useReverseChronological, isCompactTable, yoySort, includeContributionsInReturns, detailsSort, detailsSortOrder, hideInactiveAccounts, hideNoDataAccounts, showDetailsFilters, detailsItemsPerPage, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance, isInitialized]);
 
   // Helper functions to get available years and accounts
   const getAvailableYears = (data) => {
@@ -380,10 +380,17 @@ const Performance = () => {
           // Calculate beginning balance (balance - gains + fees - netContributions)
           const beginningBalance = balance - gains + fees - netContributions;
           
-          // Calculate return percentage
+          // Calculate return percentage - affected by includeContributionsInReturns setting
           let returnPercentage = 0;
           if (beginningBalance > 0) {
-            returnPercentage = (totalReturns / beginningBalance) * 100;
+            if (includeContributionsInReturns) {
+              // Include contributions in return calculation (total growth %)
+              const totalGrowth = totalReturns + netContributions;
+              returnPercentage = (totalGrowth / beginningBalance) * 100;
+            } else {
+              // Traditional return calculation (investment returns only)
+              returnPercentage = (totalReturns / beginningBalance) * 100;
+            }
           } else if (beginningBalance === 0 && totalReturns !== 0) {
             returnPercentage = totalReturns > 0 ? 100 : -100;
           }
@@ -419,7 +426,7 @@ const Performance = () => {
     });
     
     return results;
-  }, [performanceData, selectedAccounts, availableYears, availableAccounts]);
+  }, [performanceData, selectedAccounts, availableYears, availableAccounts, includeContributionsInReturns]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -563,9 +570,6 @@ const Performance = () => {
     setDetailsCurrentPage(1);
   }, [hideInactiveAccounts, hideNoDataAccounts, detailsSort, detailsSortOrder, selectedYears, selectedAccounts, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance]);
 
-  const returnsChartFilteredData = useMemo(() => {
-    return showAllYearsInReturnsChart ? processedData : filteredData;
-  }, [processedData, filteredData, showAllYearsInReturnsChart]);
 
 
   // Calculate year-over-year data for performance analysis
@@ -705,8 +709,8 @@ const Performance = () => {
   // Returns chart data
   const returnsChartData = useMemo(() => {
     const sortedData = useReverseChronological ? 
-      [...returnsChartFilteredData].sort((a, b) => b.year - a.year) :
-      [...returnsChartFilteredData].sort((a, b) => a.year - b.year);
+      [...filteredData].sort((a, b) => b.year - a.year) :
+      [...filteredData].sort((a, b) => a.year - b.year);
     
     const allYears = [...new Set(sortedData.map(d => d.year))].sort((a, b) => 
       useReverseChronological ? b - a : a - b
@@ -719,21 +723,35 @@ const Performance = () => {
     // Aggregate returns by year (only include accounts with actual data)
     const yearlyReturns = allYears.map(year => {
       const yearData = sortedData.filter(d => d.year === year && d.hasData);
-      return yearData.reduce((sum, d) => sum + (d.totalReturns || 0), 0);
+      if (includeContributionsInReturns) {
+        // Include contributions in returns calculation (total growth)
+        return yearData.reduce((sum, d) => sum + (d.totalReturns || 0) + (d.netContributions || 0), 0);
+      } else {
+        // Traditional returns calculation (gains - fees only)
+        return yearData.reduce((sum, d) => sum + (d.totalReturns || 0), 0);
+      }
     });
     
     const yearlyReturnPercents = allYears.map(year => {
       const yearData = sortedData.filter(d => d.year === year && d.hasData);
       const totalBeginning = yearData.reduce((sum, d) => sum + Math.max(0, d.beginningBalance || 0), 0);
-      const totalReturns = yearData.reduce((sum, d) => sum + (d.totalReturns || 0), 0);
-      return totalBeginning > 0 ? (totalReturns / totalBeginning) * 100 : 0;
+      
+      if (includeContributionsInReturns) {
+        // Include contributions in percentage calculation
+        const totalGrowth = yearData.reduce((sum, d) => sum + (d.totalReturns || 0) + (d.netContributions || 0), 0);
+        return totalBeginning > 0 ? (totalGrowth / totalBeginning) * 100 : 0;
+      } else {
+        // Traditional percentage calculation
+        const totalReturns = yearData.reduce((sum, d) => sum + (d.totalReturns || 0), 0);
+        return totalBeginning > 0 ? (totalReturns / totalBeginning) * 100 : 0;
+      }
     });
     
     return {
       labels: labelsWithYTD,
       datasets: [
         {
-          label: 'Total Returns ($)',
+          label: includeContributionsInReturns ? 'Total Growth ($)' : 'Total Returns ($)',
           data: yearlyReturns,
           backgroundColor: 'rgba(34, 197, 94, 0.8)',
           borderColor: 'rgb(34, 197, 94)',
@@ -741,7 +759,7 @@ const Performance = () => {
           yAxisID: 'y'
         },
         {
-          label: 'Return %',
+          label: includeContributionsInReturns ? 'Growth %' : 'Return %',
           data: yearlyReturnPercents,
           type: 'line',
           borderColor: 'rgb(168, 85, 247)',
@@ -752,7 +770,7 @@ const Performance = () => {
         }
       ]
     };
-  }, [returnsChartFilteredData, useReverseChronological]);
+  }, [filteredData, useReverseChronological, includeContributionsInReturns]);
 
   // Chart options
   const chartOptions = {
@@ -1217,11 +1235,11 @@ const Performance = () => {
                       <label className="performance-chart-toggle">
                         <input
                           type="checkbox"
-                          checked={showAllYearsInReturnsChart}
-                          onChange={(e) => setShowAllYearsInReturnsChart(e.target.checked)}
+                          checked={includeContributionsInReturns}
+                          onChange={(e) => setIncludeContributionsInReturns(e.target.checked)}
                         />
                         <span className="performance-chart-toggle-label">
-                          Show All Years
+                          Include Contributions in Returns
                         </span>
                       </label>
                     </div>
@@ -1317,6 +1335,17 @@ const Performance = () => {
                         />
                         <span style={{ fontSize: '0.9rem', fontWeight: '500' }}>
                           Hide No Data Entries ({filteredData.filter(d => !d.hasData).length} no data)
+                        </span>
+                      </label>
+                      
+                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                        <input
+                          type="checkbox"
+                          checked={includeContributionsInReturns}
+                          onChange={(e) => setIncludeContributionsInReturns(e.target.checked)}
+                        />
+                        <span style={{ fontSize: '0.9rem', fontWeight: '500', color: '#059669' }}>
+                          Include Contributions in Returns
                         </span>
                       </label>
                     </div>
@@ -1774,8 +1803,8 @@ const Performance = () => {
                             <th>Gains</th>
                             <th>Fees</th>
                             <th>Withdrawals</th>
-                            <th>Total Returns</th>
-                            <th>Return %</th>
+                            <th>{includeContributionsInReturns ? 'Total Growth' : 'Total Returns'}</th>
+                            <th>{includeContributionsInReturns ? 'Growth %' : 'Return %'}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -1796,8 +1825,8 @@ const Performance = () => {
                               <td className="performance-table-currency">{data.hasData ? formatCurrency(data.gains) : 'No Data'}</td>
                               <td className="performance-table-currency negative">{data.hasData ? formatCurrency(data.fees) : 'No Data'}</td>
                               <td className="performance-table-currency negative">{data.hasData ? formatCurrency(data.withdrawals) : 'No Data'}</td>
-                              <td className={`performance-table-currency ${data.hasData && data.totalReturns >= 0 ? 'positive' : data.hasData && data.totalReturns < 0 ? 'negative' : ''}`}>
-                                {data.hasData ? formatCurrency(data.totalReturns) : 'No Data'}
+                              <td className={`performance-table-currency ${data.hasData && (includeContributionsInReturns ? (data.totalReturns + data.netContributions) >= 0 : data.totalReturns >= 0) ? 'positive' : data.hasData && (includeContributionsInReturns ? (data.totalReturns + data.netContributions) < 0 : data.totalReturns < 0) ? 'negative' : ''}`}>
+                                {data.hasData ? formatCurrency(includeContributionsInReturns ? data.totalReturns + data.netContributions : data.totalReturns) : 'No Data'}
                               </td>
                               <td className={`performance-table-percent ${data.hasData && data.returnPercentage !== null && !isNaN(data.returnPercentage) && data.returnPercentage >= 0 ? 'positive' : data.hasData && data.returnPercentage !== null && !isNaN(data.returnPercentage) && data.returnPercentage < 0 ? 'negative' : ''}`}>
                                 {formatPercentage(data.returnPercentage, data.hasData)}

@@ -1703,7 +1703,8 @@ export const getPerformanceSettings = () => {
     showAllYearsInChart: false,
     showAllYearsInReturnsChart: false,
     useReverseChronological: false,
-    isCompactTable: false
+    isCompactTable: false,
+    includeContributionsInReturns: false
   });
 };
 
