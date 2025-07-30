@@ -1,14 +1,108 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo } from 'react';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData } from '../utils/localStorage';
-import { formatCurrency, calculateAge } from '../utils/calculationHelpers';
+import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
+import { useDualCalculator } from '../hooks/useDualCalculator';
+import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
+import { getMostRecentPortfolioAccounts } from '../utils/portfolioPerformanceSync';
 import Navigation from './Navigation';
+
+// Tooltip component for contribution details
+const ContributionTooltip = ({ contributions, type, children }) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+  
+  if (!contributions?.breakdown) {
+    return children;
+  }
+
+  const breakdown = contributions.breakdown;
+  
+  const renderEmployeeContributionTooltip = () => (
+    <div className="retirement-tooltip-content">
+      <div className="tooltip-header">Employee Contributions Breakdown</div>
+      {breakdown.traditional401k > 0 && (
+        <div className="tooltip-item">
+          <span>Traditional 401k:</span>
+          <span>{formatCurrency(breakdown.traditional401k)}</span>
+        </div>
+      )}
+      {breakdown.roth401k > 0 && (
+        <div className="tooltip-item">
+          <span>Roth 401k:</span>
+          <span>{formatCurrency(breakdown.roth401k)}</span>
+        </div>
+      )}
+      {breakdown.traditionalIra > 0 && (
+        <div className="tooltip-item">
+          <span>Traditional IRA:</span>
+          <span>{formatCurrency(breakdown.traditionalIra)}</span>
+        </div>
+      )}
+      {breakdown.rothIra > 0 && (
+        <div className="tooltip-item">
+          <span>Roth IRA:</span>
+          <span>{formatCurrency(breakdown.rothIra)}</span>
+        </div>
+      )}
+      {breakdown.brokerage > 0 && (
+        <div className="tooltip-item">
+          <span>Brokerage:</span>
+          <span>{formatCurrency(breakdown.brokerage)}</span>
+        </div>
+      )}
+    </div>
+  );
+
+  const renderEmployerMatchTooltip = () => (
+    <div className="retirement-tooltip-content">
+      <div className="tooltip-header">Employer Match Details</div>
+      <div className="tooltip-item">
+        <span>Match Rate:</span>
+        <span>{breakdown.employerMatchRate}%</span>
+      </div>
+      <div className="tooltip-item">
+        <span>Base Salary:</span>
+        <span>{formatCurrency(breakdown.salary)}</span>
+      </div>
+      <div className="tooltip-item">
+        <span>Match Amount:</span>
+        <span>{formatCurrency(breakdown.employerMatch)}</span>
+      </div>
+      <div className="tooltip-item">
+        <span>Data Source:</span>
+        <span className={breakdown.employerMatchSource === 'actual' ? 'actual-data' : 'projected-data'}>
+          {breakdown.employerMatchSource === 'actual' ? 'Actual (Performance Tracker)' : 'Projected (Calculated)'}
+        </span>
+      </div>
+    </div>
+  );
+
+  return (
+    <div 
+      className="retirement-tooltip-wrapper"
+      onMouseEnter={() => setShowTooltip(true)}
+      onMouseLeave={() => setShowTooltip(false)}
+    >
+      {children}
+      {showTooltip && (
+        <div className="retirement-tooltip">
+          {type === 'employee' ? renderEmployeeContributionTooltip() : renderEmployerMatchTooltip()}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Retirement = () => {
   const { formData: contextFormData } = useContext(FormContext);
 
-  // Toggle for showing spouse calculator
-  const [showSpouseCalculator, setShowSpouseCalculator] = useState(true);
+  // Use shared dual calculator hook
+  const showSpouseCalculator = useDualCalculator();
+  
+  // Tab state for detailed breakdown
+  const [activeTab, setActiveTab] = useState('summary');
+  
+  // Detailed mode for projections table
+  const [showDetailedProjections, setShowDetailedProjections] = useState(false);
 
   // Load existing retirement data
   const loadRetirementData = () => {
@@ -76,17 +170,89 @@ const Retirement = () => {
   const currentYear = new Date().getFullYear();
   const paycheckData = getPaycheckData();
   const historicalData = getHistoricalData();
+  const performanceData = getPerformanceData();
+
+  // Debug logging for loaded data
+  console.log(`🔍 Debug Retirement Component: currentYear=${currentYear}`);
+  console.log(`🔍 Debug Retirement Component paycheckData:`, paycheckData);
+  console.log(`🔍 Debug Retirement Component performanceData:`, performanceData);
+
+  // Helper function to get actual employer match data from performance data
+  const getActualEmployerMatchForYear = useCallback((userKey, year) => {
+    const paycheckUser = paycheckData[userKey];
+    console.log(`🔍 Debug getActualEmployerMatchForYear: userKey=${userKey}, year=${year}`);
+    console.log(`🔍 Debug paycheckUser:`, paycheckUser);
+    console.log(`🔍 Debug performanceData:`, performanceData);
+
+    if (!paycheckUser?.name || !performanceData) {
+      console.log(`🔍 Debug: Early return - missing paycheckUser.name or performanceData`);
+      return null;
+    }
+
+    let totalEmployerMatch = 0;
+    let foundData = false;
+
+    // Match user name (flexible matching like in the existing code)
+    const matchesUser = (portfolioOwner, paycheckName) => {
+      if (!portfolioOwner || !paycheckName) return false;
+      if (portfolioOwner === paycheckName) return true;
+      if (portfolioOwner.toLowerCase() === paycheckName.toLowerCase()) return true;
+      const paycheckFirstName = paycheckName.split(' ')[0];
+      if (portfolioOwner.toLowerCase() === paycheckFirstName.toLowerCase()) return true;
+      const portfolioLower = portfolioOwner.toLowerCase();
+      const paycheckLower = paycheckName.toLowerCase();
+      return portfolioLower.includes(paycheckLower) || paycheckLower.includes(portfolioLower);
+    };
+
+    console.log(`🔍 Debug: Looking for user "${paycheckUser.name}" in year ${year}`);
+
+    // Find all performance data entries for this user and year
+    for (const [entryId, entry] of Object.entries(performanceData)) {
+      console.log(`🔍 Debug: Checking entry ${entryId}, year: ${entry.year}, target year: ${year}`);
+      
+      if (entry.year === year && entry.users) {
+        console.log(`🔍 Debug: Found matching year ${year}, checking users:`, Object.keys(entry.users));
+        
+        for (const [owner, userData] of Object.entries(entry.users)) {
+          console.log(`🔍 Debug: Checking owner "${owner}" against paycheck user "${paycheckUser.name}"`);
+          console.log(`🔍 Debug: userData:`, userData);
+          
+          const userMatches = matchesUser(owner, paycheckUser.name);
+          console.log(`🔍 Debug: User matches: ${userMatches}`);
+          
+          if (userMatches) {
+            console.log(`🔍 Debug: User match found! Checking employerMatch data...`);
+            console.log(`🔍 Debug: userData.employerMatch: ${userData.employerMatch}`);
+            console.log(`🔍 Debug: userData.accountType: ${userData.accountType}`);
+            
+            // Sum up employer match from all 401k accounts for this user
+            if (userData.employerMatch !== undefined && userData.accountType === '401k') {
+              const matchAmount = parseFloat(userData.employerMatch) || 0;
+              console.log(`🔍 Debug: Adding employer match: ${matchAmount}`);
+              totalEmployerMatch += matchAmount;
+              foundData = true;
+            } else {
+              console.log(`🔍 Debug: Skipping - employerMatch undefined or not 401k account`);
+            }
+          }
+        }
+      }
+    }
+    
+    console.log(`🔍 Debug: Final result - foundData: ${foundData}, totalEmployerMatch: ${totalEmployerMatch}`);
+    return foundData ? totalEmployerMatch : null;
+  }, [paycheckData, performanceData]);
 
   // Calculate age-based return rate
   const calculateReturnRate = (currentAge, retirementAge, retirementRate) => {
     if (currentAge >= retirementAge) {
       return retirementRate / 100;
     }
-    // Start at 10% and decrease by 0.1% each year until retirement
-    const yearsToRetirement = retirementAge - currentAge;
-    const currentRate = Math.max(10 - (0.1 * (retirementAge - yearsToRetirement - currentAge)), retirementRate);
+    // Start at 10% at age 20, decrease by 0.1% each year after age 20
+    const currentRate = Math.max(10 - (0.1 * (currentAge - 20)), retirementRate);
     return currentRate / 100;
   };
+
 
   // Calculate retirement projections for a user
   const calculateRetirementProjections = useCallback((userKey) => {
@@ -114,6 +280,8 @@ const Retirement = () => {
           year,
           age,
           salary: 0,
+          contributions: { employee: 0, employer: 0, total: 0 },
+          withdrawal: 0,
           balances: { taxFree: 0, taxDeferred: 0, afterTax: 0 },
           totalBalance: 0,
           isRetired,
@@ -126,9 +294,18 @@ const Retirement = () => {
     const currentAge = calculateAge(paycheckUser.birthday);
     const currentSalary = parseFloat(paycheckUser.salary) || 0;
     
-    // Get current balances from historical data (latest year)
-    const latestHistoricalEntry = Object.values(historicalData)
-      .sort((a, b) => b.year - a.year)[0];
+    // Get current balances from most recent portfolio data (allow any year for retirement planning)
+    const portfolioRecords = getPortfolioRecords();
+    let portfolioAccounts = [];
+    
+    if (portfolioRecords.length > 0) {
+      // Sort by updateDate to get the most recent record (regardless of year)
+      const sortedRecords = portfolioRecords.sort((a, b) => 
+        new Date(b.updateDate) - new Date(a.updateDate)
+      );
+      const mostRecentRecord = sortedRecords[0];
+      portfolioAccounts = mostRecentRecord.accounts || [];
+    }
     
     const currentBalances = {
       taxFree: 0,
@@ -136,12 +313,71 @@ const Retirement = () => {
       afterTax: 0
     };
 
-    if (latestHistoricalEntry && latestHistoricalEntry.users && latestHistoricalEntry.users[paycheckUser.name]) {
-      const userData = latestHistoricalEntry.users[paycheckUser.name];
-      currentBalances.taxFree = (parseFloat(userData.roth401k) || 0) + (parseFloat(userData.rothira) || 0);
-      currentBalances.taxDeferred = (parseFloat(userData.traditional401k) || 0) + (parseFloat(userData.traditionalira) || 0);
-      currentBalances.afterTax = parseFloat(userData.brokerage) || 0;
-    }
+    // Filter accounts for this user and sum by tax type (with flexible name matching)
+    const matchesUser = (portfolioOwner, paycheckName) => {
+      if (!portfolioOwner || !paycheckName) return false;
+      
+      // Exact match
+      if (portfolioOwner === paycheckName) return true;
+      
+      // Case-insensitive match
+      if (portfolioOwner.toLowerCase() === paycheckName.toLowerCase()) return true;
+      
+      // First name match (portfolio "Sean" matches paycheck "Sean Dion")
+      const paycheckFirstName = paycheckName.split(' ')[0];
+      if (portfolioOwner.toLowerCase() === paycheckFirstName.toLowerCase()) return true;
+      
+      // Last name match or contains
+      const portfolioLower = portfolioOwner.toLowerCase();
+      const paycheckLower = paycheckName.toLowerCase();
+      if (portfolioLower.includes(paycheckLower) || paycheckLower.includes(portfolioLower)) return true;
+      
+      return false;
+    };
+
+    console.log('Debug: Portfolio accounts:', portfolioAccounts);
+    console.log('Debug: Looking for user:', paycheckUser.name);
+    console.log('Debug: Available owners in portfolio:', [...new Set(portfolioAccounts.map(account => account.owner))]);
+    console.log('Debug: User accounts (exact match):', portfolioAccounts.filter(account => account.owner === paycheckUser.name));
+    console.log('Debug: User accounts (flexible match):', portfolioAccounts.filter(account => matchesUser(account.owner, paycheckUser.name)));
+    
+    portfolioAccounts
+      .filter(account => matchesUser(account.owner, paycheckUser.name))
+      .forEach(account => {
+        const amount = parseFloat(account.amount) || 0;
+        console.log('Debug: Processing account:', account.accountName, 'Amount:', amount, 'Tax Type:', account.taxType);
+        
+        switch (account.taxType) {
+          case 'Tax-Free':
+            currentBalances.taxFree += amount;
+            break;
+          case 'Tax-Deferred':
+            currentBalances.taxDeferred += amount;
+            break;
+          case 'After-Tax':
+            currentBalances.afterTax += amount;
+            break;
+          default:
+            // If taxType is not specified, try to infer from accountType
+            if (account.accountType === 'HSA') {
+              currentBalances.taxDeferred += amount;
+            } else if (account.accountType === 'IRA' && account.accountName?.toLowerCase().includes('roth')) {
+              currentBalances.taxFree += amount;
+            } else if (account.accountType === 'IRA') {
+              currentBalances.taxDeferred += amount;
+            } else if (account.accountType === '401k' && account.accountName?.toLowerCase().includes('roth')) {
+              currentBalances.taxFree += amount;
+            } else if (account.accountType === '401k') {
+              currentBalances.taxDeferred += amount;
+            } else {
+              // Default to after-tax for brokerage, ESPP, etc.
+              currentBalances.afterTax += amount;
+            }
+            break;
+        }
+      });
+
+    console.log('Debug: Final current balances:', currentBalances);
 
     // Calculate annual contributions
     const traditional401kAnnual = (parseFloat(paycheckUser.retirementOptions?.traditional401kPercent) || 0) * currentSalary / 100;
@@ -160,18 +396,60 @@ const Retirement = () => {
     let salary = currentSalary;
     let balances = { ...currentBalances };
 
-    // Calculate remaining contributions for current year
-    const currentMonthsRemaining = 12 - (new Date().getMonth());
-    const currentYearContributions = {
-      taxFree: ((roth401kAnnual + rothIraAnnual) * currentMonthsRemaining / 12),
-      taxDeferred: ((traditional401kAnnual + employerMatchAnnual + traditionalIraAnnual) * currentMonthsRemaining / 12),
-      afterTax: (brokerageAnnual * currentMonthsRemaining / 12)
-    };
 
     for (let age = currentAge; age <= (parseFloat(user.ageOfDeath) || 90); age++) {
       const year = currentYear + (age - currentAge);
       const returnRate = calculateReturnRate(age, (parseFloat(user.ageAtRetirement) || 65), (parseFloat(sharedInputs.retirementReturnRate) || 6));
       const isRetired = age >= (parseFloat(user.ageAtRetirement) || 65);
+
+      let contributions = { employee: 0, employer: 0, total: 0 };
+      let withdrawal = 0;
+
+      // For current year, calculate contributions first, then show entry
+      let currentYearContributions = { employee: 0, employer: 0, total: 0 };
+      if (age === currentAge && !isRetired) {
+        // Calculate current year contributions for display
+        const employerMatchPercent = (parseFloat(user.employerMatch) || 0);
+        const employeeContributionForMatchPercent = (parseFloat(user.employeeContributionForMatch) || 0);
+        const projectedRemaining = calculateProjectedRemainingContributions(paycheckUser, employerMatchPercent, employeeContributionForMatchPercent);
+        
+        const employeeContributions = projectedRemaining.traditional401k + projectedRemaining.roth401k + 
+                                     projectedRemaining.traditionalIra + projectedRemaining.rothIra + 
+                                     projectedRemaining.brokerage;
+        const employerContributions = projectedRemaining.employerMatch;
+        
+        currentYearContributions = {
+          employee: employeeContributions,
+          employer: employerContributions,
+          total: employeeContributions + employerContributions,
+          breakdown: {
+            traditional401k: projectedRemaining.traditional401k,
+            roth401k: projectedRemaining.roth401k,
+            traditionalIra: projectedRemaining.traditionalIra,
+            rothIra: projectedRemaining.rothIra,
+            brokerage: projectedRemaining.brokerage,
+            employerMatch: projectedRemaining.employerMatch,
+            employerMatchSource: 'projected',
+            employerMatchRate: employerMatchPercent,
+            salary: salary
+          }
+        };
+      }
+
+      if (age === currentAge) {
+        // Show current portfolio balances as starting point
+        projections.push({
+          year,
+          age,
+          salary,
+          contributions: currentYearContributions,
+          withdrawal,
+          balances: { ...currentBalances },
+          totalBalance: currentBalances.taxFree + currentBalances.taxDeferred + currentBalances.afterTax,
+          isRetired,
+          returnRate: returnRate * 100
+        });
+      }
 
       // Apply returns to existing balances
       balances.taxFree *= (1 + returnRate);
@@ -179,25 +457,96 @@ const Retirement = () => {
       balances.afterTax *= (1 + returnRate);
 
       if (!isRetired) {
-        // Add contributions (full year except current year)
-        const contributionMultiplier = age === currentAge ? (currentMonthsRemaining / 12) : 1;
-        
         // Update salary with annual increase
         if (age > currentAge) {
           salary *= (1 + (parseFloat(sharedInputs.annualInflation) || 0) / 100 + (parseFloat(user.annualSalaryIncrease) || 0) / 100);
         }
 
-        // Recalculate contributions based on new salary
+        // Calculate contributions based on updated salary for each year
         const annualTraditional401k = (parseFloat(paycheckUser.retirementOptions?.traditional401kPercent) || 0) * salary / 100;
         const annualRoth401k = (parseFloat(paycheckUser.retirementOptions?.roth401kPercent) || 0) * salary / 100;
-        const annualEmployerMatch = Math.min(
-          ((parseFloat(user.employerMatch) || 0) / 100) * salary,
-          ((annualTraditional401k + annualRoth401k) / salary) * ((parseFloat(user.employerMatch) || 0) / 100) * salary
-        );
+        const total401kPercent = (parseFloat(paycheckUser.retirementOptions?.traditional401kPercent) || 0) + (parseFloat(paycheckUser.retirementOptions?.roth401kPercent) || 0);
+        const employeeContributionForMatchPercent = (parseFloat(user.employeeContributionForMatch) || 0);
+        // Employee must contribute at least the threshold to get any match
+        let annualEmployerMatch = 0;
+        if (total401kPercent >= employeeContributionForMatchPercent) {
+          // Employee meets threshold, so employer provides full match
+          annualEmployerMatch = salary * ((parseFloat(user.employerMatch) || 0) / 100);
+        }
 
-        balances.taxFree += (annualRoth401k + rothIraAnnual) * contributionMultiplier;
-        balances.taxDeferred += (annualTraditional401k + annualEmployerMatch + traditionalIraAnnual) * contributionMultiplier;
-        balances.afterTax += brokerageAnnual * contributionMultiplier;
+        // Calculate IRA and brokerage contributions (these don't scale with salary)
+        const annualTraditionalIra = (parseFloat(paycheckUser.budgetImpacting?.traditionalIraMonthly) || 0) * 12;
+        const annualRothIra = (parseFloat(paycheckUser.budgetImpacting?.rothIraMonthly) || 0) * 12;
+        const annualBrokerage = (paycheckUser.budgetImpacting?.brokerageAccounts || []).reduce((sum, account) => 
+          sum + (parseFloat(account.monthlyAmount) || 0), 0) * 12;
+
+        // For current year, use projected remaining contributions; for future years, use full annual amounts
+        let actualContributions;
+        if (age === currentAge) {
+          // Use projected remaining contributions for current year
+          const employerMatchPercent = (parseFloat(user.employerMatch) || 0);
+          const employeeContributionForMatchPercent = (parseFloat(user.employeeContributionForMatch) || 0);
+          const projectedRemaining = calculateProjectedRemainingContributions(paycheckUser, employerMatchPercent, employeeContributionForMatchPercent);
+          actualContributions = {
+            traditional401k: projectedRemaining.traditional401k,
+            roth401k: projectedRemaining.roth401k,
+            employerMatch: projectedRemaining.employerMatch,
+            traditionalIra: projectedRemaining.traditionalIra,
+            rothIra: projectedRemaining.rothIra,
+            brokerage: projectedRemaining.brokerage
+          };
+        } else {
+          // Use full annual amounts for future years
+          actualContributions = {
+            traditional401k: annualTraditional401k,
+            roth401k: annualRoth401k,
+            employerMatch: annualEmployerMatch,
+            traditionalIra: annualTraditionalIra,
+            rothIra: annualRothIra,
+            brokerage: annualBrokerage
+          };
+        }
+
+        // Check if we have actual employer match data for this year
+        console.log(`🔍 Debug: Calling getActualEmployerMatchForYear for ${userKey}, year ${year}`);
+        const actualEmployerMatch = getActualEmployerMatchForYear(userKey, year);
+        console.log(`🔍 Debug: getActualEmployerMatchForYear returned: ${actualEmployerMatch}`);
+        
+        if (actualEmployerMatch !== null) {
+          console.log(`🔍 Debug: Using actual employer match ${actualEmployerMatch} instead of calculated ${actualContributions.employerMatch}`);
+          actualContributions.employerMatch = actualEmployerMatch;
+        } else {
+          console.log(`🔍 Debug: No actual employer match data found, using calculated value: ${actualContributions.employerMatch}`);
+        }
+
+        // Calculate total contributions for this year
+        const employeeContributions = actualContributions.traditional401k + actualContributions.roth401k + 
+                                     actualContributions.traditionalIra + actualContributions.rothIra + 
+                                     actualContributions.brokerage;
+        const employerContributions = actualContributions.employerMatch;
+        
+        contributions = {
+          employee: employeeContributions,
+          employer: employerContributions,
+          total: employeeContributions + employerContributions,
+          breakdown: {
+            traditional401k: actualContributions.traditional401k,
+            roth401k: actualContributions.roth401k,
+            traditionalIra: actualContributions.traditionalIra,
+            rothIra: actualContributions.rothIra,
+            brokerage: actualContributions.brokerage,
+            employerMatch: actualContributions.employerMatch,
+            employerMatchSource: actualEmployerMatch !== null ? 'actual' : 'calculated',
+            employerMatchRate: (parseFloat(user.employerMatch) || 0),
+            salary: salary
+          }
+        };
+
+        console.log(`🔍 Debug: Final contributions for ${userKey} year ${year}:`, contributions);
+
+        balances.taxFree += actualContributions.roth401k + actualContributions.rothIra;
+        balances.taxDeferred += actualContributions.traditional401k + actualContributions.employerMatch + actualContributions.traditionalIra;
+        balances.afterTax += actualContributions.brokerage;
       } else {
         // Apply retirement raises and withdrawals
         if ((parseFloat(user.raisesInRetirement) || 0) > 0) {
@@ -206,7 +555,7 @@ const Retirement = () => {
 
         // Calculate withdrawal (simplified 4% rule or custom rate)
         const totalBalance = balances.taxFree + balances.taxDeferred + balances.afterTax;
-        const withdrawal = totalBalance * ((parseFloat(sharedInputs.withdrawalRate) || 4) / 100);
+        withdrawal = totalBalance * ((parseFloat(sharedInputs.withdrawalRate) || 4) / 100);
         
         // Proportionally withdraw from each account type
         if (totalBalance > 0) {
@@ -220,19 +569,24 @@ const Retirement = () => {
         }
       }
 
-      projections.push({
-        year,
-        age,
-        salary,
-        balances: { ...balances },
-        totalBalance: balances.taxFree + balances.taxDeferred + balances.afterTax,
-        isRetired,
-        returnRate: returnRate * 100
-      });
+      // For all years after current, add projection after applying changes
+      if (age > currentAge) {
+        projections.push({
+          year,
+          age,
+          salary,
+          contributions,
+          withdrawal,
+          balances: { ...balances },
+          totalBalance: balances.taxFree + balances.taxDeferred + balances.afterTax,
+          isRetired,
+          returnRate: returnRate * 100
+        });
+      }
     }
 
     return projections;
-  }, [retirementDataState, paycheckData, historicalData, currentYear]);
+  }, [retirementDataState, paycheckData, currentYear]);
 
   // Calculate projections for both users
   const yourProjections = useMemo(() => calculateRetirementProjections('your'), [calculateRetirementProjections]);
@@ -241,45 +595,10 @@ const Retirement = () => {
     [calculateRetirementProjections, showSpouseCalculator]
   );
 
-  // Toggle spouse calculator
-  const toggleSpouseCalculator = () => {
-    const newShowSpouse = !showSpouseCalculator;
-    setShowSpouseCalculator(newShowSpouse);
-    const newData = {
-      ...retirementDataState,
-      settings: {
-        ...(retirementDataState.settings || {}),
-        showSpouseCalculator: newShowSpouse
-      }
-    };
-    saveRetirementData(newData);
-  };
 
-  // Load spouse calculator setting from paycheck data (master source)
-  useEffect(() => {
-    const paycheckData = getPaycheckData();
-    if (paycheckData?.settings?.showSpouseCalculator !== undefined) {
-      setShowSpouseCalculator(paycheckData.settings.showSpouseCalculator);
-    }
-  }, []);
+  // Dual calculator toggle is now handled by the shared hook
 
-  // Listen for paycheck data updates to sync spouse calculator toggle
-  useEffect(() => {
-    const handlePaycheckDataUpdate = (event) => {
-      const updatedData = event.detail || getPaycheckData();
-      if (updatedData?.settings?.showSpouseCalculator !== undefined) {
-        setShowSpouseCalculator(updatedData.settings.showSpouseCalculator);
-      }
-    };
-
-    window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
-    return () => {
-      window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
-    };
-  }, []);
-
-  // Let TaxCalculator handle the dual calculator toggle
-  // Retirement will sync via paycheckDataUpdated event
+  // Dual calculator state is managed by the shared hook
 
   return (
     <div className="calculator-page">
@@ -370,40 +689,6 @@ const Retirement = () => {
                 </div>
               </div>
 
-              {/* Projections Display */}
-              {yourProjections.length > 0 && (
-                <div className="form-section">
-                  <h3>Retirement Projections</h3>
-                  <div className="projections-summary">
-                    <div className="projection-card">
-                      <h4>At Retirement (Age {retirementDataState.your?.ageAtRetirement || 65})</h4>
-                      {(() => {
-                        const retirementProjection = yourProjections.find(p => p.age === (retirementDataState.your?.ageAtRetirement || 65));
-                        return retirementProjection ? (
-                          <div className="balance-breakdown">
-                            <div className="balance-item">
-                              <span>Tax-Free:</span>
-                              <span>{formatCurrency(retirementProjection.balances.taxFree)}</span>
-                            </div>
-                            <div className="balance-item">
-                              <span>Tax-Deferred:</span>
-                              <span>{formatCurrency(retirementProjection.balances.taxDeferred)}</span>
-                            </div>
-                            <div className="balance-item">
-                              <span>After-Tax:</span>
-                              <span>{formatCurrency(retirementProjection.balances.afterTax)}</span>
-                            </div>
-                            <div className="balance-item total">
-                              <span>Total:</span>
-                              <span>{formatCurrency(retirementProjection.totalBalance)}</span>
-                            </div>
-                          </div>
-                        ) : <span>No data available</span>;
-                      })()}
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
 
             {/* Spouse Calculator */}
@@ -483,40 +768,6 @@ const Retirement = () => {
                   </div>
                 </div>
 
-                {/* Spouse Projections Display */}
-                {spouseProjections.length > 0 && (
-                  <div className="form-section">
-                    <h3>Retirement Projections</h3>
-                    <div className="projections-summary">
-                      <div className="projection-card">
-                        <h4>At Retirement (Age {retirementDataState.spouse?.ageAtRetirement || 65})</h4>
-                        {(() => {
-                          const retirementProjection = spouseProjections.find(p => p.age === (retirementDataState.spouse?.ageAtRetirement || 65));
-                          return retirementProjection ? (
-                            <div className="balance-breakdown">
-                              <div className="balance-item">
-                                <span>Tax-Free:</span>
-                                <span>{formatCurrency(retirementProjection.balances.taxFree)}</span>
-                              </div>
-                              <div className="balance-item">
-                                <span>Tax-Deferred:</span>
-                                <span>{formatCurrency(retirementProjection.balances.taxDeferred)}</span>
-                              </div>
-                              <div className="balance-item">
-                                <span>After-Tax:</span>
-                                <span>{formatCurrency(retirementProjection.balances.afterTax)}</span>
-                              </div>
-                              <div className="balance-item total">
-                                <span>Total:</span>
-                                <span>{formatCurrency(retirementProjection.totalBalance)}</span>
-                              </div>
-                            </div>
-                          ) : <span>No data available</span>;
-                        })()}
-                      </div>
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </div>
@@ -564,60 +815,242 @@ const Retirement = () => {
             </div>
           </div>
 
-          {/* Combined Projections Table */}
-          <div className="projections-table-section">
-            <h3>Year-by-Year Projections</h3>
-            {(yourProjections.length > 0 || spouseProjections.length > 0) ? (
-              <div className="table-responsive">
-                <table className="projections-table">
-                  <thead>
-                    <tr>
-                      <th>Year</th>
-                      {yourProjections.length > 0 && (
-                        <>
-                          <th>{paycheckData?.your?.name || 'Your'} Age</th>
-                          <th>Total Balance</th>
-                          <th>Return Rate</th>
-                        </>
-                      )}
-                      {spouseProjections.length > 0 && (
-                        <>
-                          <th>{paycheckData?.spouse?.name || 'Spouse'} Age</th>
-                          <th>Total Balance</th>
-                          <th>Return Rate</th>
-                        </>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {Array.from({ length: Math.max(yourProjections.length, spouseProjections.length) }).map((_, index) => {
-                      const yourProj = yourProjections[index];
-                      const spouseProj = spouseProjections[index];
-                      const year = yourProj?.year || spouseProj?.year;
-                      
-                      return (
-                        <tr key={index} className={yourProj?.isRetired || spouseProj?.isRetired ? 'retirement-row' : ''}>
-                          <td>{year}</td>
-                          {yourProjections.length > 0 && (
-                            <>
-                              <td>{yourProj?.age || '-'}</td>
-                              <td>{yourProj ? formatCurrency(yourProj.totalBalance) : '-'}</td>
-                              <td>{yourProj ? `${yourProj.returnRate.toFixed(1)}%` : '-'}</td>
-                            </>
-                          )}
-                          {spouseProjections.length > 0 && (
-                            <>
-                              <td>{spouseProj?.age || '-'}</td>
-                              <td>{spouseProj ? formatCurrency(spouseProj.totalBalance) : '-'}</td>
-                              <td>{spouseProj ? `${spouseProj.returnRate.toFixed(1)}%` : '-'}</td>
-                            </>
-                          )}
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+          {/* Tab Navigation */}
+          <div className="retirement-tabs">
+            <div className="tab-buttons">
+              <button 
+                className={`tab-button ${activeTab === 'summary' ? 'active' : ''}`}
+                onClick={() => setActiveTab('summary')}
+              >
+                Summary
+              </button>
+              <button 
+                className={`tab-button ${activeTab === 'projections' ? 'active' : ''}`}
+                onClick={() => setActiveTab('projections')}
+              >
+                Year-by-Year Projections
+              </button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === 'summary' && (
+            <div className="tab-content">
+              <h3>Retirement Summary</h3>
+              <div className="summary-cards">
+                {yourProjections.length > 0 && (
+                  <div className="summary-card">
+                    <h4>{paycheckData?.your?.name || 'Your'} Summary</h4>
+                    {(() => {
+                      const retirementProjection = yourProjections.find(p => p.age === (retirementDataState.your?.ageAtRetirement || 65));
+                      return retirementProjection ? (
+                        <div className="balance-breakdown">
+                          <div className="balance-item">
+                            <span>Tax-Free:</span>
+                            <span>{formatCurrency(retirementProjection.balances.taxFree)}</span>
+                          </div>
+                          <div className="balance-item">
+                            <span>Tax-Deferred:</span>
+                            <span>{formatCurrency(retirementProjection.balances.taxDeferred)}</span>
+                          </div>
+                          <div className="balance-item">
+                            <span>After-Tax:</span>
+                            <span>{formatCurrency(retirementProjection.balances.afterTax)}</span>
+                          </div>
+                          <div className="balance-item total">
+                            <span>Total:</span>
+                            <span>{formatCurrency(retirementProjection.totalBalance)}</span>
+                          </div>
+                        </div>
+                      ) : <span>No data available</span>;
+                    })()}
+                  </div>
+                )}
+                
+                {showSpouseCalculator && spouseProjections.length > 0 && (
+                  <div className="summary-card">
+                    <h4>{paycheckData?.spouse?.name || 'Spouse'} Summary</h4>
+                    {(() => {
+                      const retirementProjection = spouseProjections.find(p => p.age === (retirementDataState.spouse?.ageAtRetirement || 65));
+                      return retirementProjection ? (
+                        <div className="balance-breakdown">
+                          <div className="balance-item">
+                            <span>Tax-Free:</span>
+                            <span>{formatCurrency(retirementProjection.balances.taxFree)}</span>
+                          </div>
+                          <div className="balance-item">
+                            <span>Tax-Deferred:</span>
+                            <span>{formatCurrency(retirementProjection.balances.taxDeferred)}</span>
+                          </div>
+                          <div className="balance-item">
+                            <span>After-Tax:</span>
+                            <span>{formatCurrency(retirementProjection.balances.afterTax)}</span>
+                          </div>
+                          <div className="balance-item total">
+                            <span>Total:</span>
+                            <span>{formatCurrency(retirementProjection.totalBalance)}</span>
+                          </div>
+                        </div>
+                      ) : <span>No data available</span>;
+                    })()}
+                  </div>
+                )}
               </div>
+            </div>
+          )}
+
+
+          {activeTab === 'projections' && (
+            <div className="tab-content">
+              <div className="projections-controls">
+                <label className="projections-toggle">
+                  <input
+                    type="checkbox"
+                    checked={showDetailedProjections}
+                    onChange={(e) => setShowDetailedProjections(e.target.checked)}
+                  />
+                  <span className="projections-toggle-label">
+                    Show Detailed View
+                  </span>
+                </label>
+              </div>
+              
+            {(yourProjections.length > 0 || spouseProjections.length > 0) ? (
+              <>
+                <div className="table-responsive">
+                  <table className="projections-table">
+                    <thead>
+                      <tr>
+                        <th>Year</th>
+                        {yourProjections.length > 0 && (
+                          <>
+                            <th>{paycheckData?.your?.name || 'Your'} Age</th>
+                            {showDetailedProjections && (
+                              <>
+                                <th>Salary</th>
+                                <th>Employee Contributions</th>
+                                <th>Employer Match</th>
+                                <th>Total Contributions</th>
+                                <th>Withdrawal</th>
+                                <th>Tax-Free</th>
+                                <th>Tax-Deferred</th>
+                                <th>After-Tax</th>
+                              </>
+                            )}
+                            <th>Total Balance</th>
+                            {showDetailedProjections && <th>Return Rate</th>}
+                          </>
+                        )}
+                        {spouseProjections.length > 0 && (
+                          <>
+                            <th>{paycheckData?.spouse?.name || 'Spouse'} Age</th>
+                            {showDetailedProjections && (
+                              <>
+                                <th>Salary</th>
+                                <th>Employee Contributions</th>
+                                <th>Employer Match</th>
+                                <th>Total Contributions</th>
+                                <th>Withdrawal</th>
+                                <th>Tax-Free</th>
+                                <th>Tax-Deferred</th>
+                                <th>After-Tax</th>
+                              </>
+                            )}
+                            <th>Total Balance</th>
+                            {showDetailedProjections && <th>Return Rate</th>}
+                          </>
+                        )}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {Array.from({ length: Math.max(yourProjections.length, spouseProjections.length) }).map((_, index) => {
+                        const yourProj = yourProjections[index];
+                        const spouseProj = spouseProjections[index];
+                        const year = yourProj?.year || spouseProj?.year;
+                        
+                        return (
+                          <tr key={index} className={yourProj?.isRetired || spouseProj?.isRetired ? 'retirement-row' : ''}>
+                            <td>{year}</td>
+                            {yourProjections.length > 0 && (
+                              <>
+                                <td>{yourProj?.age || '-'}</td>
+                                {showDetailedProjections && (
+                                  <>
+                                    <td>{yourProj ? formatCurrency(yourProj.salary) : '-'}</td>
+                                    <td>
+                                      <ContributionTooltip contributions={yourProj?.contributions} type="employee">
+                                        {yourProj ? formatCurrency(yourProj.contributions?.employee || 0) : '-'}
+                                        {yourProj && year === currentYear && yourProj.contributions?.employee > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                      </ContributionTooltip>
+                                    </td>
+                                    <td>
+                                      <ContributionTooltip contributions={yourProj?.contributions} type="employer">
+                                        {yourProj ? formatCurrency(yourProj.contributions?.employer || 0) : '-'}
+                                        {yourProj && year === currentYear && yourProj.contributions?.employer > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                        {yourProj && getActualEmployerMatchForYear('your', year) !== null && <span style={{fontSize: '0.75em', color: '#0066cc', marginLeft: '4px'}}>📊</span>}
+                                      </ContributionTooltip>
+                                    </td>
+                                    <td>
+                                      {yourProj ? formatCurrency(yourProj.contributions?.total || 0) : '-'}
+                                      {yourProj && year === currentYear && yourProj.contributions?.total > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                    </td>
+                                    <td>{yourProj && yourProj.withdrawal > 0 ? formatCurrency(yourProj.withdrawal) : '-'}</td>
+                                    <td>{yourProj ? formatCurrency(yourProj.balances.taxFree) : '-'}</td>
+                                    <td>{yourProj ? formatCurrency(yourProj.balances.taxDeferred) : '-'}</td>
+                                    <td>{yourProj ? formatCurrency(yourProj.balances.afterTax) : '-'}</td>
+                                  </>
+                                )}
+                                <td className="total-balance">{yourProj ? formatCurrency(yourProj.totalBalance) : '-'}</td>
+                                {showDetailedProjections && <td>{yourProj ? `${yourProj.returnRate.toFixed(1)}%` : '-'}</td>}
+                              </>
+                            )}
+                            {spouseProjections.length > 0 && (
+                              <>
+                                <td>{spouseProj?.age || '-'}</td>
+                                {showDetailedProjections && (
+                                  <>
+                                    <td>{spouseProj ? formatCurrency(spouseProj.salary) : '-'}</td>
+                                    <td>
+                                      <ContributionTooltip contributions={spouseProj?.contributions} type="employee">
+                                        {spouseProj ? formatCurrency(spouseProj.contributions?.employee || 0) : '-'}
+                                        {spouseProj && year === currentYear && spouseProj.contributions?.employee > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                      </ContributionTooltip>
+                                    </td>
+                                    <td>
+                                      <ContributionTooltip contributions={spouseProj?.contributions} type="employer">
+                                        {spouseProj ? formatCurrency(spouseProj.contributions?.employer || 0) : '-'}
+                                        {spouseProj && year === currentYear && spouseProj.contributions?.employer > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                        {spouseProj && getActualEmployerMatchForYear('spouse', year) !== null && <span style={{fontSize: '0.75em', color: '#0066cc', marginLeft: '4px'}}>📊</span>}
+                                      </ContributionTooltip>
+                                    </td>
+                                    <td>
+                                      {spouseProj ? formatCurrency(spouseProj.contributions?.total || 0) : '-'}
+                                      {spouseProj && year === currentYear && spouseProj.contributions?.total > 0 && <span style={{fontSize: '0.75em', color: '#666', marginLeft: '4px'}}>*</span>}
+                                    </td>
+                                    <td>{spouseProj && spouseProj.withdrawal > 0 ? formatCurrency(spouseProj.withdrawal) : '-'}</td>
+                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.taxFree) : '-'}</td>
+                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.taxDeferred) : '-'}</td>
+                                    <td>{spouseProj ? formatCurrency(spouseProj.balances.afterTax) : '-'}</td>
+                                  </>
+                                )}
+                                <td className="total-balance">{spouseProj ? formatCurrency(spouseProj.totalBalance) : '-'}</td>
+                                {showDetailedProjections && <td>{spouseProj ? `${spouseProj.returnRate.toFixed(1)}%` : '-'}</td>}
+                              </>
+                            )}
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Footnote for current year contributions */}
+                <div style={{marginTop: '16px', fontSize: '0.9em', color: '#666', fontStyle: 'italic'}}>
+                  <span>* {currentYear} contributions represent remaining contributions for the year based on current paycheck settings. Past contributions are already reflected in current balances.</span>
+                  <br />
+                  <span>📊 Employer match data from actual performance tracking (when available)</span>
+                </div>
+              </>
             ) : (
               <div className="no-projections-message">
                 <p>No projections available. Please ensure you have:</p>
@@ -629,7 +1062,8 @@ const Retirement = () => {
                 <p>Once you have this information, your retirement projections will appear here automatically.</p>
               </div>
             )}
-          </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -186,13 +186,18 @@ const Performance = () => {
       });
     };
 
-    // Let TaxCalculator handle the dual calculator toggle
-    // Performance will sync via paycheckDataUpdated event and re-evaluate accounts
+    // Listen for paycheck data updates to sync dual calculator state
+    const handlePaycheckUpdate = () => {
+      const paycheck = getPaycheckData();
+      setPaycheckDataState(paycheck);
+    };
 
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     
     return () => {
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+      window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     };
   }, []);
 

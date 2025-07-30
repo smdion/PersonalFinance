@@ -97,6 +97,8 @@ const Navigation = () => {
       window.dispatchEvent(new CustomEvent(newState ? 'expandAllSections' : 'collapseAllSections'));
     } else if (page === 'budget') {
       window.dispatchEvent(new CustomEvent(newState ? 'expandAllCategories' : 'collapseAllCategories'));
+    } else if (page === 'contributions') {
+      window.dispatchEvent(new CustomEvent(newState ? 'expandAllSections' : 'collapseAllSections'));
     }
   };
 

@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
-import { getPaycheckData, setPaycheckData, getPerformanceData, getHistoricalData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getPerformanceData, getHistoricalData, getRetirementData } from '../utils/localStorage';
+import { useDualCalculator } from '../hooks/useDualCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { 
   formatCurrency, 
@@ -21,7 +22,7 @@ const Contributions = () => {
   const [historicalData, setHistoricalData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
-  const [showSpouseCalculator, setShowSpouseCalculator] = useState(true);
+  const showSpouseCalculator = useDualCalculator(); // Use shared hook
   const [showHelp, setShowHelp] = useState(false);
   
   // State for collapsible sections
@@ -30,7 +31,8 @@ const Contributions = () => {
     ira: false,
     hsa: false,
     espp: false,
-    brokerage: false
+    brokerage: false,
+    total: false
   });
   
   const [expandedPersonSections, setExpandedPersonSections] = useState({
@@ -39,14 +41,16 @@ const Contributions = () => {
       ira: false,
       hsa: false,
       espp: false,
-      brokerage: false
+      brokerage: false,
+      personalTotal: false
     },
     spouse: {
       k401: false,
       ira: false,
       hsa: false,
       espp: false,
-      brokerage: false
+      brokerage: false,
+      personalTotal: false
     }
   });
 
@@ -77,20 +81,10 @@ const Contributions = () => {
     setPerformanceData(performanceData);
     setHistoricalData(historicalData);
     
-    // Load spouse calculator setting from paycheck data
-    if (paycheckData?.settings?.showSpouseCalculator !== undefined) {
-      setShowSpouseCalculator(paycheckData.settings.showSpouseCalculator);
-    }
-
     // Listen for data updates
     const handlePaycheckUpdate = (event) => {
       const updatedData = event.detail || getPaycheckData();
       setPaycheckData(updatedData);
-      
-      // Sync spouse calculator toggle
-      if (updatedData?.settings?.showSpouseCalculator !== undefined) {
-        setShowSpouseCalculator(updatedData.settings.showSpouseCalculator);
-      }
     };
 
     const handlePerformanceUpdate = () => {
@@ -226,8 +220,17 @@ const Contributions = () => {
       
       // Standard calculation (always calculate)
       const annual401k = salary * (total401kPercent / 100);
-      const employerMatch = parseFloat(retirementOptions.employerMatch) || 0;
-      const annualEmployerMatch = salary * (employerMatch / 100);
+      // Get employer match from retirement data (fallback to retirementOptions if available)
+      const retirementData = getRetirementData();
+      const userKey = person === paycheckData.your ? 'your' : 'spouse';
+      const userRetirementData = retirementData?.[userKey] || {};
+      const employerMatch = parseFloat(userRetirementData.employerMatch) || parseFloat(retirementOptions.employerMatch) || 0;
+      const employeeContributionForMatchPercent = parseFloat(userRetirementData.employeeContributionForMatch) || 4;
+      // Calculate annual employer match - only if employee meets contribution threshold
+      let annualEmployerMatch = 0;
+      if (total401kPercent >= employeeContributionForMatchPercent) {
+        annualEmployerMatch = salary * (employerMatch / 100);
+      }
       
       const max401k = isOver50 
         ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
@@ -392,7 +395,12 @@ const Contributions = () => {
         // Use the same settings as Annual Settings View (paycheck calculator settings)
         const grossPayPerPaycheck = salary / periodsPerYear;
         const projected401k = grossPayPerPaycheck * remainingPaychecks * (total401kPercent / 100);
-        const projectedEmployerMatch = grossPayPerPaycheck * remainingPaychecks * (employerMatch / 100);
+        // Calculate employer match - only if employee meets contribution threshold
+        const employeeContributionForMatchPercent = parseFloat(userRetirementData.employeeContributionForMatch) || 4;
+        let projectedEmployerMatch = 0;
+        if (total401kPercent >= employeeContributionForMatchPercent) {
+          projectedEmployerMatch = grossPayPerPaycheck * remainingPaychecks * (employerMatch / 100);
+        }
         
         
         // IRA breakdown
@@ -592,23 +600,50 @@ const Contributions = () => {
         ira: true,
         hsa: true,
         espp: true,
-        brokerage: true
+        brokerage: true,
+        total: true
       });
-      setExpandedPersonSections({
-        your: {
+      
+      // Update person sections to expand all, using correct keys
+      setExpandedPersonSections(prev => {
+        const updated = { ...prev };
+        
+        // Always update 'your' and 'spouse' keys for ContributionBreakdown components
+        updated.your = {
+          ...(updated.your || {}),
           k401: true,
           ira: true,
           hsa: true,
           espp: true,
           brokerage: true
-        },
-        spouse: {
+        };
+        updated.spouse = {
+          ...(updated.spouse || {}),
           k401: true,
           ira: true,
           hsa: true,
           espp: true,
           brokerage: true
+        };
+        
+        // Get the actual person names that are displayed in the UI
+        // These need to match exactly what person.name contains in the PersonContributionCard
+        const yourName = 'Sean Dion';
+        const spouseName = 'Joanna Dion';
+        
+        updated[yourName] = {
+          ...(updated[yourName] || {}),
+          personalTotal: true
+        };
+        
+        if (showSpouseCalculator) {
+          updated[spouseName] = {
+            ...(updated[spouseName] || {}),
+            personalTotal: true
+          };
         }
+        
+        return updated;
       });
       // Notify navigation of state change
       window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
@@ -622,23 +657,51 @@ const Contributions = () => {
         ira: false,
         hsa: false,
         espp: false,
-        brokerage: false
+        brokerage: false,
+        total: false
       });
-      setExpandedPersonSections({
-        your: {
+      
+      // Update person sections to collapse all, using correct keys
+      setExpandedPersonSections(prev => {
+        const updated = { ...prev };
+        
+        // Always update 'your' and 'spouse' keys for ContributionBreakdown components
+        updated.your = {
+          ...(updated.your || {}),
           k401: false,
           ira: false,
           hsa: false,
           espp: false,
           brokerage: false
-        },
-        spouse: {
+        };
+        updated.spouse = {
+          ...(updated.spouse || {}),
           k401: false,
           ira: false,
           hsa: false,
           espp: false,
           brokerage: false
+        };
+        
+        // Get the actual person names that are displayed in the UI
+        // These need to match exactly what person.name contains in the PersonContributionCard
+        const yourName = 'Sean Dion';
+        const spouseName = 'Joanna Dion';
+        
+        
+        updated[yourName] = {
+          ...(updated[yourName] || {}),
+          personalTotal: false
+        };
+        
+        if (showSpouseCalculator) {
+          updated[spouseName] = {
+            ...(updated[spouseName] || {}),
+            personalTotal: false
+          };
         }
+        
+        return updated;
       });
       // Notify navigation of state change
       window.dispatchEvent(new CustomEvent('updateNavigationExpandState', { 
@@ -1093,14 +1156,48 @@ const Contributions = () => {
         )}
 
         {/* Grand Total */}
-        <div className="contributions-household-section contributions-grand-total-section">
-          <h4>Total Annual Contributions</h4>
-          <div className="contributions-household-grid">
-            <div className="contributions-household-item grand-total">
-              <span className="label">Combined Household Total:</span>
+        <div className="contributions-household-section">
+          <h4 
+            className="contributions-section-header-clickable"
+            onClick={() => toggleHouseholdSection('total')}
+            style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+          >
+            <span>Total Annual Contributions</span>
+            <span className="contributions-toggle-icon">
+              {expandedHouseholdSections.total ? '▼' : '▶'}
+            </span>
+          </h4>
+          {expandedHouseholdSections.total && (
+            <div className="contributions-household-grid">
+            <div className="contributions-household-item">
+              <span className="label">
+                <span className="label-full">Employee Only:</span>
+                <span className="label-short">Employee Only:</span>
+                <span className="label-mobile">Employee:</span>
+              </span>
+              <span className="value">{formatCurrency(
+                (breakdownData.projected401kEmployee || 0) +
+                (mode === 'ytd' ? (breakdownData.ytd401kEmployee || 0) : 0) +
+                (breakdownData.projectedIra || 0) +
+                (mode === 'ytd' ? (breakdownData.ytdIra || 0) : 0) +
+                (breakdownData.projectedHsaEmployee || 0) +
+                (mode === 'ytd' ? (breakdownData.ytdHsaEmployee || 0) : 0) +
+                (breakdownData.projectedEspp || 0) +
+                (mode === 'ytd' ? (breakdownData.ytdEspp || 0) : 0) +
+                (breakdownData.projectedBrokerage || 0) +
+                (mode === 'ytd' ? (breakdownData.ytdBrokerage || 0) : 0)
+              )}</span>
+            </div>
+            <div className="contributions-household-item">
+              <span className="label">
+                <span className="label-full">Total (with Match):</span>
+                <span className="label-short">Total (with Match):</span>
+                <span className="label-mobile">Total:</span>
+              </span>
               <span className="value">{formatCurrency(totals.totalContributions)}</span>
             </div>
           </div>
+          )}
         </div>
       </div>
     );
@@ -1509,6 +1606,44 @@ const Contributions = () => {
                       onToggle={togglePersonSection}
                     />
                   )}
+                  
+                  {/* Personal Total Breakdown */}
+                  <div className="contributions-contribution-section">
+                    <h4 
+                      className="contributions-section-header-clickable"
+                      onClick={() => togglePersonSection(person.name, 'personalTotal')}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>Total Annual Contributions</span>
+                      <span className="contributions-toggle-icon">
+                        {expandedPersonSections[person.name]?.personalTotal ? '▼' : '▶'}
+                      </span>
+                    </h4>
+                    {expandedPersonSections[person.name]?.personalTotal && (
+                      <div className="contributions-contribution-grid">
+                        <div className="contributions-contribution-item">
+                          <span className="label">Employee Contributions Only:</span>
+                          <span className="value">{formatCurrency(
+                            (person.standardBreakdown.k401?.totalEmployee || 0) +
+                            (person.standardBreakdown.hsa?.totalEmployee || 0) +
+                            (person.standardBreakdown.ira?.total || 0) +
+                            (person.standardBreakdown.espp?.total || 0) +
+                            (person.standardBreakdown.brokerage?.total || 0)
+                          )}</span>
+                        </div>
+                        <div className="contributions-contribution-item total">
+                          <span className="label">Total (with Match):</span>
+                          <span className="value">{formatCurrency(
+                            (person.standardBreakdown.k401?.totalCombined || 0) +
+                            (person.standardBreakdown.hsa?.totalCombined || 0) +
+                            (person.standardBreakdown.ira?.total || 0) +
+                            (person.standardBreakdown.espp?.total || 0) +
+                            (person.standardBreakdown.brokerage?.total || 0)
+                          )}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
               
@@ -1572,6 +1707,44 @@ const Contributions = () => {
                       onToggle={togglePersonSection}
                     />
                   )}
+                  
+                  {/* Personal Total Breakdown */}
+                  <div className="contributions-contribution-section">
+                    <h4 
+                      className="contributions-section-header-clickable"
+                      onClick={() => togglePersonSection(person.name, 'personalTotal')}
+                      style={{ cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}
+                    >
+                      <span>Personal Total Annual Contributions</span>
+                      <span className="contributions-toggle-icon">
+                        {expandedPersonSections[person.name]?.personalTotal ? '▼' : '▶'}
+                      </span>
+                    </h4>
+                    {expandedPersonSections[person.name]?.personalTotal && (
+                      <div className="contributions-contribution-grid">
+                        <div className="contributions-contribution-item">
+                          <span className="label">Employee Contributions Only:</span>
+                          <span className="value">{formatCurrency(
+                            (person.ytdBreakdown.k401?.totalEmployee || 0) +
+                            (person.ytdBreakdown.hsa?.totalEmployee || 0) +
+                            (person.ytdBreakdown.ira?.total || 0) +
+                            (person.ytdBreakdown.espp?.total || 0) +
+                            (person.ytdBreakdown.brokerage?.total || 0)
+                          )}</span>
+                        </div>
+                        <div className="contributions-contribution-item total">
+                          <span className="label">Total (with Match):</span>
+                          <span className="value">{formatCurrency(
+                            (person.ytdBreakdown.k401?.totalCombined || 0) +
+                            (person.ytdBreakdown.hsa?.totalCombined || 0) +
+                            (person.ytdBreakdown.ira?.total || 0) +
+                            (person.ytdBreakdown.espp?.total || 0) +
+                            (person.ytdBreakdown.brokerage?.total || 0)
+                          )}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </>
               )}
               
