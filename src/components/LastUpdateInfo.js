@@ -12,7 +12,7 @@ const LastUpdateInfo = ({ className = '', showDetails = true, compact = false })
           <div className="last-update-title">Liquid Assets Data Status</div>
           <div className="last-update-message">No Liquid Assets data updates yet</div>
           <div className="last-update-action">
-            Go to the <a href="/portfolio">Liquid Assets page</a> to add your first investment data update.
+            Go to the <a href="/liquid-assets">Liquid Assets page</a> to add your first investment data update.
           </div>
         </div>
       </div>

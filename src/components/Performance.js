@@ -916,7 +916,7 @@ const Performance = () => {
                   <div className="performance-step-number">1</div>
                   <div className="performance-step-content">
                     <strong>Add Performance Data</strong>
-                    <p>Go to the Portfolio page and enter your investment account performance for one or more years</p>
+                    <p>Go to the Liquid Assets page and enter your investment account performance for one or more years</p>
                   </div>
                 </div>
                 
@@ -976,7 +976,7 @@ const Performance = () => {
               
               <div className="performance-empty-state-cta">
                 <p><strong>Ready to start?</strong></p>
-                <p>Head to the <a href="/portfolio" className="performance-portfolio-link">Portfolio page</a> to add your first year of performance data!</p>
+                <p>Head to the <a href="/liquid-assets" className="performance-portfolio-link">Liquid Assets page</a> to add your first year of performance data!</p>
               </div>
             </div>
           </div>

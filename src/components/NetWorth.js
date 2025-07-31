@@ -378,8 +378,8 @@ const NetWorth = () => {
       const espp = historicalEntry.espp || 0;
       const hsa = historicalEntry.hsa || 0;
       
-      // Calculate portfolio value (investments)
-      const portfolio = taxFree + taxDeferred + brokerage + espp + hsa;
+      // Calculate accounts value (investments)
+      const accounts = taxFree + taxDeferred + brokerage + espp + hsa;
       const retirement = taxFree + taxDeferred; // Retirement accounts only
       
       // Calculate house value based on selected mode
@@ -401,7 +401,7 @@ const NetWorth = () => {
       const totalLiabilities = mortgage + otherLiabilities;
       
       // Calculate net worth
-      const totalAssets = portfolio + houseValue + cash + otherAssets;
+      const totalAssets = accounts + houseValue + cash + otherAssets;
       const netWorth = totalAssets - totalLiabilities;
       
       // Calculate Money Guy Score
@@ -462,7 +462,7 @@ const NetWorth = () => {
         cash,
         espp,
         retirement,
-        portfolio,
+        accounts,
         taxFree,
         taxDeferred,
         brokerage,
@@ -530,7 +530,7 @@ const NetWorth = () => {
       return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
     });
     const netWorthData = sortedData.map(d => d.netWorth);
-    const portfolioData = sortedData.map(d => d.portfolio);
+    const accountsData = sortedData.map(d => d.accounts);
     const houseData = sortedData.map(d => d.houseValue);
     const cashData = sortedData.map(d => d.cash);
     const liabilityData = sortedData.map(d => d.totalLiabilities); // Show as positive values
@@ -548,8 +548,8 @@ const NetWorth = () => {
           fill: true
         },
         {
-          label: 'Portfolio',
-          data: portfolioData,
+          label: 'Accounts',
+          data: accountsData,
           borderColor: 'rgb(59, 130, 246)',
           backgroundColor: 'rgba(59, 130, 246, 0.1)',
           borderWidth: 2,
@@ -610,7 +610,7 @@ const NetWorth = () => {
     // Create datasets for each category showing all years
     const datasets = categories.map((category, categoryIndex) => {
       const data = sortedData.map(d => {
-        const total = d.portfolio;
+        const total = d.accounts;
         if (total <= 0) return 0;
         
         switch (categoryIndex) {
@@ -649,7 +649,7 @@ const NetWorth = () => {
     const labelsWithYTD = years.map(year => {
       return isCurrentYear(year) ? `${year} (YTD)` : year.toString();
     });
-    const categories = ['Portfolio', 'House Equity', 'Cash', 'Assets'];
+    const categories = ['Accounts', 'House Equity', 'Cash', 'Assets'];
     const colors = [
       'rgba(59, 130, 246, 0.8)',
       'rgba(168, 85, 247, 0.8)',
@@ -664,12 +664,12 @@ const NetWorth = () => {
         const houseEquity = Math.max(0, d.houseValue - (d.mortgage || 0));
         
         // Total of all positive components for percentage calculation (no liabilities)
-        const totalAssets = d.portfolio + houseEquity + d.cash + d.otherAssets;
+        const totalAssets = d.accounts + houseEquity + d.cash + d.otherAssets;
         
         if (totalAssets <= 0) return 0;
         
         switch (categoryIndex) {
-          case 0: return (d.portfolio / totalAssets) * 100;
+          case 0: return (d.accounts / totalAssets) * 100;
           case 1: return (houseEquity / totalAssets) * 100;
           case 2: return (d.cash / totalAssets) * 100;
           case 3: return (d.otherAssets / totalAssets) * 100;
@@ -713,7 +713,7 @@ const NetWorth = () => {
     
     // Net Worth and Portfolio data
     const netWorthData = sortedData.map(d => d.netWorth);
-    const portfolioData = sortedData.map(d => d.portfolio);
+    const accountsData = sortedData.map(d => d.accounts);
 
     return {
       labels: labelsWithYTD,
@@ -746,8 +746,8 @@ const NetWorth = () => {
           fill: false
         },
         {
-          label: 'Portfolio',
-          data: portfolioData,
+          label: 'Accounts',
+          data: accountsData,
           borderColor: 'rgb(251, 146, 60)',
           backgroundColor: 'rgba(251, 146, 60, 0.1)',
           borderWidth: 2,
@@ -1095,8 +1095,8 @@ const NetWorth = () => {
                 <div className="networth-step">
                   <div className="networth-step-number">1</div>
                   <div className="networth-step-content">
-                    <strong>Add Historical Data</strong>
-                    <p>Go to the Historical page and enter your financial data for one or more years</p>
+                    <strong>Add Annual Data</strong>
+                    <p>Go to the Raw Data page and enter your financial data for one or more years</p>
                   </div>
                 </div>
                 
@@ -1156,7 +1156,7 @@ const NetWorth = () => {
               
               <div className="networth-empty-state-cta">
                 <p><strong>Ready to start?</strong></p>
-                <p>Head to the <a href="/historical" className="networth-historical-link">Historical page</a> to add your first year of data!</p>
+                <p>Head to the <a href="/raw-data" className="networth-historical-link">Raw Data page</a> to add your first year of data!</p>
               </div>
             </div>
           </div>
@@ -1455,7 +1455,7 @@ const NetWorth = () => {
                         return [
                           { label: 'Latest Net Worth', value: formatCurrency(latest.netWorth), year: latest.year },
                           { label: 'Total Growth', value: formatCurrency(totalGrowth), change: `${percentGrowth >= 0 ? '+' : ''}${percentGrowth.toFixed(1)}%` },
-                          { label: 'Latest Portfolio', value: formatCurrency(latest.portfolio), year: latest.year },
+                          { label: 'Latest Accounts', value: formatCurrency(latest.accounts), year: latest.year },
                           { label: 'Latest House Value', value: formatCurrency(latest.houseValue), year: latest.year },
                           { label: 'Latest Liabilities', value: formatCurrency(latest.totalLiabilities), year: latest.year }
                         ].map((stat, idx) => (
@@ -1751,7 +1751,7 @@ const NetWorth = () => {
                                   </ul>
                                 </div>
                                 <div className="networth-score-info-source">
-                                  <em>Data sourced from Performance Tracker contributions</em>
+                                  <em>Data sourced from Account Tracker contributions</em>
                                 </div>
                               </div>
                             )}

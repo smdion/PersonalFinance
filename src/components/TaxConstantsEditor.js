@@ -269,18 +269,15 @@ const TaxConstantsEditor = () => {
                   <p><strong>Source:</strong> Annual Federal Wage Withholding Tables from <strong>IRS Publication 15-T</strong> (Percentage Method for Automated Payroll Systems)</p>
                   <p><strong>Where to find it:</strong></p>
                   <ul>
-                    <li>Visit <a href="https://www.irs.gov/pub/irs-pdf/p15t.pdf" target="_blank" rel="noopener noreferrer">IRS.gov Publication 15-T (PDF)</a></li>
-                    <li>Search for "Publication 15-T" on IRS.gov</li>
-                    <li>Look for the current tax year version</li>
+                    <li>Download <a href="https://www.irs.gov/pub/irs-pdf/p15t.pdf" target="_blank" rel="noopener noreferrer">IRS.gov Publication 15-T (PDF)</a></li>
                   </ul>
                   <p><strong>What to look for:</strong></p>
                   <ul>
-                    <li><strong>Standard Method:</strong> "Percentage Method Tables for Income Tax Withholding (for Wages Paid in [Year])"</li>
-                    <li><strong>Multiple Jobs Method:</strong> "Percentage Method Tables for Manual Payroll Systems With Forms W-4 From 2020 or Later"</li>
+                    <li><strong>Method:</strong> "Percentage Method Tables for Automated Payroll Systems and Withholding on Periodic Payments of Pensions and Annuities"</li>
                     <li>Tables are organized by filing status (Single, Married Filing Jointly, Married Filing Separately, Head of Household)</li>
                     <li>Each table shows wage brackets with corresponding base withholding amounts and marginal rates</li>
                   </ul>
-                  <p><strong>When to update:</strong> Annually, typically in December for the following tax year</p>
+                  <p><strong>When to update:</strong> Annually, typically in December for the following tax year or when the new 15-T is available.</p>
                 </div>
               </div>
               {renderWageTable('ANNUAL_WAGE_WITHHOLDING', 'Annual Wage Withholding Tables (Standard Method)')}

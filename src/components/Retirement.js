@@ -146,7 +146,7 @@ const ContributionTooltip = ({ contributions, type, children }) => {
       <div className="tooltip-item">
         <span>Data Source:</span>
         <span className={breakdown.employerMatchSource === 'actual' ? 'actual-data' : 'projected-data'}>
-          {breakdown.employerMatchSource === 'actual' ? 'Actual (Performance Tracker)' : 'Projected (Calculated)'}
+          {breakdown.employerMatchSource === 'actual' ? 'Actual (Account Tracker)' : 'Projected (Calculated)'}
         </span>
       </div>
     </div>

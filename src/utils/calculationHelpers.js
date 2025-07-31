@@ -420,7 +420,7 @@ export const processNetWorthData = (annualData, performanceData, paycheckData, n
 export const generateMainNetWorthChartData = (filteredData) => {
   const years = filteredData.map(d => d.year);
   const netWorthData = filteredData.map(d => d.netWorth);
-  const portfolioData = filteredData.map(d => d.portfolio);
+  const accountsData = filteredData.map(d => d.accounts);
   const houseData = filteredData.map(d => d.houseValue);
   const cashData = filteredData.map(d => d.cash);
   const liabilityData = filteredData.map(d => d.totalLiabilities); // Show as positive values
@@ -438,8 +438,8 @@ export const generateMainNetWorthChartData = (filteredData) => {
         fill: true
       },
       {
-        label: 'Portfolio',
-        data: portfolioData,
+        label: 'Accounts',
+        data: accountsData,
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         borderWidth: 2,
@@ -491,7 +491,7 @@ export const generatePortfolioTaxLocationData = (filteredData) => {
 
   const datasets = categories.map((category, categoryIndex) => {
     const data = filteredData.map(d => {
-      const total = d.portfolio;
+      const total = d.accounts;
       if (total <= 0) return 0;
       
       switch (categoryIndex) {
@@ -537,7 +537,7 @@ export const generateNetWorthLocationData = (filteredData) => {
       if (total <= 0) return 0;
       
       switch (categoryIndex) {
-        case 0: return (d.portfolio / total) * 100;
+        case 0: return (d.accounts / total) * 100;
         case 1: return (d.houseValue / total) * 100;
         case 2: return (d.cash / total) * 100;
         case 3: return (d.otherAssets / total) * 100;
@@ -571,9 +571,9 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
   // Calculate Prodigious Accumulator (2x Average Accumulator)
   const prodigiousAccumulatorData = filteredData.map(d => (d.averageAccumulator || 0) * 2);
   
-  // Net Worth and Portfolio data
+  // Net Worth and Accounts data
   const netWorthData = filteredData.map(d => d.netWorth);
-  const portfolioData = filteredData.map(d => d.portfolio);
+  const accountsData = filteredData.map(d => d.accounts);
 
   return {
     labels: years,
@@ -606,8 +606,8 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
         fill: false
       },
       {
-        label: 'Portfolio',
-        data: portfolioData,
+        label: 'Accounts',
+        data: accountsData,
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         borderWidth: 2,
@@ -704,6 +704,7 @@ export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly', cu
       ytdIncome += grossSalary;
     } else {
       // Use the dates as specified in the income period
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = grossSalary / periodsPerYear;
       
@@ -774,6 +775,7 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
     if (isFullYear) {
       projectedIncome += grossSalary;
     } else {
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = grossSalary / periodsPerYear;
       const payPeriodsInPeriod = calculatePayPeriodsBetweenDates(startDate, endDate, payPeriod);
@@ -792,6 +794,7 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
       const nextDay = new Date(lastEndDate);
       nextDay.setDate(nextDay.getDate() + 1);
       
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = (parseFloat(currentSalary) || 0) / periodsPerYear;
       const remainingPayPeriods = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
@@ -915,6 +918,7 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
 
 // Calculate remaining contribution room based on YTD contributions
 export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCoverage) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const isOver50 = age >= 50;
   const isOver55 = age >= 55;
   
@@ -955,6 +959,7 @@ export const calculateMaxOutPerPaycheckAmounts = (
   age,
   hsaCoverage = 'none'
 ) => {
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
   const today = new Date();
   const endOfYear = new Date(today.getFullYear(), 11, 31);
@@ -1048,6 +1053,7 @@ export const calculateProjectedRemainingContributions = (paycheckUser, employerM
 
   const salary = parseFloat(paycheckUser.salary) || 0;
   const payPeriod = paycheckUser.payPeriod || 'biWeekly';
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
 
   // Calculate remaining pay periods from today to end of year

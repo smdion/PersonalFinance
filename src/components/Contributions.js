@@ -2547,7 +2547,7 @@ const Contributions = () => {
                     <h5>📈 Progress + Forecast View</h5>
                     <p>Shows actual YTD progress + projected remaining contributions:</p>
                     <ul>
-                      <li><strong>YTD Data:</strong> From Performance Tracker and Historical Tracker entries</li>
+                      <li><strong>YTD Data:</strong> From Account Tracker and Annual Tracker entries</li>
                       <li><strong>Projected Remaining:</strong> Based on current settings for remaining time periods</li>
                       <li><strong>Time Calculations:</strong> Uses remaining pay periods and months in the year</li>
                     </ul>
@@ -2561,8 +2561,8 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>401(k) Contributions</h5>
                   <ul>
-                    <li><strong>Employee:</strong> Performance Tracker entries (accountType: "401k")</li>
-                    <li><strong>Employer Match:</strong> Performance Tracker "employerMatch" field</li>
+                    <li><strong>Employee:</strong> Account Tracker entries (accountType: "401k")</li>
+                    <li><strong>Employer Match:</strong> Account Tracker "employerMatch" field</li>
                     <li><strong>Limits:</strong> $23,000 + $7,500 catch-up (age 50+) for 2025</li>
                     <li><strong>Account Type:</strong> Always Individual (separate limits per person)</li>
                   </ul>
@@ -2571,7 +2571,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>IRA Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "IRA")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "IRA")</li>
                     <li><strong>Limits:</strong> $7,000 + $1,000 catch-up (age 50+) for 2025</li>
                     <li><strong>Account Type:</strong> Treated as Joint (combined limit for household)</li>
                     <li><strong>Division:</strong> Joint totals divided evenly between spouses</li>
@@ -2581,8 +2581,8 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>HSA Contributions</h5>
                   <ul>
-                    <li><strong>Employee:</strong> Performance Tracker entries (accountType: "HSA")</li>
-                    <li><strong>Employer:</strong> Historical Tracker "employerHsa" field OR estimated from paycheck settings</li>
+                    <li><strong>Employee:</strong> Account Tracker entries (accountType: "HSA")</li>
+                    <li><strong>Employer:</strong> Annual Tracker "employerHsa" field OR estimated from paycheck settings</li>
                     <li><strong>Limits:</strong> $4,300 (self) / $8,550 (family) + $1,000 catch-up (age 55+) for 2025</li>
                     <li><strong>Important:</strong> Both employee AND employer contributions count toward IRS limit</li>
                     <li><strong>Account Type:</strong> Always Individual (separate limits per person)</li>
@@ -2592,7 +2592,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>ESPP Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "ESPP")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "ESPP")</li>
                     <li><strong>Limits:</strong> No IRS annual limit (company-specific limits may apply)</li>
                     <li><strong>Account Type:</strong> Always Individual</li>
                   </ul>
@@ -2601,7 +2601,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>Brokerage Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "Brokerage" or "Taxable")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "Brokerage" or "Taxable")</li>
                     <li><strong>Limits:</strong> No IRS annual limit</li>
                     <li><strong>Account Type:</strong> Auto-detected (Joint if user name is "Joint" or account name contains "joint")</li>
                     <li><strong>Division:</strong> Joint totals divided evenly between spouses</li>
@@ -2656,9 +2656,9 @@ const Contributions = () => {
                 <h4>⚠️ Important Notes</h4>
                 <div className="contributions-help-notes">
                   <ul>
-                    <li><strong>Data Accuracy:</strong> Ensure your Performance Tracker and Historical Tracker data is up-to-date</li>
+                    <li><strong>Data Accuracy:</strong> Ensure your Account Tracker and Annual Tracker data is up-to-date</li>
                     <li><strong>Missing Data:</strong> If YTD data is missing, the tool estimates based on current settings</li>
-                    <li><strong>Account Naming:</strong> Use consistent naming across Performance Tracker for accurate categorization</li>
+                    <li><strong>Account Naming:</strong> Use consistent naming across Account Tracker for accurate categorization</li>
                     <li><strong>Joint Accounts:</strong> Mark accounts as "Joint" in the user name for proper household calculations</li>
                     <li><strong>Real-Time Updates:</strong> Changes in Paycheck Calculator automatically update these projections</li>
                     <li><strong>Tax Year:</strong> All calculations are based on the current calendar year</li>
@@ -2670,9 +2670,9 @@ const Contributions = () => {
                 <h4>🔧 Troubleshooting</h4>
                 <div className="contributions-help-troubleshooting">
                   <ul>
-                    <li><strong>Missing YTD Data:</strong> Add entries to Performance Tracker with correct account types</li>
+                    <li><strong>Missing YTD Data:</strong> Add entries to Account Tracker with correct account types</li>
                     <li><strong>Wrong Limits:</strong> Check birthdate and HSA coverage type in Paycheck Calculator</li>
-                    <li><strong>Employer HSA Not Showing:</strong> Add "employerHsa" field to Historical Tracker or verify paycheck settings</li>
+                    <li><strong>Employer HSA Not Showing:</strong> Add "employerHsa" field to Annual Tracker or verify paycheck settings</li>
                     <li><strong>Joint Account Issues:</strong> Ensure account user name is "Joint" or account name contains "joint"</li>
                     <li><strong>Calculation Discrepancies:</strong> Verify pay period settings match your actual pay schedule</li>
                   </ul>
