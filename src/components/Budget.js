@@ -8,7 +8,7 @@ import Navigation from './Navigation';
 // Define empty budget categories constant
 const EMPTY_BUDGET_CATEGORIES = [];
 
-const BudgetForm = () => {
+const Budget = () => {
   const { formData, resetFormData } = useContext(FormContext);
   
   // Remove settings menu state and ref
@@ -958,4 +958,4 @@ const BudgetForm = () => {
   );
 };
 
-export default BudgetForm;
+export default Budget;

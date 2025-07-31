@@ -235,7 +235,7 @@ src/
 
 ### Key Components
 - `TaxCalculator.js` - Main paycheck calculator
-- `BudgetForm.js` - Budget planning interface
+- `Budget.js` - Budget planning interface
 - `Savings.js` - Savings goal tracking with bulk editing
 - `Historical.js` - Historical data tracker
 - `Performance.js` - Investment performance tracker
