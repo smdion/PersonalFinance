@@ -14,7 +14,6 @@ export const getIsResettingAllData = () => {
 export const STORAGE_KEYS = {
   BUDGET_DATA: 'budgetData',
   PAYCHECK_DATA: 'paycheckData',
-  FORM_DATA: 'formData',
   APP_SETTINGS: 'appSettings',
   ANNUAL_DATA: 'annualData',
   ACCOUNT_DATA: 'accountData',
@@ -70,14 +69,18 @@ export const removeFromStorage = (key) => {
 };
 
 // Name mapping utilities for handling name changes
-export const NAME_MAPPING_KEY = 'nameMapping';
-
 export const getNameMapping = () => {
-  return getFromStorage(NAME_MAPPING_KEY, {});
+  const appSettings = getAppSettings();
+  return appSettings.nameMapping || {};
 };
 
 export const setNameMapping = (mapping) => {
-  return setToStorage(NAME_MAPPING_KEY, mapping);
+  const appSettings = getAppSettings();
+  const updatedSettings = {
+    ...appSettings,
+    nameMapping: mapping
+  };
+  return setAppSettings(updatedSettings);
 };
 
 // Add name mapping functionality - Enhanced for consistency
@@ -88,8 +91,8 @@ let nameMappingLoaded = false;
 const loadNameMapping = () => {
   if (!nameMappingLoaded) {
     try {
-      const savedMappings = JSON.parse(localStorage.getItem('nameMapping') || '{}');
-      nameMapping = { ...savedMappings };
+      const appSettings = getAppSettings();
+      nameMapping = { ...appSettings.nameMapping };
       nameMappingLoaded = true;
     } catch (error) {
         nameMapping = {};
@@ -301,19 +304,59 @@ export const setPaycheckData = (data) => {
 };
 
 export const getFormData = () => {
-  return getFromStorage(STORAGE_KEYS.FORM_DATA, {});
+  const paycheckData = getPaycheckData();
+  return paycheckData.formData || {};
 };
 
 export const setFormData = (data) => {
-  return setToStorage(STORAGE_KEYS.FORM_DATA, data);
+  const paycheckData = getPaycheckData();
+  const updatedPaycheckData = {
+    ...paycheckData,
+    formData: data
+  };
+  return setPaycheckData(updatedPaycheckData);
 };
 
 export const getAppSettings = () => {
-  return getFromStorage(STORAGE_KEYS.APP_SETTINGS, {});
+  return getFromStorage(STORAGE_KEYS.APP_SETTINGS, {
+    hasSeenBetaWelcome: false,
+    isDemoData: false,
+    nameMapping: {}
+  });
 };
 
 export const setAppSettings = (data) => {
   return setToStorage(STORAGE_KEYS.APP_SETTINGS, data);
+};
+
+// Beta welcome utilities
+export const getHasSeenBetaWelcome = () => {
+  const appSettings = getAppSettings();
+  return appSettings.hasSeenBetaWelcome;
+};
+
+export const setHasSeenBetaWelcome = (value) => {
+  const appSettings = getAppSettings();
+  const updatedSettings = {
+    ...appSettings,
+    hasSeenBetaWelcome: value
+  };
+  return setAppSettings(updatedSettings);
+};
+
+// Demo data utilities
+export const getIsDemoData = () => {
+  const appSettings = getAppSettings();
+  return appSettings.isDemoData;
+};
+
+export const setIsDemoData = (value) => {
+  const appSettings = getAppSettings();
+  const updatedSettings = {
+    ...appSettings,
+    isDemoData: value
+  };
+  return setAppSettings(updatedSettings);
 };
 
 // Performance sync settings utilities
@@ -439,7 +482,6 @@ export const exportAllData = () => {
     version: '2.0.0', // Updated version to reflect new data structure
     budgetData: getBudgetData(),
     paycheckData: getPaycheckData(),
-    formData: getFormData(),
     appSettings: getAppSettings(),
     annualData: getAnnualData(),
     accountData: getAccountData(),
@@ -493,18 +535,7 @@ export const exportAllLocalStorageData = () => {
     }
   });
   
-  // Export additional localStorage keys not in STORAGE_KEYS
-  const additionalKeys = [
-    'nameMapping',
-    'hasSeenBetaWelcome'
-  ];
-  
-  additionalKeys.forEach(key => {
-    const data = getFromStorage(key, null);
-    if (data !== null) {
-      allData[key] = data;
-    }
-  });
+  // Legacy keys are now handled in appSettings - no additional export needed
   
   // Export ALL localStorage items (catch any we might have missed)
   try {
@@ -573,24 +604,13 @@ export const exportAllLocalStorageDataFiltered = () => {
     }
   });
   
-  // Export additional localStorage keys not in STORAGE_KEYS
-  const additionalKeys = [
-    'nameMapping',
-    'hasSeenBetaWelcome'
-  ];
-  
-  additionalKeys.forEach(key => {
-    const data = getFromStorage(key, null);
-    if (data !== null) {
-      allData[key] = data;
-    }
-  });
+  // Legacy keys are now handled in appSettings - no additional export needed
   
   // Export ALL localStorage items (catch any we might have missed)
   try {
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && !Object.values(STORAGE_KEYS).includes(key) && !additionalKeys.includes(key)) {
+      if (key && !Object.values(STORAGE_KEYS).includes(key)) {
         try {
           const value = localStorage.getItem(key);
           if (value) {
@@ -1085,14 +1105,10 @@ export const importAllData = (importData) => {
       removeFromStorage(key);
     });
     
-    // Also clear name mapping
-    removeFromStorage(NAME_MAPPING_KEY);
     
     // Clear ALL localStorage items to ensure complete reset before import
     const keysToRemove = [
-      ...Object.values(STORAGE_KEYS),
-      'nameMapping',
-      'hasSeenBetaWelcome'
+      ...Object.values(STORAGE_KEYS)
     ];
     
     // Also clear any other items that might exist in localStorage
@@ -1132,10 +1148,6 @@ export const importAllData = (importData) => {
       importedSections.push('Paycheck Data');
     }
     
-    if (importData.formData !== undefined || importData.form_data !== undefined) {
-      setFormData(importData.formData || importData.form_data);
-      importedSections.push('Form Data');
-    }
     
     if (importData.appSettings !== undefined || importData.app_settings !== undefined) {
       setAppSettings(importData.appSettings || importData.app_settings);
@@ -1241,29 +1253,13 @@ export const importAllData = (importData) => {
       importedSections.push('Manual Account Groups');
     }
     
-    // Import name mapping (should be done last to ensure data integrity)
-    if (importData.nameMapping !== undefined) {
-      setNameMapping(importData.nameMapping);
-      importedSections.push('Name Mapping');
-    }
-    
-    // Import additional localStorage keys not in main data structure
-    const additionalKeys = ['hasSeenBetaWelcome'];
-    additionalKeys.forEach(key => {
-      if (importData[key] !== undefined) {
-        setToStorage(key, importData[key]);
-        importedSections.push(key);
-      }
-    });
     
     // Import any other localStorage items that were exported
     const knownKeys = new Set([
       ...Object.values(STORAGE_KEYS),
-      'nameMapping',
       'exportedAt',
       'version',
-      'dataSource',
-      ...additionalKeys
+      'dataSource'
     ]);
     
     Object.keys(importData).forEach(key => {
@@ -1405,8 +1401,6 @@ export const clearAllAppData = () => {
       removeFromStorage(key);
     });
     
-    // Also clear name mapping
-    removeFromStorage(NAME_MAPPING_KEY);
     
     // Also clear any other potential storage keys that might exist
     const keysToRemove = [
@@ -1428,9 +1422,7 @@ export const clearAllAppData = () => {
       'portfolioInputs',
       'sharedAccounts', 
       'manualAccountGroups',
-      'savingsData',
-      'nameMapping',
-      'hasSeenBetaWelcome' // Also clear beta welcome flag
+      'savingsData'
     ];
     
     keysToRemove.forEach(key => {
@@ -1563,7 +1555,6 @@ export const resetAllAppData = () => {
       // Reset to default empty states - Updated for object format
       setBudgetData([]);
       setPaycheckData({});
-      setFormData({});
       setAppSettings({});
       setHistoricalData({});
       setPerformanceData({}); // Changed from [] to {}

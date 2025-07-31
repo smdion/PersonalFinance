@@ -1,5 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { getFormData, setFormData, setBudgetData, getBudgetData } from '../utils/localStorage';
+import { getFormData, setFormData, setBudgetData, getBudgetData, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 
 export const FormContext = createContext();
 
@@ -16,18 +16,13 @@ export const FormProvider = ({ children }) => {
   const initialFormData = {
     combinedMonthlyTakeHome: 0,
     combinedTakeHomePerPayPeriod: 0,
-    biWeeklyType: 'even', // 'even' or 'odd'
-    yourBudgetImpacting: {
-      traditionalIraMonthly: 0,
-      rothIraMonthly: 0,
-      brokerageAccounts: [], // Array of {id, name, monthlyAmount} objects
-    },
-    spouseBudgetImpacting: {
-      traditionalIraMonthly: 0,
-      rothIraMonthly: 0,
-      brokerageAccounts: [], // Array of {id, name, monthlyAmount} objects
-    },
-    showSpouseCalculator: true,
+    biWeeklyType: 'even' // 'even' or 'odd'
+  };
+
+  const initialBudgetImpacting = {
+    traditionalIraMonthly: 0,
+    rothIraMonthly: 0,
+    brokerageAccounts: [], // Array of {id, name, monthlyAmount} objects
   };
 
   const [formData, setFormDataState] = useState(() => {
@@ -35,10 +30,36 @@ export const FormProvider = ({ children }) => {
     return { ...initialFormData, ...savedData };
   });
 
+  // Get budget impacting data from paycheck data
+  const [budgetImpactingData, setBudgetImpactingData] = useState(() => {
+    const paycheckData = getPaycheckData();
+    return {
+      yourBudgetImpacting: paycheckData?.your?.budgetImpacting || initialBudgetImpacting,
+      spouseBudgetImpacting: paycheckData?.spouse?.budgetImpacting || initialBudgetImpacting
+    };
+  });
+
   // Save form data to localStorage whenever it changes
   useEffect(() => {
     setFormData(formData);
   }, [formData]);
+
+  // Save budget impacting data to paycheck data whenever it changes
+  useEffect(() => {
+    const paycheckData = getPaycheckData();
+    const updatedPaycheckData = {
+      ...paycheckData,
+      your: {
+        ...paycheckData.your,
+        budgetImpacting: budgetImpactingData.yourBudgetImpacting
+      },
+      spouse: {
+        ...paycheckData.spouse,
+        budgetImpacting: budgetImpactingData.spouseBudgetImpacting
+      }
+    };
+    setPaycheckData(updatedPaycheckData);
+  }, [budgetImpactingData]);
 
   const updateFormData = useCallback((key, value) => {
     setFormDataState((prev) => ({ ...prev, [key]: value }));
@@ -46,12 +67,12 @@ export const FormProvider = ({ children }) => {
 
   const updateBudgetImpacting = useCallback((person, contributions) => {
     const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
-    setFormDataState((prev) => ({ ...prev, [key]: contributions }));
+    setBudgetImpactingData((prev) => ({ ...prev, [key]: contributions }));
   }, []);
 
   const addBrokerageAccount = useCallback((person, accountName = 'New Brokerage Account') => {
     const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
-    setFormDataState((prev) => ({
+    setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
@@ -69,7 +90,7 @@ export const FormProvider = ({ children }) => {
 
   const updateBrokerageAccount = useCallback((person, accountId, field, value) => {
     const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
-    setFormDataState((prev) => ({
+    setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
@@ -84,7 +105,7 @@ export const FormProvider = ({ children }) => {
 
   const removeBrokerageAccount = useCallback((person, accountId) => {
     const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
-    setFormDataState((prev) => ({
+    setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
         ...prev[key],
@@ -174,14 +195,15 @@ export const FormProvider = ({ children }) => {
     // Add your contributions with actual current name
     const yourName = paycheckData?.your?.name?.trim() || 'Your';
     budgetItems = budgetItems.concat(
-      createBudgetItemsForPerson(formData.yourBudgetImpacting, 'your', yourName)
+      createBudgetItemsForPerson(budgetImpactingData.yourBudgetImpacting, 'your', yourName)
     );
 
     // Add spouse contributions ONLY if dual calculator is enabled with actual current name
-    if (formData.showSpouseCalculator) {
+    const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
+    if (showSpouseCalculator) {
       const spouseName = paycheckData?.spouse?.name?.trim() || 'Spouse';
       budgetItems = budgetItems.concat(
-        createBudgetItemsForPerson(formData.spouseBudgetImpacting, 'spouse', spouseName)
+        createBudgetItemsForPerson(budgetImpactingData.spouseBudgetImpacting, 'spouse', spouseName)
       );
     }
 
@@ -211,7 +233,7 @@ export const FormProvider = ({ children }) => {
     
     // Dispatch event to notify components
     window.dispatchEvent(new CustomEvent('budgetDataUpdated', { detail: budgetCategories }));
-  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator, createBudgetItemsForPerson]);
+  }, [budgetImpactingData.yourBudgetImpacting, budgetImpactingData.spouseBudgetImpacting, createBudgetItemsForPerson]);
 
   // Run sync with a slight delay to ensure all data is loaded
   useEffect(() => {
@@ -229,76 +251,8 @@ export const FormProvider = ({ children }) => {
     }, 50);
     
     return () => clearTimeout(timer);
-  }, [formData.yourBudgetImpacting, formData.spouseBudgetImpacting, formData.showSpouseCalculator]);
+  }, [budgetImpactingData.yourBudgetImpacting, budgetImpactingData.spouseBudgetImpacting]);
 
-  // Helper function to migrate old format to new format
-  const migrateBudgetImpactingData = useCallback((oldData) => {
-    const newData = {
-      traditionalIraMonthly: oldData.traditionalIraMonthly || 0,
-      rothIraMonthly: oldData.rothIraMonthly || 0,
-      brokerageAccounts: []
-    };
-
-    // Migrate old hard-coded fields to brokerage accounts array
-    if (oldData.retirementBrokerageMonthly > 0) {
-      newData.brokerageAccounts.push({
-        id: Date.now() + Math.random(),
-        name: 'Retirement Brokerage',
-        monthlyAmount: oldData.retirementBrokerageMonthly
-      });
-    }
-
-    if (oldData.longTermSavingsMonthly > 0) {
-      newData.brokerageAccounts.push({
-        id: Date.now() + Math.random() + 1,
-        name: 'Long-Term Savings',
-        monthlyAmount: oldData.longTermSavingsMonthly
-      });
-    }
-
-    // Keep existing brokerage accounts if they exist
-    if (oldData.brokerageAccounts && Array.isArray(oldData.brokerageAccounts)) {
-      newData.brokerageAccounts = [...newData.brokerageAccounts, ...oldData.brokerageAccounts];
-    }
-
-    return newData;
-  }, []);
-
-  // Add effect to load budget impacting data from paycheck data
-  useEffect(() => {
-    const loadBudgetImpactingFromPaycheck = () => {
-      try {
-        const { getPaycheckData } = require('../utils/localStorage');
-        const paycheckData = getPaycheckData();
-        
-        if (paycheckData?.your?.budgetImpacting) {
-          const yourContributions = paycheckData.your.budgetImpacting;
-          if (typeof yourContributions === 'object') {
-            const migratedData = migrateBudgetImpactingData(yourContributions);
-            setFormDataState(prev => ({
-              ...prev,
-              yourBudgetImpacting: migratedData
-            }));
-          }
-        }
-        
-        if (paycheckData?.spouse?.budgetImpacting) {
-          const spouseContributions = paycheckData.spouse.budgetImpacting;
-          if (typeof spouseContributions === 'object') {
-            const migratedData = migrateBudgetImpactingData(spouseContributions);
-            setFormDataState(prev => ({
-              ...prev,
-              spouseBudgetImpacting: migratedData
-            }));
-          }
-        }
-      } catch (error) {
-        // Silent error handling in production
-      }
-    };
-
-    loadBudgetImpactingFromPaycheck();
-  }, [migrateBudgetImpactingData]);
 
   // Add effect to listen for paycheck data updates and re-sync names
   useEffect(() => {
@@ -326,7 +280,15 @@ export const FormProvider = ({ children }) => {
   }, [syncBudgetCategories]);
 
   const value = {
-    formData, 
+    formData: {
+      ...formData,
+      yourBudgetImpacting: budgetImpactingData.yourBudgetImpacting,
+      spouseBudgetImpacting: budgetImpactingData.spouseBudgetImpacting,
+      showSpouseCalculator: (() => {
+        const paycheckData = getPaycheckData();
+        return paycheckData?.settings?.showSpouseCalculator ?? true;
+      })()
+    }, 
     updateFormData, 
     updateBudgetImpacting, 
     addBrokerageAccount,
