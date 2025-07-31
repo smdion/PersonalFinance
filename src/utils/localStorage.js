@@ -25,7 +25,7 @@ export const STORAGE_KEYS = {
   LIQUID_ASSETS_RECORDS: 'liquidAssetsRecords',
   LIQUID_ASSETS_INPUTS: 'liquidAssetsInputs',
   SHARED_ACCOUNTS: 'sharedAccounts',
-  MANUAL_ACCOUNT_GROUPS: 'liquidAccountGroups',
+  MANUAL_ACCOUNT_GROUPS: 'liquidAssetsAccountGroups',
   PRIMARY_HOME_DATA: 'primaryHomeData',
   ASSET_LIABILITY_DATA: 'assetLiabilityData'
 };
@@ -496,7 +496,7 @@ export const exportAllData = () => {
     liquidAssetsRecords: getLiquidAssetsRecords(),
     liquidAssetsInputs: getLiquidAssetsInputs(),
     sharedAccounts: getSharedAccounts(),
-    liquidAccountGroups: getManualAccountGroups(),
+    liquidAssetsAccountGroups: getManualAccountGroups(),
     // Include name mapping for data integrity
     nameMapping: getNameMapping()
   };
@@ -942,7 +942,7 @@ export const exportAllAsCSV = () => {
       ]);
     });
     
-    exports.liquidAccountGroups = {
+    exports.liquidAssetsAccountGroups = {
       filename: `manual_account_groups_${timestamp}.csv`,
       content: rows.map(row =>
         row.map(value => {
@@ -1254,8 +1254,8 @@ export const importAllData = (importData) => {
       importedSections.push('Liquid Assets Inputs');
     }
     
-    if (importData.liquidAccountGroups !== undefined || importData.manualAccountGroups !== undefined || importData.manual_account_groups !== undefined) {
-      setManualAccountGroups(importData.liquidAccountGroups || importData.manualAccountGroups || importData.manual_account_groups);
+    if (importData.liquidAssetsAccountGroups !== undefined) {
+      setManualAccountGroups(importData.liquidAssetsAccountGroups);
       importedSections.push('Manual Account Groups');
     }
     
@@ -1289,7 +1289,7 @@ export const importAllData = (importData) => {
       dispatchGlobalEvent('accountDataUpdated');
       dispatchGlobalEvent('sharedAccountsUpdated');
       dispatchGlobalEvent('liquidAssetsInputsUpdated');
-      dispatchGlobalEvent('liquidAccountGroupsUpdated');
+      dispatchGlobalEvent('liquidAssetsAccountGroupsUpdated');
     }, 100);
     
     return { 
@@ -1305,7 +1305,6 @@ export const importAllData = (importData) => {
 
 // Helper function to import data directly from a JavaScript object (for debugging)
 export const importDataDirectly = (jsonData) => {
-  console.log('Direct import data:', jsonData);
   return importAllData(jsonData);
 };
 
@@ -1426,7 +1425,7 @@ export const clearAllAppData = () => {
       'portfolioRecords',
       'portfolioInputs',
       'sharedAccounts', 
-      'liquidAccountGroups',
+      'liquidAssetsAccountGroups',
       'savingsData'
     ];
     
@@ -1933,12 +1932,8 @@ export const getLiquidAssetsInputs = () => {
 
 // Set current liquid assets inputs (form data)
 export const setLiquidAssetsInputs = (inputs) => {
-  console.log('🔧 setLiquidAssetsInputs called with:', inputs.length, 'inputs');
-  console.log('🔧 Storage key:', STORAGE_KEYS.LIQUID_ASSETS_INPUTS);
-  console.log('🔧 Input data sample:', inputs[0]);
   
   const result = setToStorage(STORAGE_KEYS.LIQUID_ASSETS_INPUTS, inputs);
-  console.log('🔧 setToStorage result:', result);
   
   if (result) {
     // Notify components that liquid assets inputs have been updated
@@ -1947,7 +1942,6 @@ export const setLiquidAssetsInputs = (inputs) => {
     }, 50);
   }
   
-  console.log('🔧 setLiquidAssetsInputs returning:', result);
   return result;
 };
 
@@ -2191,7 +2185,6 @@ export const initializeSharedAccounts = () => {
   if (sharedAccounts.length === 0) {
     // First time setup - sync existing accounts
     const syncResult = syncAllAccountsToShared();
-    console.log('Initialized shared accounts:', syncResult);
     return syncResult;
   }
   
@@ -2224,7 +2217,7 @@ export const setManualAccountGroups = (groups) => {
   if (result) {
     // Notify components that manual groups have been updated
     setTimeout(() => {
-      dispatchGlobalEvent('liquidAccountGroupsUpdated', groups);
+      dispatchGlobalEvent('liquidAssetsAccountGroupsUpdated', groups);
     }, 50);
   }
   return result;
@@ -2422,13 +2415,6 @@ export const getUnusedAccounts = () => {
     !usedAccountNames.has(account.accountName)
   );
   
-  console.log('🎯 Accounts filter:', {
-    totalAvailable: allAccounts.length,
-    alreadyUsed: usedAccountNames.size,
-    unused: unusedAccounts.length,
-    usedAccountNames: Array.from(usedAccountNames)
-  });
-  
   return unusedAccounts;
 };
 
@@ -2485,7 +2471,7 @@ export const clearManualAccountGroups = () => {
   const result = setToStorage(STORAGE_KEYS.MANUAL_ACCOUNT_GROUPS, {});
   if (result) {
     setTimeout(() => {
-      dispatchGlobalEvent('liquidAccountGroupsUpdated', {});
+      dispatchGlobalEvent('liquidAssetsAccountGroupsUpdated', {});
     }, 50);
   }
   return result;
@@ -2617,16 +2603,11 @@ export const syncPaycheckToAnnual = () => {
 // Asset Liability data utilities
 export const getAssetLiabilityData = () => {
   const data = getFromStorage(STORAGE_KEYS.ASSET_LIABILITY_DATA, {});
-  console.log('📦 localStorage getAssetLiabilityData - Retrieved data:', data);
-  console.log('📦 localStorage getAssetLiabilityData - Storage key:', STORAGE_KEYS.ASSET_LIABILITY_DATA);
   return data;
 };
 
 export const setAssetLiabilityData = (data) => {
-  console.log('📦 localStorage setAssetLiabilityData - Storing data:', data);
-  console.log('📦 localStorage setAssetLiabilityData - Storage key:', STORAGE_KEYS.ASSET_LIABILITY_DATA);
   const result = setToStorage(STORAGE_KEYS.ASSET_LIABILITY_DATA, data);
-  console.log('📦 localStorage setAssetLiabilityData - Store result:', result);
   if (result) {
     setTimeout(() => {
       dispatchGlobalEvent('assetLiabilityDataUpdated', data);

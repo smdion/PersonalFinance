@@ -43,7 +43,6 @@ const AssetLiabilityManager = ({
 
   const loadCurrentYearData = () => {
     const assetLiabilityData = getAssetLiabilityData();
-    console.log(`🏠 AssetLiabilityManager (${type}) loadCurrentYearData - assetLiabilityData:`, assetLiabilityData);
     
     // For assets and liabilities, always use "Joint" as the only owner
     const userList = ['Joint'];
@@ -233,7 +232,6 @@ const AssetLiabilityManager = ({
     
     // Auto-save after a short delay
     setTimeout(() => {
-      console.log(`🏠 Auto-save triggered by ${field} change in ${type}`);
       autoSaveData(updatedInputs, true);
     }, 1000);
   };
@@ -269,7 +267,6 @@ const AssetLiabilityManager = ({
     
     // Auto-save after adding
     setTimeout(() => {
-      console.log(`🏠 Auto-save triggered by adding new ${getSingularType(type).toLowerCase()}`);
       autoSaveData(updatedInputs, true);
     }, 100);
   };
@@ -298,7 +295,6 @@ const AssetLiabilityManager = ({
       
       // Auto-save immediately when removing
       setTimeout(() => {
-        console.log(`🏠 Auto-save triggered by removing ${getSingularType(type).toLowerCase()}`);
         autoSaveData(updatedInputs, true);
       }, 100);
     }
@@ -388,7 +384,6 @@ const AssetLiabilityManager = ({
         input.name.trim() && input.type && input.amount && !isNaN(parseFloat(input.amount))
       );
       if (!hasValidData) {
-        console.log(`🏠 Auto-save skipped for ${type}, no valid data`);
         return;
       }
     }
@@ -496,9 +491,7 @@ const AssetLiabilityManager = ({
       }
       
       // Save updated asset liability data
-      console.log(`🏠 AssetLiabilityManager (${type}) saveUpdatedData - Saving assetLiabilityData:`, assetLiabilityData);
       const saveResult = setAssetLiabilityData(assetLiabilityData);
-      console.log(`🏠 AssetLiabilityManager (${type}) saveUpdatedData - Save result:`, saveResult);
       if (saveResult) {
         setCurrentYearData(assetLiabilityData);
         

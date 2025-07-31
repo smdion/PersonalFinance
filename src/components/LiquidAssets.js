@@ -174,14 +174,14 @@ const LiquidAssets = () => {
 
     window.addEventListener('resetAllData', handleResetAllData);
     window.addEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
-    window.addEventListener('liquidAccountGroupsUpdated', handleManualGroupsUpdated);
+    window.addEventListener('liquidAssetsAccountGroupsUpdated', handleManualGroupsUpdated);
     window.addEventListener('liquidAssetsInputsUpdated', handleLiquidAssetsInputsUpdated);
 
     // Cleanup event listeners
     return () => {
       window.removeEventListener('resetAllData', handleResetAllData);
       window.removeEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
-      window.removeEventListener('liquidAccountGroupsUpdated', handleManualGroupsUpdated);
+      window.removeEventListener('liquidAssetsAccountGroupsUpdated', handleManualGroupsUpdated);
       window.removeEventListener('liquidAssetsInputsUpdated', handleLiquidAssetsInputsUpdated);
     };
   }, []);
