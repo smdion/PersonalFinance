@@ -168,7 +168,8 @@ const BudgetForm = () => {
     }
     
     // Calculate for spouse if dual mode is enabled and spouse data exists
-    if (formData.showSpouseCalculator && paycheckData.spouse && paycheckData.spouse.salary) {
+    const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
+    if (showSpouseCalculator && paycheckData.spouse && paycheckData.spouse.salary) {
       const spouseBiWeeklyType = paycheckData.spouse.payWeekType || 'even';
       const spousePayPeriod = paycheckData.spouse.payPeriod || 'biWeekly';
       
@@ -196,7 +197,7 @@ const BudgetForm = () => {
       extraMonths: Array.from(allExtraMonths).map(name => ({ name })),
       individuals
     };
-  }, [paycheckData, formData.showSpouseCalculator]);
+  }, [paycheckData]);
 
   // Save budget data to localStorage whenever it changes (with error handling)
   useEffect(() => {
@@ -467,7 +468,8 @@ const BudgetForm = () => {
       if (paycheckData?.your?.name?.trim()) {
         userNames.push(paycheckData.your.name.trim());
       }
-      if (paycheckData?.spouse?.name?.trim() && formData.showSpouseCalculator) {
+      const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
+      if (paycheckData?.spouse?.name?.trim() && showSpouseCalculator) {
         userNames.push(paycheckData.spouse.name.trim());
       }
       

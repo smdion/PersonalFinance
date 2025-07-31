@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import Navigation from './Navigation';
+import { getHasSeenBetaWelcome, setHasSeenBetaWelcome } from '../utils/localStorage';
 
 const Welcome = () => {
   const [showBetaWelcome, setShowBetaWelcome] = useState(false);
 
   // Check if user has seen the beta welcome popup
   useEffect(() => {
-    const hasSeenBetaWelcome = localStorage.getItem('hasSeenBetaWelcome');
+    const hasSeenBetaWelcome = getHasSeenBetaWelcome();
     if (!hasSeenBetaWelcome) {
       setShowBetaWelcome(true);
     }
@@ -15,7 +16,7 @@ const Welcome = () => {
 
   // Handle beta welcome popup dismissal
   const dismissBetaWelcome = () => {
-    localStorage.setItem('hasSeenBetaWelcome', 'true');
+    setHasSeenBetaWelcome(true);
     setShowBetaWelcome(false);
   };
 

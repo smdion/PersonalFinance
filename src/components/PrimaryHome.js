@@ -8,7 +8,7 @@ import {
   STORAGE_KEYS
 } from '../utils/localStorage';
 import CSVImportExport from './CSVImportExport';
-import '../styles/portfolio.css';
+import '../styles/liquid-assets.css';
 
 const PrimaryHome = () => {
   const [homeData, setHomeData] = useState({
@@ -45,7 +45,6 @@ const PrimaryHome = () => {
 
   const loadExistingData = () => {
     const assetLiabilityData = getAssetLiabilityData();
-    console.log('🏡 PrimaryHome loadExistingData - assetLiabilityData:', assetLiabilityData);
     
     // Load saved Primary Home data using standard localStorage pattern
     const savedPrimaryHomeData = getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {
@@ -75,9 +74,7 @@ const PrimaryHome = () => {
 
     // Then, overlay with current Assets/Liabilities data (this takes precedence for basic fields)
     const houseDetails = assetLiabilityData.houseDetails || [];
-    console.log('🏡 PrimaryHome loadExistingData - houseDetails:', houseDetails);
     const primaryHomeAsset = houseDetails.find(asset => asset.type === 'Primary Home');
-    console.log('🏡 PrimaryHome loadExistingData - primaryHomeAsset:', primaryHomeAsset);
 
     if (primaryHomeAsset) {
       mergedHomeData = {
@@ -151,7 +148,6 @@ const PrimaryHome = () => {
     
     // Auto-save after a short delay
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by homeData change');
       saveData(true);
     }, 1000);
   };
@@ -171,7 +167,6 @@ const PrimaryHome = () => {
     
     // Auto-save after a short delay
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by mortgageData change');
       saveData(true);
     }, 1000);
   };
@@ -188,7 +183,6 @@ const PrimaryHome = () => {
     
     // Auto-save after adding
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by amortizationSchedule addition');
       saveData(true);
     }, 100);
   };
@@ -204,7 +198,6 @@ const PrimaryHome = () => {
     
     // Auto-save after a short delay
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by amortizationSchedule update');
       saveData(true);
     }, 1000);
   };
@@ -214,7 +207,6 @@ const PrimaryHome = () => {
     
     // Auto-save immediately when removing
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by amortizationSchedule removal');
       saveData(true);
     }, 100);
   };
@@ -233,7 +225,6 @@ const PrimaryHome = () => {
     
     // Auto-save after adding
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by homeImprovement addition');
       saveData(true);
     }, 100);
   };
@@ -249,7 +240,6 @@ const PrimaryHome = () => {
     
     // Auto-save after a short delay
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by homeImprovement update');
       saveData(true);
     }, 1000);
   };
@@ -265,7 +255,6 @@ const PrimaryHome = () => {
     
     // Auto-save immediately when removing
     setTimeout(() => {
-      console.log('🏡 Auto-save triggered by homeImprovement removal');
       saveData(true);
     }, 100);
   };
@@ -320,19 +309,13 @@ const PrimaryHome = () => {
   };
 
   const saveData = (isAutoSave = false) => {
-    console.log('🏡 PrimaryHome saveData - Function called!', isAutoSave ? '(Auto-save)' : '(Manual save)');
-    console.log('🏡 PrimaryHome saveData - homeData:', homeData);
-    console.log('🏡 PrimaryHome saveData - homeImprovements:', homeImprovements);
-    console.log('🏡 PrimaryHome saveData - amortizationSchedules:', amortizationSchedules);
     
     // For auto-save, skip validation if there's no meaningful data to save
     if (isAutoSave && (!homeData.propertyName || !homeData.currentValue)) {
-      console.log('🏡 PrimaryHome saveData - Auto-save skipped, insufficient data');
       return;
     }
     
     if (!isAutoSave && !validateData()) {
-      console.log('🏡 PrimaryHome saveData - Validation failed, exiting');
       return;
     }
 
@@ -432,9 +415,7 @@ const PrimaryHome = () => {
         delete assetLiabilityData.amortizationSchedules;
       }
 
-      console.log('🏡 PrimaryHome saveData - Saving assetLiabilityData:', assetLiabilityData);
       const saveResult = setAssetLiabilityData(assetLiabilityData);
-      console.log('🏡 PrimaryHome saveData - Save result:', saveResult);
 
       // Dispatch event to notify other components
       setTimeout(() => {

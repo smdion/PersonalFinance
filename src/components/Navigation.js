@@ -37,7 +37,7 @@ const Navigation = () => {
             { path: '/other-assets', label: 'Assets', icon: '🏠' },
             { path: '/liabilities', label: 'Liabilities', icon: '💳' },
             { path: '/primary-home', label: 'Primary Home', icon: '🏡' },
-            { path: '/portfolio', label: 'Portfolio', icon: '📈' }
+            { path: '/liquid-assets', label: 'Liquid Assets', icon: '📈' }
           ]
         },
         {

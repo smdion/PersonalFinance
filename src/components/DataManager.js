@@ -348,17 +348,23 @@ const DataManager = ({
     window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
     
     // Listen for this component's specific data updates
-    if (dataKey === 'historicalData') {
-      window.addEventListener('historicalDataUpdated', handleDataUpdated);
-    } else if (dataKey === 'performanceData') {
+    if (dataKey === 'annualData') {
+      window.addEventListener('annualDataUpdated', handleDataUpdated);
+      // Also listen for old event name for backward compatibility
+      window.addEventListener('annualDataUpdated', handleDataUpdated);
+    } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+      window.addEventListener('accountDataUpdated', handleDataUpdated);
+      // Also listen for old event name for backward compatibility
       window.addEventListener('performanceDataUpdated', handleDataUpdated);
     }
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
-      if (dataKey === 'historicalData') {
-        window.removeEventListener('historicalDataUpdated', handleDataUpdated);
-      } else if (dataKey === 'performanceData') {
+      if (dataKey === 'annualData') {
+        window.removeEventListener('annualDataUpdated', handleDataUpdated);
+        window.removeEventListener('annualDataUpdated', handleDataUpdated);
+      } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+        window.removeEventListener('accountDataUpdated', handleDataUpdated);
         window.removeEventListener('performanceDataUpdated', handleDataUpdated);
       }
     };
@@ -1155,7 +1161,12 @@ const DataManager = ({
         }
       });
       
-      setUserFilters(initialFilters);
+      setUserFilters(prev => {
+        // Only update if filters have actually changed
+        const hasChanged = Object.keys(initialFilters).length !== Object.keys(prev).length ||
+                          Object.keys(initialFilters).some(key => prev[key] !== initialFilters[key]);
+        return hasChanged ? initialFilters : prev;
+      });
     }
   }, [usePaycheckUsers, userNames, entryData, paycheckData]);
 
@@ -1198,7 +1209,12 @@ const DataManager = ({
     if (years.length > 0) {
       const initial = {};
       years.forEach(y => { initial[y] = true; });
-      setYearFilters(initial);
+      setYearFilters(prev => {
+        // Only update if filters have actually changed
+        const hasChanged = years.some(y => prev[y] === undefined) || 
+                          Object.keys(prev).some(y => !years.includes(Number(y)));
+        return hasChanged ? initial : prev;
+      });
     }
   }, [entryData]);
 
@@ -1430,16 +1446,30 @@ const DataManager = ({
 
   // Reset to page 1 only when filters change (not when data changes)
   React.useEffect(() => {
-    setCurrentPage(1);
+    if (currentPage > 1) {
+      setCurrentPage(1);
+    }
   }, [userFilters, yearFilters, accountTypeFilters, combinedSectionFilters]);
 
   // Pagination controls
   const goToPage = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    const newPage = Math.max(1, Math.min(page, totalPages));
+    if (newPage !== currentPage) {
+      setCurrentPage(newPage);
+    }
   };
 
-  const nextPage = () => goToPage(currentPage + 1);
-  const prevPage = () => goToPage(currentPage - 1);
+  const nextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+  
+  const prevPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
 
   // Column resizing functionality
   const handleMouseDown = useCallback((columnKey, e) => {
@@ -1592,6 +1622,141 @@ const DataManager = ({
     );
   };
 
+  // Tooltip component for contribution details (reused from Retirement component)
+  const ContributionTooltip = ({ contributions, type, children, year }) => {
+    const [showTooltip, setShowTooltip] = useState(false);
+    const [tooltipPosition, setTooltipPosition] = useState('top');
+    
+    if (!contributions?.breakdown) {
+      return children;
+    }
+
+    const breakdown = contributions.breakdown;
+    const currentYear = new Date().getFullYear();
+    const isCurrentYear = year === currentYear;
+    
+    const handleMouseEnter = (e) => {
+      setShowTooltip(true);
+      
+      // Find the table tbody to determine row position
+      const tableBody = e.currentTarget.closest('tbody');
+      if (tableBody) {
+        // Get all table rows
+        const allRows = Array.from(tableBody.querySelectorAll('tr'));
+        const currentRow = e.currentTarget.closest('tr');
+        const rowIndex = allRows.indexOf(currentRow);
+        const totalRows = allRows.length;
+        
+        // Top 50% of rows show tooltip down, bottom 50% show tooltip up
+        if (rowIndex < totalRows / 2) {
+          setTooltipPosition('bottom');
+        } else {
+          setTooltipPosition('top');
+        }
+      } else {
+        // Fallback to original logic if can't find table structure
+        const rect = e.currentTarget.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceAbove = rect.top;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const headerBuffer = 250;
+        
+        if (spaceBelow > spaceAbove || spaceAbove < headerBuffer) {
+          setTooltipPosition('bottom');
+        } else {
+          setTooltipPosition('top');
+        }
+      }
+    };
+    
+    const renderEmployeeContributionTooltip = () => (
+      <div className="retirement-tooltip-content">
+        <div className="tooltip-header">Employee Contributions Breakdown</div>
+        {isCurrentYear && (
+          <div className="tooltip-note">
+            <span>* {currentYear} amounts shown are remaining contributions for the year. Existing contributions are already reflected in current balances.</span>
+          </div>
+        )}
+        {breakdown.traditional401k > 0 && (
+          <div className="tooltip-item">
+            <span>Traditional 401k:</span>
+            <span>{formatCurrency(breakdown.traditional401k)}</span>
+          </div>
+        )}
+        {breakdown.roth401k > 0 && (
+          <div className="tooltip-item">
+            <span>Roth 401k:</span>
+            <span>{formatCurrency(breakdown.roth401k)}</span>
+          </div>
+        )}
+        {breakdown.traditionalIra > 0 && (
+          <div className="tooltip-item">
+            <span>Traditional IRA:</span>
+            <span>{formatCurrency(breakdown.traditionalIra)}</span>
+          </div>
+        )}
+        {breakdown.rothIra > 0 && (
+          <div className="tooltip-item">
+            <span>Roth IRA:</span>
+            <span>{formatCurrency(breakdown.rothIra)}</span>
+          </div>
+        )}
+        {breakdown.brokerage > 0 && (
+          <div className="tooltip-item">
+            <span>Brokerage:</span>
+            <span>{formatCurrency(breakdown.brokerage)}</span>
+          </div>
+        )}
+      </div>
+    );
+
+    const renderEmployerMatchTooltip = () => (
+      <div className="retirement-tooltip-content">
+        <div className="tooltip-header">Employer Match Details</div>
+        {isCurrentYear && (
+          <div className="tooltip-note">
+            <span>* {currentYear} amount shown is remaining match for the year. Existing match is already reflected in current balances.</span>
+          </div>
+        )}
+        <div className="tooltip-item">
+          <span>Match Rate:</span>
+          <span>{breakdown.employerMatchRate}%</span>
+        </div>
+        <div className="tooltip-item">
+          <span>Base Salary:</span>
+          <span>{formatCurrency(breakdown.salary)}</span>
+        </div>
+        <div className="tooltip-item">
+          <span>Match Amount:</span>
+          <span>{formatCurrency(breakdown.employerMatch)}</span>
+        </div>
+        <div className="tooltip-item">
+          <span>Data Source:</span>
+          <span className={breakdown.employerMatchSource === 'actual' ? 'actual-data' : 'projected-data'}>
+            {breakdown.employerMatchSource === 'actual' ? 'Actual (Performance Tracker)' : 'Projected (Calculated)'}
+          </span>
+        </div>
+      </div>
+    );
+
+    return (
+      <div 
+        className="retirement-tooltip-wrapper"
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={() => setShowTooltip(false)}
+      >
+        {children}
+        {showTooltip && (
+          <div 
+            className={`retirement-tooltip retirement-tooltip-${tooltipPosition}`}
+          >
+            {type === 'employee' ? renderEmployeeContributionTooltip() : renderEmployerMatchTooltip()}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   // Spreadsheet-like cell rendering for user fields
   const renderUserTableCell = (entry, userName, field, rowKey) => {
     const userSection = schema.sections.find(s => s.name === 'users');
@@ -1637,7 +1802,8 @@ const DataManager = ({
       `This field is controlled by ${fieldConfig.lockedBy} and cannot be edited directly (current year only)` : 
       (canEdit ? 'Click to edit' : undefined);
 
-    return (
+    // Create the basic cell content
+    const cellContent = (
       <span
         onClick={canEdit ? () => startEditCell(rowKey, 'users', field, userName) : undefined}
         style={{
@@ -1650,6 +1816,26 @@ const DataManager = ({
         {isReadonly && '🔒 '}{displayValue}
       </span>
     );
+
+    // Check if this field should have a tooltip (employee contributions or employer match)
+    if ((field === 'employeeContributions' || field === 'employerMatch') && 
+        entry.users && entry.users[userName] && 
+        entry.users[userName].contributions && 
+        entry.users[userName].contributions.breakdown) {
+      
+      const tooltipType = field === 'employeeContributions' ? 'employee' : 'employer';
+      return (
+        <ContributionTooltip 
+          contributions={entry.users[userName].contributions} 
+          type={tooltipType}
+          year={entry.year}
+        >
+          {cellContent}
+        </ContributionTooltip>
+      );
+    }
+
+    return cellContent;
   };
 
   // Helper to render the import/export section using the reusable component

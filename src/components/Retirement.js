@@ -1,19 +1,94 @@
-import React, { useState, useCallback, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
-import { getMostRecentPortfolioAccounts } from '../utils/portfolioPerformanceSync';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
 import DataManager from './DataManager';
+import '../styles/last-update-info.css';
 
 // Tooltip component for contribution details
 const ContributionTooltip = ({ contributions, type, children }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState('top');
+  const tooltipRef = useRef(null);
+  const wrapperRef = useRef(null);
   
   if (!contributions?.breakdown) {
     return children;
   }
+
+  // Calculate optimal tooltip position to avoid cutoff
+  const calculateTooltipPosition = useCallback(() => {
+    if (!tooltipRef.current || !wrapperRef.current) return;
+    
+    const tooltip = tooltipRef.current;
+    const wrapper = wrapperRef.current;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    // Get viewport dimensions and scroll position
+    const viewportHeight = window.innerHeight;
+    const scrollY = window.scrollY;
+    
+    // Calculate space above and below the wrapper element relative to viewport
+    const spaceAbove = wrapperRect.top;
+    const spaceBelow = viewportHeight - wrapperRect.bottom;
+    
+    // Get actual tooltip height, with fallback
+    const tooltipHeight = tooltipRect.height > 0 ? tooltipRect.height : 120;
+    
+    // Conservative buffer for header and spacing
+    const headerBuffer = 140; // Account for header, navigation, and padding
+    const spacingBuffer = 16; // Margin between tooltip and trigger
+    
+    // Check if tooltip would be cut off at top (by header) or bottom (by viewport)
+    const wouldCutOffTop = spaceAbove < (tooltipHeight + spacingBuffer + headerBuffer);
+    const wouldCutOffBottom = spaceBelow < (tooltipHeight + spacingBuffer);
+    
+    // Decide position based on available space and cutoff risk
+    if (wouldCutOffTop && !wouldCutOffBottom) {
+      // Not enough space above, use bottom
+      setTooltipPosition('bottom');
+    } else if (!wouldCutOffTop && wouldCutOffBottom) {
+      // Not enough space below, use top
+      setTooltipPosition('top');
+    } else if (!wouldCutOffTop && !wouldCutOffBottom) {
+      // Both positions work, prefer top (default behavior)
+      setTooltipPosition('top');
+    } else {
+      // Neither position ideal, choose the one with more available space
+      setTooltipPosition(spaceAbove > spaceBelow ? 'top' : 'bottom');
+    }
+  }, []);
+
+  const handleMouseEnter = () => {
+    setShowTooltip(true);
+    // Calculate position after tooltip is rendered
+    setTimeout(calculateTooltipPosition, 0);
+  };
+
+  // Recalculate position on window resize or scroll
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    const handleResize = () => {
+      calculateTooltipPosition();
+    };
+    
+    const handleScroll = () => {
+      calculateTooltipPosition();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showTooltip, calculateTooltipPosition]);
 
   const breakdown = contributions.breakdown;
   
@@ -79,13 +154,17 @@ const ContributionTooltip = ({ contributions, type, children }) => {
 
   return (
     <div 
+      ref={wrapperRef}
       className="retirement-tooltip-wrapper"
-      onMouseEnter={() => setShowTooltip(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {children}
       {showTooltip && (
-        <div className="retirement-tooltip">
+        <div 
+          ref={tooltipRef}
+          className={`retirement-tooltip retirement-tooltip-${tooltipPosition}`}
+        >
           {type === 'employee' ? renderEmployeeContributionTooltip() : renderEmployerMatchTooltip()}
         </div>
       )}
@@ -158,7 +237,8 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
         taxDeferred: yourProj.balances?.taxDeferred || 0,
         afterTax: yourProj.balances?.afterTax || 0,
         totalBalance: yourProj.totalBalance || 0,
-        returnRate: (yourProj.returnRate || 0) / 100
+        returnRate: (yourProj.returnRate || 0) / 100,
+        contributions: yourProj.contributions // Include full contributions object with breakdown
       };
     }
     
@@ -177,7 +257,8 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
         taxDeferred: spouseProj.balances?.taxDeferred || 0,
         afterTax: spouseProj.balances?.afterTax || 0,
         totalBalance: spouseProj.totalBalance || 0,
-        returnRate: (spouseProj.returnRate || 0) / 100
+        returnRate: (spouseProj.returnRate || 0) / 100,
+        contributions: spouseProj.contributions // Include full contributions object with breakdown
       };
     }
     
@@ -267,24 +348,15 @@ const Retirement = () => {
 
   // Get current year and user data
   const currentYear = new Date().getFullYear();
-  const paycheckData = getPaycheckData();
-  const historicalData = getHistoricalData();
-  const performanceData = getPerformanceData();
-
-  // Debug logging for loaded data
-  console.log(`🔍 Debug Retirement Component: currentYear=${currentYear}`);
-  console.log(`🔍 Debug Retirement Component paycheckData:`, paycheckData);
-  console.log(`🔍 Debug Retirement Component performanceData:`, performanceData);
+  const paycheckData = useMemo(() => getPaycheckData(), []);
+  const annualData = useMemo(() => getAnnualData(), []);
+  const performanceData = useMemo(() => getPerformanceData(), []);
 
   // Helper function to get actual employer match data from performance data
   const getActualEmployerMatchForYear = useCallback((userKey, year) => {
     const paycheckUser = paycheckData[userKey];
-    console.log(`🔍 Debug getActualEmployerMatchForYear: userKey=${userKey}, year=${year}`);
-    console.log(`🔍 Debug paycheckUser:`, paycheckUser);
-    console.log(`🔍 Debug performanceData:`, performanceData);
 
     if (!paycheckUser?.name || !performanceData) {
-      console.log(`🔍 Debug: Early return - missing paycheckUser.name or performanceData`);
       return null;
     }
 
@@ -303,42 +375,24 @@ const Retirement = () => {
       return portfolioLower.includes(paycheckLower) || paycheckLower.includes(portfolioLower);
     };
 
-    console.log(`🔍 Debug: Looking for user "${paycheckUser.name}" in year ${year}`);
-
     // Find all performance data entries for this user and year
     for (const [entryId, entry] of Object.entries(performanceData)) {
-      console.log(`🔍 Debug: Checking entry ${entryId}, year: ${entry.year}, target year: ${year}`);
-      
       if (entry.year === year && entry.users) {
-        console.log(`🔍 Debug: Found matching year ${year}, checking users:`, Object.keys(entry.users));
-        
         for (const [owner, userData] of Object.entries(entry.users)) {
-          console.log(`🔍 Debug: Checking owner "${owner}" against paycheck user "${paycheckUser.name}"`);
-          console.log(`🔍 Debug: userData:`, userData);
-          
           const userMatches = matchesUser(owner, paycheckUser.name);
-          console.log(`🔍 Debug: User matches: ${userMatches}`);
           
           if (userMatches) {
-            console.log(`🔍 Debug: User match found! Checking employerMatch data...`);
-            console.log(`🔍 Debug: userData.employerMatch: ${userData.employerMatch}`);
-            console.log(`🔍 Debug: userData.accountType: ${userData.accountType}`);
-            
             // Sum up employer match from all 401k accounts for this user
             if (userData.employerMatch !== undefined && userData.accountType === '401k') {
               const matchAmount = parseFloat(userData.employerMatch) || 0;
-              console.log(`🔍 Debug: Adding employer match: ${matchAmount}`);
               totalEmployerMatch += matchAmount;
               foundData = true;
-            } else {
-              console.log(`🔍 Debug: Skipping - employerMatch undefined or not 401k account`);
             }
           }
         }
       }
     }
     
-    console.log(`🔍 Debug: Final result - foundData: ${foundData}, totalEmployerMatch: ${totalEmployerMatch}`);
     return foundData ? totalEmployerMatch : null;
   }, [paycheckData, performanceData]);
 
@@ -434,17 +488,10 @@ const Retirement = () => {
       return false;
     };
 
-    console.log('Debug: Portfolio accounts:', portfolioAccounts);
-    console.log('Debug: Looking for user:', paycheckUser.name);
-    console.log('Debug: Available owners in portfolio:', [...new Set(portfolioAccounts.map(account => account.owner))]);
-    console.log('Debug: User accounts (exact match):', portfolioAccounts.filter(account => account.owner === paycheckUser.name));
-    console.log('Debug: User accounts (flexible match):', portfolioAccounts.filter(account => matchesUser(account.owner, paycheckUser.name)));
-    
     portfolioAccounts
       .filter(account => matchesUser(account.owner, paycheckUser.name))
       .forEach(account => {
         const amount = parseFloat(account.amount) || 0;
-        console.log('Debug: Processing account:', account.accountName, 'Amount:', amount, 'Tax Type:', account.taxType);
         
         switch (account.taxType) {
           case 'Tax-Free':
@@ -475,8 +522,6 @@ const Retirement = () => {
             break;
         }
       });
-
-    console.log('Debug: Final current balances:', currentBalances);
 
     // Calculate annual contributions
     const traditional401kAnnual = (parseFloat(paycheckUser.retirementOptions?.traditional401kPercent) || 0) * currentSalary / 100;
@@ -607,15 +652,10 @@ const Retirement = () => {
         }
 
         // Check if we have actual employer match data for this year
-        console.log(`🔍 Debug: Calling getActualEmployerMatchForYear for ${userKey}, year ${year}`);
         const actualEmployerMatch = getActualEmployerMatchForYear(userKey, year);
-        console.log(`🔍 Debug: getActualEmployerMatchForYear returned: ${actualEmployerMatch}`);
         
         if (actualEmployerMatch !== null) {
-          console.log(`🔍 Debug: Using actual employer match ${actualEmployerMatch} instead of calculated ${actualContributions.employerMatch}`);
           actualContributions.employerMatch = actualEmployerMatch;
-        } else {
-          console.log(`🔍 Debug: No actual employer match data found, using calculated value: ${actualContributions.employerMatch}`);
         }
 
         // Calculate total contributions for this year
@@ -640,8 +680,6 @@ const Retirement = () => {
             salary: salary
           }
         };
-
-        console.log(`🔍 Debug: Final contributions for ${userKey} year ${year}:`, contributions);
 
         balances.taxFree += actualContributions.roth401k + actualContributions.rothIra;
         balances.taxDeferred += actualContributions.traditional401k + actualContributions.employerMatch + actualContributions.traditionalIra;
@@ -708,7 +746,7 @@ const Retirement = () => {
     } else {
       setProjectionsData({});
     }
-  }, [yourProjections, spouseProjections, paycheckData, currentYear, getActualEmployerMatchForYear]);
+  }, [yourProjections, spouseProjections, paycheckData, currentYear]);
 
 
   // Dual calculator toggle is now handled by the shared hook
@@ -725,6 +763,9 @@ const Retirement = () => {
           <h1>Retirement Planner</h1>
           <p>Project your retirement savings and plan for financial independence</p>
         </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={false} compact={true} />
 
         <div className="calculator-content">
           <div className={`calculator-grid ${showSpouseCalculator ? 'dual-view' : 'single-view'}`}>
@@ -1050,7 +1091,7 @@ const Retirement = () => {
                     customParseCSVRow={() => null} // Disable CSV import
                     customFormatCSVRow={() => []} // Disable CSV export
                     beforeCSVImport={() => false} // Disable CSV import
-                    itemsPerPage={25}
+                    itemsPerPage={10}
                     disableReadOnly={true}
                   />
                   

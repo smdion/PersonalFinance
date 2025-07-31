@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
-import { getPaycheckData, setPaycheckData, getPerformanceData, getHistoricalData, getRetirementData } from '../utils/localStorage';
+import LastUpdateInfo from './LastUpdateInfo';
+import { getPaycheckData, setPaycheckData, getPerformanceData, getAnnualData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { 
@@ -14,12 +15,13 @@ import {
   calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
 import '../styles/contributions.css';
+import '../styles/last-update-info.css';
 
 const Contributions = () => {
   const navigate = useNavigate();
   const [paycheckData, setPaycheckData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
-  const [historicalData, setHistoricalData] = useState({});
+  const [annualData, setAnnualData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
   const showSpouseCalculator = useDualCalculator(); // Use shared hook
@@ -76,10 +78,10 @@ const Contributions = () => {
     // Load paycheck, performance, and historical data
     const paycheckData = getPaycheckData();
     const performanceData = getPerformanceData();
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     setPaycheckData(paycheckData);
     setPerformanceData(performanceData);
-    setHistoricalData(historicalData);
+    setAnnualData(annualData);
     
     // Listen for data updates
     const handlePaycheckUpdate = (event) => {
@@ -93,18 +95,23 @@ const Contributions = () => {
     };
 
     const handleHistoricalUpdate = () => {
-      const updatedData = getHistoricalData();
-      setHistoricalData(updatedData);
+      const updatedData = getAnnualData();
+      setAnnualData(updatedData);
     };
 
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+    // Listen for both new and old event names for backward compatibility
+    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
     };
   }, []);
 
@@ -142,10 +149,10 @@ const Contributions = () => {
       const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
       
       // Get individual contributions (401k, HSA, ESPP) - only this person's accounts
-      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), historicalData);
+      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), annualData);
       
       // Get all contributions (for joint accounts like IRA, Brokerage) - all users including Joint
-      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), historicalData);
+      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), annualData);
       
       // Determine which accounts are joint and divide contributions evenly
       const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
@@ -269,6 +276,7 @@ const Contributions = () => {
       } else if (hsaCoverage === 'family') {
         maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
       }
+      
 
       // ESPP calculations
       const esppPercent = parseFloat(person.esppDeductionPercent) || 0;
@@ -419,18 +427,23 @@ const Contributions = () => {
         
         // If no historical employer HSA data, calculate YTD based on current settings and elapsed time
         if (ytdHsaEmployer === 0 && hsaEmployerContribution > 0) {
-          // Calculate how much of the year has elapsed and estimate YTD employer contributions
-          const currentMonth = today.getMonth() + 1; // 1-12
-          const elapsedMonths = currentMonth - 1; // How many complete months have passed
-          ytdHsaEmployer = (hsaEmployerContribution * elapsedMonths) / 12;
+          // Calculate how much of the year has elapsed based on pay periods
+          const startOfYear = new Date(today.getFullYear(), 0, 1);
+          const elapsedPayPeriods = calculatePayPeriodsBetweenDates(startOfYear, today, payPeriod);
+          ytdHsaEmployer = (hsaEmployerContribution / periodsPerYear) * elapsedPayPeriods;
         }
         
         const ytdHsaTotal = ytdHsaEmployee + ytdHsaEmployer;
         
         // Calculate projected HSA contributions for remaining pay periods using settings
-        const projectedHsaEmployee = hsaContributionPerPaycheck * remainingPaychecks;
-        const projectedHsaEmployer = remainingPaychecks > 0 ? (hsaEmployerContribution * remainingPaychecks / periodsPerYear) : 0;
+        // To ensure YTD + Projected = Annual exactly, calculate projected as (Annual - YTD)
+        const expectedAnnualEmployee = hsaContributionPerPaycheck * periodsPerYear;
+        const expectedAnnualEmployer = hsaEmployerContribution;
+        
+        const projectedHsaEmployee = Math.max(0, expectedAnnualEmployee - ytdHsaEmployee);
+        const projectedHsaEmployer = Math.max(0, expectedAnnualEmployer - ytdHsaEmployer);
         const projectedHsaTotal = projectedHsaEmployee + projectedHsaEmployer;
+        
         
         // ESPP breakdown
         const ytdEspp = ytdContributions.espp || 0;
@@ -590,7 +603,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData, historicalData, showSpouseCalculator]);
+  }, [paycheckData, performanceData, annualData, showSpouseCalculator]);
 
   // Event listeners for navigation controls
   useEffect(() => {
@@ -937,7 +950,16 @@ const Contributions = () => {
       return sum;
     }, 0);
 
-    const is401kOverLimit = totals.total401k > total401kLimit;
+    // For 401k warnings, only warn if EMPLOYEE contributions exceed employee limits
+    // Don't warn if total (employee + employer) exceeds employee limits but employee portion is within limits
+    const total401kEmployeeContributions = people.reduce((sum, p) => {
+      if (mode === 'ytd') {
+        return sum + (p.ytdBreakdown?.k401?.totalEmployee || 0);
+      } else {
+        return sum + (p.standardBreakdown?.k401?.totalEmployee || 0);
+      }
+    }, 0);
+    const is401kOverLimit = total401kEmployeeContributions > total401kLimit;
     const isIraOverLimit = totals.totalIra > totalIraLimit;
     const isHsaOverLimit = totals.totalHsa > totalHsaLimit;
 
@@ -1217,7 +1239,20 @@ const Contributions = () => {
       if (!breakdown) return null;
 
       // Check if annual total exceeds IRS limit
-      const isOverLimit = breakdown.limit && (breakdown.totalCombined || breakdown.total) > breakdown.limit;
+      // For 401k, only warn about employee contributions exceeding employee limit
+      // Employer match doesn't count against employee limit ($23.5k), only against total limit ($70k)
+      let isOverLimit = false;
+      if (breakdown.limit) {
+        if (accountType === 'k401' && breakdown.totalEmployee !== undefined) {
+          // For 401k, warn only if employee contribution exceeds employee limit
+          // Don't warn about employer match pushing total over employee limit
+          isOverLimit = breakdown.totalEmployee > breakdown.limit;
+        } else {
+          // For other account types (IRA, HSA), check total against limit
+          const amountToCheck = breakdown.totalCombined || breakdown.total;
+          isOverLimit = amountToCheck > breakdown.limit;
+        }
+      }
       const warningIcon = isOverLimit ? ' ⚠️' : '';
 
       // Helper function to determine CSS class for "Add" amounts based on proximity to max
@@ -1336,7 +1371,9 @@ const Contributions = () => {
                     </div>
                     <div className="contributions-contribution-item">
                       <span className="label">Combined Total:</span>
-                      <span className={`value total highlight ${getLimitStatusClass(breakdown.totalCombined, breakdown.limit)}`}>
+                      <span className={`value total highlight ${accountType === 'k401' 
+                        ? getLimitStatusClass(breakdown.totalEmployee, breakdown.limit) 
+                        : getLimitStatusClass(breakdown.totalCombined, breakdown.limit)}`}>
                         {formatCurrency(breakdown.totalCombined)}
                         {isOverLimit && <span className="contributions-warning-icon">⚠️</span>}
                       </span>
@@ -1644,6 +1681,46 @@ const Contributions = () => {
                       </div>
                     )}
                   </div>
+
+                  {/* Individual Contribution Analysis for Standard */}
+                  <div className="contributions-opportunities">
+                    <h4>🎯 Individual Contribution Analysis</h4>
+                    <div className="contributions-opportunities-grid">
+                      {person.standardBreakdown.k401?.remaining !== 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.standardBreakdown.k401.remaining > 0 ? '💰 Additional 401(k) room:' : '⚠️ 401(k) Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.standardBreakdown.k401.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.standardBreakdown.k401.remaining))}
+                            {person.standardBreakdown.k401.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                      {person.standardBreakdown.ira?.remaining !== 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.standardBreakdown.ira.remaining > 0 ? '💰 Additional IRA room:' : '⚠️ IRA Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.standardBreakdown.ira.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.standardBreakdown.ira.remaining))}
+                            {person.standardBreakdown.ira.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                      {person.standardBreakdown.hsa?.remaining !== 0 && person.standardBreakdown.hsa.limit > 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.standardBreakdown.hsa.remaining > 0 ? '💰 Additional HSA room:' : '⚠️ HSA Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.standardBreakdown.hsa.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.standardBreakdown.hsa.remaining))}
+                            {person.standardBreakdown.hsa.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </>
               )}
               
@@ -1744,6 +1821,46 @@ const Contributions = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+
+                  {/* Individual Contribution Analysis for YTD */}
+                  <div className="contributions-opportunities">
+                    <h4>🎯 Individual Contribution Analysis</h4>
+                    <div className="contributions-opportunities-grid">
+                      {person.ytdBreakdown.k401?.remaining !== 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.ytdBreakdown.k401.remaining > 0 ? '💰 Additional 401(k) room:' : '⚠️ 401(k) Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.ytdBreakdown.k401.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.ytdBreakdown.k401.remaining))}
+                            {person.ytdBreakdown.k401.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                      {person.ytdBreakdown.ira?.remaining !== 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.ytdBreakdown.ira.remaining > 0 ? '💰 Additional IRA room:' : '⚠️ IRA Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.ytdBreakdown.ira.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.ytdBreakdown.ira.remaining))}
+                            {person.ytdBreakdown.ira.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                      {person.ytdBreakdown.hsa?.remaining !== 0 && person.ytdBreakdown.hsa.limit > 0 && (
+                        <div className="contributions-opportunity">
+                          <span className="label">
+                            {person.ytdBreakdown.hsa.remaining > 0 ? '💰 Additional HSA room:' : '⚠️ HSA Over Contributed:'}
+                          </span>
+                          <span className={`value ${person.ytdBreakdown.hsa.remaining > 0 ? 'contributions-limit-within' : 'contributions-limit-exceeded'}`}>
+                            {formatCurrency(Math.abs(person.ytdBreakdown.hsa.remaining))}
+                            {person.ytdBreakdown.hsa.remaining < 0 && <span className="contributions-warning-icon">⚠️</span>}
+                          </span>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </>
               )}
@@ -2383,6 +2500,12 @@ const Contributions = () => {
           <p>Analyze your current contribution strategy and identify improvement opportunities</p>
           
           <p>Compare your Annual Settings View (full-year projections) with Progress + Forecast View (actual contributions + remaining forecast)</p>
+        </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={false} compact={true} />
+
+        <div className="header">{/* Continuation of header content */}
           
           <div className="contributions-help-toggle">
             <button 

@@ -240,15 +240,15 @@ export const generateDataFilename = (dataType, userNames = [], fileExtension = '
 // Net Worth Dashboard Calculation Functions
 
 // Calculate house value based on mode (market value vs cost basis)
-export const calculateHouseValue = (year, historicalEntry, netWorthMode, historicalData, assetLiabilityData) => {
+export const calculateHouseValue = (year, annualEntry, netWorthMode, annualData, assetLiabilityData) => {
   if (netWorthMode === 'market') {
     // Use online estimated value from historical data
-    return historicalEntry.house || 0;
+    return annualEntry.house || 0;
   } else {
     // Cost basis: Get purchase price and year from assetLiabilityData primary home
     if (!assetLiabilityData) {
       // Fallback to market value if no asset liability data available
-      return historicalEntry.house || 0;
+      return annualEntry.house || 0;
     }
     
     const houseDetails = assetLiabilityData.houseDetails || [];
@@ -256,7 +256,7 @@ export const calculateHouseValue = (year, historicalEntry, netWorthMode, histori
     
     if (!primaryHome) {
       // Fallback if no primary home data is available
-      return historicalEntry.house || 0;
+      return annualEntry.house || 0;
     }
     
     // Extract purchase data from primary home
@@ -265,7 +265,7 @@ export const calculateHouseValue = (year, historicalEntry, netWorthMode, histori
     
     if (!purchaseDate || !purchasePrice) {
       // Fallback to market value if purchase data is incomplete
-      return historicalEntry.house || 0;
+      return annualEntry.house || 0;
     }
     
     // Parse purchase year from date string (YYYY-MM-DD format)
@@ -276,7 +276,7 @@ export const calculateHouseValue = (year, historicalEntry, netWorthMode, histori
     // Calculate cumulative home improvements from purchase year to current year
     let cumulativeImprovements = 0;
     for (let y = purchaseYear; y <= year; y++) {
-      const yearData = historicalData[y];
+      const yearData = annualData[y];
       if (yearData && yearData.homeImprovements) {
         cumulativeImprovements += yearData.homeImprovements;
       }
@@ -315,13 +315,13 @@ export const getAverageAgeForYear = (year, paycheckData) => {
 };
 
 // Calculate cumulative lifetime earnings up to a given year
-export const getCumulativeEarnings = (targetYear, historicalData) => {
+export const getCumulativeEarnings = (targetYear, annualData) => {
   let cumulative = 0;
-  const years = Object.keys(historicalData).map(y => parseInt(y)).sort();
+  const years = Object.keys(annualData).map(y => parseInt(y)).sort();
   
   for (const year of years) {
     if (year > targetYear) break;
-    const yearData = historicalData[year];
+    const yearData = annualData[year];
     if (yearData && yearData.agi) {
       cumulative += yearData.agi;
     }
@@ -331,39 +331,39 @@ export const getCumulativeEarnings = (targetYear, historicalData) => {
 };
 
 // Process net worth data with all calculations
-export const processNetWorthData = (historicalData, performanceData, paycheckData, netWorthMode, assetLiabilityData = null) => {
-  const years = Object.keys(historicalData).map(year => parseInt(year)).sort();
+export const processNetWorthData = (annualData, performanceData, paycheckData, netWorthMode, assetLiabilityData = null) => {
+  const years = Object.keys(annualData).map(year => parseInt(year)).sort();
   
   return years.map(year => {
-    const historicalEntry = historicalData[year];
+    const annualEntry = annualData[year];
     const performanceEntry = performanceData[year];
     
-    if (!historicalEntry) return null;
+    if (!annualEntry) return null;
     
     // Calculate investment components
-    const taxFree = historicalEntry.taxFree || 0;
-    const taxDeferred = historicalEntry.taxDeferred || 0;
-    const brokerage = historicalEntry.brokerage || 0;
-    const espp = historicalEntry.espp || 0;
-    const hsa = historicalEntry.hsa || 0;
+    const taxFree = annualEntry.taxFree || 0;
+    const taxDeferred = annualEntry.taxDeferred || 0;
+    const brokerage = annualEntry.brokerage || 0;
+    const espp = annualEntry.espp || 0;
+    const hsa = annualEntry.hsa || 0;
     
     // Calculate portfolio value (investments)
     const portfolio = taxFree + taxDeferred + brokerage + espp + hsa;
     const retirement = taxFree + taxDeferred;
     
     // Calculate house value based on selected mode
-    const houseValue = calculateHouseValue(year, historicalEntry, netWorthMode, historicalData, assetLiabilityData);
+    const houseValue = calculateHouseValue(year, annualEntry, netWorthMode, annualData, assetLiabilityData);
     
     // Cash and other assets
-    const cash = historicalEntry.cash || 0;
-    const otherAssets = historicalEntry.othAssets || 0;
+    const cash = annualEntry.cash || 0;
+    const otherAssets = annualEntry.othAssets || 0;
     
     // Get AGI directly from historical data
-    const agi = historicalEntry.agi || 0;
+    const agi = annualEntry.agi || 0;
     
     // Liabilities
-    const mortgage = historicalEntry.mortgage || 0;
-    const otherLiabilities = historicalEntry.othLia || 0;
+    const mortgage = annualEntry.mortgage || 0;
+    const otherLiabilities = annualEntry.othLia || 0;
     const totalLiabilities = mortgage + otherLiabilities;
     
     // Calculate net worth
@@ -384,7 +384,7 @@ export const processNetWorthData = (historicalData, performanceData, paycheckDat
     }
     
     // Calculate Wealth Score (Net Worth / Cumulative Lifetime Earnings as percentage)
-    const cumulativeEarnings = getCumulativeEarnings(year, historicalData);
+    const cumulativeEarnings = getCumulativeEarnings(year, annualData);
     const wealthScore = cumulativeEarnings > 0 ? (netWorth / cumulativeEarnings) * 100 : null;
     
     return {
@@ -405,7 +405,7 @@ export const processNetWorthData = (historicalData, performanceData, paycheckDat
       mortgage,
       otherLiabilities,
       totalLiabilities,
-      homeImprovements: historicalEntry.homeImprovements || 0,
+      homeImprovements: annualEntry.homeImprovements || 0,
       // Custom scores
       averageAge,
       averageAccumulator,
@@ -803,7 +803,7 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
 };
 
 // Calculate YTD contributions for a person from Performance data and Historical data
-export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), historicalData = null) => {
+export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), annualData = null) => {
   const result = {
     traditional401k: 0,
     roth401k: 0,
@@ -894,8 +894,8 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
   result.totalIra = result.traditionalIra + result.rothIra;
   
   // Get HSA employer contributions from historical data if available
-  if (historicalData && historicalData[currentYear]) {
-    const yearData = historicalData[currentYear];
+  if (annualData && annualData[currentYear]) {
+    const yearData = annualData[currentYear];
     if (yearData.users) {
       userNames.forEach(userName => {
         if (yearData.users[userName] && yearData.users[userName].employerHsa) {
