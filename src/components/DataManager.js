@@ -348,10 +348,10 @@ const DataManager = ({
     window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
     
     // Listen for this component's specific data updates
-    if (dataKey === 'historicalData' || dataKey === 'annualData') {
+    if (dataKey === 'annualData') {
       window.addEventListener('annualDataUpdated', handleDataUpdated);
       // Also listen for old event name for backward compatibility
-      window.addEventListener('historicalDataUpdated', handleDataUpdated);
+      window.addEventListener('annualDataUpdated', handleDataUpdated);
     } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
       window.addEventListener('accountDataUpdated', handleDataUpdated);
       // Also listen for old event name for backward compatibility
@@ -360,9 +360,9 @@ const DataManager = ({
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
-      if (dataKey === 'historicalData' || dataKey === 'annualData') {
+      if (dataKey === 'annualData') {
         window.removeEventListener('annualDataUpdated', handleDataUpdated);
-        window.removeEventListener('historicalDataUpdated', handleDataUpdated);
+        window.removeEventListener('annualDataUpdated', handleDataUpdated);
       } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
         window.removeEventListener('accountDataUpdated', handleDataUpdated);
         window.removeEventListener('performanceDataUpdated', handleDataUpdated);

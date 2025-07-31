@@ -6,10 +6,6 @@ import {
   syncPaycheckToAnnual,
   cleanupJointDataFromAnnual,
   cleanupEmptyAnnualEntries,
-  // Legacy aliases for backward compatibility
-  syncPaycheckToHistorical,
-  cleanupJointDataFromHistorical,
-  cleanupEmptyHistoricalEntries,
   // Import accounts data functions
   getAccountData, 
   setAccountData,
@@ -136,9 +132,9 @@ const RawData = () => {
 
   // Sync paycheck data and cleanup on component mount
   useEffect(() => {
-    syncPaycheckToHistorical();
-    cleanupJointDataFromHistorical();
-    cleanupEmptyHistoricalEntries();
+    syncPaycheckToAnnual();
+    cleanupJointDataFromAnnual();
+    cleanupEmptyAnnualEntries();
     // Initialize shared accounts system for account data
     initializeSharedAccounts();
     

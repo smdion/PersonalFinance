@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
@@ -349,7 +349,7 @@ const Retirement = () => {
   // Get current year and user data
   const currentYear = new Date().getFullYear();
   const paycheckData = useMemo(() => getPaycheckData(), []);
-  const historicalData = useMemo(() => getHistoricalData(), []);
+  const annualData = useMemo(() => getAnnualData(), []);
   const performanceData = useMemo(() => getPerformanceData(), []);
 
   // Helper function to get actual employer match data from performance data

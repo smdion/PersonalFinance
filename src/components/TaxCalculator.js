@@ -3,7 +3,7 @@ import { calculateTakeHomePay } from '../utils/taxCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import PaycheckForm from './PaycheckForm';
 import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToHistorical } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToAnnual } from '../utils/localStorage';
 import Navigation from './Navigation';
 
 const TaxCalculator = () => {
@@ -445,7 +445,7 @@ const TaxCalculator = () => {
     setPaycheckData(dataToSave);
     
     // Auto-sync salary, employer, and bonus to historical data
-    syncPaycheckToHistorical();
+    syncPaycheckToAnnual();
     
     // Dispatch event to notify other components with delay to ensure save is complete
     setTimeout(() => {

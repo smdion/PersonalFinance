@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getPaycheckData, setPaycheckData, getPerformanceData, getHistoricalData, getRetirementData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getPerformanceData, getAnnualData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { 
@@ -21,7 +21,7 @@ const Contributions = () => {
   const navigate = useNavigate();
   const [paycheckData, setPaycheckData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
-  const [historicalData, setHistoricalData] = useState({});
+  const [annualData, setAnnualData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
   const showSpouseCalculator = useDualCalculator(); // Use shared hook
@@ -78,10 +78,10 @@ const Contributions = () => {
     // Load paycheck, performance, and historical data
     const paycheckData = getPaycheckData();
     const performanceData = getPerformanceData();
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     setPaycheckData(paycheckData);
     setPerformanceData(performanceData);
-    setHistoricalData(historicalData);
+    setAnnualData(annualData);
     
     // Listen for data updates
     const handlePaycheckUpdate = (event) => {
@@ -95,8 +95,8 @@ const Contributions = () => {
     };
 
     const handleHistoricalUpdate = () => {
-      const updatedData = getHistoricalData();
-      setHistoricalData(updatedData);
+      const updatedData = getAnnualData();
+      setAnnualData(updatedData);
     };
 
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
@@ -104,14 +104,14 @@ const Contributions = () => {
     window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
     window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
-    window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
       window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
-      window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
     };
   }, []);
 
@@ -149,10 +149,10 @@ const Contributions = () => {
       const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
       
       // Get individual contributions (401k, HSA, ESPP) - only this person's accounts
-      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), historicalData);
+      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), annualData);
       
       // Get all contributions (for joint accounts like IRA, Brokerage) - all users including Joint
-      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), historicalData);
+      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), annualData);
       
       // Determine which accounts are joint and divide contributions evenly
       const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
@@ -603,7 +603,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData, historicalData, showSpouseCalculator]);
+  }, [paycheckData, performanceData, annualData, showSpouseCalculator]);
 
   // Event listeners for navigation controls
   useEffect(() => {

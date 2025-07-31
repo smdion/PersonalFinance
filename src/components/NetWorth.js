@@ -15,7 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
+import { getAnnualData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
@@ -34,7 +34,7 @@ ChartJS.register(
 );
 
 const NetWorth = () => {
-  const [historicalData, setHistoricalData] = useState({});
+  const [annualData, setAnnualData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
   const showSpouseCalculator = useDualCalculator(); // Use shared dual calculator hook
@@ -131,13 +131,13 @@ const NetWorth = () => {
   // Load data from localStorage
   useEffect(() => {
     const loadData = () => {
-      const historical = getHistoricalData();
+      const annual = getAnnualData();
       const performance = getPerformanceData();
       const paycheck = getPaycheckData();
       const assetLiability = getAssetLiabilityData();
       const savedSettings = getNetWorthSettings();
       
-      setHistoricalData(historical);
+      setAnnualData(annual);
       setPerformanceData(performance);
       setPaycheckData(paycheck);
       setAssetLiabilityData(assetLiability);
@@ -153,7 +153,7 @@ const NetWorth = () => {
       setUseReverseChronological(savedSettings.useReverseChronological !== undefined ? savedSettings.useReverseChronological : false);
       setIsCompactTable(savedSettings.isCompactTable || false);
       
-      const availableYears = Object.values(historical)
+      const availableYears = Object.values(annual)
         .map(entry => entry.year)
         .filter(year => year && !isNaN(year) && year > 0)
         .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
@@ -178,10 +178,10 @@ const NetWorth = () => {
     loadData();
 
     // Listen for data updates
-    const handleHistoricalUpdate = () => {
-      const historical = getHistoricalData();
-      setHistoricalData(historical);
-      const availableYears = Object.values(historical)
+    const handleAnnualUpdate = () => {
+      const annual = getAnnualData();
+      setAnnualData(annual);
+      const availableYears = Object.values(annual)
         .map(entry => entry.year)
         .filter(year => year && !isNaN(year) && year > 0)
         .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates
@@ -207,16 +207,14 @@ const NetWorth = () => {
     };
 
     // Listen for both new and old event names for backward compatibility
-    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
-    window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('annualDataUpdated', handleAnnualUpdate);
     window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     
     return () => {
-      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
-      window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('annualDataUpdated', handleAnnualUpdate);
       window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
@@ -277,7 +275,7 @@ const NetWorth = () => {
       // Calculate cumulative home improvements from purchase year to current year
       let cumulativeImprovements = 0;
       for (let y = purchaseYear; y <= year; y++) {
-        const yearData = historicalData[y];
+        const yearData = annualData[y];
         if (yearData && yearData.homeImprovements) {
           cumulativeImprovements += yearData.homeImprovements;
         }
@@ -317,7 +315,7 @@ const NetWorth = () => {
 
   // Helper: Calculate 3-year average income for a given year
   const getThreeYearAverageIncome = (targetYear) => {
-    const years = Object.values(historicalData)
+    const years = Object.values(annualData)
       .map(entry => entry.year)
       .filter(year => year && !isNaN(year) && year > 0)
       .sort();
@@ -331,7 +329,7 @@ const NetWorth = () => {
     let validYears = 0;
     
     for (const year of relevantYears) {
-      const yearData = Object.values(historicalData).find(entry => entry.year === year);
+      const yearData = Object.values(annualData).find(entry => entry.year === year);
       if (yearData && yearData.agi) {
         totalIncome += yearData.agi;
         validYears++;
@@ -344,14 +342,14 @@ const NetWorth = () => {
   // Helper: Calculate cumulative lifetime earnings up to a given year
   const getCumulativeEarnings = (targetYear) => {
     let cumulative = 0;
-    const years = Object.values(historicalData)
+    const years = Object.values(annualData)
       .map(entry => entry.year)
       .filter(year => year && !isNaN(year) && year > 0)
       .sort();
     
     for (const year of years) {
       if (year > targetYear) break;
-      const yearData = Object.values(historicalData).find(entry => entry.year === year);
+      const yearData = Object.values(annualData).find(entry => entry.year === year);
       if (yearData && yearData.agi) {
         cumulative += yearData.agi;
       }
@@ -362,13 +360,13 @@ const NetWorth = () => {
 
   // Process and calculate net worth data
   const processedData = useMemo(() => {
-    const years = Object.values(historicalData)
+    const years = Object.values(annualData)
       .map(entry => entry.year)
       .filter(year => year && !isNaN(year) && year > 0)
       .sort();
     
     return years.map(year => {
-      const historicalEntry = Object.values(historicalData).find(entry => entry.year === year);
+      const historicalEntry = Object.values(annualData).find(entry => entry.year === year);
       const performanceEntry = performanceData[year];
       
       if (!historicalEntry) return null;
@@ -492,7 +490,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [historicalData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
+  }, [annualData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -1050,7 +1048,7 @@ const NetWorth = () => {
   };
 
   // Get available years for selection
-  const availableYears = Object.values(historicalData)
+  const availableYears = Object.values(annualData)
     .map(entry => entry.year)
     .filter(year => year && !isNaN(year) && year > 0)
     .filter((year, index, arr) => arr.indexOf(year) === index) // Remove duplicates

@@ -77,7 +77,7 @@ const LastUpdateInfo = ({ className = '', showDetails = true, compact = false })
     <div className={`last-update-info ${className}`}>
       <div className="last-update-header">
         <div className="last-update-icon">📊</div>
-        <div className="last-update-title">Portfolio Data Status</div>
+        <div className="last-update-title">Liquid Assets Data Status</div>
       </div>
       
       <div className="last-update-content">
