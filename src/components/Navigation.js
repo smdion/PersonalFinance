@@ -275,21 +275,6 @@ const Navigation = () => {
     setShowSettingsMenu(false);
   };
 
-  const cleanupObsoleteData = async () => {
-    try {
-      const { cleanupObsoleteFields } = await import('../utils/localStorage');
-      const result = cleanupObsoleteFields();
-      
-      if (result.success) {
-        alert(`Data cleanup completed: ${result.message}`);
-      } else {
-        alert(`Cleanup failed: ${result.message}`);
-      }
-    } catch (error) {
-      alert('Failed to cleanup data. Please try again.');
-    }
-    setShowSettingsMenu(false);
-  };
 
   return (
     <nav className="navigation">
@@ -372,7 +357,7 @@ const Navigation = () => {
                     {expandStates.paycheck ? '📕' : '📖'}
                   </button>
                   <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggleMultiUserCalculator'))}
                     className="page-control-button dual-calc"
                     title="Toggle dual calculator mode"
                   >
@@ -391,7 +376,7 @@ const Navigation = () => {
               )}
               {location.pathname === '/retirement' && (
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleMultiUserCalculator'))}
                   className="page-control-button dual-calc"
                   title="Toggle dual calculator mode"
                 >
@@ -408,7 +393,7 @@ const Navigation = () => {
                     {expandStates.contributions ? '📕' : '📖'}
                   </button>
                   <button
-                    onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                    onClick={() => window.dispatchEvent(new CustomEvent('toggleMultiUserCalculator'))}
                     className="page-control-button dual-calc"
                     title="Toggle dual calculator mode"
                   >
@@ -418,7 +403,7 @@ const Navigation = () => {
               )}
               {location.pathname === '/raw-data' && (
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleMultiUserCalculator'))}
                   className="page-control-button dual-calc"
                   title="Toggle dual calculator mode"
                 >
@@ -427,7 +412,7 @@ const Navigation = () => {
               )}
               {location.pathname === '/performance' && (
                 <button
-                  onClick={() => window.dispatchEvent(new CustomEvent('toggleDualCalculator'))}
+                  onClick={() => window.dispatchEvent(new CustomEvent('toggleMultiUserCalculator'))}
                   className="page-control-button dual-calc"
                   title="Toggle dual calculator mode"
                 >
@@ -538,9 +523,6 @@ const Navigation = () => {
                     🎯 Load Demo Data
                   </button>
                   <div className="settings-menu-divider"></div>
-                  <button onClick={cleanupObsoleteData} className="settings-menu-item">
-                    🧹 Cleanup Old Data Fields
-                  </button>
                   <button onClick={exportAllData} className="settings-menu-item">
                     📤 Export All Data (JSON)
                   </button>

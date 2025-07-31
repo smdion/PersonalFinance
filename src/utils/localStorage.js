@@ -71,221 +71,15 @@ export const removeFromStorage = (key) => {
   }
 };
 
-// Name mapping utilities for handling name changes
-export const getNameMapping = () => {
-  const appSettings = getAppSettings();
-  return appSettings.nameMapping || {};
-};
 
-export const setNameMapping = (mapping) => {
-  const appSettings = getAppSettings();
-  const updatedSettings = {
-    ...appSettings,
-    nameMapping: mapping
-  };
-  return setAppSettings(updatedSettings);
-};
 
-// Add name mapping functionality - Enhanced for consistency
-let nameMapping = {};
-let nameMappingLoaded = false;
 
-// Load name mapping from localStorage consistently
-const loadNameMapping = () => {
-  if (!nameMappingLoaded) {
-    try {
-      const appSettings = getAppSettings();
-      nameMapping = { ...appSettings.nameMapping };
-      nameMappingLoaded = true;
-    } catch (error) {
-        nameMapping = {};
-      nameMappingLoaded = true;
-    }
-  }
-  return nameMapping;
-};
 
-export const updateNameMapping = (oldName, newName) => {
-  if (!oldName || !newName || oldName === newName) return;
-  
-  // Ensure we're working with trimmed names but preserve spaces within the name
-  const trimmedOldName = oldName.trim();
-  const trimmedNewName = newName.trim();
-  
-  if (!trimmedOldName || !trimmedNewName || trimmedOldName === trimmedNewName) return;
-  
-  
-  // Load current mappings first
-  loadNameMapping();
-  
-  // Update in-memory mapping
-  nameMapping[trimmedOldName] = trimmedNewName;
-  
-  // Save to localStorage immediately and synchronously
-  try {
-    localStorage.setItem('nameMapping', JSON.stringify(nameMapping));
-    
-    // Force immediate migration of all data
-    migrateAllDataForNameChange(trimmedOldName, trimmedNewName);
-    
-  } catch (error) {
-  }
-  
-  // Dispatch event to notify components
-  setTimeout(() => {
-    window.dispatchEvent(new CustomEvent('nameMappingUpdated'));
-  }, 100);
-};
 
-export const getCurrentUserName = (originalName) => {
-  if (!originalName) return originalName;
-  
-  // Ensure we're working with the trimmed version for lookup but preserve the original structure
-  const trimmedOriginalName = originalName.trim();
-  
-  // Always load mappings to ensure we have the latest
-  loadNameMapping();
-  
-  // Return mapped name or original if no mapping exists
-  const mappedName = nameMapping[trimmedOriginalName] || trimmedOriginalName;
-  return mappedName;
-};
 
-// Enhanced function to apply name mapping to any data structure
-export const applyNameMappingToData = (data) => {
-  if (!data || typeof data !== 'object') return data;
-  
-  const mapping = getNameMapping();
-  if (!mapping || Object.keys(mapping).length === 0) return data;
-  
-  
-  const processedData = {};
-  
-  Object.entries(data).forEach(([key, entry]) => {
-    if (entry.users && typeof entry.users === 'object') {
-      const mappedUsers = {};
-      
-      Object.entries(entry.users).forEach(([userName, userData]) => {
-        const mappedName = getCurrentUserName(userName);
-        mappedUsers[mappedName] = userData;
-      });
-      
-      processedData[key] = { ...entry, users: mappedUsers };
-    } else {
-      processedData[key] = entry;
-    }
-  });
-  
-  return processedData;
-};
 
-// Get all historical names for a user
-export const getAllUserNames = (currentName) => {
-  if (!currentName) return [];
-  
-  const mapping = getNameMapping();
-  const names = [currentName];
-  
-  // Find original name that maps to current name
-  Object.keys(mapping).forEach(originalName => {
-    if (mapping[originalName] === currentName && !names.includes(originalName)) {
-      names.push(originalName);
-    }
-  });
-  
-  return names;
-};
 
-export const migrateDataForNameChange = (data, oldName, newName) => {
-  
-  if (!data || typeof data !== 'object') return data;
-  
-  // Ensure we're working with trimmed names but preserve spaces
-  const trimmedOldName = oldName.trim();
-  const trimmedNewName = newName.trim();
-  
-  if (!trimmedOldName || !trimmedNewName || trimmedOldName === trimmedNewName) {
-    return data;
-  }
-  
-  const migratedData = {};
-  let hasChanges = false;
-  
-  Object.entries(data).forEach(([key, entry]) => {
-    if (entry && entry.users && typeof entry.users === 'object') {
-      const migratedEntry = { ...entry };
-      const migratedUsers = {};
-      
-      Object.entries(entry.users).forEach(([userName, userData]) => {
-        // Use exact string comparison with trimmed names to handle names with spaces
-        const trimmedUserName = userName.trim();
-        if (trimmedUserName === trimmedOldName) {
-          hasChanges = true;
-          // Update the name field within the user data if it exists
-          if (userData && typeof userData === 'object') {
-            migratedUsers[trimmedNewName] = {
-              ...userData,
-              // Ensure the name field is updated with the full new name including spaces
-              ...(userData.name !== undefined && { name: trimmedNewName })
-            };
-          } else {
-            migratedUsers[trimmedNewName] = userData;
-          }
-        } else {
-          // Keep other users as-is but ensure we preserve their full names
-          migratedUsers[userName] = userData;
-        }
-      });
-      
-      migratedEntry.users = migratedUsers;
-      migratedData[key] = migratedEntry;
-    } else {
-      migratedData[key] = entry;
-    }
-  });
-  
-  return migratedData;
-};
 
-// Enhanced function to migrate all data types when names change - Force immediate save
-export const migrateAllDataForNameChange = (oldName, newName) => {
-  if (!oldName || !newName || oldName === newName) return;
-  
-  
-  // Migrate annual data - Force save
-  try {
-    const annualData = getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
-    const migratedAnnual = migrateDataForNameChange(annualData, oldName, newName);
-    
-    // Force immediate save
-    const saveResult = setToStorage(STORAGE_KEYS.ANNUAL_DATA, migratedAnnual);
-    
-    if (saveResult) {
-    }
-  } catch (error) {
-    console.error('Error migrating annual data:', error);
-  }
-  
-  // Migrate account data - Force save
-  try {
-    const accountData = getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {});
-    const migratedAccount = migrateDataForNameChange(accountData, oldName, newName);
-    
-    // Force immediate save
-    const saveResult = setToStorage(STORAGE_KEYS.ACCOUNT_DATA, migratedAccount);
-    
-    if (saveResult) {
-    }
-  } catch (error) {
-    console.error('Error migrating account data:', error);
-  }
-  
-  // Dispatch events to notify components of the data changes - with delay to ensure saves are complete
-  setTimeout(() => {
-    dispatchGlobalEvent('annualDataUpdated', getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {}));
-    dispatchGlobalEvent('accountDataUpdated', getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {}));
-  }, 200);
-};
 
 // Specific data utilities
 export const getBudgetData = () => {
@@ -306,6 +100,52 @@ export const setPaycheckData = (data) => {
   return setToStorage(STORAGE_KEYS.PAYCHECK_DATA, data);
 };
 
+// Centralized User Name Resolution
+// Resolves normalized user keys (user1, user2, joint) to display names
+export const resolveUserDisplayName = (userKey) => {
+  if (!userKey) return '';
+  
+  // Handle joint accounts
+  if (userKey.toLowerCase() === 'joint') {
+    return 'Joint';
+  }
+  
+  // Resolve user1/user2 to actual names from paycheck data
+  if (userKey === 'user1' || userKey === 'user2') {
+    try {
+      const paycheckData = getPaycheckData();
+      if (userKey === 'user1' && paycheckData?.user1?.name) {
+        return paycheckData.user1.name;
+      } else if (userKey === 'user2' && paycheckData?.user2?.name) {
+        return paycheckData.user2.name;
+      }
+    } catch (error) {
+      console.warn('Could not resolve user name from paycheck data:', error);
+    }
+  }
+  
+  // Return as-is for any other values (including actual names for backward compatibility)
+  return userKey;
+};
+
+// Helper to get all normalized user keys with their display names
+export const getAllUserMappings = () => {
+  const paycheckData = getPaycheckData();
+  const mappings = {};
+  
+  if (paycheckData?.user1?.name) {
+    mappings.user1 = paycheckData.user1.name;
+  }
+  
+  if (paycheckData?.user2?.name) {
+    mappings.user2 = paycheckData.user2.name;
+  }
+  
+  mappings.joint = 'Joint';
+  
+  return mappings;
+};
+
 export const getFormData = () => {
   const paycheckData = getPaycheckData();
   return paycheckData.formData || {};
@@ -323,8 +163,7 @@ export const setFormData = (data) => {
 export const getAppSettings = () => {
   return getFromStorage(STORAGE_KEYS.APP_SETTINGS, {
     hasSeenBetaWelcome: false,
-    isDemoData: false,
-    nameMapping: {}
+    isDemoData: false
   });
 };
 
@@ -406,33 +245,17 @@ export const setReadOnlyOverrideSettings = (settings) => {
   return setAppSettings(updatedSettings);
 };
 
-export const getAnnualDataWithNameMapping = () => {
+export const getAnnualData = () => {
   try {
-    const data = getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
-    // Apply name mapping to ensure current names are displayed
-    return applyNameMappingToData(data);
+    return getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
   } catch (error) {
-    console.error('Error loading annual data with name mapping:', error);
+    console.error('Error loading annual data:', error);
     return {};
   }
 };
 
-export const getAnnualData = () => {
-  // Always return data with name mapping applied for consistency
-  return getAnnualDataWithNameMapping();
-};
-
 export const setAnnualData = (data) => {
-  
-  // Don't apply name mapping when saving - data should already have correct names
   const result = setToStorage(STORAGE_KEYS.ANNUAL_DATA, data);
-  return result;
-};
-
-export const setAnnualDataWithNameMapping = (data) => {
-  
-  // Don't apply name mapping when saving - data should already have correct names
-  const result = setAnnualData(data);
   if (result) {
     // Dispatch update event to notify components
     setTimeout(() => {
@@ -442,32 +265,18 @@ export const setAnnualDataWithNameMapping = (data) => {
   return result;
 };
 
-export const getAccountDataWithNameMapping = () => {
+
+export const getAccountData = () => {
   try {
-    const data = getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {});
-    // Apply name mapping to ensure current names are displayed
-    return applyNameMappingToData(data);
+    return getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {});
   } catch (error) {
-    console.error('Error loading account data with name mapping:', error);
+    console.error('Error loading account data:', error);
     return {};
   }
 };
 
-export const getAccountData = () => {
-  // Always return data with name mapping applied for consistency
-  return getAccountDataWithNameMapping();
-};
-
 export const setAccountData = (data) => {
-  
-  // Don't apply name mapping when saving - data should already have correct names
   const result = setToStorage(STORAGE_KEYS.ACCOUNT_DATA, data);
-  return result;
-};
-
-export const setAccountDataWithNameMapping = (data) => {
-  const result = setAccountData(data);
-  
   if (result) {
     // Dispatch update event to notify components
     setTimeout(() => {
@@ -476,6 +285,7 @@ export const setAccountDataWithNameMapping = (data) => {
   }
   return result;
 };
+
 
 // Export all app data to JSON
 export const exportAllData = () => {
@@ -502,8 +312,6 @@ export const exportAllData = () => {
     liquidAssetsAccountGroups: getManualAccountGroups(),
     // Tax constants data
     taxConstants: getTaxConstants(),
-    // Include name mapping for data integrity
-    nameMapping: getNameMapping()
   };
   
   return exportData;
@@ -581,27 +389,27 @@ export const exportAllLocalStorageDataFiltered = () => {
   
   // First, get paycheck data to check dual calculator setting
   const paycheckData = getPaycheckData();
-  const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+  const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
   
   // Get user names for filtering
   const userNames = [];
-  if (paycheckData?.your?.name?.trim()) {
-    userNames.push(paycheckData.your.name.trim());
+  if (paycheckData?.user1?.name?.trim()) {
+    userNames.push(paycheckData.user1.name.trim());
   }
-  if (isDualMode && paycheckData?.spouse?.name?.trim()) {
-    userNames.push(paycheckData.spouse.name.trim());
+  if (isMultiUserMode && paycheckData?.user2?.name?.trim()) {
+    userNames.push(paycheckData.user2.name.trim());
   }
   
   // Export all known storage keys with filtering
   Object.entries(STORAGE_KEYS).forEach(([keyName, storageKey]) => {
     let data = getFromStorage(storageKey, null);
     
-    // Apply filtering to annual and account data if dual mode is disabled
-    if (!isDualMode && data !== null) {
+    // Apply filtering to annual and account data if multi-user mode is disabled
+    if (!isMultiUserMode && data !== null) {
       if (storageKey === 'annualData') {
-        data = filterAnnualDataForSingleMode(data, userNames[0]);
+        data = filterAnnualDataForSingleMode(data, 'user1');
       } else if (storageKey === 'accountData') {
-        data = filterAccountDataForSingleMode(data, userNames[0]);
+        data = filterAccountDataForSingleMode(data, 'user1');
       }
     }
     
@@ -638,19 +446,19 @@ export const exportAllLocalStorageDataFiltered = () => {
   return allData;
 };
 
-// Helper function to filter annual data for single mode
-const filterAnnualDataForSingleMode = (annualData, primaryUserName) => {
+// Helper function to filter annual data for single mode (works with normalized keys)
+const filterAnnualDataForSingleMode = (annualData, primaryUserKey) => {
   if (!annualData || typeof annualData !== 'object') return annualData;
   
   const filteredData = {};
   
   Object.entries(annualData).forEach(([year, yearData]) => {
     if (yearData && typeof yearData === 'object' && yearData.users) {
-      // Filter out user data that isn't the primary user or Joint
+      // Filter out user data that isn't the primary user (no Joint in single mode)
       const filteredUsers = {};
-      Object.entries(yearData.users).forEach(([userName, userData]) => {
-        if (userName === primaryUserName) {
-          filteredUsers[userName] = userData;
+      Object.entries(yearData.users).forEach(([userKey, userData]) => {
+        if (userKey === primaryUserKey) {
+          filteredUsers[userKey] = userData;
         }
         // Note: Joint data is excluded in single mode
       });
@@ -668,19 +476,19 @@ const filterAnnualDataForSingleMode = (annualData, primaryUserName) => {
   return filteredData;
 };
 
-// Helper function to filter account data for single mode
-const filterAccountDataForSingleMode = (accountData, primaryUserName) => {
+// Helper function to filter account data for single mode (works with normalized keys)
+const filterAccountDataForSingleMode = (accountData, primaryUserKey) => {
   if (!accountData || typeof accountData !== 'object') return accountData;
   
   const filteredData = {};
   
   Object.entries(accountData).forEach(([entryId, entry]) => {
     if (entry && typeof entry === 'object' && entry.users) {
-      // Filter out user data that isn't the primary user or Joint
+      // Filter out user data that isn't the primary user (no Joint in single mode)
       const filteredUsers = {};
-      Object.entries(entry.users).forEach(([userName, userData]) => {
-        if (userName === primaryUserName) {
-          filteredUsers[userName] = userData;
+      Object.entries(entry.users).forEach(([userKey, userData]) => {
+        if (userKey === primaryUserKey) {
+          filteredUsers[userKey] = userData;
         }
         // Note: Joint data is excluded in single mode
       });
@@ -808,18 +616,17 @@ export const exportAllAsCSV = () => {
   // Account Data CSV - filtered based on dual calculator setting
   const accountData = getAccountData();
   const paycheckData = getPaycheckData();
-  const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
-  const primaryUserName = paycheckData?.your?.name?.trim();
+  const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
   
   if (Object.keys(accountData).length > 0) {
     const accountRows = [];
     Object.values(accountData).forEach(entry => {
       if (entry.users) {
         Object.entries(entry.users).forEach(([owner, userData]) => {
-          // Filter users based on dual calculator setting
-          if (!isDualMode) {
-            // In single mode, only show primary user data
-            if (owner !== primaryUserName) {
+          // Filter users based on multi-user calculator setting
+          if (!isMultiUserMode) {
+            // In single mode, only show user1 data (use normalized keys)
+            if (owner !== 'user1') {
               return; // Skip this user
             }
           }
@@ -884,10 +691,10 @@ export const exportAllAsCSV = () => {
       // Add individual user rows - filtered based on dual calculator setting
       if (yearData.users) {
         Object.entries(yearData.users).forEach(([owner, userData]) => {
-          // Filter users based on dual calculator setting
-          if (!isDualMode) {
-            // In single mode, only show primary user data
-            if (owner !== primaryUserName) {
+          // Filter users based on multi-user calculator setting
+          if (!isMultiUserMode) {
+            // In single mode, only show user1 data (use normalized keys)
+            if (owner !== 'user1') {
               return; // Skip this user
             }
           }
@@ -1052,48 +859,6 @@ export const downloadAllCSVExports = () => {
   return { success: true, message: `Downloaded ${exportCount} CSV files`, count: exportCount };
 };
 
-// Helper function to check if user data is empty/meaningless
-const isUserDataEmpty = (userData) => {
-  if (!userData || typeof userData !== 'object') return true;
-  
-  // Check if all values are empty, null, undefined
-  // NOTE: We do NOT consider 0 as empty since it can be valid financial data
-  return Object.values(userData).every(value => {
-    if (value === null || value === undefined || value === '') return true;
-    if (typeof value === 'string' && value.trim() === '') return true;
-    return false;
-  });
-};
-
-// Helper function to clean empty user data from entries
-const cleanEmptyUserData = (data) => {
-  if (!data || typeof data !== 'object') return data;
-  
-  const cleanedData = {};
-  
-  Object.entries(data).forEach(([key, entry]) => {
-    if (entry.users && typeof entry.users === 'object') {
-      const cleanedUsers = {};
-      
-      Object.entries(entry.users).forEach(([userName, userData]) => {
-        // Only keep user data that is not empty
-        if (!isUserDataEmpty(userData)) {
-          cleanedUsers[userName] = userData;
-        }
-      });
-      
-      // Only keep entry if it has users or other data
-      if (Object.keys(cleanedUsers).length > 0 || Object.keys(entry).some(k => k !== 'users' && entry[k] !== undefined && entry[k] !== '')) {
-        cleanedData[key] = { ...entry, users: cleanedUsers };
-      }
-    } else {
-      // Keep entries without users structure
-      cleanedData[key] = entry;
-    }
-  });
-  
-  return cleanedData;
-};
 
 
 // Import data from JSON (validation included)
@@ -1139,9 +904,7 @@ export const importAllData = (importData) => {
       }
     });
     
-    // Clear the in-memory cache
-    nameMapping = {};
-    nameMappingLoaded = false;
+    // Clear the in-memory cache (nameMapping removed with normalized data)
     
     // Import each section if it exists (handle both camelCase and snake_case for backward compatibility)
     if (importData.budgetData !== undefined || importData.budget_data !== undefined) {
@@ -1163,14 +926,14 @@ export const importAllData = (importData) => {
     if (importData.annualData !== undefined || importData.annual_data !== undefined) {
       // Support current key names
       const dataToImport = importData.annualData || importData.annual_data;
-      // Clean empty user data before importing
-      let cleanedAnnualData = cleanEmptyUserData(dataToImport);
+      // Skip cleaning for normalized data - it's already clean
+      let cleanedAnnualData = dataToImport;
       
-      // Apply dual calculator filtering if single mode is enabled
+      // Apply multi-user calculator filtering if single mode is enabled
       const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
-      const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
-      if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
-        cleanedAnnualData = filterAnnualDataForSingleMode(cleanedAnnualData, currentPaycheckData.your.name.trim());
+      const isMultiUserMode = currentPaycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+      if (!isMultiUserMode) {
+        cleanedAnnualData = filterAnnualDataForSingleMode(cleanedAnnualData, 'user1');
       }
       
       setAnnualData(cleanedAnnualData);
@@ -1190,14 +953,14 @@ export const importAllData = (importData) => {
         }, {});
       }
       
-      // Clean empty user data before importing
-      let cleanedAccountData = cleanEmptyUserData(accountDataToImport);
+      // Skip cleaning for normalized data - it's already clean
+      let cleanedAccountData = accountDataToImport;
       
-      // Apply dual calculator filtering if single mode is enabled
+      // Apply multi-user calculator filtering if single mode is enabled
       const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
-      const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
-      if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
-        cleanedAccountData = filterAccountDataForSingleMode(cleanedAccountData, currentPaycheckData.your.name.trim());
+      const isMultiUserMode = currentPaycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+      if (!isMultiUserMode) {
+        cleanedAccountData = filterAccountDataForSingleMode(cleanedAccountData, 'user1');
       }
       
       const result = setAccountData(cleanedAccountData);
@@ -1477,11 +1240,11 @@ export const exportAllDataWithTimestamp = () => {
     // Get user names from paycheck data for filename
     const paycheckData = getPaycheckData();
     const userNames = [];
-    if (paycheckData?.your?.name?.trim()) {
-      userNames.push(paycheckData.your.name.trim());
+    if (paycheckData?.user1?.name?.trim()) {
+      userNames.push(paycheckData.user1.name.trim());
     }
-    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
-      userNames.push(paycheckData.spouse.name.trim());
+    if (paycheckData?.user2?.name?.trim() && (paycheckData?.settings?.activeUsers?.includes('user2') ?? true)) {
+      userNames.push(paycheckData.user2.name.trim());
     }
 
     const dataStr = JSON.stringify(allData, null, 2);
@@ -1513,8 +1276,8 @@ export const hasExistingData = () => {
     
     // Check if any meaningful data exists
     return (budgetData && budgetData.length > 0) ||
-           (paycheckData && ((paycheckData.your && paycheckData.your.salary) || 
-                            (paycheckData.spouse && paycheckData.spouse.salary))) ||
+           (paycheckData && ((paycheckData.user1 && paycheckData.user1.salary) || 
+                            (paycheckData.user2 && paycheckData.user2.salary))) ||
            (annualData && Object.keys(annualData).length > 0) ||
            (accountData && Object.keys(accountData).length > 0);
   } catch (error) {
@@ -1597,90 +1360,6 @@ export const resetAllAppData = () => {
   }
 };
 
-// Add this function to clean up obsolete fields from historical data
-export const cleanupObsoleteFields = () => {
-  try {
-    const annualData = getAnnualData();
-    const obsoleteFields = ['ltbrokerage', 'rbrokerage', 'networthminus', 'networthplus'];
-    let hasChanges = false;
-    
-    const cleanedData = {};
-    
-    Object.entries(annualData).forEach(([key, entry]) => {
-      const cleanedEntry = { ...entry };
-      
-      // Remove obsolete fields from the main entry
-      obsoleteFields.forEach(field => {
-        if (cleanedEntry.hasOwnProperty(field)) {
-          delete cleanedEntry[field];
-          hasChanges = true;
-        }
-      });
-      
-      // Also clean obsolete fields from user data if they exist
-      if (cleanedEntry.users && typeof cleanedEntry.users === 'object') {
-        Object.keys(cleanedEntry.users).forEach(userName => {
-          obsoleteFields.forEach(field => {
-            if (cleanedEntry.users[userName].hasOwnProperty(field)) {
-              delete cleanedEntry.users[userName][field];
-              hasChanges = true;
-            }
-          });
-        });
-      }
-      
-      cleanedData[key] = cleanedEntry;
-    });
-    
-    if (hasChanges) {
-      setAnnualData(cleanedData);
-      return { success: true, message: `Removed obsolete fields: ${obsoleteFields.join(', ')}` };
-    } else {
-      return { success: true, message: 'No obsolete fields found' };
-    }
-  } catch (error) {
-    console.error('Error cleaning up obsolete fields:', error);
-    return { success: false, message: error.message };
-  }
-};
-
-// Clean up joint data from annual storage since annual data should only track individual users
-export const cleanupJointDataFromAnnual = () => {
-  try {
-    const annualData = getAnnualData();
-    let hasChanges = false;
-    
-    const cleanedData = {};
-    Object.entries(annualData).forEach(([year, yearData]) => {
-      if (yearData && yearData.users && yearData.users['Joint']) {
-        // Remove Joint data
-        const cleanedYearData = { ...yearData };
-        cleanedYearData.users = { ...yearData.users };
-        delete cleanedYearData.users['Joint'];
-        
-        // If users object is now empty, remove it entirely
-        if (Object.keys(cleanedYearData.users).length === 0) {
-          delete cleanedYearData.users;
-        }
-        
-        cleanedData[year] = cleanedYearData;
-        hasChanges = true;
-      } else {
-        cleanedData[year] = yearData;
-      }
-    });
-    
-    if (hasChanges) {
-      setAnnualData(cleanedData);
-      return { success: true, message: 'Removed joint data from annual records' };
-    } else {
-      return { success: true, message: 'No joint data found in annual records' };
-    }
-  } catch (error) {
-    console.error('Error cleaning up joint data from annual:', error);
-    return { success: false, message: error.message };
-  }
-};
 
 
 // Net Worth settings utilities
@@ -2484,39 +2163,6 @@ export const clearManualAccountGroups = () => {
   return result;
 };
 
-// Clean up empty historical entries (entries with no users or meaningful data)
-export const cleanupEmptyAnnualEntries = () => {
-  try {
-    const annualData = getAnnualData();
-    let hasChanges = false;
-    
-    const cleanedData = {};
-    Object.entries(annualData).forEach(([key, entry]) => {
-      // Keep entry if it has users with meaningful data, or if it has other financial data
-      const hasUsers = entry.users && Object.keys(entry.users).length > 0;
-      const hasFinancialData = entry.taxFree || entry.taxDeferred || entry.brokerage || 
-                               entry.espp || entry.hsa || entry.cash || entry.house || 
-                               entry.mortgage || entry.othAsset || entry.othLia;
-      const hasValidAGI = entry.agi && entry.agi > 0;
-      
-      if (hasUsers || hasFinancialData || hasValidAGI) {
-        cleanedData[key] = entry;
-      } else {
-        hasChanges = true; // This entry will be removed
-      }
-    });
-    
-    if (hasChanges) {
-      setAnnualData(cleanedData);
-      return { success: true, message: 'Removed empty annual entries' };
-    } else {
-      return { success: true, message: 'No empty entries found' };
-    }
-  } catch (error) {
-    console.error('Error cleaning up empty historical entries:', error);
-    return { success: false, message: error.message };
-  }
-};
 
 // Sync paycheck data to annual data for current year
 export const syncPaycheckToAnnual = () => {
@@ -2527,16 +2173,16 @@ export const syncPaycheckToAnnual = () => {
 
     // Get users from paycheck data
     const users = [];
-    if (paycheckData?.your?.name?.trim()) {
+    if (paycheckData?.user1?.name?.trim()) {
       users.push({
-        name: paycheckData.your.name.trim(),
-        data: paycheckData.your
+        name: paycheckData.user1.name.trim(),
+        data: paycheckData.user1
       });
     }
-    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
+    if (paycheckData?.user2?.name?.trim() && (paycheckData?.settings?.activeUsers?.includes('user2') ?? true)) {
       users.push({
-        name: paycheckData.spouse.name.trim(),
-        data: paycheckData.spouse
+        name: paycheckData.user2.name.trim(),
+        data: paycheckData.user2
       });
     }
 
@@ -2632,8 +2278,6 @@ export const setAssetLiabilityData = (data) => {
 // Legacy Performance data aliases (backward compatibility)
 export const getPerformanceData = getAccountData;
 export const setPerformanceData = setAccountData;
-export const getPerformanceDataWithNameMapping = getAccountDataWithNameMapping;
-export const setPerformanceDataWithNameMapping = setAccountDataWithNameMapping;
 export const syncPerformanceAccountsToShared = syncAccountDataToShared;
 
 // ============================================================================
@@ -2692,7 +2336,6 @@ export const getTaxConstants = () => {
       
       // Store the migrated constants
       setTaxConstants(initialConstants);
-      console.log('Tax constants migrated from file to localStorage');
       
       return initialConstants;
     } catch (error) {
@@ -2873,4 +2516,5 @@ const getHardcodedTaxConstants = () => {
     }
   };
 };
+
 

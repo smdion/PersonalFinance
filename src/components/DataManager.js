@@ -1,10 +1,8 @@
 import React, { useState, useEffect, useCallback, useRef, memo } from 'react';
 import { 
   getPaycheckData, 
-  updateNameMapping, 
-  migrateDataForNameChange,
   dispatchGlobalEvent,
-  getCurrentUserName
+  resolveUserDisplayName
 } from '../utils/localStorage';
 import { formatCurrency, generateDataFilename } from '../utils/calculationHelpers';
 import Papa from 'papaparse';
@@ -309,28 +307,7 @@ const DataManager = ({
         let hasNameChanges = false;
         let migratedData = { ...entryData };
         
-        // Check your name change
-        const oldYourName = lastPaycheckDataRef.current.your?.name;
-        const newYourName = newPaycheckData.your?.name;
-        if (oldYourName && newYourName && oldYourName !== newYourName) {
-          updateNameMapping(oldYourName, newYourName);
-          migratedData = migrateDataForNameChange(migratedData, oldYourName, newYourName);
-          hasNameChanges = true;
-        }
-        
-        // Check spouse name change
-        const oldSpouseName = lastPaycheckDataRef.current.spouse?.name;
-        const newSpouseName = newPaycheckData.spouse?.name;
-        if (oldSpouseName && newSpouseName && oldSpouseName !== newSpouseName) {
-          updateNameMapping(oldSpouseName, newSpouseName);
-          migratedData = migrateDataForNameChange(migratedData, oldSpouseName, newSpouseName);
-          hasNameChanges = true;
-        }
-        
-        if (hasNameChanges) {
-          setData(migratedData);
-          setEntryData(migratedData); // Also update local state immediately
-        }
+        // Name changes are no longer supported - data uses normalized keys
       }
       
       // Update the paycheck data reference
@@ -372,12 +349,12 @@ const DataManager = ({
   useEffect(() => {
     if (usePaycheckUsers && paycheckData) {
       const names = [];
-      if (paycheckData.your?.name?.trim()) {
-        names.push(paycheckData.your.name.trim());
+      if (paycheckData.user1?.name?.trim()) {
+        names.push(paycheckData.user1.name.trim());
       }
-      // Only add spouse if dual calculator is enabled AND spouse name exists
-      if ((paycheckData.settings?.showSpouseCalculator ?? true) && paycheckData.spouse?.name?.trim()) {
-        names.push(paycheckData.spouse.name.trim());
+      // Only add user2 if dual calculator is enabled AND user2 name exists
+      if ((paycheckData.settings?.activeUsers?.includes('user2') ?? true) && paycheckData.user2?.name?.trim()) {
+        names.push(paycheckData.user2.name.trim());
       }
       
       // Only update if names actually changed
@@ -496,21 +473,21 @@ const DataManager = ({
   // Enhanced CSV upload guard that handles paycheck validation
   const handleEnhancedBeforeCSVImport = () => {
     if (usePaycheckUsers && paycheckData) {
-      const yourName = paycheckData?.your?.name?.trim();
-      const dualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
-      const spouseName = paycheckData?.spouse?.name?.trim();
+      const user1Name = paycheckData?.user1?.name?.trim();
+      const dualMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+      const user2Name = paycheckData?.user2?.name?.trim();
 
-      if (!yourName) {
+      if (!user1Name) {
         alert(
-          "Please fill out the Name field for 'Your' in the Paycheck Calculator before importing a CSV.\n\n" +
+          "Please fill out the Name field for 'User 1' in the Paycheck Calculator before importing a CSV.\n\n" +
           "Go to the Paycheck Calculator and enter a name for yourself. This ensures your data is mapped correctly."
         );
         return false;
       }
-      if (dualMode && !spouseName) {
+      if (dualMode && !user2Name) {
         alert(
-          "Please fill out the Name field for 'Spouse' in the Paycheck Calculator before importing a CSV.\n\n" +
-          "Go to the Paycheck Calculator and enter a name for your spouse. This ensures your data is mapped correctly."
+          "Please fill out the Name field for 'User 2' in the Paycheck Calculator before importing a CSV.\n\n" +
+          "Go to the Paycheck Calculator and enter a name for your spouse/partner. This ensures your data is mapped correctly."
         );
         return false;
       }
@@ -797,30 +774,23 @@ const DataManager = ({
 
           let processedData = savedData;
           
-          // Always apply name mapping if we're in usePaycheckUsers mode and have data
+          // For normalized data structure, use data as-is without name mapping
           if (usePaycheckUsers && Object.keys(savedData).length > 0) {
             processedData = {};
             
             Object.entries(savedData).forEach(([key, entry]) => {
               if (entry.users && typeof entry.users === 'object') {
-                const mappedUsers = {};
+                const cleanUsers = {};
                 
                 Object.entries(entry.users).forEach(([userName, userData]) => {
-                  // Apply name mapping
-                  const mappedName = getCurrentUserName(userName);
-                  
+                  // For normalized structure, use keys directly (user1, user2, Joint)
                   // Only add user data if it's not empty
                   if (!isUserDataEmpty(userData)) {
-                    // Ensure we preserve the full name including spaces
-                    mappedUsers[mappedName] = {
-                      ...userData,
-                      // Update the name field in the user data if it exists
-                      ...(userData.name !== undefined && { name: mappedName })
-                    };
+                    cleanUsers[userName] = userData;
                   }
                 });
                 
-                processedData[key] = { ...entry, users: mappedUsers };
+                processedData[key] = { ...entry, users: cleanUsers };
               } else {
                 // Keep non-user data as-is
                 processedData[key] = entry;
@@ -901,35 +871,23 @@ const DataManager = ({
 
   const handleUserFieldChange = (userName, field, value) => {
     if (field === 'name') {
-      // Handle name changes with data migration
-      const oldName = userName;
+      // Handle name changes - simplified without name mapping
       const newName = value.trim();
       
-      if (oldName !== newName && newName) {
-        // Update name mapping and migrate data
-        const { updateNameMapping } = require('../utils/localStorage');
-        updateNameMapping(oldName, newName);
-        
+      if (newName) {
         // Update the current form data to reflect the new name
         setFormData(prev => {
           const newFormData = { ...prev };
           
           // Update the user field with the new name
           Object.keys(newFormData).forEach(key => {
-            if (newFormData[key] && typeof newFormData[key] === 'object' && newFormData[key][oldName]) {
-              newFormData[key][newName] = { ...newFormData[key][oldName], name: newName };
-              delete newFormData[key][oldName];
+            if (newFormData[key] && typeof newFormData[key] === 'object' && newFormData[key][userName]) {
+              newFormData[key][userName] = { ...newFormData[key][userName], name: newName };
             }
           });
           
           return newFormData;
         });
-        
-        // Force a refresh of entry data to show updated names
-        setTimeout(() => {
-          const updatedData = getData();
-          setEntryData(updatedData);
-        }, 100);
       }
     }
     
@@ -1113,14 +1071,13 @@ const DataManager = ({
   // Initialize user filters when userNames change
   useEffect(() => {
     if (usePaycheckUsers && userNames.length > 0) {
-      // Get all users that actually exist in the data, applying name mapping
+      // Get all users that actually exist in the data - use keys directly for normalized data
       const allUsersInData = new Set();
       Object.values(entryData).forEach(entry => {
         if (entry.users && typeof entry.users === 'object') {
           Object.keys(entry.users).forEach(user => {
-            // Apply name mapping to get current name
-            const mappedName = getCurrentUserName(user);
-            allUsersInData.add(mappedName);
+            // For normalized data structure, work directly with user keys (user1, user2, Joint)
+            allUsersInData.add(user);
           });
         }
       });
@@ -1130,34 +1087,25 @@ const DataManager = ({
       // Initialize filters to show only users that are currently enabled in paycheck calculator
       const initialFilters = {};
       
-      // Check if dual calculator mode is enabled
-      const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+      // Check if multi-user calculator mode is enabled
+      const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
       
-      // Always include the first user if they exist in data
-      if (userNames[0] && allUsersInData.has(userNames[0])) {
-        initialFilters[userNames[0]] = true;
+      // Always include user1 if they exist in data
+      if (allUsersInData.has('user1')) {
+        initialFilters['user1'] = true;
       }
       
-      // Only include spouse and Joint if dual mode is enabled
-      if (isDualMode) {
-        if (userNames[1] && allUsersInData.has(userNames[1])) {
-          initialFilters[userNames[1]] = true;
+      // Only include user2 and Joint if multi-user mode is enabled
+      if (isMultiUserMode) {
+        if (allUsersInData.has('user2')) {
+          initialFilters['user2'] = true;
         }
         
         if (hasJointData) {
           initialFilters['Joint'] = true;
         }
       }
-      
-      // Include any other users found in data that aren't in userNames (legacy data)
-      allUsersInData.forEach(user => {
-        if (!userNames.includes(user) && user !== 'Joint') {
-          // Only show legacy users if dual mode is enabled (assume all legacy users are spouse-related)
-          if (isDualMode) {
-            initialFilters[user] = true;
-          }
-        }
-      });
+      // Note: In single-user mode, Joint accounts are NOT shown since Joint implies multiple users
       
       setUserFilters(prev => {
         // Only update if filters have actually changed
@@ -1330,13 +1278,12 @@ const DataManager = ({
   const getAvailableFilterOptions = React.useMemo(() => {
     const allUsersInData = new Set();
     
-    // Collect all users that actually exist in the data, applying name mapping
+    // Collect all users that actually exist in the data - use keys directly for normalized data
     Object.values(entryData).forEach(entry => {
       if (entry.users && typeof entry.users === 'object') {
         Object.keys(entry.users).forEach(user => {
-          // Apply name mapping to get current name
-          const mappedName = getCurrentUserName(user);
-          allUsersInData.add(mappedName);
+          // For normalized data structure, work directly with user keys (user1, user2, Joint)
+          allUsersInData.add(user);
         });
       }
     });
@@ -1344,39 +1291,37 @@ const DataManager = ({
     // Create options array based on current paycheck calculator settings
     const options = [];
     
-    // Check if dual calculator mode is enabled
-    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+    // Check if multi-user calculator mode is enabled
+    const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
     
-    // Always add first user if they exist in the data
-    if (userNames[0] && allUsersInData.has(userNames[0])) {
-      options.push(userNames[0]);
-    }
-    
-    // Only add spouse-related options if dual mode is enabled
-    if (isDualMode) {
-      // Add second user (spouse) if they exist in the data
-      if (userNames[1] && allUsersInData.has(userNames[1])) {
-        options.push(userNames[1]);
+    // When using paycheck users, use only normalized user1/user2/Joint structure
+    if (usePaycheckUsers) {
+      // Always include user1 if it exists in the data
+      if (allUsersInData.has('user1')) {
+        options.push('user1');
       }
       
-      // Add Joint if it exists in any entry
-      if (allUsersInData.has('Joint')) {
-        options.push('Joint');
-      }
-    }
-    
-    // Add any other users found in data that aren't already included (legacy data)
-    // Only show legacy users if dual mode is enabled (assume all legacy users are spouse-related)
-    if (isDualMode) {
-      allUsersInData.forEach(user => {
-        if (!options.includes(user)) {
-          options.push(user);
+      // Only add user2 and Joint if multi-user mode is enabled
+      if (isMultiUserMode) {
+        if (allUsersInData.has('user2')) {
+          options.push('user2');
         }
+        if (allUsersInData.has('Joint')) {
+          options.push('Joint');
+        }
+      }
+      // Note: In single-user mode, Joint accounts are NOT shown since Joint implies multiple users
+      
+      // For paycheck users mode, do NOT include any legacy users
+    } else {
+      // For non-paycheck users mode, show all users found in data (legacy behavior)
+      allUsersInData.forEach(user => {
+        options.push(user);
       });
     }
     
     return options;
-  }, [entryData, userNames, paycheckData?.settings?.showSpouseCalculator]);
+  }, [entryData, userNames, paycheckData?.settings?.activeUsers?.includes('user2'), usePaycheckUsers]);
 
   // Toggle user filter
   const toggleUserFilter = (userName) => {
@@ -2296,7 +2241,7 @@ const DataManager = ({
                       activeUsers.forEach(name => {
                         headers.push(
                           <th key={name} className="user-section" colSpan={userSection.fields.length}>
-                            {name}
+                            {resolveUserDisplayName(name)}
                           </th>
                         );
                       });

@@ -16,7 +16,7 @@ import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
 import { getAnnualData, getAccountData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
-import { useDualCalculator } from '../hooks/useDualCalculator';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
 
@@ -37,7 +37,8 @@ const NetWorth = () => {
   const [annualData, setAnnualData] = useState({});
   const [accountData, setAccountData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
-  const showSpouseCalculator = useDualCalculator(); // Use shared dual calculator hook
+  const { activeUsers } = useMultiUserCalculator(); // Use multi-user calculator hook
+  const isMultiUserMode = activeUsers.includes('user2');
   const [assetLiabilityData, setAssetLiabilityData] = useState({});
   const [selectedYears, setSelectedYears] = useState([]);
   const [netWorthMode, setNetWorthMode] = useState('market'); // 'market' or 'costBasis'
@@ -288,8 +289,8 @@ const NetWorth = () => {
     if (!paycheckData) return null;
     
     const birthdays = [];
-    if (paycheckData.your?.birthday) birthdays.push(paycheckData.your.birthday);
-    if (paycheckData.spouse?.birthday) birthdays.push(paycheckData.spouse.birthday);
+    if (paycheckData.user1?.birthday) birthdays.push(paycheckData.user1.birthday);
+    if (paycheckData.user2?.birthday) birthdays.push(paycheckData.user2.birthday);
     
     if (birthdays.length === 0) return null;
     
@@ -423,8 +424,8 @@ const NetWorth = () => {
       let yearAccountEntries = Object.values(accountData).filter(entry => entry.year === year);
       
       // Filter account entries based on dual calculator mode
-      if (!showSpouseCalculator && paycheckData?.your?.name?.trim()) {
-        const firstUserName = paycheckData.your.name.trim();
+      if (!isMultiUserMode && paycheckData?.user1?.name?.trim()) {
+        const firstUserName = paycheckData.user1.name.trim();
         yearAccountEntries = yearAccountEntries.filter(entry => {
           // Include entries for the primary user or Joint accounts
           if (entry.users) {
@@ -488,7 +489,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [annualData, accountData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
+  }, [annualData, accountData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, isMultiUserMode]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -1438,7 +1439,7 @@ const NetWorth = () => {
                 {filteredData.length > 0 && (
                   <div className="networth-summary">
                     <h2 className="networth-summary-title">📊 Quick Summary</h2>
-                    {!showSpouseCalculator && (
+                    {!isMultiUserMode && (
                       <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: '16px', fontStyle: 'italic' }}>
                         📊 Dual calculator mode disabled - showing primary user data only
                       </div>

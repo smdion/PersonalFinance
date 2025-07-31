@@ -34,8 +34,8 @@ export const PaycheckBudgetProvider = ({ children }) => {
   const [budgetImpactingData, setBudgetImpactingData] = useState(() => {
     const paycheckData = getPaycheckData();
     return {
-      yourBudgetImpacting: paycheckData?.your?.budgetImpacting || initialBudgetImpacting,
-      spouseBudgetImpacting: paycheckData?.spouse?.budgetImpacting || initialBudgetImpacting
+      user1BudgetImpacting: paycheckData?.user1?.budgetImpacting || initialBudgetImpacting,
+      user2BudgetImpacting: paycheckData?.user2?.budgetImpacting || initialBudgetImpacting
     };
   });
 
@@ -49,13 +49,13 @@ export const PaycheckBudgetProvider = ({ children }) => {
     const paycheckData = getPaycheckData();
     const updatedPaycheckData = {
       ...paycheckData,
-      your: {
-        ...paycheckData.your,
-        budgetImpacting: budgetImpactingData.yourBudgetImpacting
+      user1: {
+        ...paycheckData.user1,
+        budgetImpacting: budgetImpactingData.user1BudgetImpacting
       },
-      spouse: {
-        ...paycheckData.spouse,
-        budgetImpacting: budgetImpactingData.spouseBudgetImpacting
+      user2: {
+        ...paycheckData.user2,
+        budgetImpacting: budgetImpactingData.user2BudgetImpacting
       }
     };
     setPaycheckData(updatedPaycheckData);
@@ -66,12 +66,12 @@ export const PaycheckBudgetProvider = ({ children }) => {
   }, []);
 
   const updateBudgetImpacting = useCallback((person, contributions) => {
-    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    const key = person === 'user1' ? 'user1BudgetImpacting' : 'user2BudgetImpacting';
     setBudgetImpactingData((prev) => ({ ...prev, [key]: contributions }));
   }, []);
 
   const addBrokerageAccount = useCallback((person, accountName = 'New Brokerage Account') => {
-    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    const key = person === 'user1' ? 'user1BudgetImpacting' : 'user2BudgetImpacting';
     setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
@@ -89,7 +89,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
   }, []);
 
   const updateBrokerageAccount = useCallback((person, accountId, field, value) => {
-    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    const key = person === 'user1' ? 'user1BudgetImpacting' : 'user2BudgetImpacting';
     setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
@@ -104,7 +104,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
   }, []);
 
   const removeBrokerageAccount = useCallback((person, accountId) => {
-    const key = person === 'your' ? 'yourBudgetImpacting' : 'spouseBudgetImpacting';
+    const key = person === 'user1' ? 'user1BudgetImpacting' : 'user2BudgetImpacting';
     setBudgetImpactingData((prev) => ({
       ...prev,
       [key]: {
@@ -192,18 +192,18 @@ export const PaycheckBudgetProvider = ({ children }) => {
     // Create the budget impacting contributions items with CURRENT names
     let budgetItems = [];
     
-    // Add your contributions with actual current name
-    const yourName = paycheckData?.your?.name?.trim() || 'Your';
+    // Add user1 contributions with actual current name
+    const user1Name = paycheckData?.user1?.name?.trim() || 'User 1';
     budgetItems = budgetItems.concat(
-      createBudgetItemsForPerson(budgetImpactingData.yourBudgetImpacting, 'your', yourName)
+      createBudgetItemsForPerson(budgetImpactingData.user1BudgetImpacting, 'user1', user1Name)
     );
 
-    // Add spouse contributions ONLY if dual calculator is enabled with actual current name
-    const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
-    if (showSpouseCalculator) {
-      const spouseName = paycheckData?.spouse?.name?.trim() || 'Spouse';
+    // Add user2 contributions ONLY if multi-user mode is enabled with actual current name
+    const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+    if (isMultiUserMode) {
+      const user2Name = paycheckData?.user2?.name?.trim() || 'User 2';
       budgetItems = budgetItems.concat(
-        createBudgetItemsForPerson(budgetImpactingData.spouseBudgetImpacting, 'spouse', spouseName)
+        createBudgetItemsForPerson(budgetImpactingData.user2BudgetImpacting, 'user2', user2Name)
       );
     }
 
@@ -233,7 +233,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
     
     // Dispatch event to notify components
     window.dispatchEvent(new CustomEvent('budgetDataUpdated', { detail: budgetCategories }));
-  }, [budgetImpactingData.yourBudgetImpacting, budgetImpactingData.spouseBudgetImpacting, createBudgetItemsForPerson]);
+  }, [budgetImpactingData.user1BudgetImpacting, budgetImpactingData.user2BudgetImpacting, createBudgetItemsForPerson]);
 
   // Run sync with a slight delay to ensure all data is loaded
   useEffect(() => {
@@ -251,7 +251,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
     }, 50);
     
     return () => clearTimeout(timer);
-  }, [budgetImpactingData.yourBudgetImpacting, budgetImpactingData.spouseBudgetImpacting]);
+  }, [budgetImpactingData.user1BudgetImpacting, budgetImpactingData.user2BudgetImpacting]);
 
 
   // Add effect to listen for paycheck data updates and re-sync names
@@ -263,30 +263,21 @@ export const PaycheckBudgetProvider = ({ children }) => {
       }, 100);
     };
 
-    // Also listen for name mapping updates to re-sync budget categories
-    const handleNameMappingUpdate = () => {
-      setTimeout(() => {
-        syncBudgetCategories();
-      }, 100);
-    };
-
     window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
-    window.addEventListener('nameMappingUpdated', handleNameMappingUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdate);
-      window.removeEventListener('nameMappingUpdated', handleNameMappingUpdate);
     };
   }, [syncBudgetCategories]);
 
   const value = {
     formData: {
       ...formData,
-      yourBudgetImpacting: budgetImpactingData.yourBudgetImpacting,
-      spouseBudgetImpacting: budgetImpactingData.spouseBudgetImpacting,
-      showSpouseCalculator: (() => {
+      yourBudgetImpacting: budgetImpactingData.user1BudgetImpacting,
+      spouseBudgetImpacting: budgetImpactingData.user2BudgetImpacting,
+      isMultiUserMode: (() => {
         const paycheckData = getPaycheckData();
-        return paycheckData?.settings?.showSpouseCalculator ?? true;
+        return paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
       })()
     }, 
     updateFormData, 

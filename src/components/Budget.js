@@ -3,6 +3,7 @@ import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { getBudgetData, setBudgetData, getPaycheckData, getSavingsData, getIsResettingAllData } from '../utils/localStorage';
 import { calculateExtraPaycheckIncome, generateDataFilename } from '../utils/calculationHelpers';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import Navigation from './Navigation';
 
 // Define empty budget categories constant
@@ -10,6 +11,8 @@ const EMPTY_BUDGET_CATEGORIES = [];
 
 const Budget = () => {
   const { formData, resetFormData } = useContext(PaycheckBudgetContext);
+  const { activeUsers } = useMultiUserCalculator();
+  const isMultiUserMode = activeUsers.includes('user2');
   
   // Remove settings menu state and ref
   
@@ -26,41 +29,6 @@ const Budget = () => {
   // Add state for paycheck data
   const [paycheckData, setPaycheckData] = useState(null);
 
-  // Add data migration function to handle old budget data format
-  const migrateBudgetData = (data) => {
-    if (!Array.isArray(data)) return data;
-    
-    return data.map(category => {
-      if (!category.items) return category;
-      
-      const migratedItems = category.items.map(item => {
-        // Check if item uses old format with nested amounts
-        if (item.amounts && typeof item.amounts === 'object') {
-          return {
-            ...item,
-            standard: item.amounts.standard || 0,
-            tight: item.amounts.tight || 0,
-            emergency: item.amounts.emergency || 0,
-            // Remove the old amounts object
-            amounts: undefined
-          };
-        }
-        
-        // Item is already in new format or needs default values
-        return {
-          ...item,
-          standard: item.standard || 0,
-          tight: item.tight || 0,
-          emergency: item.emergency || 0
-        };
-      });
-      
-      return {
-        ...category,
-        items: migratedItems
-      };
-    });
-  };
   
   // Load budget data from localStorage on mount and listen for updates
   useEffect(() => {
@@ -68,14 +36,7 @@ const Budget = () => {
       try {
         const savedData = getBudgetData();
         if (savedData && savedData.length > 0) {
-          // Migrate data to ensure compatibility
-          const migratedData = migrateBudgetData(savedData);
-          setBudgetCategories(migratedData);
-          
-          // Save migrated data back to localStorage if migration occurred
-          if (JSON.stringify(migratedData) !== JSON.stringify(savedData)) {
-            setBudgetData(migratedData);
-          }          
+          setBudgetCategories(savedData);          
         } else {
           // Initialize with empty budget categories instead of hardcoded defaults
           setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
@@ -145,48 +106,48 @@ const Budget = () => {
     };
 
     // Calculate for "your" paycheck if data exists
-    if (paycheckData.your && paycheckData.your.salary) {
-      const yourBiWeeklyType = paycheckData.your.payWeekType || 'even';
-      const yourPayPeriod = paycheckData.your.payPeriod || 'biWeekly';
+    if (paycheckData.user1 && paycheckData.user1.salary) {
+      const user1BiWeeklyType = paycheckData.user1.payWeekType || 'even';
+      const user1PayPeriod = paycheckData.user1.payPeriod || 'biWeekly';
       
-      if (yourPayPeriod === 'biWeekly') {
-        const yourNetPerPaycheck = getIndividualNetPay('your');
-        const yourExtra = calculateExtraPaycheckIncome(yourNetPerPaycheck, yourBiWeeklyType, currentYear);
+      if (user1PayPeriod === 'biWeekly') {
+        const user1NetPerPaycheck = getIndividualNetPay('user1');
+        const user1Extra = calculateExtraPaycheckIncome(user1NetPerPaycheck, user1BiWeeklyType, currentYear);
         
-        if (yourExtra.totalExtraPaychecks > 0) {
+        if (user1Extra.totalExtraPaychecks > 0) {
           individuals.push({
-            name: paycheckData.your.name || 'Your',
-            ...yourExtra,
-            netPerPaycheck: yourNetPerPaycheck
+            name: paycheckData.user1.name || 'User 1',
+            ...user1Extra,
+            netPerPaycheck: user1NetPerPaycheck
           });
           
-          totalExtraIncome += yourExtra.totalExtraIncome;
-          totalExtraPaychecks += yourExtra.totalExtraPaychecks;
-          yourExtra.extraMonths.forEach(month => allExtraMonths.add(month.name));
+          totalExtraIncome += user1Extra.totalExtraIncome;
+          totalExtraPaychecks += user1Extra.totalExtraPaychecks;
+          user1Extra.extraMonths.forEach(month => allExtraMonths.add(month.name));
         }
       }
     }
     
     // Calculate for spouse if dual mode is enabled and spouse data exists
-    const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
-    if (showSpouseCalculator && paycheckData.spouse && paycheckData.spouse.salary) {
-      const spouseBiWeeklyType = paycheckData.spouse.payWeekType || 'even';
-      const spousePayPeriod = paycheckData.spouse.payPeriod || 'biWeekly';
+    const isMultiUserActive = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+    if (isMultiUserActive && paycheckData.user2 && paycheckData.user2.salary) {
+      const user2BiWeeklyType = paycheckData.user2.payWeekType || 'even';
+      const user2PayPeriod = paycheckData.user2.payPeriod || 'biWeekly';
       
-      if (spousePayPeriod === 'biWeekly') {
-        const spouseNetPerPaycheck = getIndividualNetPay('spouse');
-        const spouseExtra = calculateExtraPaycheckIncome(spouseNetPerPaycheck, spouseBiWeeklyType, currentYear);
+      if (user2PayPeriod === 'biWeekly') {
+        const user2NetPerPaycheck = getIndividualNetPay('user2');
+        const user2Extra = calculateExtraPaycheckIncome(user2NetPerPaycheck, user2BiWeeklyType, currentYear);
         
-        if (spouseExtra.totalExtraPaychecks > 0) {
+        if (user2Extra.totalExtraPaychecks > 0) {
           individuals.push({
-            name: paycheckData.spouse.name || 'Spouse',
-            ...spouseExtra,
-            netPerPaycheck: spouseNetPerPaycheck
+            name: paycheckData.user2.name || 'User 2',
+            ...user2Extra,
+            netPerPaycheck: user2NetPerPaycheck
           });
           
-          totalExtraIncome += spouseExtra.totalExtraIncome;
-          totalExtraPaychecks += spouseExtra.totalExtraPaychecks;
-          spouseExtra.extraMonths.forEach(month => allExtraMonths.add(month.name));
+          totalExtraIncome += user2Extra.totalExtraIncome;
+          totalExtraPaychecks += user2Extra.totalExtraPaychecks;
+          user2Extra.extraMonths.forEach(month => allExtraMonths.add(month.name));
         }
       }
     }
@@ -465,12 +426,12 @@ const Budget = () => {
       
       // Get user names from paycheck data
       const userNames = [];
-      if (paycheckData?.your?.name?.trim()) {
-        userNames.push(paycheckData.your.name.trim());
+      if (paycheckData?.user1?.name?.trim()) {
+        userNames.push(paycheckData.user1.name.trim());
       }
-      const showSpouseCalculator = paycheckData?.settings?.showSpouseCalculator ?? true;
-      if (paycheckData?.spouse?.name?.trim() && showSpouseCalculator) {
-        userNames.push(paycheckData.spouse.name.trim());
+      const isMultiUserActive = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+      if (paycheckData?.user2?.name?.trim() && isMultiUserActive) {
+        userNames.push(paycheckData.user2.name.trim());
       }
       
       const link = document.createElement('a');

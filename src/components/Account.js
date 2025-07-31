@@ -15,7 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getAccountData, getAccountSettings, setAccountSettings, getPaycheckData, setPaycheckData } from '../utils/localStorage';
+import { getAccountData, getAccountSettings, setAccountSettings, getPaycheckData, setPaycheckData, resolveUserDisplayName } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
 
@@ -661,7 +661,7 @@ const Account = () => {
     sortedData.forEach(data => {
       if (!accountGroups[data.accountId]) {
         accountGroups[data.accountId] = {
-          label: `${data.accountName} (${data.owner})${!data.isActive ? ' [Inactive]' : ''}`,
+          label: `${data.accountName} (${resolveUserDisplayName(data.owner)})${!data.isActive ? ' [Inactive]' : ''}`,
           data: [],
           years: []
         };
@@ -1102,9 +1102,9 @@ const Account = () => {
                 <div className="performance-account-checkboxes">
                   {availableAccounts.filter(account => {
                     // If dual calculator mode is disabled, only show first user and Joint accounts
-                    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+                    const isDualMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
                     if (!isDualMode) {
-                      const firstUserName = paycheckData?.your?.name?.trim();
+                      const firstUserName = paycheckData?.user1?.name?.trim();
                       return account.owner === firstUserName || account.owner === 'Joint';
                     }
                     return true;
@@ -1119,20 +1119,20 @@ const Account = () => {
                         {account.accountName}
                         {!account.isActive && <span className="performance-account-status"> (Inactive - Last: {account.lastActiveYear})</span>}
                       </span>
-                      <span className="performance-account-owner">({account.owner})</span>
+                      <span className="performance-account-owner">({resolveUserDisplayName(account.owner)})</span>
                     </label>
                   ))}
                 </div>
                 <div className="performance-account-summary">
                   {(() => {
-                    const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
+                    const isDualMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
                     const visibleAccounts = isDualMode ? availableAccounts : availableAccounts.filter(account => {
-                      const firstUserName = paycheckData?.your?.name?.trim();
+                      const firstUserName = paycheckData?.user1?.name?.trim();
                       return account.owner === firstUserName || account.owner === 'Joint';
                     });
                     return `${selectedAccounts.length} of ${visibleAccounts.length} accounts selected`;
                   })()}
-                  {paycheckData?.settings?.showSpouseCalculator === false && (
+                  {!paycheckData?.settings?.activeUsers?.includes('user2') && (
                     <span style={{ fontSize: '0.8rem', color: '#6b7280', display: 'block', marginTop: '4px' }}>
                       (Dual calculator mode disabled - showing primary user accounts only)
                     </span>
@@ -1282,7 +1282,7 @@ const Account = () => {
                       {sortedYoyData.map((data, idx) => (
                         <div key={`${data.accountId}-${data.year}`} className="performance-yoy-card">
                           <div className="performance-yoy-header">
-                            <h4>{data.accountName} ({data.owner})</h4>
+                            <h4>{data.accountName} ({resolveUserDisplayName(data.owner)})</h4>
                             <span className="performance-yoy-years">{data.previousYear} → {data.year}</span>
                           </div>
                           <div className="performance-yoy-metrics">
@@ -1820,7 +1820,7 @@ const Account = () => {
                                 {data.accountName}
                                 {!data.isActive && <span className="performance-inactive-badge">[Inactive]</span>}
                               </td>
-                              <td className="performance-table-owner">{data.owner}</td>
+                              <td className="performance-table-owner">{resolveUserDisplayName(data.owner)}</td>
                               <td className="performance-table-year">
                                 {data.year}
                                 {getYTDIndicator(data.year, 'table')}

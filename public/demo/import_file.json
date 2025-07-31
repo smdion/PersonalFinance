@@ -355,7 +355,7 @@
     }
   ],
   "paycheckData": {
-    "your": {
+    "user1": {
       "name": "Alex Johnson",
       "birthday": "1987-04-15",
       "salary": "95000",
@@ -396,7 +396,7 @@
       "payWeekType": "odd",
       "hsaCoverageType": "family"
     },
-    "spouse": {
+    "user2": {
       "name": "Jamie Lee",
       "birthday": "1990-09-22",
       "salary": "105000",
@@ -446,12 +446,12 @@
   },
   "formData": {
     "showSpouseCalculator": true,
-    "yourBudgetImpacting": {
+    "user1BudgetImpacting": {
       "traditionalIraMonthly": 500,
       "rothIraMonthly": 300,
       "brokerageAccounts": []
     },
-    "spouseBudgetImpacting": {
+    "user2BudgetImpacting": {
       "traditionalIraMonthly": 400,
       "rothIraMonthly": 0,
       "brokerageAccounts": [

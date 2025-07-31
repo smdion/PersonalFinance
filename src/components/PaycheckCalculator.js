@@ -2,7 +2,8 @@ import React, { useState, useCallback, useContext, useEffect, useRef, useMemo } 
 import { calculateTakeHomePay, getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import PaycheckInputFields from './PaycheckInputFields';
 import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
-import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToAnnual } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, syncPaycheckToAnnual } from '../utils/localStorage';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import Navigation from './Navigation';
 
 const PaycheckCalculator = () => {
@@ -17,12 +18,13 @@ const PaycheckCalculator = () => {
   // Add global section control state
   const [globalSectionControl, setGlobalSectionControl] = useState(null);
   
-  // Toggle for showing spouse calculator
-  const [showSpouseCalculator, setShowSpouseCalculator] = useState(true);
+  // Use multi-user calculator hook
+  const { activeUsers } = useMultiUserCalculator();
+  const isMultiUserMode = activeUsers.includes('user2');
   
   // Initialize with empty defaults
   const emptyDefaults = {
-    your: {
+    user1: {
       name: '',
       employer: '',
       birthday: '',
@@ -63,7 +65,7 @@ const PaycheckCalculator = () => {
       bonusMultiplier: 0,
       bonusTarget: 0,
     },
-    spouse: {
+    user2: {
       name: '',
       employer: '',
       birthday: '',
@@ -106,42 +108,42 @@ const PaycheckCalculator = () => {
     }
   };
   
-  // Your variables - start with empty defaults
-  const [name, setName] = useState(emptyDefaults.your.name);
-  const [employer, setEmployer] = useState(emptyDefaults.your.employer);
-  const [birthday, setBirthday] = useState(emptyDefaults.your.birthday);
-  const [salary, setSalary] = useState(emptyDefaults.your.salary);
-  const [payPeriod, setPayPeriod] = useState(emptyDefaults.your.payPeriod);
-  const [filingStatus, setFilingStatus] = useState(emptyDefaults.your.filingStatus);
-  const [w4Type, setW4Type] = useState(emptyDefaults.your.w4Type);
-  const [w4Options, setW4Options] = useState(emptyDefaults.your.w4Options);
-  const [retirementOptions, setRetirementOptions] = useState(emptyDefaults.your.retirementOptions);
-  const [medicalDeductions, setMedicalDeductions] = useState(emptyDefaults.your.medicalDeductions);
-  const [esppDeductionPercent, setEsppDeductionPercent] = useState(emptyDefaults.your.esppDeductionPercent);
-  const [budgetImpacting, setBudgetImpacting] = useState(emptyDefaults.your.budgetImpacting);
-  const [bonusMultiplier, setBonusMultiplier] = useState(emptyDefaults.your.bonusMultiplier);
-  const [bonusTarget, setBonusTarget] = useState(emptyDefaults.your.bonusTarget);
+  // User1 variables - start with empty defaults
+  const [name, setName] = useState(emptyDefaults.user1.name);
+  const [employer, setEmployer] = useState(emptyDefaults.user1.employer);
+  const [birthday, setBirthday] = useState(emptyDefaults.user1.birthday);
+  const [salary, setSalary] = useState(emptyDefaults.user1.salary);
+  const [payPeriod, setPayPeriod] = useState(emptyDefaults.user1.payPeriod);
+  const [filingStatus, setFilingStatus] = useState(emptyDefaults.user1.filingStatus);
+  const [w4Type, setW4Type] = useState(emptyDefaults.user1.w4Type);
+  const [w4Options, setW4Options] = useState(emptyDefaults.user1.w4Options);
+  const [retirementOptions, setRetirementOptions] = useState(emptyDefaults.user1.retirementOptions);
+  const [medicalDeductions, setMedicalDeductions] = useState(emptyDefaults.user1.medicalDeductions);
+  const [esppDeductionPercent, setEsppDeductionPercent] = useState(emptyDefaults.user1.esppDeductionPercent);
+  const [budgetImpacting, setBudgetImpacting] = useState(emptyDefaults.user1.budgetImpacting);
+  const [bonusMultiplier, setBonusMultiplier] = useState(emptyDefaults.user1.bonusMultiplier);
+  const [bonusTarget, setBonusTarget] = useState(emptyDefaults.user1.bonusTarget);
   const [overrideBonus, setOverrideBonus] = useState('');
   const [remove401kFromBonus, setRemove401kFromBonus] = useState(false);
   const [effectiveBonus, setEffectiveBonus] = useState(0);
   const [results, setResults] = useState(null);
   const [payWeekType, setPayWeekType] = useState('even');
 
-  // Spouse variables - start with empty defaults
-  const [spouseName, setSpouseName] = useState(emptyDefaults.spouse.name);
-  const [spouseEmployer, setSpouseEmployer] = useState(emptyDefaults.spouse.employer);
-  const [spouseBirthday, setSpouseBirthday] = useState(emptyDefaults.spouse.birthday);
-  const [spouseSalary, setSpouseSalary] = useState(emptyDefaults.spouse.salary);
-  const [spousePayPeriod, setSpousePayPeriod] = useState(emptyDefaults.spouse.payPeriod);
-  const [spouseFilingStatus, setSpouseFilingStatus] = useState(emptyDefaults.spouse.filingStatus);
-  const [spouseW4Type, setSpouseW4Type] = useState(emptyDefaults.spouse.w4Type);
-  const [spouseW4Options, setSpouseW4Options] = useState(emptyDefaults.spouse.w4Options);
-  const [spouseRetirementOptions, setSpouseRetirementOptions] = useState(emptyDefaults.spouse.retirementOptions);
-  const [spouseMedicalDeductions, setSpouseMedicalDeductions] = useState(emptyDefaults.spouse.medicalDeductions);
-  const [spouseEsppDeductionPercent, setSpouseEsppDeductionPercent] = useState(emptyDefaults.spouse.esppDeductionPercent);
-  const [spouseBudgetImpacting, setSpouseBudgetImpacting] = useState(emptyDefaults.spouse.budgetImpacting);
-  const [spouseBonusMultiplier, setSpouseBonusMultiplier] = useState(emptyDefaults.spouse.bonusMultiplier);
-  const [spouseBonusTarget, setSpouseBonusTarget] = useState(emptyDefaults.spouse.bonusTarget);
+  // User2 variables - start with empty defaults
+  const [user2Name, setUser2Name] = useState(emptyDefaults.user2.name);
+  const [spouseEmployer, setSpouseEmployer] = useState(emptyDefaults.user2.employer);
+  const [spouseBirthday, setSpouseBirthday] = useState(emptyDefaults.user2.birthday);
+  const [spouseSalary, setSpouseSalary] = useState(emptyDefaults.user2.salary);
+  const [spousePayPeriod, setSpousePayPeriod] = useState(emptyDefaults.user2.payPeriod);
+  const [spouseFilingStatus, setSpouseFilingStatus] = useState(emptyDefaults.user2.filingStatus);
+  const [spouseW4Type, setSpouseW4Type] = useState(emptyDefaults.user2.w4Type);
+  const [spouseW4Options, setSpouseW4Options] = useState(emptyDefaults.user2.w4Options);
+  const [spouseRetirementOptions, setSpouseRetirementOptions] = useState(emptyDefaults.user2.retirementOptions);
+  const [spouseMedicalDeductions, setSpouseMedicalDeductions] = useState(emptyDefaults.user2.medicalDeductions);
+  const [spouseEsppDeductionPercent, setSpouseEsppDeductionPercent] = useState(emptyDefaults.user2.esppDeductionPercent);
+  const [spouseBudgetImpacting, setSpouseBudgetImpacting] = useState(emptyDefaults.user2.budgetImpacting);
+  const [spouseBonusMultiplier, setSpouseBonusMultiplier] = useState(emptyDefaults.user2.bonusMultiplier);
+  const [spouseBonusTarget, setSpouseBonusTarget] = useState(emptyDefaults.user2.bonusTarget);
   const [spouseOverrideBonus, setSpouseOverrideBonus] = useState('');
   const [spouseRemove401kFromBonus, setSpouseRemove401kFromBonus] = useState(false);
   const [spouseEffectiveBonus, setSpouseEffectiveBonus] = useState(0);
@@ -236,13 +238,13 @@ const PaycheckCalculator = () => {
     );
     setResults(calculation);
 
-    updateBudgetImpacting('your', budgetImpacting);
+    updateBudgetImpacting('user1', budgetImpacting);
 
     // Calculate combined monthly as 2 paychecks instead of annual ÷ 12
-    const combinedMonthlyTakeHome = showSpouseCalculator && spouseResults
+    const combinedMonthlyTakeHome = isMultiUserMode && spouseResults
       ? ((calculation?.netTakeHomePaycheck || 0) + (spouseResults?.netTakeHomePaycheck || 0)) * 2
       : (calculation?.netTakeHomePaycheck || 0) * 2;
-    const combinedTakeHomePerPayPeriod = showSpouseCalculator && spouseResults
+    const combinedTakeHomePerPayPeriod = isMultiUserMode && spouseResults
       ? (calculation?.netTakeHomePaycheck || 0) + (spouseResults?.netTakeHomePaycheck || 0)
       : calculation?.netTakeHomePaycheck || 0;
     
@@ -257,7 +259,7 @@ const PaycheckCalculator = () => {
     retirementOptions,
     medicalDeductions,
     esppDeductionPercent,
-    showSpouseCalculator,
+    isMultiUserMode,
     spouseResults,
     updateFormData,
     updateBudgetImpacting,
@@ -295,7 +297,7 @@ const PaycheckCalculator = () => {
     const calculation = calculateTakeHomePay(grossPayPerPaycheck, spousePayPeriod, spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions, spouseMedicalDeductions, spouseEsppDeductionPercent, spouseHsaCoverageType);
     setSpouseResults(calculation);
 
-    updateBudgetImpacting('spouse', spouseBudgetImpacting);
+    updateBudgetImpacting('user2', spouseBudgetImpacting);
 
     if (results) {
       // Calculate combined monthly as 2 paychecks instead of annual ÷ 12
@@ -318,58 +320,55 @@ const PaycheckCalculator = () => {
       const savedData = getPaycheckData();
       
       if (savedData && Object.keys(savedData).length > 0) {
-        // Load your data
-        if (savedData.your) {
-          setName(savedData.your.name || '');
-          setEmployer(savedData.your.employer || '');
-          setBirthday(savedData.your.birthday || '');
-          setSalary(savedData.your.salary || '');
-          setPayPeriod(savedData.your.payPeriod || 'biWeekly');
-          setFilingStatus(savedData.your.filingStatus || 'single');
-          setW4Type(savedData.your.w4Type || 'new');
-          setW4Options(savedData.your.w4Options || emptyDefaults.your.w4Options);
-          setRetirementOptions(savedData.your.retirementOptions || emptyDefaults.your.retirementOptions);
-          setMedicalDeductions(savedData.your.medicalDeductions || emptyDefaults.your.medicalDeductions);
-          setEsppDeductionPercent(savedData.your.esppDeductionPercent || 0);
-          setBudgetImpacting(savedData.your.budgetImpacting || emptyDefaults.your.budgetImpacting);
-          setBonusMultiplier(savedData.your.bonusMultiplier || 0);
-          setBonusTarget(savedData.your.bonusTarget || 0);
-          setOverrideBonus(savedData.your.overrideBonus || '');
-          setRemove401kFromBonus(savedData.your.remove401kFromBonus || false);
-          setEffectiveBonus(savedData.your.effectiveBonus || 0);
-          setHsaCoverageType(savedData.your.hsaCoverageType || 'self');
-          setPayWeekType(savedData.your.payWeekType || 'even');
-          setIncomePeriodsData(savedData.your.incomePeriodsData || []);
+        // Load user1 data
+        if (savedData.user1) {
+          setName(savedData.user1.name || '');
+          setEmployer(savedData.user1.employer || '');
+          setBirthday(savedData.user1.birthday || '');
+          setSalary(savedData.user1.salary || '');
+          setPayPeriod(savedData.user1.payPeriod || 'biWeekly');
+          setFilingStatus(savedData.user1.filingStatus || 'single');
+          setW4Type(savedData.user1.w4Type || 'new');
+          setW4Options(savedData.user1.w4Options || emptyDefaults.user1.w4Options);
+          setRetirementOptions(savedData.user1.retirementOptions || emptyDefaults.user1.retirementOptions);
+          setMedicalDeductions(savedData.user1.medicalDeductions || emptyDefaults.user1.medicalDeductions);
+          setEsppDeductionPercent(savedData.user1.esppDeductionPercent || 0);
+          setBudgetImpacting(savedData.user1.budgetImpacting || emptyDefaults.user1.budgetImpacting);
+          setBonusMultiplier(savedData.user1.bonusMultiplier || 0);
+          setBonusTarget(savedData.user1.bonusTarget || 0);
+          setOverrideBonus(savedData.user1.overrideBonus || '');
+          setRemove401kFromBonus(savedData.user1.remove401kFromBonus || false);
+          setEffectiveBonus(savedData.user1.effectiveBonus || 0);
+          setHsaCoverageType(savedData.user1.hsaCoverageType || 'self');
+          setPayWeekType(savedData.user1.payWeekType || 'even');
+          setIncomePeriodsData(savedData.user1.incomePeriodsData || []);
         }
         
-        // Load spouse data
-        if (savedData.spouse) {
-          setSpouseName(savedData.spouse.name || '');
-          setSpouseEmployer(savedData.spouse.employer || '');
-          setSpouseBirthday(savedData.spouse.birthday || '');
-          setSpouseSalary(savedData.spouse.salary || '');
-          setSpousePayPeriod(savedData.spouse.payPeriod || 'biWeekly');
-          setSpouseFilingStatus(savedData.spouse.filingStatus || 'single');
-          setSpouseW4Type(savedData.spouse.w4Type || 'new');
-          setSpouseW4Options(savedData.spouse.w4Options || emptyDefaults.spouse.w4Options);
-          setSpouseRetirementOptions(savedData.spouse.retirementOptions || emptyDefaults.spouse.retirementOptions);
-          setSpouseMedicalDeductions(savedData.spouse.medicalDeductions || emptyDefaults.spouse.medicalDeductions);
-          setSpouseEsppDeductionPercent(savedData.spouse.esppDeductionPercent || 0);
-          setSpouseBudgetImpacting(savedData.spouse.budgetImpacting || emptyDefaults.spouse.budgetImpacting);
-          setSpouseBonusMultiplier(savedData.spouse.bonusMultiplier || 0);
-          setSpouseBonusTarget(savedData.spouse.bonusTarget || 0);
-          setSpouseOverrideBonus(savedData.spouse.overrideBonus || '');
-          setSpouseRemove401kFromBonus(savedData.spouse.remove401kFromBonus || false);
-          setSpouseEffectiveBonus(savedData.spouse.effectiveBonus || 0);
-          setSpouseHsaCoverageType(savedData.spouse.hsaCoverageType || 'self');
-          setSpousePayWeekType(savedData.spouse.payWeekType || 'even');
-          setSpouseIncomePeriodsData(savedData.spouse.incomePeriodsData || []);
+        // Load user2 data
+        if (savedData.user2) {
+          setUser2Name(savedData.user2.name || '');
+          setSpouseEmployer(savedData.user2.employer || '');
+          setSpouseBirthday(savedData.user2.birthday || '');
+          setSpouseSalary(savedData.user2.salary || '');
+          setSpousePayPeriod(savedData.user2.payPeriod || 'biWeekly');
+          setSpouseFilingStatus(savedData.user2.filingStatus || 'single');
+          setSpouseW4Type(savedData.user2.w4Type || 'new');
+          setSpouseW4Options(savedData.user2.w4Options || emptyDefaults.user2.w4Options);
+          setSpouseRetirementOptions(savedData.user2.retirementOptions || emptyDefaults.user2.retirementOptions);
+          setSpouseMedicalDeductions(savedData.user2.medicalDeductions || emptyDefaults.user2.medicalDeductions);
+          setSpouseEsppDeductionPercent(savedData.user2.esppDeductionPercent || 0);
+          setSpouseBudgetImpacting(savedData.user2.budgetImpacting || emptyDefaults.user2.budgetImpacting);
+          setSpouseBonusMultiplier(savedData.user2.bonusMultiplier || 0);
+          setSpouseBonusTarget(savedData.user2.bonusTarget || 0);
+          setSpouseOverrideBonus(savedData.user2.overrideBonus || '');
+          setSpouseRemove401kFromBonus(savedData.user2.remove401kFromBonus || false);
+          setSpouseEffectiveBonus(savedData.user2.effectiveBonus || 0);
+          setSpouseHsaCoverageType(savedData.user2.hsaCoverageType || 'self');
+          setSpousePayWeekType(savedData.user2.payWeekType || 'even');
+          setSpouseIncomePeriodsData(savedData.user2.incomePeriodsData || []);
         }
         
-        // Load settings
-        if (savedData.settings) {
-          setShowSpouseCalculator(savedData.settings.showSpouseCalculator ?? true);
-        }
+        // Settings are now managed by the multi-user calculator hook
       }
       
       hasLoadedDataRef.current = true; // Mark as loaded
@@ -404,34 +403,18 @@ const PaycheckCalculator = () => {
       return;
     }
 
-    // Check for name changes and handle mapping with better logging
-    const savedData = getPaycheckData();
-    const { updateNameMapping } = require('../utils/localStorage');
-    
-    // Check if "your" name changed
-    const oldYourName = savedData?.your?.name?.trim();
-    const newYourName = name.trim();
-    if (oldYourName && newYourName && oldYourName !== newYourName) {
-      updateNameMapping(oldYourName, newYourName);
-    }
-    
-    // Check if spouse name changed
-    const oldSpouseName = savedData?.spouse?.name?.trim();
-    const newSpouseName = spouseName.trim();
-    if (oldSpouseName && newSpouseName && oldSpouseName !== newSpouseName) {
-      updateNameMapping(oldSpouseName, newSpouseName);
-    }
+    // Name changes are no longer supported - data uses normalized user1/user2 keys
 
     const dataToSave = {
-      your: {
+      user1: {
         name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
         retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
         bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, payWeekType,
         netTakeHomePaycheck: results?.netTakeHomePaycheck || 0,
         incomePeriodsData
       },
-      spouse: {
-        name: spouseName, employer: spouseEmployer, birthday: spouseBirthday, 
+      user2: {
+        name: user2Name, employer: spouseEmployer, birthday: spouseBirthday, 
         salary: spouseSalary, payPeriod: spousePayPeriod, filingStatus: spouseFilingStatus,
         w4Type: spouseW4Type, w4Options: spouseW4Options, retirementOptions: spouseRetirementOptions,
         medicalDeductions: spouseMedicalDeductions, esppDeductionPercent: spouseEsppDeductionPercent,
@@ -441,7 +424,7 @@ const PaycheckCalculator = () => {
         incomePeriodsData: spouseIncomePeriodsData
       },
       settings: {
-        showSpouseCalculator
+        isMultiUserMode
       }
     };
     
@@ -457,8 +440,8 @@ const PaycheckCalculator = () => {
   }, [
     name, employer, birthday, salary, payPeriod, filingStatus, w4Type, w4Options,
     retirementOptions, medicalDeductions, esppDeductionPercent, budgetImpacting,
-    bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, showSpouseCalculator, payWeekType,
-    spouseName, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
+    bonusMultiplier, bonusTarget, overrideBonus, remove401kFromBonus, effectiveBonus, hsaCoverageType, isMultiUserMode, payWeekType,
+    user2Name, spouseEmployer, spouseBirthday, spouseSalary, spousePayPeriod,
     spouseFilingStatus, spouseW4Type, spouseW4Options, spouseRetirementOptions,
     spouseMedicalDeductions, spouseEsppDeductionPercent, spouseBudgetImpacting,
     spouseBonusMultiplier, spouseBonusTarget, spouseOverrideBonus, spouseRemove401kFromBonus, spouseEffectiveBonus, spouseHsaCoverageType, spousePayWeekType,
@@ -478,7 +461,7 @@ const PaycheckCalculator = () => {
         setPaycheckData({});
         
         // Reset all state variables to empty defaults
-        Object.entries(emptyDefaults.your).forEach(([key, value]) => {
+        Object.entries(emptyDefaults.user1).forEach(([key, value]) => {
           switch(key) {
             case 'name': setName(value); break;
             case 'employer': setEmployer(value); break;
@@ -499,9 +482,9 @@ const PaycheckCalculator = () => {
           }
         });
         
-        Object.entries(emptyDefaults.spouse).forEach(([key, value]) => {
+        Object.entries(emptyDefaults.user2).forEach(([key, value]) => {
           switch(key) {
-            case 'name': setSpouseName(value); break;
+            case 'name': setUser2Name(value); break;
             case 'employer': setSpouseEmployer(value); break;
             case 'birthday': setSpouseBirthday(value); break;
             case 'salary': setSpouseSalary(value); break;
@@ -524,7 +507,7 @@ const PaycheckCalculator = () => {
         setSpouseHsaCoverageType('self');
         setResults(null);
         setSpouseResults(null);
-        setShowSpouseCalculator(true);
+        // Multi-user mode is now managed by the hook
         
       } catch (error) {
         console.error('Error resetting paycheck calculator data:', error);
@@ -540,17 +523,17 @@ const PaycheckCalculator = () => {
 
   // Remove click outside handler for settings menu
 
-  // Add effect to update context when showSpouseCalculator changes
+  // Add effect to update context when isMultiUserMode changes
   useEffect(() => {
-    updateFormData('showSpouseCalculator', showSpouseCalculator);
+    updateFormData('isMultiUserMode', isMultiUserMode);
 
-    if (!showSpouseCalculator && results) {
+    if (!isMultiUserMode && results) {
       // Calculate as 2 paychecks instead of annual ÷ 12
       const yourMonthlyTakeHome = (results?.netTakeHomePaycheck || 0) * 2;
       
       updateFormData('combinedMonthlyTakeHome', yourMonthlyTakeHome);
       updateFormData('combinedTakeHomePerPayPeriod', results?.netTakeHomePaycheck || 0);
-    } else if (showSpouseCalculator && results && spouseResults) {
+    } else if (isMultiUserMode && results && spouseResults) {
       // Calculate as 2 paychecks instead of annual ÷ 12
       const yourMonthlyTakeHome = (results?.netTakeHomePaycheck || 0) * 2;
       const spouseMonthlyTakeHome = (spouseResults.netTakeHomePaycheck * 2);
@@ -561,22 +544,22 @@ const PaycheckCalculator = () => {
       updateFormData('combinedMonthlyTakeHome', combinedMonthlyTakeHome);
       updateFormData('combinedTakeHomePerPayPeriod', combinedTakeHomePerPayPeriod);
     }
-  }, [showSpouseCalculator, updateFormData]);
+  }, [isMultiUserMode, updateFormData]);
 
   // Simple one-way sync: update context when local state changes
   useEffect(() => {
-    updateBudgetImpacting('your', budgetImpacting);
+    updateBudgetImpacting('user1', budgetImpacting);
   }, [budgetImpacting, updateBudgetImpacting]);
 
   useEffect(() => {
-    updateBudgetImpacting('spouse', spouseBudgetImpacting);
+    updateBudgetImpacting('user2', spouseBudgetImpacting);
   }, [spouseBudgetImpacting, updateBudgetImpacting]);
 
   // Add reset function for settings menu
   const resetAllData = () => {
     if (window.confirm('Are you sure you want to reset all calculator data? This cannot be undone.')) {
       // Reset to empty defaults
-      Object.entries(emptyDefaults.your).forEach(([key, value]) => {
+      Object.entries(emptyDefaults.user1).forEach(([key, value]) => {
         switch(key) {
           case 'name': setName(value); break;
           case 'employer': setEmployer(value); break;
@@ -599,7 +582,7 @@ const PaycheckCalculator = () => {
       
       Object.entries(emptyDefaults.spouse).forEach(([key, value]) => {
         switch(key) {
-          case 'name': setSpouseName(value); break;
+          case 'name': setUser2Name(value); break;
           case 'employer': setSpouseEmployer(value); break;
           case 'birthday': setSpouseBirthday(value); break;
           case 'salary': setSpouseSalary(value); break;
@@ -660,36 +643,14 @@ const PaycheckCalculator = () => {
         detail: { page: 'paycheck', expanded: false } 
       }));
     };
-    const handleToggleDualCalculator = () => {
-      setShowSpouseCalculator(prev => {
-        const newValue = !prev;
-        
-        // Immediately update the paycheck data with the new setting
-        const currentData = getPaycheckData();
-        const updatedData = {
-          ...currentData,
-          settings: {
-            ...currentData.settings,
-            showSpouseCalculator: newValue
-          }
-        };
-        setPaycheckData(updatedData);
-        
-        // Dispatch event to notify other components about the change
-        window.dispatchEvent(new CustomEvent('paycheckDataUpdated', { detail: updatedData }));
-        
-        return newValue;
-      });
-    };
+    // Toggle dual calculator is now handled by the multi-user calculator hook
 
     window.addEventListener('expandAllSections', handleExpandAll);
     window.addEventListener('collapseAllSections', handleCollapseAll);
-    window.addEventListener('toggleDualCalculator', handleToggleDualCalculator);
 
     return () => {
       window.removeEventListener('expandAllSections', handleExpandAll);
       window.removeEventListener('collapseAllSections', handleCollapseAll);
-      window.removeEventListener('toggleDualCalculator', handleToggleDualCalculator);
     };
   }, []);
 
@@ -698,7 +659,7 @@ const PaycheckCalculator = () => {
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <h1>💼 {showSpouseCalculator ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
+          <h1>💼 {isMultiUserMode ? 'Household Paycheck Calculator' : 'Paycheck Calculator'}</h1>
           <p>Calculate Your Net Pay With Precision And Plan Your Financial Future</p>
           
         </div>
@@ -844,11 +805,11 @@ const PaycheckCalculator = () => {
             onUpdateIncomePeriods={setIncomePeriodsData}
           />
           
-          {showSpouseCalculator && (
+          {isMultiUserMode && (
             <PaycheckInputFields 
               personName="Spouse"
-              name={spouseName}
-              setName={setSpouseName}
+              name={user2Name}
+              setName={setUser2Name}
               employer={spouseEmployer}
               setEmployer={setSpouseEmployer}
               birthday={spouseBirthday}

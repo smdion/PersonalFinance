@@ -31,7 +31,9 @@ import {
   // Liquid Assets inputs persistence
   getLiquidAssetsInputs,
   setLiquidAssetsInputs as saveLiquidAssetsInputsToLocalStorage,
-  clearLiquidAssetsInputs
+  clearLiquidAssetsInputs,
+  // Name resolution utilities
+  resolveUserDisplayName
 } from '../utils/localStorage';
 import { generateDataFilename } from '../utils/calculationHelpers';
 import CSVImportExport from './CSVImportExport';
@@ -244,20 +246,18 @@ const LiquidAssets = () => {
     const paycheckData = getPaycheckData();
     
     
-    // Get users from paycheck data
+    // Get users from paycheck data - always use current normalized user names
     const userList = [];
-    if (paycheckData?.your?.name?.trim()) {
-      userList.push(paycheckData.your.name.trim());
+    if (paycheckData?.user1?.name?.trim()) {
+      userList.push(paycheckData.user1.name.trim());
     }
-    if (paycheckData?.spouse?.name?.trim() && (paycheckData?.settings?.showSpouseCalculator ?? true)) {
-      userList.push(paycheckData.spouse.name.trim());
+    if (paycheckData?.user2?.name?.trim() && (paycheckData?.settings?.activeUsers?.includes('user2') ?? true)) {
+      userList.push(paycheckData.user2.name.trim());
     }
     
-    // Get all existing users from annual data for the current year
-    const existingUsers = Object.keys(annualData[currentYear]?.users || {});
-    
-    // Combine paycheck users with historical users and remove duplicates
-    const allUsers = [...new Set([...userList, ...existingUsers])];
+    // Use only current paycheck users to avoid showing legacy data
+    // Historical users are resolved through the resolveUserDisplayName function
+    const allUsers = [...userList];
     
     // If still no users, create default
     if (allUsers.length === 0) {
@@ -1343,7 +1343,7 @@ const LiquidAssets = () => {
                           {/* Show unused accounts */}
                           {unusedAccounts.map(acc => (
                             <option key={acc.id} value={acc.accountName}>
-                              {acc.accountName} ({acc.owner}){!acc.isCurrentYear ? ` - ${acc.year}` : ''}
+                              {acc.accountName} ({resolveUserDisplayName(acc.owner)}){!acc.isCurrentYear ? ` - ${acc.year}` : ''}
                             </option>
                           ))}
                           {/* Also show the currently selected account for this group (if any) */}
@@ -1511,7 +1511,7 @@ const LiquidAssets = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
               <h2>Liquid Assets Account Values</h2>
-              <p>Enter your current account values from investment websites:</p>
+              <p>Enter current account values from investment websites:</p>
               {showExpandedFields ? (
                 <p style={{ fontSize: '0.9rem', color: '#28a745', margin: '0.5rem 0' }}>
                   📊 <strong>Detailed Update Mode:</strong> Will sync balance + employee contributions, employer match, gains/losses, fees, and withdrawals
@@ -2131,7 +2131,7 @@ const LiquidAssets = () => {
                         {record.accounts.map((acc, idx) => (
                           <div key={idx} className="record-account">
                             <div className="account-main-info">
-                              <strong>{acc.accountName}</strong> ({acc.owner}) - {acc.taxType} - {formatCurrency(acc.amount)}
+                              <strong>{acc.accountName}</strong> ({resolveUserDisplayName(acc.owner)}) - {acc.taxType} - {formatCurrency(acc.amount)}
                               {acc.investmentCompany && <span className="account-company"> • {acc.investmentCompany}</span>}
                               {acc.description && <span className="account-description"> • {acc.description}</span>}
                             </div>

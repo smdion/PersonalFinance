@@ -403,17 +403,6 @@ const PrimaryHome = () => {
         assetLiabilityData.mortgage = mortgageDetails.reduce((sum, mortgage) => sum + mortgage.amount, 0);
       }
 
-      // Home improvements and amortization schedules are now stored within the house details above
-      // Remove any legacy root-level storage
-      if (assetLiabilityData.homeImprovements !== undefined) {
-        delete assetLiabilityData.homeImprovements;
-      }
-      if (assetLiabilityData.homeImprovementsDetails !== undefined) {
-        delete assetLiabilityData.homeImprovementsDetails;
-      }
-      if (assetLiabilityData.amortizationSchedules !== undefined) {
-        delete assetLiabilityData.amortizationSchedules;
-      }
 
       const saveResult = setAssetLiabilityData(assetLiabilityData);
 
