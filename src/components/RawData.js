@@ -4,8 +4,6 @@ import {
   setAnnualData, 
   STORAGE_KEYS,
   syncPaycheckToAnnual,
-  cleanupJointDataFromAnnual,
-  cleanupEmptyAnnualEntries,
   // Import accounts data functions
   getAccountData, 
   setAccountData,
@@ -22,6 +20,8 @@ import {
   getPaycheckData,
   setPaycheckData
 } from '../utils/localStorage';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
+import { migrateToNormalizedUserKeys } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
@@ -29,6 +29,8 @@ import '../styles/last-update-info.css';
 import { syncAccountsFromLatestLiquidAssets, generateAccountName } from '../utils/liquidAssetsAccountsSync';
 
 const RawData = () => {
+  const { activeUsers } = useMultiUserCalculator();
+  
   // State for read-only override
   const [readOnlyOverrideSettings, setReadOnlyOverrideSettingsState] = useState({
     disableReadOnlyMode: false
@@ -41,8 +43,8 @@ const RawData = () => {
     setReadOnlyOverrideSettingsState(settings);
   }, []);
 
-  // Function to sync ALL Asset Liability data to Historical data
-  const syncAssetLiabilityToHistorical = () => {
+  // Function to sync ALL Asset Liability data to Annual data
+  const syncAssetLiabilityToAnnual = () => {
     try {
       const assetLiabilityData = getAssetLiabilityData();
       const annualData = getAnnualData();
@@ -130,25 +132,23 @@ const RawData = () => {
     }
   };
 
-  // Sync paycheck data and cleanup on component mount
+  // Sync paycheck data on component mount
   useEffect(() => {
     syncPaycheckToAnnual();
-    cleanupJointDataFromAnnual();
-    cleanupEmptyAnnualEntries();
     // Initialize shared accounts system for account data
     initializeSharedAccounts();
     
     // Sync to show only accounts from latest liquid assets record
     syncAccountsFromLatestLiquidAssets();
     
-    // Sync ALL asset liability data to historical data
-    syncAssetLiabilityToHistorical();
+    // Sync ALL asset liability data to annual data
+    syncAssetLiabilityToAnnual();
   }, []);
 
   // Listen for asset liability data updates to sync all asset liability data
   useEffect(() => {
     const handleAssetLiabilityUpdate = () => {
-      syncAssetLiabilityToHistorical();
+      syncAssetLiabilityToAnnual();
     };
 
     // Let PaycheckCalculator handle the dual calculator toggle
@@ -282,8 +282,8 @@ const RawData = () => {
     }
   };
 
-  // Schema configuration for Historical DataManager
-  const historicalSchema = {
+  // Schema configuration for Annual DataManager
+  const annualSchema = {
     primaryKeyLabel: 'Year',
     primaryKeyType: 'number',
     sections: [
@@ -346,7 +346,7 @@ const RawData = () => {
       },
       {
         name: 'users',
-        title: '👥 Account Owners',
+        title: '👥 Account Information (Per User)',
         fields: [
           { name: 'accountName', label: 'Account Name', type: 'text' },
           { name: 'accountType', label: 'Account Type', type: 'text' },
@@ -355,7 +355,7 @@ const RawData = () => {
       },
       {
         name: 'financial',
-        title: '💰 Financial Data',
+        title: '💰 Financial Data (Shared)',
         fields: [
           { name: 'balance', label: 'Balance', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
           { name: 'contributions', label: 'Contributions', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component (current year)' },
@@ -431,7 +431,7 @@ const RawData = () => {
                 🔒 Data Protection Settings
               </span>
               <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                Historical and Account data are read-only by default
+                Annual and Account data are read-only by default
               </span>
             </div>
             <label style={{ 
@@ -475,7 +475,7 @@ const RawData = () => {
                     Warning: Read-Only Protection is Disabled
                   </div>
                   <div style={{ fontSize: '0.85rem', color: '#7f1d1d', lineHeight: '1.4' }}>
-                    You can now edit Historical and Account data directly. Most updates should be made through 
+                    You can now edit Annual and Account data directly. Most updates should be made through 
                     the Paycheck Calculator, Portfolio, Asset Manager, and other source components to maintain data consistency.
                   </div>
                 </div>
@@ -513,7 +513,7 @@ const RawData = () => {
                     Disable Read-Only Protection?
                   </h3>
                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#374151', lineHeight: '1.5' }}>
-                    Historical and Account data are normally read-only because they're automatically updated 
+                    Annual and Account data are normally read-only because they're automatically updated 
                     from other components (Paycheck Calculator, Portfolio, Asset Manager, etc.).
                   </p>
                 </div>
@@ -569,13 +569,13 @@ const RawData = () => {
         )}
 
         <DataManager
-          key={`historical-${readOnlyOverrideSettings.disableReadOnlyMode}`}
+          key={`annual-${readOnlyOverrideSettings.disableReadOnlyMode}-${activeUsers.join(',')}`}
           title="Annual Data"
           subtitle="Add your first year of data to start tracking your financial progress"
           dataKey={STORAGE_KEYS.ANNUAL_DATA}
           getData={getAnnualData}
           setData={setAnnualData}
-          schema={historicalSchema}
+          schema={annualSchema}
           usePaycheckUsers={true}
           primaryKey="year"
           sortField="year"
@@ -585,7 +585,7 @@ const RawData = () => {
         />
 
         <DataManager
-          key={`account-${readOnlyOverrideSettings.disableReadOnlyMode}`}
+          key={`account-${readOnlyOverrideSettings.disableReadOnlyMode}-${activeUsers.join(',')}`}
           title="Account Data"
           subtitle="Account data synced from Liquid Assets component"
           dataKey={STORAGE_KEYS.ACCOUNT_DATA}

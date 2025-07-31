@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getAccountData } from '../utils/localStorage';
-import { useDualCalculator } from '../hooks/useDualCalculator';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
@@ -204,16 +204,16 @@ const retirementProjectionsSchema = {
 };
 
 // Transform retirement projections to DataManager format
-const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjections, paycheckData, currentYear, getActualEmployerMatchForYear) => {
+const transformProjectionsToDataManagerFormat = (user1Projections, user2Projections, paycheckData, currentYear, getActualEmployerMatchForYear) => {
   const data = {};
   
   // Get the maximum length of projections
-  const maxLength = Math.max(yourProjections.length, spouseProjections.length);
+  const maxLength = Math.max(user1Projections.length, user2Projections.length);
   
   for (let i = 0; i < maxLength; i++) {
-    const yourProj = yourProjections[i];
-    const spouseProj = spouseProjections[i];
-    const year = yourProj?.year || spouseProj?.year;
+    const user1Proj = user1Projections[i];
+    const user2Proj = user2Projections[i];
+    const year = user1Proj?.year || user2Proj?.year;
     
     if (!year) continue;
     
@@ -222,43 +222,39 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
       users: {}
     };
     
-    // Add your data if available
-    if (yourProj) {
-      const yourName = paycheckData?.your?.name || 'Your';
-      
-      entry.users[yourName] = {
-        age: yourProj.age,
-        salary: yourProj.salary || 0,
-        employeeContributions: yourProj.contributions?.employee || 0,
-        employerMatch: yourProj.contributions?.employer || 0,
-        totalContributions: yourProj.contributions?.total || 0,
-        withdrawal: yourProj.withdrawal || 0,
-        taxFree: yourProj.balances?.taxFree || 0,
-        taxDeferred: yourProj.balances?.taxDeferred || 0,
-        afterTax: yourProj.balances?.afterTax || 0,
-        totalBalance: yourProj.totalBalance || 0,
-        returnRate: (yourProj.returnRate || 0) / 100,
-        contributions: yourProj.contributions // Include full contributions object with breakdown
+    // Add user1 data if available
+    if (user1Proj) {
+      entry.users['user1'] = {
+        age: user1Proj.age,
+        salary: user1Proj.salary || 0,
+        employeeContributions: user1Proj.contributions?.employee || 0,
+        employerMatch: user1Proj.contributions?.employer || 0,
+        totalContributions: user1Proj.contributions?.total || 0,
+        withdrawal: user1Proj.withdrawal || 0,
+        taxFree: user1Proj.balances?.taxFree || 0,
+        taxDeferred: user1Proj.balances?.taxDeferred || 0,
+        afterTax: user1Proj.balances?.afterTax || 0,
+        totalBalance: user1Proj.totalBalance || 0,
+        returnRate: (user1Proj.returnRate || 0) / 100,
+        contributions: user1Proj.contributions // Include full contributions object with breakdown
       };
     }
     
-    // Add spouse data if available
-    if (spouseProj) {
-      const spouseName = paycheckData?.spouse?.name || 'Spouse';
-      
-      entry.users[spouseName] = {
-        age: spouseProj.age,
-        salary: spouseProj.salary || 0,
-        employeeContributions: spouseProj.contributions?.employee || 0,
-        employerMatch: spouseProj.contributions?.employer || 0,
-        totalContributions: spouseProj.contributions?.total || 0,
-        withdrawal: spouseProj.withdrawal || 0,
-        taxFree: spouseProj.balances?.taxFree || 0,
-        taxDeferred: spouseProj.balances?.taxDeferred || 0,
-        afterTax: spouseProj.balances?.afterTax || 0,
-        totalBalance: spouseProj.totalBalance || 0,
-        returnRate: (spouseProj.returnRate || 0) / 100,
-        contributions: spouseProj.contributions // Include full contributions object with breakdown
+    // Add user2 data if available
+    if (user2Proj) {
+      entry.users['user2'] = {
+        age: user2Proj.age,
+        salary: user2Proj.salary || 0,
+        employeeContributions: user2Proj.contributions?.employee || 0,
+        employerMatch: user2Proj.contributions?.employer || 0,
+        totalContributions: user2Proj.contributions?.total || 0,
+        withdrawal: user2Proj.withdrawal || 0,
+        taxFree: user2Proj.balances?.taxFree || 0,
+        taxDeferred: user2Proj.balances?.taxDeferred || 0,
+        afterTax: user2Proj.balances?.afterTax || 0,
+        totalBalance: user2Proj.totalBalance || 0,
+        returnRate: (user2Proj.returnRate || 0) / 100,
+        contributions: user2Proj.contributions // Include full contributions object with breakdown
       };
     }
     
@@ -272,8 +268,9 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
 const Retirement = () => {
   const { formData: contextFormData } = useContext(PaycheckBudgetContext);
 
-  // Use shared dual calculator hook
-  const showSpouseCalculator = useDualCalculator();
+  // Use multi-user calculator hook
+  const { activeUsers } = useMultiUserCalculator();
+  const isMultiUserMode = activeUsers.includes('user2');
   
   // Tab state for detailed breakdown
   const [activeTab, setActiveTab] = useState('summary');
@@ -287,7 +284,7 @@ const Retirement = () => {
   // Load existing retirement data
   const loadRetirementData = () => {
     return getRetirementData() || {
-      your: {
+      user1: {
         ageAtRetirement: 65,
         ageOfDeath: 90,
         annualSalaryIncrease: 3,
@@ -295,7 +292,7 @@ const Retirement = () => {
         employerMatch: 4,
         employeeContributionForMatch: 4
       },
-      spouse: {
+      user2: {
         ageAtRetirement: 65,
         ageOfDeath: 90,
         annualSalaryIncrease: 3,
@@ -307,9 +304,6 @@ const Retirement = () => {
         annualInflation: 2.5,
         withdrawalRate: 4,
         retirementReturnRate: 6
-      },
-      settings: {
-        showSpouseCalculator: true
       }
     };
   };
@@ -352,42 +346,29 @@ const Retirement = () => {
   const annualData = useMemo(() => getAnnualData(), []);
   const accountData = useMemo(() => getAccountData(), []);
 
-  // Helper function to get actual employer match data from performance data
+  // Helper function to get actual employer match data from performance data (works with normalized keys)
   const getActualEmployerMatchForYear = useCallback((userKey, year) => {
     const paycheckUser = paycheckData[userKey];
 
-    if (!paycheckUser?.name || !accountData) {
+    if (!paycheckUser || !accountData) {
       return null;
     }
 
     let totalEmployerMatch = 0;
     let foundData = false;
 
-    // Match user name (flexible matching like in the existing code)
-    const matchesUser = (portfolioOwner, paycheckName) => {
-      if (!portfolioOwner || !paycheckName) return false;
-      if (portfolioOwner === paycheckName) return true;
-      if (portfolioOwner.toLowerCase() === paycheckName.toLowerCase()) return true;
-      const paycheckFirstName = paycheckName.split(' ')[0];
-      if (portfolioOwner.toLowerCase() === paycheckFirstName.toLowerCase()) return true;
-      const portfolioLower = portfolioOwner.toLowerCase();
-      const paycheckLower = paycheckName.toLowerCase();
-      return portfolioLower.includes(paycheckLower) || paycheckLower.includes(portfolioLower);
-    };
-
-    // Find all performance data entries for this user and year
+    // Find all performance data entries for this user and year using normalized keys
     for (const [entryId, entry] of Object.entries(accountData)) {
       if (entry.year === year && entry.users) {
-        for (const [owner, userData] of Object.entries(entry.users)) {
-          const userMatches = matchesUser(owner, paycheckUser.name);
-          
-          if (userMatches) {
-            // Sum up employer match from all 401k accounts for this user
-            if (userData.employerMatch !== undefined && userData.accountType === '401k') {
-              const matchAmount = parseFloat(userData.employerMatch) || 0;
-              totalEmployerMatch += matchAmount;
-              foundData = true;
-            }
+        // Use normalized userKey directly to access user data
+        const userData = entry.users[userKey];
+        
+        if (userData) {
+          // Sum up employer match from all 401k accounts for this user
+          if (userData.employerMatch !== undefined && userData.accountType === '401k') {
+            const matchAmount = parseFloat(userData.employerMatch) || 0;
+            totalEmployerMatch += matchAmount;
+            foundData = true;
           }
         }
       }
@@ -466,30 +447,9 @@ const Retirement = () => {
       afterTax: 0
     };
 
-    // Filter accounts for this user and sum by tax type (with flexible name matching)
-    const matchesUser = (portfolioOwner, paycheckName) => {
-      if (!portfolioOwner || !paycheckName) return false;
-      
-      // Exact match
-      if (portfolioOwner === paycheckName) return true;
-      
-      // Case-insensitive match
-      if (portfolioOwner.toLowerCase() === paycheckName.toLowerCase()) return true;
-      
-      // First name match (portfolio "Sean" matches paycheck "Sean Dion")
-      const paycheckFirstName = paycheckName.split(' ')[0];
-      if (portfolioOwner.toLowerCase() === paycheckFirstName.toLowerCase()) return true;
-      
-      // Last name match or contains
-      const portfolioLower = portfolioOwner.toLowerCase();
-      const paycheckLower = paycheckName.toLowerCase();
-      if (portfolioLower.includes(paycheckLower) || paycheckLower.includes(portfolioLower)) return true;
-      
-      return false;
-    };
-
+    // Filter accounts for this user using normalized keys
     portfolioAccounts
-      .filter(account => matchesUser(account.owner, paycheckUser.name))
+      .filter(account => account.owner === userKey)
       .forEach(account => {
         const amount = parseFloat(account.amount) || 0;
         
@@ -726,18 +686,18 @@ const Retirement = () => {
   }, [retirementDataState, paycheckData, currentYear]);
 
   // Calculate projections for both users
-  const yourProjections = useMemo(() => calculateRetirementProjections('your'), [calculateRetirementProjections]);
-  const spouseProjections = useMemo(() => 
-    showSpouseCalculator ? calculateRetirementProjections('spouse') : [], 
-    [calculateRetirementProjections, showSpouseCalculator]
+  const user1Projections = useMemo(() => calculateRetirementProjections('user1'), [calculateRetirementProjections]);
+  const user2Projections = useMemo(() => 
+    isMultiUserMode ? calculateRetirementProjections('user2') : [], 
+    [calculateRetirementProjections, isMultiUserMode]
   );
 
   // Transform projections data for DataManager
   useEffect(() => {
-    if (yourProjections.length > 0 || spouseProjections.length > 0) {
+    if (user1Projections.length > 0 || user2Projections.length > 0) {
       const transformedData = transformProjectionsToDataManagerFormat(
-        yourProjections, 
-        spouseProjections, 
+        user1Projections, 
+        user2Projections, 
         paycheckData, 
         currentYear, 
         getActualEmployerMatchForYear
@@ -746,7 +706,7 @@ const Retirement = () => {
     } else {
       setProjectionsData({});
     }
-  }, [yourProjections, spouseProjections, paycheckData, currentYear]);
+  }, [user1Projections, user2Projections, paycheckData, currentYear]);
 
 
   // Dual calculator toggle is now handled by the shared hook
@@ -768,11 +728,11 @@ const Retirement = () => {
         <LastUpdateInfo showDetails={false} compact={true} />
 
         <div className="calculator-content">
-          <div className={`calculator-grid ${showSpouseCalculator ? 'dual-view' : 'single-view'}`}>
+          <div className={`calculator-grid ${isMultiUserMode ? 'dual-view' : 'single-view'}`}>
             {/* Your Calculator */}
             <div className="calculator-section">
               <h2 className="calculator-section-title">
-                {paycheckData?.your?.name || 'Your'} Retirement Plan
+                {paycheckData?.user1?.name || 'user1'} Retirement Plan
               </h2>
               
               <div className="form-section">
@@ -782,8 +742,8 @@ const Retirement = () => {
                     <label>Age at Retirement</label>
                     <input
                       type="number"
-                      value={retirementDataState.your?.ageAtRetirement || 65}
-                      onChange={(e) => updateUserData('your', 'ageAtRetirement', e.target.value)}
+                      value={retirementDataState.user1?.ageAtRetirement || 65}
+                      onChange={(e) => updateUserData('user1', 'ageAtRetirement', e.target.value)}
                       min="50"
                       max="80"
                     />
@@ -792,8 +752,8 @@ const Retirement = () => {
                     <label>Age of Death</label>
                     <input
                       type="number"
-                      value={retirementDataState.your?.ageOfDeath || 90}
-                      onChange={(e) => updateUserData('your', 'ageOfDeath', e.target.value)}
+                      value={retirementDataState.user1?.ageOfDeath || 90}
+                      onChange={(e) => updateUserData('user1', 'ageOfDeath', e.target.value)}
                       min="65"
                       max="110"
                     />
@@ -803,8 +763,8 @@ const Retirement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={retirementDataState.your?.annualSalaryIncrease || 3}
-                      onChange={(e) => updateUserData('your', 'annualSalaryIncrease', e.target.value)}
+                      value={retirementDataState.user1?.annualSalaryIncrease || 3}
+                      onChange={(e) => updateUserData('user1', 'annualSalaryIncrease', e.target.value)}
                       min="0"
                       max="20"
                     />
@@ -814,8 +774,8 @@ const Retirement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={retirementDataState.your?.raisesInRetirement || 0}
-                      onChange={(e) => updateUserData('your', 'raisesInRetirement', e.target.value)}
+                      value={retirementDataState.user1?.raisesInRetirement || 0}
+                      onChange={(e) => updateUserData('user1', 'raisesInRetirement', e.target.value)}
                       min="0"
                       max="10"
                     />
@@ -825,8 +785,8 @@ const Retirement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={retirementDataState.your?.employerMatch || 4}
-                      onChange={(e) => updateUserData('your', 'employerMatch', e.target.value)}
+                      value={retirementDataState.user1?.employerMatch || 4}
+                      onChange={(e) => updateUserData('user1', 'employerMatch', e.target.value)}
                       min="0"
                       max="15"
                     />
@@ -836,8 +796,8 @@ const Retirement = () => {
                     <input
                       type="number"
                       step="0.1"
-                      value={retirementDataState.your?.employeeContributionForMatch || 4}
-                      onChange={(e) => updateUserData('your', 'employeeContributionForMatch', e.target.value)}
+                      value={retirementDataState.user1?.employeeContributionForMatch || 4}
+                      onChange={(e) => updateUserData('user1', 'employeeContributionForMatch', e.target.value)}
                       min="0"
                       max="15"
                     />
@@ -848,10 +808,10 @@ const Retirement = () => {
             </div>
 
             {/* Spouse Calculator */}
-            {showSpouseCalculator && (
+            {isMultiUserMode && (
               <div className="calculator-section">
                 <h2 className="calculator-section-title">
-                  {paycheckData?.spouse?.name || 'Spouse'} Retirement Plan
+                  {paycheckData?.user2?.name || 'user2'} Retirement Plan
                 </h2>
                 
                 <div className="form-section">
@@ -861,8 +821,8 @@ const Retirement = () => {
                       <label>Age at Retirement</label>
                       <input
                         type="number"
-                        value={retirementDataState.spouse?.ageAtRetirement || 65}
-                        onChange={(e) => updateUserData('spouse', 'ageAtRetirement', e.target.value)}
+                        value={retirementDataState.user2?.ageAtRetirement || 65}
+                        onChange={(e) => updateUserData('user2', 'ageAtRetirement', e.target.value)}
                         min="50"
                         max="80"
                       />
@@ -871,8 +831,8 @@ const Retirement = () => {
                       <label>Age of Death</label>
                       <input
                         type="number"
-                        value={retirementDataState.spouse?.ageOfDeath || 90}
-                        onChange={(e) => updateUserData('spouse', 'ageOfDeath', e.target.value)}
+                        value={retirementDataState.user2?.ageOfDeath || 90}
+                        onChange={(e) => updateUserData('user2', 'ageOfDeath', e.target.value)}
                         min="65"
                         max="110"
                       />
@@ -882,8 +842,8 @@ const Retirement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={retirementDataState.spouse?.annualSalaryIncrease || 3}
-                        onChange={(e) => updateUserData('spouse', 'annualSalaryIncrease', e.target.value)}
+                        value={retirementDataState.user2?.annualSalaryIncrease || 3}
+                        onChange={(e) => updateUserData('user2', 'annualSalaryIncrease', e.target.value)}
                         min="0"
                         max="20"
                       />
@@ -893,8 +853,8 @@ const Retirement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={retirementDataState.spouse?.raisesInRetirement || 0}
-                        onChange={(e) => updateUserData('spouse', 'raisesInRetirement', e.target.value)}
+                        value={retirementDataState.user2?.raisesInRetirement || 0}
+                        onChange={(e) => updateUserData('user2', 'raisesInRetirement', e.target.value)}
                         min="0"
                         max="10"
                       />
@@ -904,8 +864,8 @@ const Retirement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={retirementDataState.spouse?.employerMatch || 4}
-                        onChange={(e) => updateUserData('spouse', 'employerMatch', e.target.value)}
+                        value={retirementDataState.user2?.employerMatch || 4}
+                        onChange={(e) => updateUserData('user2', 'employerMatch', e.target.value)}
                         min="0"
                         max="15"
                       />
@@ -915,8 +875,8 @@ const Retirement = () => {
                       <input
                         type="number"
                         step="0.1"
-                        value={retirementDataState.spouse?.employeeContributionForMatch || 4}
-                        onChange={(e) => updateUserData('spouse', 'employeeContributionForMatch', e.target.value)}
+                        value={retirementDataState.user2?.employeeContributionForMatch || 4}
+                        onChange={(e) => updateUserData('user2', 'employeeContributionForMatch', e.target.value)}
                         min="0"
                         max="15"
                       />
@@ -994,11 +954,11 @@ const Retirement = () => {
             <div className="tab-content">
               <h3>Retirement Summary</h3>
               <div className="summary-cards">
-                {yourProjections.length > 0 && (
+                {user1Projections.length > 0 && (
                   <div className="summary-card">
-                    <h4>{paycheckData?.your?.name || 'Your'} Summary</h4>
+                    <h4>{paycheckData?.user1?.name || 'user1'} Summary</h4>
                     {(() => {
-                      const retirementProjection = yourProjections.find(p => p.age === (retirementDataState.your?.ageAtRetirement || 65));
+                      const retirementProjection = user1Projections.find(p => p.age === (retirementDataState.user1?.ageAtRetirement || 65));
                       return retirementProjection ? (
                         <div className="balance-breakdown">
                           <div className="balance-item">
@@ -1023,11 +983,11 @@ const Retirement = () => {
                   </div>
                 )}
                 
-                {showSpouseCalculator && spouseProjections.length > 0 && (
+                {isMultiUserMode && user2Projections.length > 0 && (
                   <div className="summary-card">
-                    <h4>{paycheckData?.spouse?.name || 'Spouse'} Summary</h4>
+                    <h4>{paycheckData?.user2?.name || 'user2'} Summary</h4>
                     {(() => {
-                      const retirementProjection = spouseProjections.find(p => p.age === (retirementDataState.spouse?.ageAtRetirement || 65));
+                      const retirementProjection = user2Projections.find(p => p.age === (retirementDataState.user2?.ageAtRetirement || 65));
                       return retirementProjection ? (
                         <div className="balance-breakdown">
                           <div className="balance-item">

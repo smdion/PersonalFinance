@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
 import { getPaycheckData, setPaycheckData, getAccountData, getAnnualData, getRetirementData } from '../utils/localStorage';
-import { useDualCalculator } from '../hooks/useDualCalculator';
+import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import { getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
   formatCurrency, 
@@ -29,7 +29,8 @@ const Contributions = () => {
   const [annualData, setAnnualData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
-  const showSpouseCalculator = useDualCalculator(); // Use shared hook
+  const { activeUsers } = useMultiUserCalculator(); // Use multi-user calculator hook
+  const isMultiUserMode = activeUsers.includes('user2');
   const [showHelp, setShowHelp] = useState(false);
   
   // State for collapsible sections
@@ -43,7 +44,7 @@ const Contributions = () => {
   });
   
   const [expandedPersonSections, setExpandedPersonSections] = useState({
-    your: {
+    user1: {
       k401: false,
       ira: false,
       hsa: false,
@@ -51,7 +52,7 @@ const Contributions = () => {
       brokerage: false,
       personalTotal: false
     },
-    spouse: {
+    user2: {
       k401: false,
       ira: false,
       hsa: false,
@@ -121,17 +122,17 @@ const Contributions = () => {
 
   // Calculate contribution metrics
   const contributionMetrics = useMemo(() => {
-    if (!paycheckData?.your) return { hasData: false };
+    if (!paycheckData?.user1) return { hasData: false };
 
-    const yourData = paycheckData.your;
-    const spouseData = paycheckData.spouse || {};
-    const showSpouse = showSpouseCalculator;
+    const user1Data = paycheckData.user1;
+    const user2Data = paycheckData.user2 || {};
+    const showUser2 = isMultiUserMode;
 
-    // Helper function to calculate person's metrics
-    const calculatePersonMetrics = (person, personName) => {
+    // Helper function to calculate user's metrics
+    const calculateUserMetrics = (userData, userName) => {
       
-      const salary = parseFloat(person.salary) || 0;
-      const birthday = person.birthday;
+      const salary = parseFloat(userData.salary) || 0;
+      const birthday = userData.birthday;
       const age = birthday ? calculateAge(birthday) : 0;
       const isOver50 = age >= 50;
       const isOver55 = age >= 55;
@@ -141,13 +142,14 @@ const Contributions = () => {
       let progressAGI = salary; // Default to input salary
       
       // For Progress + Forecast View, use prorated salary if income periods are available
-      if (person.incomePeriodsData && person.incomePeriodsData.length > 0) {
-        progressAGI = calculateProjectedAnnualIncome(person.incomePeriodsData, person.payPeriod || 'biWeekly');
+      if (userData.incomePeriodsData && userData.incomePeriodsData.length > 0) {
+        progressAGI = calculateProjectedAnnualIncome(userData.incomePeriodsData, userData.payPeriod || 'biWeekly');
       }
 
       // Get YTD contributions from Account data 
-      const individualUserNames = [person.name].filter(n => n && n.trim());
-      const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
+      const individualUserNames = [userData.name].filter(n => n && n.trim());
+      const otherUserData = userData === user1Data ? user2Data : user1Data;
+      const allUserNames = [userData.name, otherUserData.name, 'Joint'].filter(n => n && n.trim());
       
       // Get individual contributions (401k, HSA, ESPP) - only this person's accounts
       const individualYtdContributions = calculateYTDContributionsFromAccount(accountData, individualUserNames, new Date().getFullYear(), annualData);
@@ -156,7 +158,7 @@ const Contributions = () => {
       const allYtdContributions = calculateYTDContributionsFromAccount(accountData, allUserNames, new Date().getFullYear(), annualData);
       
       // Determine which accounts are joint and divide contributions evenly
-      const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
+      const actualUsers = [userData.name, otherUserData.name].filter(n => n && n.trim());
       const numActualUsers = actualUsers.length;
       
       // Start with individual contributions, then override with joint contributions where appropriate
@@ -211,17 +213,17 @@ const Contributions = () => {
         }
       }
       
-      const remainingRoom = calculateRemainingContributionRoom(ytdContributions, age, person.hsaCoverageType);
+      const remainingRoom = calculateRemainingContributionRoom(ytdContributions, age, userData.hsaCoverageType);
 
       // Calculate YTD and projected contributions using actual pay periods
-      const payPeriod = person.payPeriod || 'biWeekly';
+      const payPeriod = userData.payPeriod || 'biWeekly';
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       
       // Initialize maxOutAmounts at function scope
       let maxOutAmounts = null;
 
       // 401k calculations - from retirementOptions
-      const retirementOptions = person.retirementOptions || {};
+      const retirementOptions = userData.retirementOptions || {};
       const traditional401k = parseFloat(retirementOptions.traditional401kPercent) || 0;
       const roth401k = parseFloat(retirementOptions.roth401kPercent) || 0;
       const total401kPercent = traditional401k + roth401k;
@@ -230,7 +232,7 @@ const Contributions = () => {
       const annual401k = salary * (total401kPercent / 100);
       // Get employer match from retirement data (fallback to retirementOptions if available)
       const retirementData = getRetirementData();
-      const userKey = person === paycheckData.your ? 'your' : 'spouse';
+      const userKey = userData === user1Data ? 'your' : 'spouse';
       const userRetirementData = retirementData?.[userKey] || {};
       const employerMatch = parseFloat(userRetirementData.employerMatch) || parseFloat(retirementOptions.employerMatch) || 0;
       const employeeContributionForMatchPercent = parseFloat(userRetirementData.employeeContributionForMatch) || 4;
@@ -245,7 +247,7 @@ const Contributions = () => {
         : CONTRIBUTION_LIMITS.k401_employee;
 
       // IRA calculations - from budgetImpacting
-      const budgetImpacting = person.budgetImpacting || {};
+      const budgetImpacting = userData.budgetImpacting || {};
       const traditionalIra = parseFloat(budgetImpacting.traditionalIraMonthly) || 0;
       const rothIra = parseFloat(budgetImpacting.rothIraMonthly) || 0;
       
@@ -262,7 +264,7 @@ const Contributions = () => {
         : CONTRIBUTION_LIMITS.ira_self;
 
       // HSA calculations - from medicalDeductions
-      const medicalDeductions = person.medicalDeductions || {};
+      const medicalDeductions = userData.medicalDeductions || {};
       const hsaContributionPerPaycheck = parseFloat(medicalDeductions.hsa) || 0;
       const hsaEmployerAnnual = parseFloat(medicalDeductions.employerHsa) || 0;
       
@@ -270,7 +272,7 @@ const Contributions = () => {
       const hsaContributionAnnual = hsaContributionPerPaycheck * periodsPerYear;
       const hsaEmployerContribution = hsaEmployerAnnual;
       
-      const hsaCoverage = person.hsaCoverageType || 'none';
+      const hsaCoverage = userData.hsaCoverageType || 'none';
       let maxHsa = 0;
       if (hsaCoverage === 'self') {
         maxHsa = CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
@@ -280,7 +282,7 @@ const Contributions = () => {
       
 
       // ESPP calculations
-      const esppPercent = parseFloat(person.esppDeductionPercent) || 0;
+      const esppPercent = parseFloat(userData.esppDeductionPercent) || 0;
       const annualEspp = salary * (esppPercent / 100);
 
       // Brokerage calculations - from budgetImpacting
@@ -552,7 +554,7 @@ const Contributions = () => {
       }
 
       return {
-        name: personName,
+        name: userName,
         salary,
         standardAGI,
         progressAGI,
@@ -596,15 +598,15 @@ const Contributions = () => {
 
     const metrics = {
       hasData: true,
-      your: calculatePersonMetrics(yourData, yourData.name || 'You')
+      your: calculateUserMetrics(user1Data, user1Data.name || 'You')
     };
 
-    if (showSpouse && spouseData.salary) {
-      metrics.spouse = calculatePersonMetrics(spouseData, spouseData.name || 'Spouse');
+    if (showUser2 && user2Data.salary) {
+      metrics.spouse = calculateUserMetrics(user2Data, user2Data.name || 'Spouse');
     }
 
     return metrics;
-  }, [paycheckData, accountData, annualData, showSpouseCalculator]);
+  }, [paycheckData, accountData, annualData, isMultiUserMode]);
 
   // Event listeners for navigation controls
   useEffect(() => {
@@ -640,19 +642,19 @@ const Contributions = () => {
           brokerage: true
         };
         
-        // Get the actual person names that are displayed in the UI
-        // These need to match exactly what person.name contains in the PersonContributionCard
-        const yourName = 'Sean Dion';
-        const spouseName = 'Joanna Dion';
+        // Get the actual user names that are displayed in the UI
+        // These need to match exactly what userData.name contains in the PersonContributionCard
+        const user1Name = contributionMetrics?.your?.name || 'User 1';
+        const user2Name = contributionMetrics?.spouse?.name || 'User 2';
         
-        updated[yourName] = {
-          ...(updated[yourName] || {}),
+        updated[user1Name] = {
+          ...(updated[user1Name] || {}),
           personalTotal: true
         };
         
-        if (showSpouseCalculator) {
-          updated[spouseName] = {
-            ...(updated[spouseName] || {}),
+        if (isMultiUserMode) {
+          updated[user2Name] = {
+            ...(updated[user2Name] || {}),
             personalTotal: true
           };
         }
@@ -697,20 +699,20 @@ const Contributions = () => {
           brokerage: false
         };
         
-        // Get the actual person names that are displayed in the UI
-        // These need to match exactly what person.name contains in the PersonContributionCard
-        const yourName = 'Sean Dion';
-        const spouseName = 'Joanna Dion';
+        // Get the actual user names that are displayed in the UI
+        // These need to match exactly what userData.name contains in the PersonContributionCard
+        const user1Name = contributionMetrics?.your?.name || 'User 1';
+        const user2Name = contributionMetrics?.spouse?.name || 'User 2';
         
         
-        updated[yourName] = {
-          ...(updated[yourName] || {}),
+        updated[user1Name] = {
+          ...(updated[user1Name] || {}),
           personalTotal: false
         };
         
-        if (showSpouseCalculator) {
-          updated[spouseName] = {
-            ...(updated[spouseName] || {}),
+        if (isMultiUserMode) {
+          updated[user2Name] = {
+            ...(updated[user2Name] || {}),
             personalTotal: false
           };
         }
@@ -1881,25 +1883,25 @@ const Contributions = () => {
   // YTD Income Tracker Component
   const YTDIncomeTracker = () => {
     // State for YTD Income Tracker
-    const [yourIncomePeriods, setYourIncomePeriods] = useState([]);
-    const [spouseIncomePeriods, setSpouseIncomePeriods] = useState([]);
-    const [yourIncomePeriodsErrors, setYourIncomePeriodsErrors] = useState([]);
-    const [spouseIncomePeriodsErrors, setSpouseIncomePeriodsErrors] = useState([]);
-    const [yourExpandedIncomePeriods, setYourExpandedIncomePeriods] = useState({});
-    const [spouseExpandedIncomePeriods, setSpouseExpandedIncomePeriods] = useState({});
+    const [user1IncomePeriods, setUser1IncomePeriods] = useState([]);
+    const [user2IncomePeriods, setUser2IncomePeriods] = useState([]);
+    const [user1IncomePeriodsErrors, setUser1IncomePeriodsErrors] = useState([]);
+    const [user2IncomePeriodsErrors, setUser2IncomePeriodsErrors] = useState([]);
+    const [user1ExpandedIncomePeriods, setUser1ExpandedIncomePeriods] = useState({});
+    const [user2ExpandedIncomePeriods, setUser2ExpandedIncomePeriods] = useState({});
     const [ytdIncomeExpanded, setYtdIncomeExpanded] = useState(false);
 
     // Initialize income periods from paycheck data
     useEffect(() => {
       const loadIncomePeriodsData = () => {
         const currentPaycheckData = getPaycheckData();
-        const yourIncomePeriodsData = currentPaycheckData.your?.incomePeriodsData || [];
-        const spouseIncomePeriodsData = currentPaycheckData.spouse?.incomePeriodsData || [];
+        const user1IncomePeriodsData = currentPaycheckData.user1?.incomePeriodsData || [];
+        const user2IncomePeriodsData = currentPaycheckData.user2?.incomePeriodsData || [];
         
-        setYourIncomePeriods(yourIncomePeriodsData);
-        setSpouseIncomePeriods(spouseIncomePeriodsData);
-        setYourIncomePeriodsErrors(validateIncomePeriods(yourIncomePeriodsData));
-        setSpouseIncomePeriodsErrors(validateIncomePeriods(spouseIncomePeriodsData));
+        setUser1IncomePeriods(user1IncomePeriodsData);
+        setUser2IncomePeriods(user2IncomePeriodsData);
+        setUser1IncomePeriodsErrors(validateIncomePeriods(user1IncomePeriodsData));
+        setUser2IncomePeriodsErrors(validateIncomePeriods(user2IncomePeriodsData));
       };
 
       loadIncomePeriodsData();
@@ -2112,15 +2114,15 @@ const Contributions = () => {
         description: 'Salary Period'
       };
       
-      const currentPeriods = userType === 'your' ? yourIncomePeriods : spouseIncomePeriods;
+      const currentPeriods = userType === 'user1' ? user1IncomePeriods : user2IncomePeriods;
       const updatedPeriods = [...currentPeriods, newPeriod];
       
-      if (userType === 'your') {
-        setYourIncomePeriods(updatedPeriods);
-        setYourIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+      if (userType === 'user1') {
+        setUser1IncomePeriods(updatedPeriods);
+        setUser1IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
       } else {
-        setSpouseIncomePeriods(updatedPeriods);
-        setSpouseIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+        setUser2IncomePeriods(updatedPeriods);
+        setUser2IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
       }
       
       // Update paycheck data
@@ -2138,7 +2140,7 @@ const Contributions = () => {
     };
 
     const updateIncomePeriod = (userType, id, field, value) => {
-      const currentPeriods = userType === 'your' ? yourIncomePeriods : spouseIncomePeriods;
+      const currentPeriods = userType === 'user1' ? user1IncomePeriods : user2IncomePeriods;
       const updatedPeriods = currentPeriods.map(period => 
         period.id === id ? { 
           ...period, 
@@ -2146,15 +2148,15 @@ const Contributions = () => {
         } : period
       );
       
-      if (userType === 'your') {
-        setYourIncomePeriods(updatedPeriods);
+      if (userType === 'user1') {
+        setUser1IncomePeriods(updatedPeriods);
         if (field !== 'startDate' && field !== 'endDate') {
-          setYourIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+          setUser1IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
         }
       } else {
-        setSpouseIncomePeriods(updatedPeriods);
+        setUser2IncomePeriods(updatedPeriods);
         if (field !== 'startDate' && field !== 'endDate') {
-          setSpouseIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+          setUser2IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
         }
       }
       
@@ -2174,24 +2176,24 @@ const Contributions = () => {
     };
 
     const validateIncomePeriodOnBlur = (userType, id) => {
-      const currentPeriods = userType === 'your' ? yourIncomePeriods : spouseIncomePeriods;
-      if (userType === 'your') {
-        setYourIncomePeriodsErrors(validateIncomePeriods(currentPeriods));
+      const currentPeriods = userType === 'user1' ? user1IncomePeriods : user2IncomePeriods;
+      if (userType === 'user1') {
+        setUser1IncomePeriodsErrors(validateIncomePeriods(currentPeriods));
       } else {
-        setSpouseIncomePeriodsErrors(validateIncomePeriods(currentPeriods));
+        setUser2IncomePeriodsErrors(validateIncomePeriods(currentPeriods));
       }
     };
 
     const removeIncomePeriod = (userType, id) => {
-      const currentPeriods = userType === 'your' ? yourIncomePeriods : spouseIncomePeriods;
+      const currentPeriods = userType === 'user1' ? user1IncomePeriods : user2IncomePeriods;
       const updatedPeriods = currentPeriods.filter(period => period.id !== id);
       
-      if (userType === 'your') {
-        setYourIncomePeriods(updatedPeriods);
-        setYourIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+      if (userType === 'user1') {
+        setUser1IncomePeriods(updatedPeriods);
+        setUser1IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
       } else {
-        setSpouseIncomePeriods(updatedPeriods);
-        setSpouseIncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
+        setUser2IncomePeriods(updatedPeriods);
+        setUser2IncomePeriodsErrors(validateIncomePeriods(updatedPeriods));
       }
       
       // Update paycheck data
@@ -2210,13 +2212,13 @@ const Contributions = () => {
     };
 
     const toggleIncomePeriod = (userType, id) => {
-      if (userType === 'your') {
-        setYourExpandedIncomePeriods(prev => ({
+      if (userType === 'user1') {
+        setUser1ExpandedIncomePeriods(prev => ({
           ...prev,
           [id]: !prev[id]
         }));
       } else {
-        setSpouseExpandedIncomePeriods(prev => ({
+        setUser2ExpandedIncomePeriods(prev => ({
           ...prev,
           [id]: !prev[id]
         }));
@@ -2431,18 +2433,18 @@ const Contributions = () => {
 
     // Get user names from paycheck data
     const currentPaycheckData = getPaycheckData();
-    const yourName = currentPaycheckData.your?.name || 'Primary';
-    const spouseName = currentPaycheckData.spouse?.name || 'Spouse';
+    const user1Name = currentPaycheckData.user1?.name || 'User 1';
+    const user2Name = currentPaycheckData.user2?.name || 'User 2';
 
     // Calculate combined totals for badge
-    const yourSalary = currentPaycheckData.your?.salary || 0;  
-    const yourPayPeriod = currentPaycheckData.your?.payPeriod || 'biWeekly';
-    const spouseSalary = currentPaycheckData.spouse?.salary || 0;
-    const spousePayPeriod = currentPaycheckData.spouse?.payPeriod || 'biWeekly';
+    const user1Salary = currentPaycheckData.user1?.salary || 0;  
+    const user1PayPeriod = currentPaycheckData.user1?.payPeriod || 'biWeekly';
+    const user2Salary = currentPaycheckData.user2?.salary || 0;
+    const user2PayPeriod = currentPaycheckData.user2?.payPeriod || 'biWeekly';
     
-    const yourProjectedIncome = calculateProjectedAnnualIncome(yourIncomePeriods, yourPayPeriod, yourSalary);
-    const spouseProjectedIncome = showSpouseCalculator ? calculateProjectedAnnualIncome(spouseIncomePeriods, spousePayPeriod, spouseSalary) : 0;
-    const combinedProjectedIncome = yourProjectedIncome + spouseProjectedIncome;
+    const user1ProjectedIncome = calculateProjectedAnnualIncome(user1IncomePeriods, user1PayPeriod, user1Salary);
+    const user2ProjectedIncome = isMultiUserMode ? calculateProjectedAnnualIncome(user2IncomePeriods, user2PayPeriod, user2Salary) : 0;
+    const combinedProjectedIncome = user1ProjectedIncome + user2ProjectedIncome;
 
     return (
       <div className="contributions-card">
@@ -2467,20 +2469,20 @@ const Contributions = () => {
           <div className="contributions-card-content">
             <div className="ytd-users-container">
               <UserYTDSection 
-                userType="your"
-                userName={yourName}
-                incomePeriods={yourIncomePeriods}
-                incomePeriodsErrors={yourIncomePeriodsErrors}
-                expandedIncomePeriods={yourExpandedIncomePeriods}
+                userType="user1"
+                userName={user1Name}
+                incomePeriods={user1IncomePeriods}
+                incomePeriodsErrors={user1IncomePeriodsErrors}
+                expandedIncomePeriods={user1ExpandedIncomePeriods}
               />
               
-              {showSpouseCalculator && (
+              {isMultiUserMode && (
                 <UserYTDSection 
-                  userType="spouse"
-                  userName={spouseName}
-                  incomePeriods={spouseIncomePeriods}
-                  incomePeriodsErrors={spouseIncomePeriodsErrors}
-                  expandedIncomePeriods={spouseExpandedIncomePeriods}
+                  userType="user2"
+                  userName={user2Name}
+                  incomePeriods={user2IncomePeriods}
+                  incomePeriodsErrors={user2IncomePeriodsErrors}
+                  expandedIncomePeriods={user2ExpandedIncomePeriods}
                 />
               )}
             </div>
@@ -2862,7 +2864,7 @@ const Contributions = () => {
         {/* Individual Breakdown */}
         <div className="contributions-individuals">
           <PersonContributionCard person={contributionMetrics.your} />
-          {showSpouseCalculator && contributionMetrics.spouse && (
+          {isMultiUserMode && contributionMetrics.spouse && (
             <PersonContributionCard person={contributionMetrics.spouse} />
           )}
         </div>

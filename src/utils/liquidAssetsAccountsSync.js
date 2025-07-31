@@ -11,7 +11,9 @@ import {
   getAccountSyncSettings,
   getManualAccountGroups,
   setManualAccountGroups,
-  calculateManualGroupBalance
+  calculateManualGroupBalance,
+  getPaycheckData,
+  resolveUserDisplayName
 } from './localStorage';
 
 // Generate consistent account names from structured data
@@ -19,8 +21,8 @@ export const generateAccountName = (owner, taxType, accountType, investmentCompa
   // Build readable account name from components
   // Format: [Owner's] [Investment Company] [Account Type] [(Tax Status)] [- Description]
   
-  // Handle undefined/null values
-  const safeOwner = owner || '';
+  // Use centralized name resolver for consistency
+  const safeOwner = resolveUserDisplayName(owner || '');
   const safeTaxType = taxType || '';
   const safeAccountType = accountType || '';
   const safeInvestmentCompany = investmentCompany || '';

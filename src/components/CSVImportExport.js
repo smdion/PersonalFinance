@@ -4,7 +4,7 @@ import { generateDataFilename } from '../utils/calculationHelpers';
 
 const CSVImportExport = ({
   title = "Data Management",
-  subtitle = "Import and export your data using CSV files",
+  subtitle = "Import and export data using CSV files",
   data = [],
   headers = [],
   formatRowData,
