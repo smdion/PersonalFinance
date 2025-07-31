@@ -20,7 +20,7 @@ export const STORAGE_KEYS = {
   ANNUAL_DATA: 'annualData',
   ACCOUNT_DATA: 'accountData',
   NETWORTH_SETTINGS: 'networthSettings',
-  PERFORMANCE_SETTINGS: 'performanceSettings',
+  ACCOUNT_SETTINGS: 'accountSettings',
   SAVINGS_DATA: 'savingsData',
   RETIREMENT_DATA: 'retirementData',
   LIQUID_ASSETS_ACCOUNTS: 'liquidAssetsAccounts',
@@ -29,7 +29,8 @@ export const STORAGE_KEYS = {
   SHARED_ACCOUNTS: 'sharedAccounts',
   MANUAL_ACCOUNT_GROUPS: 'liquidAssetsAccountGroups',
   PRIMARY_HOME_DATA: 'primaryHomeData',
-  ASSET_LIABILITY_DATA: 'assetLiabilityData'
+  ASSET_LIABILITY_DATA: 'assetLiabilityData',
+  TAX_CONSTANTS: 'taxConstants'
 };
 
 // Helper function to generate unique IDs
@@ -361,7 +362,7 @@ export const setIsDemoData = (value) => {
   return setAppSettings(updatedSettings);
 };
 
-// Performance sync settings utilities
+// Account sync settings utilities
 export const getAccountSyncSettings = () => {
   const appSettings = getAppSettings();
   return {
@@ -492,13 +493,15 @@ export const exportAllData = () => {
     assetLiabilityData: getAssetLiabilityData(),
     // New portfolio-related data
     networthSettings: getNetWorthSettings(),
-    performanceSettings: getPerformanceSettings(),
+    accountSettings: getAccountSettings(),
     savingsData: getSavingsData(),
     liquidAssetsAccounts: getLiquidAssetsAccounts(),
     liquidAssetsRecords: getLiquidAssetsRecords(),
     liquidAssetsInputs: getLiquidAssetsInputs(),
     sharedAccounts: getSharedAccounts(),
     liquidAssetsAccountGroups: getManualAccountGroups(),
+    // Tax constants data
+    taxConstants: getTaxConstants(),
     // Include name mapping for data integrity
     nameMapping: getNameMapping()
   };
@@ -928,14 +931,14 @@ export const exportAllAsCSV = () => {
   // Manual Account Groups CSV
   const manualGroups = getManualAccountGroups();
   if (Object.keys(manualGroups).length > 0) {
-    const headers = ['groupId', 'groupName', 'performanceAccountName', 'owner', 'liquidAssetsAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
+    const headers = ['groupId', 'groupName', 'accountName', 'owner', 'liquidAssetsAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
     const rows = [headers];
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
       rows.push([
         groupId,
         group.name || '',
-        group.performanceAccountName || '',
+        group.accountName || '',
         group.owner || '',
         (group.liquidAssetsAccounts || []).join(';'), // Use semicolon separator for array
         group.lastSync || '',
@@ -1226,9 +1229,9 @@ export const importAllData = (importData) => {
       importedSections.push('Net Worth Settings');
     }
     
-    if (importData.performanceSettings !== undefined || importData.performance_settings !== undefined) {
-      setPerformanceSettings(importData.performanceSettings || importData.performance_settings);
-      importedSections.push('Performance Settings');
+    if (importData.accountSettings !== undefined || importData.account_settings !== undefined || importData.performanceSettings !== undefined || importData.performance_settings !== undefined) {
+      setAccountSettings(importData.accountSettings || importData.account_settings || importData.performanceSettings || importData.performance_settings);
+      importedSections.push('Account Settings');
     }
     
     if (importData.savingsData !== undefined || importData.savings_data !== undefined) {
@@ -1261,6 +1264,11 @@ export const importAllData = (importData) => {
       importedSections.push('Manual Account Groups');
     }
     
+    // Import tax constants data
+    if (importData.taxConstants !== undefined || importData.tax_constants !== undefined) {
+      setTaxConstants(importData.taxConstants || importData.tax_constants);
+      importedSections.push('Tax Constants');
+    }
     
     // Import any other localStorage items that were exported
     const knownKeys = new Set([
@@ -1415,7 +1423,7 @@ export const clearAllAppData = () => {
       'paycheckData', 
       'formData',
       'appSettings',
-      'performanceData',
+      'accountData',
       'networthSettings',
       'retirementData',
       'primaryHomeData',
@@ -1560,7 +1568,7 @@ export const resetAllAppData = () => {
       setPaycheckData({});
       setAppSettings({});
       setAnnualData({});
-      setPerformanceData({}); // Changed from [] to {}
+      setAccountData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well
       setLiquidAssetsAccounts([]); // Reset liquid assets accounts
@@ -1695,9 +1703,9 @@ export const setNetWorthSettings = (settings) => {
   return setToStorage(STORAGE_KEYS.NETWORTH_SETTINGS, settings);
 };
 
-// Performance settings utilities
-export const getPerformanceSettings = () => {
-  return getFromStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, {
+// Account settings utilities
+export const getAccountSettings = () => {
+  return getFromStorage(STORAGE_KEYS.ACCOUNT_SETTINGS, {
     selectedYears: [],
     selectedAccounts: [],
     activeTab: 'overview',
@@ -1709,8 +1717,8 @@ export const getPerformanceSettings = () => {
   });
 };
 
-export const setPerformanceSettings = (settings) => {
-  return setToStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, settings);
+export const setAccountSettings = (settings) => {
+  return setToStorage(STORAGE_KEYS.ACCOUNT_SETTINGS, settings);
 };
 
 // Savings data utilities
@@ -1958,11 +1966,11 @@ export const clearLiquidAssetsInputs = () => {
 // =============================================================================
 // SHARED ACCOUNT MANAGEMENT SYSTEM
 // =============================================================================
-// This system allows Portfolio and Performance components to share account definitions
+// This system allows Portfolio and Account components to share account definitions
 
 export const SHARED_ACCOUNTS_KEY = STORAGE_KEYS.SHARED_ACCOUNTS;
 
-// Get all shared accounts that both Portfolio and Performance can use
+// Get all shared accounts that both Portfolio and Account can use
 export const getSharedAccounts = () => {
   return getFromStorage(SHARED_ACCOUNTS_KEY, []);
 };
@@ -2022,7 +2030,7 @@ export const addOrUpdateSharedAccount = (accountData) => {
   if (existingIndex >= 0) {
     const existing = accounts[existingIndex];
     
-    // Portfolio data takes precedence over Performance data
+    // Portfolio data takes precedence over Account data
     if (source === 'portfolio' || existing.source !== 'portfolio') {
       accountEntry = {
         id: existing.id,
@@ -2141,8 +2149,8 @@ export const syncAllAccountsToShared = () => {
   };
 };
 
-// Get accounts that can be used in Performance component (from Liquid Assets)
-export const getAccountsForPerformance = () => {
+// Get accounts that can be used in Account component (from Liquid Assets)
+export const getAccountsForAccount = () => {
   return getSharedAccounts().filter(acc => acc.source === 'liquidAssets' || acc.source === 'manual');
 };
 
@@ -2223,14 +2231,14 @@ export const setManualAccountGroups = (groups) => {
 };
 
 // Create a new manual account group
-export const createManualAccountGroup = (groupName = '', performanceAccountName = '') => {
+export const createManualAccountGroup = (groupName = '', accountName = '') => {
   const groups = getManualAccountGroups();
   const groupId = generateUniqueId();
   
   const newGroup = {
     id: groupId,
     name: groupName || `Account Group ${Object.keys(groups).length + 1}`,
-    performanceAccountName: performanceAccountName,
+    accountName: accountName,
     liquidAssetsAccounts: [], // Array of liquid assets account IDs
     owner: 'Joint', // Default owner for combined accounts
     totalBalance: 0,
@@ -2404,8 +2412,8 @@ export const getUnusedAccounts = () => {
   // Collect all account names that are already assigned to groups
   const usedAccountNames = new Set();
   Object.values(manualGroups).forEach(group => {
-    if (group.performanceAccountName) {
-      usedAccountNames.add(group.performanceAccountName);
+    if (group.accountName) {
+      usedAccountNames.add(group.accountName);
     }
   });
   
@@ -2621,7 +2629,7 @@ export const setAssetLiabilityData = (data) => {
 // These aliases maintain compatibility with existing code during transition
 
 
-// Performance data aliases (now account data)
+// Legacy Performance data aliases (backward compatibility)
 export const getPerformanceData = getAccountData;
 export const setPerformanceData = setAccountData;
 export const getPerformanceDataWithNameMapping = getAccountDataWithNameMapping;
@@ -2656,4 +2664,213 @@ export const getAccountsForPortfolio = getAccountsForLiquidAssets;
 
 // Manual groups aliases
 export const getUngroupedPortfolioAccounts = getUngroupedLiquidAssetsAccounts;
+
+// ============================================================================
+// TAX CONSTANTS UTILITIES
+// ============================================================================
+
+// Tax constants data utilities with migration support
+export const getTaxConstants = () => {
+  const stored = getFromStorage(STORAGE_KEYS.TAX_CONSTANTS, null);
+  
+  // If no custom tax constants are stored, migrate from the file and store them
+  if (!stored) {
+    try {
+      // Import default tax constants from file for initial migration
+      const defaultConstants = require('../config/taxConstants');
+      const initialConstants = {
+        ANNUAL_WAGE_WITHHOLDING: defaultConstants.ANNUAL_WAGE_WITHHOLDING,
+        ANNUAL_MULTIPLE_JOBS_WITHHOLDING: defaultConstants.ANNUAL_MULTIPLE_JOBS_WITHHOLDING,
+        STANDARD_DEDUCTIONS: defaultConstants.STANDARD_DEDUCTIONS,
+        PAYROLL_TAX_RATES: defaultConstants.PAYROLL_TAX_RATES,
+        CONTRIBUTION_LIMITS: defaultConstants.CONTRIBUTION_LIMITS,
+        W4_CONFIGS: defaultConstants.W4_CONFIGS,
+        TAX_CREDITS: defaultConstants.TAX_CREDITS,
+        ALLOWANCE_AMOUNT: defaultConstants.ALLOWANCE_AMOUNT,
+        PAY_PERIODS: defaultConstants.PAY_PERIODS
+      };
+      
+      // Store the migrated constants
+      setTaxConstants(initialConstants);
+      console.log('Tax constants migrated from file to localStorage');
+      
+      return initialConstants;
+    } catch (error) {
+      console.error('Failed to migrate tax constants:', error);
+      // Return hardcoded defaults as fallback
+      return getHardcodedTaxConstants();
+    }
+  }
+  
+  return stored;
+};
+
+export const setTaxConstants = (constants) => {
+  const result = setToStorage(STORAGE_KEYS.TAX_CONSTANTS, constants);
+  if (result) {
+    // Dispatch event to notify components that tax constants have been updated
+    setTimeout(() => {
+      dispatchGlobalEvent('taxConstantsUpdated', constants);
+    }, 50);
+  }
+  return result;
+};
+
+export const resetTaxConstantsToDefaults = () => {
+  // Clear stored tax constants to force loading of defaults
+  const result = removeFromStorage(STORAGE_KEYS.TAX_CONSTANTS);
+  if (result) {
+    setTimeout(() => {
+      dispatchGlobalEvent('taxConstantsUpdated', getTaxConstants());
+    }, 50);
+  }
+  return result;
+};
+
+// Hardcoded tax constants as ultimate fallback (2025 values)
+const getHardcodedTaxConstants = () => {
+  return {
+    ANNUAL_WAGE_WITHHOLDING: {
+      single: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 6400, baseWithholding: 0, rate: 0.10 },
+        { threshold: 18325, baseWithholding: 1192.5, rate: 0.12 },
+        { threshold: 54875, baseWithholding: 5578.5, rate: 0.22 },
+        { threshold: 109750, baseWithholding: 17651, rate: 0.24 },
+        { threshold: 203700, baseWithholding: 40199, rate: 0.32 },
+        { threshold: 256925, baseWithholding: 57231, rate: 0.35 },
+        { threshold: 632750, baseWithholding: 183647.25, rate: 0.37 }
+      ],
+      marriedJointly: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 17100, baseWithholding: 0, rate: 0.10 },
+        { threshold: 40950, baseWithholding: 2385, rate: 0.12 },
+        { threshold: 114050, baseWithholding: 115700, rate: 0.22 },
+        { threshold: 223800, baseWithholding: 35302, rate: 0.24 },
+        { threshold: 411700, baseWithholding: 80398, rate: 0.32 },
+        { threshold: 518150, baseWithholding: 114462, rate: 0.35 },
+        { threshold: 768700, baseWithholding: 202154.50, rate: 0.37 }
+      ],
+      marriedSeparately: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 6400, baseWithholding: 0, rate: 0.10 },
+        { threshold: 18325, baseWithholding: 1192.5, rate: 0.12 },
+        { threshold: 54875, baseWithholding: 5578.5, rate: 0.22 },
+        { threshold: 109750, baseWithholding: 17651, rate: 0.24 },
+        { threshold: 203700, baseWithholding: 40199, rate: 0.32 },
+        { threshold: 256925, baseWithholding: 57231, rate: 0.35 },
+        { threshold: 632750, baseWithholding: 183647.25, rate: 0.37 }
+      ],
+      headOfHousehold: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 13900, baseWithholding: 0, rate: 0.10 },
+        { threshold: 30900, baseWithholding: 1700, rate: 0.12 },
+        { threshold: 78750, baseWithholding: 7442, rate: 0.22 },
+        { threshold: 117250, baseWithholding: 15912, rate: 0.24 },
+        { threshold: 211200, baseWithholding: 38460, rate: 0.32 },
+        { threshold: 264400, baseWithholding: 55484, rate: 0.35 },
+        { threshold: 640250, baseWithholding: 187031.5, rate: 0.37 }
+      ]
+    },
+    ANNUAL_MULTIPLE_JOBS_WITHHOLDING: {
+      single: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 7500, baseWithholding: 0, rate: 0.10 },
+        { threshold: 13463, baseWithholding: 596.25, rate: 0.12 },
+        { threshold: 31738, baseWithholding: 2789.25, rate: 0.22 },
+        { threshold: 59175, baseWithholding: 8825.5, rate: 0.24 },
+        { threshold: 106150, baseWithholding: 20099.5, rate: 0.32 },
+        { threshold: 132763, baseWithholding: 28615.50, rate: 0.35 },
+        { threshold: 320675, baseWithholding: 94354.88, rate: 0.37 }
+      ],
+      marriedJointly: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 15000, baseWithholding: 0, rate: 0.10 },
+        { threshold: 26925, baseWithholding: 1182.5, rate: 0.12 },
+        { threshold: 63475, baseWithholding: 5578.5, rate: 0.22 },
+        { threshold: 118350, baseWithholding: 17651, rate: 0.24 },
+        { threshold: 212300, baseWithholding: 40199, rate: 0.32 },
+        { threshold: 265525, baseWithholding: 57231, rate: 0.35 },
+        { threshold: 390800, baseWithholding: 101077.25, rate: 0.37 }
+      ],
+      marriedSeparately: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 7500, baseWithholding: 0, rate: 0.10 },
+        { threshold: 13463, baseWithholding: 596.25, rate: 0.12 },
+        { threshold: 31738, baseWithholding: 2789.25, rate: 0.22 },
+        { threshold: 59175, baseWithholding: 8825.5, rate: 0.24 },
+        { threshold: 106150, baseWithholding: 20099.5, rate: 0.32 },
+        { threshold: 132763, baseWithholding: 28615.50, rate: 0.35 },
+        { threshold: 320675, baseWithholding: 94354.88, rate: 0.37 }
+      ],
+      headOfHousehold: [
+        { threshold: 0, baseWithholding: 0, rate: 0 },
+        { threshold: 11250, baseWithholding: 0, rate: 0.10 },
+        { threshold: 19750, baseWithholding: 850, rate: 0.12 },
+        { threshold: 43675, baseWithholding: 3272, rate: 0.22 },
+        { threshold: 62925, baseWithholding: 7956, rate: 0.24 },
+        { threshold: 109000, baseWithholding: 19230, rate: 0.32 },
+        { threshold: 136500, baseWithholding: 27742, rate: 0.35 },
+        { threshold: 324425, baseWithholding: 93515.75, rate: 0.37 }
+      ]
+    },
+    STANDARD_DEDUCTIONS: {
+      single: 15000,
+      marriedJointly: 30000,
+      marriedSeparately: 15000,
+      headOfHousehold: 22500
+    },
+    PAYROLL_TAX_RATES: {
+      socialSecurity: 0.062,
+      medicare: 0.0145
+    },
+    CONTRIBUTION_LIMITS: {
+      k401_employee: 23500,
+      k401_catchUp: 7500,
+      k401_total: 70000,
+      hsa_self: 4300,
+      hsa_family: 8550,
+      hsa_catchUp: 1000,
+      ira_self: 7000,
+      ira_catchUp: 1000
+    },
+    W4_CONFIGS: {
+      new: {
+        name: "2020+ W-4 Form",
+        allowances: false,
+        extraWithholding: true,
+        dependentCredits: true
+      },
+      old: {
+        name: "2019 and Earlier W-4 Form",
+        allowances: true,
+        extraWithholding: true,
+        dependentCredits: false
+      }
+    },
+    TAX_CREDITS: {
+      childTaxCredit: 2000,
+      otherDependentCredit: 500
+    },
+    ALLOWANCE_AMOUNT: 4850,
+    PAY_PERIODS: {
+      weekly: {
+        name: "Weekly",
+        periodsPerYear: 52
+      },
+      biWeekly: {
+        name: "Bi-Weekly",
+        periodsPerYear: 26
+      },
+      semiMonthly: {
+        name: "Semi-Monthly",
+        periodsPerYear: 24
+      },
+      monthly: {
+        name: "Monthly",
+        periodsPerYear: 12
+      }
+    }
+  };
+};
 

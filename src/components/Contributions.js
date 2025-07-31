@@ -2,15 +2,15 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getPaycheckData, setPaycheckData, getPerformanceData, getAnnualData, getRetirementData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getAccountData, getAnnualData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
-import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
+import { getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
   formatCurrency, 
   calculateAge, 
   calculateProjectedAnnualIncome,
   calculateYTDIncome,
-  calculateYTDContributionsFromPerformance, 
+  calculateYTDContributionsFromAccount, 
   calculateRemainingContributionRoom,
   calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
@@ -19,8 +19,13 @@ import '../styles/last-update-info.css';
 
 const Contributions = () => {
   const navigate = useNavigate();
+  
+  // Get tax constants dynamically
+  const CONTRIBUTION_LIMITS = getContributionLimits();
+  const PAY_PERIODS = getPayPeriods();
+  
   const [paycheckData, setPaycheckData] = useState({});
-  const [performanceData, setPerformanceData] = useState({});
+  const [accountData, setAccountData] = useState({});
   const [annualData, setAnnualData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
@@ -75,12 +80,12 @@ const Contributions = () => {
   };
 
   useEffect(() => {
-    // Load paycheck, performance, and historical data
+    // Load paycheck, account, and annual data
     const paycheckData = getPaycheckData();
-    const performanceData = getPerformanceData();
+    const accountData = getAccountData();
     const annualData = getAnnualData();
     setPaycheckData(paycheckData);
-    setPerformanceData(performanceData);
+    setAccountData(accountData);
     setAnnualData(annualData);
     
     // Listen for data updates
@@ -89,33 +94,29 @@ const Contributions = () => {
       setPaycheckData(updatedData);
     };
 
-    const handlePerformanceUpdate = () => {
-      const updatedData = getPerformanceData();
-      setPerformanceData(updatedData);
+    const handleAccountUpdate = () => {
+      const updatedData = getAccountData();
+      setAccountData(updatedData);
     };
 
-    const handleHistoricalUpdate = () => {
+    const handleAnnualUpdate = () => {
       const updatedData = getAnnualData();
       setAnnualData(updatedData);
     };
 
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     // Listen for both new and old event names for backward compatibility
-    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
-    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('accountDataUpdated', handleAccountUpdate);
+    window.addEventListener('annualDataUpdated', handleAnnualUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
-      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
-      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('accountDataUpdated', handleAccountUpdate);
+      window.removeEventListener('annualDataUpdated', handleAnnualUpdate);
     };
   }, []);
 
-  // Let TaxCalculator handle the dual calculator toggle - just listen for updates
+  // Let PaycheckCalculator handle the dual calculator toggle - just listen for updates
   // No need for toggle handler here, the paycheckDataUpdated listener above handles sync
 
   // Calculate contribution metrics
@@ -144,15 +145,15 @@ const Contributions = () => {
         progressAGI = calculateProjectedAnnualIncome(person.incomePeriodsData, person.payPeriod || 'biWeekly');
       }
 
-      // Get YTD contributions from Performance data 
+      // Get YTD contributions from Account data 
       const individualUserNames = [person.name].filter(n => n && n.trim());
       const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
       
       // Get individual contributions (401k, HSA, ESPP) - only this person's accounts
-      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), annualData);
+      const individualYtdContributions = calculateYTDContributionsFromAccount(accountData, individualUserNames, new Date().getFullYear(), annualData);
       
       // Get all contributions (for joint accounts like IRA, Brokerage) - all users including Joint
-      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), annualData);
+      const allYtdContributions = calculateYTDContributionsFromAccount(accountData, allUserNames, new Date().getFullYear(), annualData);
       
       // Determine which accounts are joint and divide contributions evenly
       const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
@@ -161,15 +162,15 @@ const Contributions = () => {
       // Start with individual contributions, then override with joint contributions where appropriate
       const ytdContributions = { ...individualYtdContributions };
       
-      // Check for joint accounts in performance data
+      // Check for joint accounts in account data
       const jointAccounts = {
         brokerage: false,
         ira: true // IRA contributions are treated as joint in our math per requirements
       };
       
-      // Check performance data for actual joint accounts
-      if (performanceData && Object.keys(performanceData).length > 0) {
-        Object.values(performanceData).forEach(yearData => {
+      // Check account data for actual joint accounts
+      if (accountData && Object.keys(accountData).length > 0) {
+        Object.values(accountData).forEach(yearData => {
           if (yearData && yearData.users) {
             Object.entries(yearData.users).forEach(([userName, account]) => {
               if (account.accountType) {
@@ -240,8 +241,8 @@ const Contributions = () => {
       }
       
       const max401k = isOver50 
-        ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-        : CONTRIBUTION_LIMITS_2025.k401_employee;
+        ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+        : CONTRIBUTION_LIMITS.k401_employee;
 
       // IRA calculations - from budgetImpacting
       const budgetImpacting = person.budgetImpacting || {};
@@ -257,8 +258,8 @@ const Contributions = () => {
       }
       
       const maxIra = isOver50 
-        ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-        : CONTRIBUTION_LIMITS_2025.ira_self;
+        ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+        : CONTRIBUTION_LIMITS.ira_self;
 
       // HSA calculations - from medicalDeductions
       const medicalDeductions = person.medicalDeductions || {};
@@ -272,9 +273,9 @@ const Contributions = () => {
       const hsaCoverage = person.hsaCoverageType || 'none';
       let maxHsa = 0;
       if (hsaCoverage === 'self') {
-        maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        maxHsa = CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       } else if (hsaCoverage === 'family') {
-        maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        maxHsa = CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       }
       
 
@@ -291,7 +292,7 @@ const Contributions = () => {
         annualBrokerage = annualBrokerage / numActualUsers;
       }
       
-      // Determine account types (joint vs individual) from performance data
+      // Determine account types (joint vs individual) from account data
       const accountTypes = {
         k401: 'Individual', // 401k are always individual accounts
         ira: 'Joint', // Our contribution math treats IRA as joint (per requirements)
@@ -422,10 +423,10 @@ const Contributions = () => {
         const ytdHsaEmployee = ytdContributions.hsa || 0;
         
         // For HSA employer contributions, we need to handle this more carefully
-        // If we have historical data for employer HSA, use it; otherwise calculate YTD based on paycheck settings
+        // If we have annual data for employer HSA, use it; otherwise calculate YTD based on paycheck settings
         let ytdHsaEmployer = ytdContributions.totalEmployerHsa || 0;
         
-        // If no historical employer HSA data, calculate YTD based on current settings and elapsed time
+        // If no annual employer HSA data, calculate YTD based on current settings and elapsed time
         if (ytdHsaEmployer === 0 && hsaEmployerContribution > 0) {
           // Calculate how much of the year has elapsed based on pay periods
           const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -603,7 +604,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData, annualData, showSpouseCalculator]);
+  }, [paycheckData, accountData, annualData, showSpouseCalculator]);
 
   // Event listeners for navigation controls
   useEffect(() => {
@@ -923,16 +924,16 @@ const Contributions = () => {
       const age = p.age || 0;
       const isOver50 = age >= 50;
       return sum + (isOver50 
-        ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-        : CONTRIBUTION_LIMITS_2025.k401_employee);
+        ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+        : CONTRIBUTION_LIMITS.k401_employee);
     }, 0);
     
     const totalIraLimit = people.reduce((sum, p) => {
       const age = p.age || 0;
       const isOver50 = age >= 50;
       return sum + (isOver50 
-        ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-        : CONTRIBUTION_LIMITS_2025.ira_self);
+        ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+        : CONTRIBUTION_LIMITS.ira_self);
     }, 0);
     
     // For HSA, we need to be careful about how we calculate household limits
@@ -943,9 +944,9 @@ const Contributions = () => {
       // Try to access hsaCoverageType from the person's data
       const hsaCoverage = paycheckData[p.name === contributionMetrics.your?.name ? 'your' : 'spouse']?.hsaCoverageType || 'none';
       if (hsaCoverage === 'self') {
-        return sum + CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        return sum + CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       } else if (hsaCoverage === 'family') {
-        return sum + CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        return sum + CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       }
       return sum;
     }, 0);
@@ -2542,7 +2543,7 @@ const Contributions = () => {
                     <h5>📈 Progress + Forecast View</h5>
                     <p>Shows actual YTD progress + projected remaining contributions:</p>
                     <ul>
-                      <li><strong>YTD Data:</strong> From Performance Tracker and Historical Tracker entries</li>
+                      <li><strong>YTD Data:</strong> From Account Tracker and Annual Tracker entries</li>
                       <li><strong>Projected Remaining:</strong> Based on current settings for remaining time periods</li>
                       <li><strong>Time Calculations:</strong> Uses remaining pay periods and months in the year</li>
                     </ul>
@@ -2556,8 +2557,8 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>401(k) Contributions</h5>
                   <ul>
-                    <li><strong>Employee:</strong> Performance Tracker entries (accountType: "401k")</li>
-                    <li><strong>Employer Match:</strong> Performance Tracker "employerMatch" field</li>
+                    <li><strong>Employee:</strong> Account Tracker entries (accountType: "401k")</li>
+                    <li><strong>Employer Match:</strong> Account Tracker "employerMatch" field</li>
                     <li><strong>Limits:</strong> $23,000 + $7,500 catch-up (age 50+) for 2025</li>
                     <li><strong>Account Type:</strong> Always Individual (separate limits per person)</li>
                   </ul>
@@ -2566,7 +2567,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>IRA Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "IRA")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "IRA")</li>
                     <li><strong>Limits:</strong> $7,000 + $1,000 catch-up (age 50+) for 2025</li>
                     <li><strong>Account Type:</strong> Treated as Joint (combined limit for household)</li>
                     <li><strong>Division:</strong> Joint totals divided evenly between spouses</li>
@@ -2576,8 +2577,8 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>HSA Contributions</h5>
                   <ul>
-                    <li><strong>Employee:</strong> Performance Tracker entries (accountType: "HSA")</li>
-                    <li><strong>Employer:</strong> Historical Tracker "employerHsa" field OR estimated from paycheck settings</li>
+                    <li><strong>Employee:</strong> Account Tracker entries (accountType: "HSA")</li>
+                    <li><strong>Employer:</strong> Annual Tracker "employerHsa" field OR estimated from paycheck settings</li>
                     <li><strong>Limits:</strong> $4,300 (self) / $8,550 (family) + $1,000 catch-up (age 55+) for 2025</li>
                     <li><strong>Important:</strong> Both employee AND employer contributions count toward IRS limit</li>
                     <li><strong>Account Type:</strong> Always Individual (separate limits per person)</li>
@@ -2587,7 +2588,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>ESPP Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "ESPP")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "ESPP")</li>
                     <li><strong>Limits:</strong> No IRS annual limit (company-specific limits may apply)</li>
                     <li><strong>Account Type:</strong> Always Individual</li>
                   </ul>
@@ -2596,7 +2597,7 @@ const Contributions = () => {
                 <div className="contributions-help-data-source">
                   <h5>Brokerage Contributions</h5>
                   <ul>
-                    <li><strong>Source:</strong> Performance Tracker entries (accountType: "Brokerage" or "Taxable")</li>
+                    <li><strong>Source:</strong> Account Tracker entries (accountType: "Brokerage" or "Taxable")</li>
                     <li><strong>Limits:</strong> No IRS annual limit</li>
                     <li><strong>Account Type:</strong> Auto-detected (Joint if user name is "Joint" or account name contains "joint")</li>
                     <li><strong>Division:</strong> Joint totals divided evenly between spouses</li>
@@ -2621,7 +2622,7 @@ const Contributions = () => {
                     <ul>
                       <li><strong>Remaining Pay Periods:</strong> Calculated from today to end of year based on pay frequency</li>
                       <li><strong>Remaining Months:</strong> Complete months remaining in the year</li>
-                      <li><strong>YTD Employer HSA:</strong> If no historical data, estimated as (annual amount × elapsed months ÷ 12)</li>
+                      <li><strong>YTD Employer HSA:</strong> If no annual data, estimated as (annual amount × elapsed months ÷ 12)</li>
                     </ul>
                   </div>
 
@@ -2651,9 +2652,9 @@ const Contributions = () => {
                 <h4>⚠️ Important Notes</h4>
                 <div className="contributions-help-notes">
                   <ul>
-                    <li><strong>Data Accuracy:</strong> Ensure your Performance Tracker and Historical Tracker data is up-to-date</li>
+                    <li><strong>Data Accuracy:</strong> Ensure your Account Tracker and Annual Tracker data is up-to-date</li>
                     <li><strong>Missing Data:</strong> If YTD data is missing, the tool estimates based on current settings</li>
-                    <li><strong>Account Naming:</strong> Use consistent naming across Performance Tracker for accurate categorization</li>
+                    <li><strong>Account Naming:</strong> Use consistent naming across Account Tracker for accurate categorization</li>
                     <li><strong>Joint Accounts:</strong> Mark accounts as "Joint" in the user name for proper household calculations</li>
                     <li><strong>Real-Time Updates:</strong> Changes in Paycheck Calculator automatically update these projections</li>
                     <li><strong>Tax Year:</strong> All calculations are based on the current calendar year</li>
@@ -2665,9 +2666,9 @@ const Contributions = () => {
                 <h4>🔧 Troubleshooting</h4>
                 <div className="contributions-help-troubleshooting">
                   <ul>
-                    <li><strong>Missing YTD Data:</strong> Add entries to Performance Tracker with correct account types</li>
+                    <li><strong>Missing YTD Data:</strong> Add entries to Account Tracker with correct account types</li>
                     <li><strong>Wrong Limits:</strong> Check birthdate and HSA coverage type in Paycheck Calculator</li>
-                    <li><strong>Employer HSA Not Showing:</strong> Add "employerHsa" field to Historical Tracker or verify paycheck settings</li>
+                    <li><strong>Employer HSA Not Showing:</strong> Add "employerHsa" field to Annual Tracker or verify paycheck settings</li>
                     <li><strong>Joint Account Issues:</strong> Ensure account user name is "Joint" or account name contains "joint"</li>
                     <li><strong>Calculation Discrepancies:</strong> Verify pay period settings match your actual pay schedule</li>
                   </ul>

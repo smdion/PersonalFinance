@@ -1,26 +1,33 @@
-import { 
-  STANDARD_DEDUCTIONS_2025,
-  CONTRIBUTION_LIMITS_2025,
-  TAX_CREDITS,
-  ALLOWANCE_AMOUNT_2025,
-  PAY_PERIODS
-} from '../config/taxConstants';
-
 import {
   calculateAnnualWageWithholding,
   calculatePayrollTaxes
 } from './calculationHelpers';
 
+import { getTaxConstants } from './localStorage';
+
+// Get tax constants from localStorage
+const getTaxConstantsData = () => {
+  const constants = getTaxConstants();
+  return {
+    STANDARD_DEDUCTIONS: constants.STANDARD_DEDUCTIONS,
+    CONTRIBUTION_LIMITS: constants.CONTRIBUTION_LIMITS,
+    TAX_CREDITS: constants.TAX_CREDITS,
+    ALLOWANCE_AMOUNT: constants.ALLOWANCE_AMOUNT,
+    PAY_PERIODS: constants.PAY_PERIODS,
+    W4_CONFIGS: constants.W4_CONFIGS
+  };
+};
+
 // Re-Export Commonly Used Items For Backward Compatibility
-export { 
-  W4_CONFIGS, 
-  CONTRIBUTION_LIMITS_2025, 
-  PAY_PERIODS
-} from '../config/taxConstants';
+export const getW4Configs = () => getTaxConstants().W4_CONFIGS;
+export const getContributionLimits = () => getTaxConstants().CONTRIBUTION_LIMITS;
+export const getPayPeriods = () => getTaxConstants().PAY_PERIODS;
 
 export { calculatePercentageOfMax } from './calculationHelpers';
 
 export function calculateFederalTax(taxableIncome, filingStatus, w4Type = 'new', w4Options = {}) {
+  const { ALLOWANCE_AMOUNT, TAX_CREDITS } = getTaxConstantsData();
+  
   if (w4Type === 'new' && w4Options.multipleJobs) {
     return 0; // Placeholder - Actual Calculation Done In CalculateTakeHomePay
   }
@@ -29,7 +36,7 @@ export function calculateFederalTax(taxableIncome, filingStatus, w4Type = 'new',
 
   // Apply W-4 Adjustments For Old Form (2019 And Earlier)
   if (w4Type === 'old' && w4Options.allowances) {
-    const allowanceReduction = w4Options.allowances * ALLOWANCE_AMOUNT_2025;
+    const allowanceReduction = w4Options.allowances * ALLOWANCE_AMOUNT;
     const reducedTaxableIncome = Math.max(0, taxableIncome - allowanceReduction);
     tax = calculateAnnualWageWithholding(reducedTaxableIncome, filingStatus, false);
   }
@@ -60,9 +67,11 @@ export function calculateTakeHomePay(
   retirementOptions = {}, medicalDeductions = {}, esppDeductionPercent = 0, 
   hsaCoverageType = 'self' // Remove bonusMultiplier parameter
 ) {
+  const { PAY_PERIODS, STANDARD_DEDUCTIONS, CONTRIBUTION_LIMITS, TAX_CREDITS, ALLOWANCE_AMOUNT } = getTaxConstantsData();
+  
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
   const annualGrossIncome = grossPay * periodsPerYear;
-  const standardDeduction = STANDARD_DEDUCTIONS_2025[filingStatus];
+  const standardDeduction = STANDARD_DEDUCTIONS[filingStatus];
   
   // Calculate 401k Contributions From Percentages
   // ...existing code...
@@ -76,8 +85,8 @@ export function calculateTakeHomePay(
   
   // Validate Contribution Limits
   const maxContribution = retirementOptions.isOver50 
-    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-    : CONTRIBUTION_LIMITS_2025.k401_employee;
+    ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+    : CONTRIBUTION_LIMITS.k401_employee;
   
   const actualTraditional401kAnnual = Math.min(traditional401kAnnual, maxContribution);
   const actualRoth401kAnnual = Math.min(roth401kAnnual, maxContribution - actualTraditional401kAnnual);
@@ -98,8 +107,8 @@ export function calculateTakeHomePay(
   const totalMedicalDeductionsAnnual = totalMedicalDeductionsPaycheck * periodsPerYear;
 
   const maxHsaContribution = hsaCoverageType === 'self'
-    ? CONTRIBUTION_LIMITS_2025.hsa_self
-    : CONTRIBUTION_LIMITS_2025.hsa_family;
+    ? CONTRIBUTION_LIMITS.hsa_self
+    : CONTRIBUTION_LIMITS.hsa_family;
 
   const totalHsaContributionAnnual = Math.min(
     (medicalDeductions.hsa || 0) * periodsPerYear,
@@ -149,7 +158,7 @@ export function calculateTakeHomePay(
     federalTaxAnnual = calculateAnnualWageWithholding(adjustedGrossIncome, filingStatus, false);
     
     if (w4Type === 'old' && w4Options.allowances) {
-      const allowanceReduction = w4Options.allowances * ALLOWANCE_AMOUNT_2025;
+      const allowanceReduction = w4Options.allowances * ALLOWANCE_AMOUNT;
       const reducedAdjustedGrossIncome = Math.max(0, adjustedGrossIncome - allowanceReduction);
       federalTaxAnnual = calculateAnnualWageWithholding(reducedAdjustedGrossIncome, filingStatus, false);
     }

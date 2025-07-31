@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { W4_CONFIGS, CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
 import { getAppSettings, setAppSettings } from '../utils/localStorage';
+import { getW4Configs, getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
   calculatePercentageOfMax,
   formatCurrency,
@@ -14,7 +14,7 @@ import {
   calculateRequiredHsaPerPaycheckContribution,
 } from '../utils/calculationHelpers';
 
-const PaycheckForm = ({ 
+const PaycheckInputFields = ({ 
   personName,
   name, setName,
   employer, setEmployer,
@@ -48,6 +48,10 @@ const PaycheckForm = ({
   payWeekType, setPayWeekType,
   hsaCoverageType, setHsaCoverageType
 }) => {
+  // Get tax constants dynamically
+  const W4_CONFIGS = getW4Configs();
+  const CONTRIBUTION_LIMITS = getContributionLimits();
+  const PAY_PERIODS = getPayPeriods();
 
   // State for collapsible sections
   const [expandedSections, setExpandedSections] = useState({
@@ -569,7 +573,7 @@ const PaycheckForm = ({
                   onChange={(e) => handleRetirementOptionChange('isOver50', e.target.checked)}
                 />
                 <span className="form-label">
-                  Age 50+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS_2025.k401_catchUp)})
+                  Age 50+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS.k401_catchUp)})
                 </span>
               </div>
 
@@ -612,8 +616,8 @@ const PaycheckForm = ({
                   <div><strong>401k Contribution Summary:</strong></div>
                   <div>Maximum Annual Contribution: {formatCurrency(
                     retirementOptions.isOver50
-                      ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-                      : CONTRIBUTION_LIMITS_2025.k401_employee
+                      ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+                      : CONTRIBUTION_LIMITS.k401_employee
                   )}</div>
                   <div>Your Annual Contribution: {formatCurrency(
                     salary * ((retirementOptions.traditional401kPercent + retirementOptions.roth401kPercent) / 100)
@@ -621,8 +625,8 @@ const PaycheckForm = ({
                   <div>Percentage Of IRS Max (Traditional + Roth): {calculatePercentageOfMax(
                     salary * ((retirementOptions.traditional401kPercent + retirementOptions.roth401kPercent) / 100),
                     retirementOptions.isOver50
-                      ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-                      : CONTRIBUTION_LIMITS_2025.k401_employee
+                      ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+                      : CONTRIBUTION_LIMITS.k401_employee
                   )}</div>
                   <div>Required Percentage to Max Out: {calculateRequired401kPercentage(parseFloat(salary) || 0, retirementOptions.isOver50)}%</div>
                 </div>
@@ -801,7 +805,7 @@ const PaycheckForm = ({
                   >
                     Self-Only Coverage
                     <div style={{ fontSize: '0.85rem', marginTop: '2px' }}>
-                      (${CONTRIBUTION_LIMITS_2025.hsa_self.toLocaleString()} Annually)
+                      (${CONTRIBUTION_LIMITS.hsa_self.toLocaleString()} Annually)
                     </div>
                   </button>
                   <button
@@ -810,7 +814,7 @@ const PaycheckForm = ({
                   >
                     Family Coverage
                     <div style={{ fontSize: '0.85rem', marginTop: '2px' }}>
-                      (${CONTRIBUTION_LIMITS_2025.hsa_family.toLocaleString()} Annually)
+                      (${CONTRIBUTION_LIMITS.hsa_family.toLocaleString()} Annually)
                     </div>
                   </button>
                 </div>
@@ -827,7 +831,7 @@ const PaycheckForm = ({
                         onChange={(e) => setIsHsaOver55(e.target.checked)}
                       />
                       <span className="form-label">
-                        Age 55+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS_2025.hsa_catchUp)})
+                        Age 55+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS.hsa_catchUp)})
                       </span>
                     </div>
                   </div>
@@ -871,8 +875,8 @@ const PaycheckForm = ({
                       <div><strong>HSA Contribution Summary:</strong></div>
                       <div>Maximum Annual Contribution: {formatCurrency(
                         hsaCoverageType === 'self'
-                          ? CONTRIBUTION_LIMITS_2025.hsa_self + (isHsaOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-                          : CONTRIBUTION_LIMITS_2025.hsa_family + (isHsaOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
+                          ? CONTRIBUTION_LIMITS.hsa_self + (isHsaOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+                          : CONTRIBUTION_LIMITS.hsa_family + (isHsaOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
                       )}</div>
                       <div>Your Annual Contribution: {formatCurrency(
                         (medicalDeductions.hsa * PAY_PERIODS[payPeriod].periodsPerYear) + (medicalDeductions.employerHsa || 0)
@@ -880,8 +884,8 @@ const PaycheckForm = ({
                       <div>Percentage of Maximum: {(
                         ((medicalDeductions.hsa * PAY_PERIODS[payPeriod].periodsPerYear) + (medicalDeductions.employerHsa || 0)) /
                         (hsaCoverageType === 'self'
-                          ? CONTRIBUTION_LIMITS_2025.hsa_self + (isHsaOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-                          : CONTRIBUTION_LIMITS_2025.hsa_family + (isHsaOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
+                          ? CONTRIBUTION_LIMITS.hsa_self + (isHsaOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+                          : CONTRIBUTION_LIMITS.hsa_family + (isHsaOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
                         ) * 100
                       ).toFixed(1)}%</div>
                       <div>Required Per Paycheck to Max Out: ${calculateRequiredHsaPerPaycheckContribution(hsaCoverageType, payPeriod, medicalDeductions.employerHsa || 0, isHsaOver55)}</div>
@@ -1035,7 +1039,7 @@ const PaycheckForm = ({
                     onChange={(e) => setIsIraOver50(e.target.checked)}
                   />
                   <span className="form-label">
-                    Age 50+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS_2025.ira_catchUp)})
+                    Age 50+ Catch-up Contribution (+{formatCurrency(CONTRIBUTION_LIMITS.ira_catchUp)})
                   </span>
                 </div>
               </div>
@@ -1143,8 +1147,8 @@ const PaycheckForm = ({
                   <div><strong>IRA Contribution Summary:</strong></div>
                   <div>Maximum Annual IRA Contribution: {formatCurrency(
                     isIraOver50
-                      ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-                      : CONTRIBUTION_LIMITS_2025.ira_self
+                      ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+                      : CONTRIBUTION_LIMITS.ira_self
                   )}</div>
                   <div>Your Annual IRA Contribution: {formatCurrency(
                     (budgetImpacting.traditionalIraMonthly + budgetImpacting.rothIraMonthly) * 12
@@ -1152,8 +1156,8 @@ const PaycheckForm = ({
                   <div>Percentage of Maximum: {calculatePercentageOfMax(
                     (budgetImpacting.traditionalIraMonthly + budgetImpacting.rothIraMonthly) * 12,
                     isIraOver50
-                      ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-                      : CONTRIBUTION_LIMITS_2025.ira_self
+                      ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+                      : CONTRIBUTION_LIMITS.ira_self
                   )}</div>
                   <div>Required Monthly to Max Out: ${calculateRequiredIraContribution(isIraOver50)}</div>
                 </div>
@@ -1512,4 +1516,4 @@ const PaycheckForm = ({
   );
 };
 
-export default PaycheckForm;
+export default PaycheckInputFields;

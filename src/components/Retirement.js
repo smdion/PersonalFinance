@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { FormContext } from '../context/FormContext';
-import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
+import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getAccountData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
@@ -146,7 +146,7 @@ const ContributionTooltip = ({ contributions, type, children }) => {
       <div className="tooltip-item">
         <span>Data Source:</span>
         <span className={breakdown.employerMatchSource === 'actual' ? 'actual-data' : 'projected-data'}>
-          {breakdown.employerMatchSource === 'actual' ? 'Actual (Performance Tracker)' : 'Projected (Calculated)'}
+          {breakdown.employerMatchSource === 'actual' ? 'Actual (Account Tracker)' : 'Projected (Calculated)'}
         </span>
       </div>
     </div>
@@ -270,7 +270,7 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
 
 
 const Retirement = () => {
-  const { formData: contextFormData } = useContext(FormContext);
+  const { formData: contextFormData } = useContext(PaycheckBudgetContext);
 
   // Use shared dual calculator hook
   const showSpouseCalculator = useDualCalculator();
@@ -350,13 +350,13 @@ const Retirement = () => {
   const currentYear = new Date().getFullYear();
   const paycheckData = useMemo(() => getPaycheckData(), []);
   const annualData = useMemo(() => getAnnualData(), []);
-  const performanceData = useMemo(() => getPerformanceData(), []);
+  const accountData = useMemo(() => getAccountData(), []);
 
   // Helper function to get actual employer match data from performance data
   const getActualEmployerMatchForYear = useCallback((userKey, year) => {
     const paycheckUser = paycheckData[userKey];
 
-    if (!paycheckUser?.name || !performanceData) {
+    if (!paycheckUser?.name || !accountData) {
       return null;
     }
 
@@ -376,7 +376,7 @@ const Retirement = () => {
     };
 
     // Find all performance data entries for this user and year
-    for (const [entryId, entry] of Object.entries(performanceData)) {
+    for (const [entryId, entry] of Object.entries(accountData)) {
       if (entry.year === year && entry.users) {
         for (const [owner, userData] of Object.entries(entry.users)) {
           const userMatches = matchesUser(owner, paycheckUser.name);
@@ -394,7 +394,7 @@ const Retirement = () => {
     }
     
     return foundData ? totalEmployerMatch : null;
-  }, [paycheckData, performanceData]);
+  }, [paycheckData, accountData]);
 
   // Calculate age-based return rate
   const calculateReturnRate = (currentAge, retirementAge, retirementRate) => {

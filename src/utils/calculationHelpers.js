@@ -1,10 +1,4 @@
-import { 
-  ANNUAL_WAGE_WITHHOLDING_2025, 
-  ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025,
-  PAYROLL_TAX_RATES,
-  CONTRIBUTION_LIMITS_2025,
-  PAY_PERIODS 
-} from '../config/taxConstants';
+import { getTaxConstants } from './localStorage';
 
 // Utility Functions
 export const calculatePercentageOfMax = (amount, max) => {
@@ -58,32 +52,36 @@ export const calculateAge = (birthday) => {
 
 // Contribution Calculation Helpers
 export const calculateRequired401kPercentage = (salary, isOver50) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const maxContribution = isOver50
-    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-    : CONTRIBUTION_LIMITS_2025.k401_employee;
+    ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+    : CONTRIBUTION_LIMITS.k401_employee;
   return ((maxContribution / salary) * 100).toFixed(2);
 };
 
 export const calculateRequiredIraContribution = (isOver50) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const maxContribution = isOver50
-    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-    : CONTRIBUTION_LIMITS_2025.ira_self;
+    ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+    : CONTRIBUTION_LIMITS.ira_self;
   return (maxContribution / 12).toFixed(2);
 };
 
 export const calculateRequiredHsaContribution = (hsaCoverageType, payPeriod, employerHsa, isOver55) => {
+  const { CONTRIBUTION_LIMITS, PAY_PERIODS } = getTaxConstants();
   const maxContribution = hsaCoverageType === 'self'
-    ? CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-    : CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    ? CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+    : CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   return ((maxContribution - employerHsa) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2);
 };
 
 export const calculateRequiredHsaPerPaycheckContribution = (hsaCoverageType, payPeriod, employerHsa, isOver55) => {
   if (hsaCoverageType === 'none') return '0.00';
   
+  const { CONTRIBUTION_LIMITS, PAY_PERIODS } = getTaxConstants();
   const maxContribution = hsaCoverageType === 'self'
-    ? CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-    : CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    ? CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+    : CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   return ((maxContribution - employerHsa) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2);
 };
 
@@ -169,11 +167,12 @@ export const calculateWithholdingFromAnnualTable = (annualGrossPay, table) => {
 };
 
 export const calculateAnnualWageWithholding = (annualGrossPay, filingStatus, isMultipleJobs = false) => {
-  const tableToUse = isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 : ANNUAL_WAGE_WITHHOLDING_2025;
+  const { ANNUAL_WAGE_WITHHOLDING, ANNUAL_MULTIPLE_JOBS_WITHHOLDING } = getTaxConstants();
+  const tableToUse = isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING : ANNUAL_WAGE_WITHHOLDING;
   const table = tableToUse[filingStatus];
   
   if (!table) {
-    const fallbackTable = (isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 : ANNUAL_WAGE_WITHHOLDING_2025).single;
+    const fallbackTable = (isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING : ANNUAL_WAGE_WITHHOLDING).single;
     if (!fallbackTable) return 0;
     return calculateWithholdingFromAnnualTable(annualGrossPay, fallbackTable);
   }
@@ -182,6 +181,7 @@ export const calculateAnnualWageWithholding = (annualGrossPay, filingStatus, isM
 };
 
 export const calculatePayrollTaxes = (grossIncome) => {
+  const { PAYROLL_TAX_RATES } = getTaxConstants();
   const socialSecurityTax = grossIncome * PAYROLL_TAX_RATES.socialSecurity;
   const medicareTax = grossIncome * PAYROLL_TAX_RATES.medicare;
   
@@ -226,8 +226,8 @@ export const generateDescriptiveFilename = (baseType, userNames = [], fileExtens
 // Generate filename specifically for different data types
 export const generateDataFilename = (dataType, userNames = [], fileExtension = 'csv') => {
   const typeMap = {
-    'historical': 'Historical_Financial_Data',
-    'performance': 'Account_Performance_Data',
+    'annual': 'Annual_Financial_Data',
+    'accounts': 'Account_Data',
     'budget': 'Budget_Categories_Data',
     'paycheck': 'Paycheck_Calculator_Data',
     'all_data': 'Complete_Financial_Data'
@@ -242,7 +242,7 @@ export const generateDataFilename = (dataType, userNames = [], fileExtension = '
 // Calculate house value based on mode (market value vs cost basis)
 export const calculateHouseValue = (year, annualEntry, netWorthMode, annualData, assetLiabilityData) => {
   if (netWorthMode === 'market') {
-    // Use online estimated value from historical data
+    // Use online estimated value from annual data
     return annualEntry.house || 0;
   } else {
     // Cost basis: Get purchase price and year from assetLiabilityData primary home
@@ -331,12 +331,12 @@ export const getCumulativeEarnings = (targetYear, annualData) => {
 };
 
 // Process net worth data with all calculations
-export const processNetWorthData = (annualData, performanceData, paycheckData, netWorthMode, assetLiabilityData = null) => {
+export const processNetWorthData = (annualData, accountData, paycheckData, netWorthMode, assetLiabilityData = null) => {
   const years = Object.keys(annualData).map(year => parseInt(year)).sort();
   
   return years.map(year => {
     const annualEntry = annualData[year];
-    const performanceEntry = performanceData[year];
+    const accountEntry = accountData[year];
     
     if (!annualEntry) return null;
     
@@ -358,7 +358,7 @@ export const processNetWorthData = (annualData, performanceData, paycheckData, n
     const cash = annualEntry.cash || 0;
     const otherAssets = annualEntry.othAssets || 0;
     
-    // Get AGI directly from historical data
+    // Get AGI directly from annual data
     const agi = annualEntry.agi || 0;
     
     // Liabilities
@@ -420,7 +420,7 @@ export const processNetWorthData = (annualData, performanceData, paycheckData, n
 export const generateMainNetWorthChartData = (filteredData) => {
   const years = filteredData.map(d => d.year);
   const netWorthData = filteredData.map(d => d.netWorth);
-  const portfolioData = filteredData.map(d => d.portfolio);
+  const accountsData = filteredData.map(d => d.accounts);
   const houseData = filteredData.map(d => d.houseValue);
   const cashData = filteredData.map(d => d.cash);
   const liabilityData = filteredData.map(d => d.totalLiabilities); // Show as positive values
@@ -438,8 +438,8 @@ export const generateMainNetWorthChartData = (filteredData) => {
         fill: true
       },
       {
-        label: 'Portfolio',
-        data: portfolioData,
+        label: 'Accounts',
+        data: accountsData,
         borderColor: 'rgb(59, 130, 246)',
         backgroundColor: 'rgba(59, 130, 246, 0.1)',
         borderWidth: 2,
@@ -491,7 +491,7 @@ export const generatePortfolioTaxLocationData = (filteredData) => {
 
   const datasets = categories.map((category, categoryIndex) => {
     const data = filteredData.map(d => {
-      const total = d.portfolio;
+      const total = d.accounts;
       if (total <= 0) return 0;
       
       switch (categoryIndex) {
@@ -537,7 +537,7 @@ export const generateNetWorthLocationData = (filteredData) => {
       if (total <= 0) return 0;
       
       switch (categoryIndex) {
-        case 0: return (d.portfolio / total) * 100;
+        case 0: return (d.accounts / total) * 100;
         case 1: return (d.houseValue / total) * 100;
         case 2: return (d.cash / total) * 100;
         case 3: return (d.otherAssets / total) * 100;
@@ -571,9 +571,9 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
   // Calculate Prodigious Accumulator (2x Average Accumulator)
   const prodigiousAccumulatorData = filteredData.map(d => (d.averageAccumulator || 0) * 2);
   
-  // Net Worth and Portfolio data
+  // Net Worth and Accounts data
   const netWorthData = filteredData.map(d => d.netWorth);
-  const portfolioData = filteredData.map(d => d.portfolio);
+  const accountsData = filteredData.map(d => d.accounts);
 
   return {
     labels: years,
@@ -606,8 +606,8 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
         fill: false
       },
       {
-        label: 'Portfolio',
-        data: portfolioData,
+        label: 'Accounts',
+        data: accountsData,
         borderColor: 'rgb(251, 146, 60)',
         backgroundColor: 'rgba(251, 146, 60, 0.1)',
         borderWidth: 2,
@@ -622,6 +622,7 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 
 // Helper function to calculate number of pay periods between two dates
 const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
   
   // Calculate the number of days between start and end dates (inclusive)
@@ -703,6 +704,7 @@ export const calculateYTDIncome = (incomePeriodsData, payPeriod = 'biWeekly', cu
       ytdIncome += grossSalary;
     } else {
       // Use the dates as specified in the income period
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = grossSalary / periodsPerYear;
       
@@ -773,6 +775,7 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
     if (isFullYear) {
       projectedIncome += grossSalary;
     } else {
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = grossSalary / periodsPerYear;
       const payPeriodsInPeriod = calculatePayPeriodsBetweenDates(startDate, endDate, payPeriod);
@@ -791,6 +794,7 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
       const nextDay = new Date(lastEndDate);
       nextDay.setDate(nextDay.getDate() + 1);
       
+      const { PAY_PERIODS } = getTaxConstants();
       const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
       const grossPayPerPaycheck = (parseFloat(currentSalary) || 0) / periodsPerYear;
       const remainingPayPeriods = calculatePayPeriodsBetweenDates(nextDay, endOfYear, payPeriod);
@@ -802,8 +806,8 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
   return projectedIncome;
 };
 
-// Calculate YTD contributions for a person from Performance data and Historical data
-export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), annualData = null) => {
+// Calculate YTD contributions for a person from Account data and Annual data
+export const calculateYTDContributionsFromAccount = (accountData, userNames, currentYear = new Date().getFullYear(), annualData = null) => {
   const result = {
     traditional401k: 0,
     roth401k: 0,
@@ -819,16 +823,16 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
     totalEmployerHsa: 0
   };
   
-  if (!performanceData || !userNames || userNames.length === 0) {
+  if (!accountData || !userNames || userNames.length === 0) {
     return result;
   }
   
-  // Performance data is organized by entryId, not by year directly
+  // Account data is organized by entryId, not by year directly
   // We need to find all entries for the current year
   const relevantUsers = [...userNames, 'Joint'];
   
-  // Iterate through all performance entries
-  Object.values(performanceData).forEach(entry => {
+  // Iterate through all account entries
+  Object.values(accountData).forEach(entry => {
     // Check if this entry is for the current year
     if (entry.year !== currentYear) return;
     
@@ -893,7 +897,7 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
   result.total401k = result.traditional401k + result.roth401k;
   result.totalIra = result.traditionalIra + result.rothIra;
   
-  // Get HSA employer contributions from historical data if available
+  // Get HSA employer contributions from annual data if available
   if (annualData && annualData[currentYear]) {
     const yearData = annualData[currentYear];
     if (yearData.users) {
@@ -914,25 +918,26 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
 
 // Calculate remaining contribution room based on YTD contributions
 export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCoverage) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const isOver50 = age >= 50;
   const isOver55 = age >= 55;
   
   // 401k limits
   const max401k = isOver50 
-    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-    : CONTRIBUTION_LIMITS_2025.k401_employee;
+    ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+    : CONTRIBUTION_LIMITS.k401_employee;
   
   // IRA limits
   const maxIra = isOver50 
-    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-    : CONTRIBUTION_LIMITS_2025.ira_self;
+    ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+    : CONTRIBUTION_LIMITS.ira_self;
   
   // HSA limits
   let maxHsa = 0;
   if (hsaCoverage === 'self') {
-    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    maxHsa = CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   } else if (hsaCoverage === 'family') {
-    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    maxHsa = CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   }
   
   return {
@@ -954,6 +959,7 @@ export const calculateMaxOutPerPaycheckAmounts = (
   age,
   hsaCoverage = 'none'
 ) => {
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
   const today = new Date();
   const endOfYear = new Date(today.getFullYear(), 11, 31);
@@ -1047,6 +1053,7 @@ export const calculateProjectedRemainingContributions = (paycheckUser, employerM
 
   const salary = parseFloat(paycheckUser.salary) || 0;
   const payPeriod = paycheckUser.payPeriod || 'biWeekly';
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
 
   // Calculate remaining pay periods from today to end of year

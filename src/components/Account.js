@@ -15,7 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getPerformanceData, getPerformanceSettings, setPerformanceSettings, getPaycheckData, setPaycheckData } from '../utils/localStorage';
+import { getAccountData, getAccountSettings, setAccountSettings, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
 
@@ -32,8 +32,8 @@ ChartJS.register(
   Filler
 );
 
-const Performance = () => {
-  const [performanceData, setPerformanceDataState] = useState({});
+const Account = () => {
+  const [accountData, setAccountDataState] = useState({});
   const [paycheckData, setPaycheckDataState] = useState(null);
   const [selectedYears, setSelectedYears] = useState([]);
   const [selectedAccounts, setSelectedAccounts] = useState([]);
@@ -105,11 +105,11 @@ const Performance = () => {
   // Load data and settings
   useEffect(() => {
     const loadData = () => {
-      const performance = getPerformanceData();
+      const performance = getAccountData();
       const paycheck = getPaycheckData();
-      const savedSettings = getPerformanceSettings();
+      const savedSettings = getAccountSettings();
       
-      setPerformanceDataState(performance);
+      setAccountDataState(performance);
       setPaycheckDataState(paycheck);
       
       // Load saved settings
@@ -166,9 +166,9 @@ const Performance = () => {
     loadData();
 
     // Listen for data updates
-    const handlePerformanceUpdate = () => {
-      const performance = getPerformanceData();
-      setPerformanceDataState(performance);
+    const handleAccountUpdate = () => {
+      const performance = getAccountData();
+      setAccountDataState(performance);
       
       // Update available options
       const availableYears = getAvailableYears(performance);
@@ -195,13 +195,11 @@ const Performance = () => {
     };
 
     // Listen for both new and old event names for backward compatibility
-    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    window.addEventListener('accountDataUpdated', handleAccountUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     
     return () => {
-      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+      window.removeEventListener('accountDataUpdated', handleAccountUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     };
   }, []);
@@ -235,7 +233,7 @@ const Performance = () => {
       filterBalanceRange,
       filterReturnPerformance
     };
-    setPerformanceSettings(settings);
+    setAccountSettings(settings);
   }, [selectedYears, selectedAccounts, activeTab, showAllYearsInChart, useReverseChronological, isCompactTable, yoySort, includeContributionsInReturns, detailsSort, detailsSortOrder, hideInactiveAccounts, hideNoDataAccounts, showDetailsFilters, detailsItemsPerPage, filterAccountType, filterOwner, filterYear, filterBalanceRange, filterReturnPerformance, isInitialized]);
 
   // Helper functions to get available years and accounts
@@ -300,8 +298,8 @@ const Performance = () => {
     });
   };
 
-  const availableYears = getAvailableYears(performanceData);
-  const availableAccounts = getAvailableAccounts(performanceData);
+  const availableYears = getAvailableYears(accountData);
+  const availableAccounts = getAvailableAccounts(accountData);
 
   // Process performance data with calculations
   const processedData = useMemo(() => {
@@ -316,7 +314,7 @@ const Performance = () => {
         // Try to find actual data for this account and year
         let userData = null;
         let parentEntry = null;
-        const yearEntries = Object.values(performanceData).filter(entry => entry.year === year);
+        const yearEntries = Object.values(accountData).filter(entry => entry.year === year);
         
         for (const entry of yearEntries) {
           if (entry.users && entry.users[account.owner]) {
@@ -431,7 +429,7 @@ const Performance = () => {
     });
     
     return results;
-  }, [performanceData, selectedAccounts, availableYears, availableAccounts, includeContributionsInReturns]);
+  }, [accountData, selectedAccounts, availableYears, availableAccounts, includeContributionsInReturns]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -899,13 +897,13 @@ const Performance = () => {
         <Navigation />
         <div className="app-container">
           <div className="header">
-            <h1>📈 Performance Dashboard</h1>
+            <h1>📈 Account Dashboard</h1>
             <p>Analyze your investment account performance over time</p>
           </div>
           <div className="performance-empty-state">
             <div className="performance-empty-state-content">
               <div className="performance-empty-state-icon">💹</div>
-              <h2>Welcome to Performance Dashboard!</h2>
+              <h2>Welcome to Account Dashboard!</h2>
               <p className="performance-empty-state-description">
                 Your performance dashboard provides comprehensive analysis of your investment account returns, contributions, and growth over time.
               </p>
@@ -915,8 +913,8 @@ const Performance = () => {
                 <div className="performance-step">
                   <div className="performance-step-number">1</div>
                   <div className="performance-step-content">
-                    <strong>Add Performance Data</strong>
-                    <p>Go to the Portfolio page and enter your investment account performance for one or more years</p>
+                    <strong>Add Account Data</strong>
+                    <p>Go to the Liquid Assets page and enter your investment account performance for one or more years</p>
                   </div>
                 </div>
                 
@@ -931,7 +929,7 @@ const Performance = () => {
                 <div className="performance-step">
                   <div className="performance-step-number">3</div>
                   <div className="performance-step-content">
-                    <strong>Analyze Performance</strong>
+                    <strong>Analyze Accounts</strong>
                     <p>Return here to see detailed analysis of your investment returns, year-over-year changes, and account comparisons</p>
                   </div>
                 </div>
@@ -943,7 +941,7 @@ const Performance = () => {
                   <div className="performance-feature">
                     <div className="performance-feature-icon">📊</div>
                     <div className="performance-feature-text">
-                      <strong>Performance Trends</strong>
+                      <strong>Account Trends</strong>
                       <p>Track account balance growth and investment returns over time</p>
                     </div>
                   </div>
@@ -976,7 +974,7 @@ const Performance = () => {
               
               <div className="performance-empty-state-cta">
                 <p><strong>Ready to start?</strong></p>
-                <p>Head to the <a href="/portfolio" className="performance-portfolio-link">Portfolio page</a> to add your first year of performance data!</p>
+                <p>Head to the <a href="/liquid-assets" className="performance-portfolio-link">Liquid Assets page</a> to add your first year of performance data!</p>
               </div>
             </div>
           </div>
@@ -990,7 +988,7 @@ const Performance = () => {
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <h1>📈 Performance Dashboard</h1>
+          <h1>📈 Account Dashboard</h1>
           <p>Analyze your investment account performance over time</p>
         </div>
 
@@ -1177,7 +1175,7 @@ const Performance = () => {
                 {/* Summary Statistics */}
                 {filteredData.length > 0 && (
                   <div className="performance-summary">
-                    <h2 className="performance-summary-title">📊 Performance Summary</h2>
+                    <h2 className="performance-summary-title">📊 Account Summary</h2>
                     <div className="performance-summary-grid">
                       {(() => {
                         const dataWithValues = filteredData.filter(d => d.hasData);
@@ -1682,7 +1680,7 @@ const Performance = () => {
                 <div className="performance-table-container">
                   {/* Header with sorting and controls */}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '12px' }}>
-                    <h2 className="performance-table-title">📋 Detailed Performance Data</h2>
+                    <h2 className="performance-table-title">📋 Detailed Account Data</h2>
                     <div style={{ display: 'flex', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
                       <div style={{ display: 'flex', gap: '8px', alignItems: 'center', flexWrap: 'wrap' }}>
                         <label style={{ fontSize: '0.9rem', fontWeight: '500', color: '#374151', whiteSpace: 'nowrap' }}>
@@ -1903,4 +1901,4 @@ const Performance = () => {
   );
 };
 
-export default Performance;
+export default Account;

@@ -82,10 +82,10 @@ const Welcome = () => {
                     <li><strong>2025 Tax-Accurate Paycheck Calculator:</strong> Dual income support, 401k/HSA planning, bonus calculations</li>
                     <li><strong>Complete Budget Planning:</strong> Auto-sync, drag & drop categories, three budget modes, extra paycheck planning</li>
                     <li><strong>Savings Goal Tracker:</strong> Automatic goal creation, bulk editing, progress tracking, purchase management</li>
-                    <li><strong>Historical Financial Data Tracking:</strong> 20+ metrics per year, year-over-year analysis, tax information</li>
-                    <li><strong>Account Performance Tracker:</strong> Investment analytics, individual & joint accounts, return calculations</li>
+                    <li><strong>Annual Financial Data Tracking:</strong> 20+ metrics per year, year-over-year analysis, tax information</li>
+                    <li><strong>Account Tracker:</strong> Investment analytics, individual & joint accounts, return calculations</li>
                     <li><strong>Contribution Analyzer:</strong> Analyze 401k/IRA/HSA strategy, identify unused contribution capacity</li>
-                    <li><strong>Portfolio Data Manager:</strong> Update investment account values with tax classification and multi-user support</li>
+                    <li><strong>Liquid Assets Data Manager:</strong> Update investment account values with tax classification and multi-user support</li>
                     <li><strong>Assets & Liabilities Tracker:</strong> Monitor homes, vehicles, debt balances for complete net worth picture</li>
                     <li><strong>Net Worth Dashboard:</strong> Interactive charts, growth analysis, asset allocation breakdowns</li>
                     <li><strong>Advanced Data Management:</strong> CSV import/export, demo data, backup/restore functionality</li>
@@ -308,9 +308,9 @@ const Welcome = () => {
             </div>
 
             <div className="calculator-card">
-              <Link to="/historical" className="calculator-link">
+              <Link to="/raw-data" className="calculator-link">
                 <div className="calculator-icon">📈</div>
-                <h3>Historical Data Tracker</h3>
+                <h3>Annual Data Tracker</h3>
                 <p>
                   Track your financial progress year-over-year with comprehensive data collection. 
                   Includes dual user support, tax information, investment tracking, assets & liabilities, and CSV import/export.
@@ -329,7 +329,7 @@ const Welcome = () => {
             <div className="calculator-card">
               <Link to="/performance" className="calculator-link">
                 <div className="calculator-icon">📊</div>
-                <h3>Performance Tracker</h3>
+                <h3>Account Tracker</h3>
                 <p>
                   Track individual account balances, contributions, gains/losses, and returns across all investment types. 
                   Monitor 401k, IRA, HSA, brokerage, and joint accounts with detailed performance analytics and historical trends.
@@ -365,9 +365,9 @@ const Welcome = () => {
             </div>
 
             <div className="calculator-card">
-              <Link to="/portfolio" className="calculator-link">
+              <Link to="/liquid-assets" className="calculator-link">
                 <div className="calculator-icon">📈</div>
-                <h3>Portfolio Data Manager</h3>
+                <h3>Liquid Assets Data Manager</h3>
                 <p>
                   Update your investment portfolio values with proper tax classification and account type categorization. 
                   Integrates directly with historical data for immediate net worth impact and comprehensive portfolio tracking.
@@ -452,7 +452,7 @@ const Welcome = () => {
                   <li><strong>Dual Income Household:</strong> Alex ($97k) and Jamie ($69k) with realistic salary progression</li>
                   <li><strong>Complete Budget:</strong> 12 categories with 35+ items across Standard/Tight/Emergency scenarios</li>
                   <li><strong>5 Years of Historical Data:</strong> Financial progression from 2021-2025 with tax information</li>
-                  <li><strong>Investment Performance:</strong> 401k accounts, joint brokerage, and high-yield savings tracking</li>
+                  <li><strong>Investment Accounts:</strong> 401k accounts, joint brokerage, and high-yield savings tracking</li>
                   <li><strong>Net Worth Growth:</strong> Realistic wealth building from $74k to $675k over 5 years</li>
                   <li><strong>Real-Life Scenarios:</strong> Salary increases, bonuses, home improvements, debt payoff</li>
                 </ul>
@@ -503,7 +503,7 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">6</div>
                     <div className="step-content">
-                      <h4>Track Investment Performance</h4>
+                      <h4>Track Investment Accounts</h4>
                       <p>Add individual accounts to monitor balances, contributions, employer matches, gains/losses, and calculate returns over time.</p>
                     </div>
                   </div>
@@ -597,8 +597,8 @@ const Welcome = () => {
               <Link to="/contributions" className="quick-start-button secondary">
                 Analyze Contributions
               </Link>
-              <Link to="/portfolio" className="quick-start-button secondary">
-                Update Portfolio Values
+              <Link to="/liquid-assets" className="quick-start-button secondary">
+                Update Liquid Assets Values
               </Link>
               <Link to="/other-assets" className="quick-start-button secondary">
                 Track Assets
@@ -607,10 +607,10 @@ const Welcome = () => {
                 Track Liabilities
               </Link>
               <Link to="/performance" className="quick-start-button secondary">
-                Track Account Performance
+                Track Account Data
               </Link>
-              <Link to="/historical" className="quick-start-button secondary">
-                Track Historical Data
+              <Link to="/raw-data" className="quick-start-button secondary">
+                Track Annual Data
               </Link>
               <Link to="/networth" className="quick-start-button secondary">
                 View Dashboard

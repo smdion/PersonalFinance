@@ -65,7 +65,7 @@ const Navigation = () => {
           icon: '💎',
           items: [
             { path: '/networth', label: 'Net Worth', icon: '💎' },
-            { path: '/performance', label: 'Performance', icon: '📈' }
+            { path: '/performance', label: 'Accounts', icon: '📈' }
           ]
         }
       ]
@@ -550,6 +550,10 @@ const Navigation = () => {
                   <button onClick={importData} className="settings-menu-item">
                     📥 Import Data
                   </button>
+                  <div className="settings-menu-divider"></div>
+                  <a href="/tax-constants" className="settings-menu-item">
+                    ⚙️ Edit Tax Constants
+                  </a>
                   <div className="settings-menu-divider"></div>
                   <button onClick={resetAllData} className="settings-menu-item danger">
                     🗑️ Reset All Data

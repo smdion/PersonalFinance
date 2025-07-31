@@ -698,6 +698,9 @@ const LiquidAssets = () => {
         setSuccessMessage(`Successfully updated ${currentYear} investment data! (${updateTypeText} sync to Accounts)`);
         setCurrentYearData(annualData[currentYear]);
         
+        // Scroll to top to show success message
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
         
@@ -861,8 +864,8 @@ const LiquidAssets = () => {
     loadManualGroups();
   };
 
-  const handleUpdateGroupPerformanceAccount = (groupId, performanceAccountName) => {
-    updateManualAccountGroup(groupId, { performanceAccountName });
+  const handleUpdateGroupAccountReference = (groupId, accountName) => {
+    updateManualAccountGroup(groupId, { accountName });
     loadManualGroups();
   };
 
@@ -1254,7 +1257,7 @@ const LiquidAssets = () => {
       <div className="app-container">
         <div className="header">
           <h1>📈 Liquid Assets Data Update</h1>
-          <p>Input current liquid assets values to update {currentYear} historical data</p>
+          <p>Input current liquid assets values to update {currentYear} annual data</p>
         </div>
 
         {successMessage && (
@@ -1327,8 +1330,8 @@ const LiquidAssets = () => {
                           Sync to Accounts Account:
                         </label>
                         <select 
-                          value={group.performanceAccountName || ''}
-                          onChange={(e) => handleUpdateGroupPerformanceAccount(groupId, e.target.value)}
+                          value={group.accountName || ''}
+                          onChange={(e) => handleUpdateGroupAccountReference(groupId, e.target.value)}
                           style={{ 
                             width: '100%', 
                             padding: '0.5rem', 
@@ -1344,9 +1347,9 @@ const LiquidAssets = () => {
                             </option>
                           ))}
                           {/* Also show the currently selected account for this group (if any) */}
-                          {group.performanceAccountName && !unusedAccounts.find(acc => acc.accountName === group.performanceAccountName) && (
-                            <option key={`current-${groupId}`} value={group.performanceAccountName}>
-                              {group.performanceAccountName} (Currently Selected)
+                          {group.accountName && !unusedAccounts.find(acc => acc.accountName === group.accountName) && (
+                            <option key={`current-${groupId}`} value={group.accountName}>
+                              {group.accountName} (Currently Selected)
                             </option>
                           )}
                         </select>
