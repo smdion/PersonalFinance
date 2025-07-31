@@ -14,8 +14,10 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
 import { getPerformanceData, getPerformanceSettings, setPerformanceSettings, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 import { formatCurrency } from '../utils/calculationHelpers';
+import '../styles/last-update-info.css';
 
 // Register Chart.js components
 ChartJS.register(
@@ -988,6 +990,9 @@ const Performance = () => {
           <h1>📈 Performance Dashboard</h1>
           <p>Analyze your investment account performance over time</p>
         </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={true} />
 
         {/* Floating Controls */}
         {showFloatingControls && (

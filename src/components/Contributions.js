@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
 import { getPaycheckData, setPaycheckData, getPerformanceData, getHistoricalData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
@@ -14,6 +15,7 @@ import {
   calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
 import '../styles/contributions.css';
+import '../styles/last-update-info.css';
 
 const Contributions = () => {
   const navigate = useNavigate();
@@ -2493,6 +2495,12 @@ const Contributions = () => {
           <p>Analyze your current contribution strategy and identify improvement opportunities</p>
           
           <p>Compare your Annual Settings View (full-year projections) with Progress + Forecast View (actual contributions + remaining forecast)</p>
+        </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={false} compact={true} />
+
+        <div className="header">{/* Continuation of header content */}
           
           <div className="contributions-help-toggle">
             <button 

@@ -1873,6 +1873,53 @@ export const deletePortfolioRecord = (recordId) => {
   return filteredRecords;
 };
 
+// Get last portfolio update information for displaying to users
+export const getLastPortfolioUpdate = () => {
+  const records = getPortfolioRecords();
+  if (records.length === 0) {
+    return {
+      hasData: false,
+      lastBalanceUpdate: null,
+      lastDetailedUpdate: null,
+      lastAnyUpdate: null
+    };
+  }
+
+  // Sort records by sync timestamp (most recent first)
+  const sortedRecords = records.sort((a, b) => {
+    const timeA = new Date(a.syncTimestamp || a.updateDate).getTime();
+    const timeB = new Date(b.syncTimestamp || b.updateDate).getTime();
+    return timeB - timeA;
+  });
+
+  // Find most recent balance-only and detailed updates
+  const lastBalanceUpdate = sortedRecords.find(record => record.syncMode === 'balance-only');
+  const lastDetailedUpdate = sortedRecords.find(record => record.syncMode === 'detailed');
+  const lastAnyUpdate = sortedRecords[0];
+
+  return {
+    hasData: true,
+    lastBalanceUpdate: lastBalanceUpdate ? {
+      date: lastBalanceUpdate.updateDate,
+      syncTimestamp: lastBalanceUpdate.syncTimestamp,
+      accountsCount: lastBalanceUpdate.accountsCount,
+      syncMode: lastBalanceUpdate.syncMode
+    } : null,
+    lastDetailedUpdate: lastDetailedUpdate ? {
+      date: lastDetailedUpdate.updateDate,
+      syncTimestamp: lastDetailedUpdate.syncTimestamp,
+      accountsCount: lastDetailedUpdate.accountsCount,
+      syncMode: lastDetailedUpdate.syncMode
+    } : null,
+    lastAnyUpdate: {
+      date: lastAnyUpdate.updateDate,
+      syncTimestamp: lastAnyUpdate.syncTimestamp,
+      accountsCount: lastAnyUpdate.accountsCount,
+      syncMode: lastAnyUpdate.syncMode
+    }
+  };
+};
+
 // Portfolio Inputs Management (current form data)
 // These functions handle the current portfolio input values for persistence
 

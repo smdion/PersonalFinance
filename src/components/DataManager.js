@@ -1632,17 +1632,34 @@ const DataManager = ({
     const handleMouseEnter = (e) => {
       setShowTooltip(true);
       
-      // Calculate if tooltip should appear above or below
-      const rect = e.currentTarget.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      const spaceAbove = rect.top;
-      const spaceBelow = viewportHeight - rect.bottom;
-      
-      // If there's more space below or if we're in the top 200px of viewport, show below
-      if (spaceBelow > spaceAbove || spaceAbove < 200) {
-        setTooltipPosition('bottom');
+      // Find the table tbody to determine row position
+      const tableBody = e.currentTarget.closest('tbody');
+      if (tableBody) {
+        // Get all table rows
+        const allRows = Array.from(tableBody.querySelectorAll('tr'));
+        const currentRow = e.currentTarget.closest('tr');
+        const rowIndex = allRows.indexOf(currentRow);
+        const totalRows = allRows.length;
+        
+        // Top 50% of rows show tooltip down, bottom 50% show tooltip up
+        if (rowIndex < totalRows / 2) {
+          setTooltipPosition('bottom');
+        } else {
+          setTooltipPosition('top');
+        }
       } else {
-        setTooltipPosition('top');
+        // Fallback to original logic if can't find table structure
+        const rect = e.currentTarget.getBoundingClientRect();
+        const viewportHeight = window.innerHeight;
+        const spaceAbove = rect.top;
+        const spaceBelow = viewportHeight - rect.bottom;
+        const headerBuffer = 250;
+        
+        if (spaceBelow > spaceAbove || spaceAbove < headerBuffer) {
+          setTooltipPosition('bottom');
+        } else {
+          setTooltipPosition('top');
+        }
       }
     };
     

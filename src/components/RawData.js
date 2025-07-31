@@ -24,6 +24,8 @@ import {
 } from '../utils/localStorage';
 import DataManager from './DataManager';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
+import '../styles/last-update-info.css';
 import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
 
 const RawData = () => {
@@ -409,6 +411,9 @@ const RawData = () => {
           <h1>📈 Annual & Account Data</h1>
           <p>Track Your Financial Journey and Account Performance Over Time</p>
         </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={true} />
 
         {/* Read-Only Override Controls */}
         <div style={{

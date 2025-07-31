@@ -1,19 +1,95 @@
-import React, { useState, useCallback, useContext, useEffect, useMemo } from 'react';
+import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
 import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
 import { getMostRecentPortfolioAccounts } from '../utils/portfolioPerformanceSync';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
 import DataManager from './DataManager';
+import '../styles/last-update-info.css';
 
 // Tooltip component for contribution details
 const ContributionTooltip = ({ contributions, type, children }) => {
   const [showTooltip, setShowTooltip] = useState(false);
+  const [tooltipPosition, setTooltipPosition] = useState('top');
+  const tooltipRef = useRef(null);
+  const wrapperRef = useRef(null);
   
   if (!contributions?.breakdown) {
     return children;
   }
+
+  // Calculate optimal tooltip position to avoid cutoff
+  const calculateTooltipPosition = useCallback(() => {
+    if (!tooltipRef.current || !wrapperRef.current) return;
+    
+    const tooltip = tooltipRef.current;
+    const wrapper = wrapperRef.current;
+    const tooltipRect = tooltip.getBoundingClientRect();
+    const wrapperRect = wrapper.getBoundingClientRect();
+    
+    // Get viewport dimensions and scroll position
+    const viewportHeight = window.innerHeight;
+    const scrollY = window.scrollY;
+    
+    // Calculate space above and below the wrapper element relative to viewport
+    const spaceAbove = wrapperRect.top;
+    const spaceBelow = viewportHeight - wrapperRect.bottom;
+    
+    // Get actual tooltip height, with fallback
+    const tooltipHeight = tooltipRect.height > 0 ? tooltipRect.height : 120;
+    
+    // Conservative buffer for header and spacing
+    const headerBuffer = 140; // Account for header, navigation, and padding
+    const spacingBuffer = 16; // Margin between tooltip and trigger
+    
+    // Check if tooltip would be cut off at top (by header) or bottom (by viewport)
+    const wouldCutOffTop = spaceAbove < (tooltipHeight + spacingBuffer + headerBuffer);
+    const wouldCutOffBottom = spaceBelow < (tooltipHeight + spacingBuffer);
+    
+    // Decide position based on available space and cutoff risk
+    if (wouldCutOffTop && !wouldCutOffBottom) {
+      // Not enough space above, use bottom
+      setTooltipPosition('bottom');
+    } else if (!wouldCutOffTop && wouldCutOffBottom) {
+      // Not enough space below, use top
+      setTooltipPosition('top');
+    } else if (!wouldCutOffTop && !wouldCutOffBottom) {
+      // Both positions work, prefer top (default behavior)
+      setTooltipPosition('top');
+    } else {
+      // Neither position ideal, choose the one with more available space
+      setTooltipPosition(spaceAbove > spaceBelow ? 'top' : 'bottom');
+    }
+  }, []);
+
+  const handleMouseEnter = () => {
+    setShowTooltip(true);
+    // Calculate position after tooltip is rendered
+    setTimeout(calculateTooltipPosition, 0);
+  };
+
+  // Recalculate position on window resize or scroll
+  useEffect(() => {
+    if (!showTooltip) return;
+    
+    const handleResize = () => {
+      calculateTooltipPosition();
+    };
+    
+    const handleScroll = () => {
+      calculateTooltipPosition();
+    };
+    
+    window.addEventListener('resize', handleResize);
+    window.addEventListener('scroll', handleScroll, true);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      window.removeEventListener('scroll', handleScroll, true);
+    };
+  }, [showTooltip, calculateTooltipPosition]);
 
   const breakdown = contributions.breakdown;
   
@@ -79,13 +155,17 @@ const ContributionTooltip = ({ contributions, type, children }) => {
 
   return (
     <div 
+      ref={wrapperRef}
       className="retirement-tooltip-wrapper"
-      onMouseEnter={() => setShowTooltip(true)}
+      onMouseEnter={handleMouseEnter}
       onMouseLeave={() => setShowTooltip(false)}
     >
       {children}
       {showTooltip && (
-        <div className="retirement-tooltip">
+        <div 
+          ref={tooltipRef}
+          className={`retirement-tooltip retirement-tooltip-${tooltipPosition}`}
+        >
           {type === 'employee' ? renderEmployeeContributionTooltip() : renderEmployerMatchTooltip()}
         </div>
       )}
@@ -684,6 +764,9 @@ const Retirement = () => {
           <h1>Retirement Planner</h1>
           <p>Project your retirement savings and plan for financial independence</p>
         </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={false} compact={true} />
 
         <div className="calculator-content">
           <div className={`calculator-grid ${showSpouseCalculator ? 'dual-view' : 'single-view'}`}>

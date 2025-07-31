@@ -14,9 +14,11 @@ import {
 } from 'chart.js';
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
+import LastUpdateInfo from './LastUpdateInfo';
 import { getHistoricalData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency } from '../utils/calculationHelpers';
+import '../styles/last-update-info.css';
 
 // Register Chart.js components
 ChartJS.register(
@@ -1168,6 +1170,9 @@ const NetWorth = () => {
           <h1>📊 Net Worth Dashboard</h1>
           <p>Track your financial progress over time</p>
         </div>
+
+        {/* Last Update Information */}
+        <LastUpdateInfo showDetails={true} />
 
         {/* Floating Controls (shown when scrolling) */}
         {showFloatingControls && (
