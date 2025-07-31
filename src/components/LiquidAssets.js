@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import Navigation from './Navigation';
 import { 
-  getHistoricalData, 
-  setHistoricalData,
+  getAnnualData, 
+  setAnnualData,
   getPaycheckData,
-  getPortfolioAccounts,
-  addPortfolioAccount,
-  getPortfolioRecords,
-  addPortfolioRecord,
-  deletePortfolioRecord,
+  getLiquidAssetsAccounts,
+  addLiquidAssetsAccount,
+  getLiquidAssetsRecords,
+  addLiquidAssetsRecord,
+  deleteLiquidAssetsRecord,
   // New shared account functions
   getSharedAccounts,
   setSharedAccounts,
@@ -23,36 +23,36 @@ import {
   deleteManualAccountGroup,
   addAccountToManualGroup,
   removeAccountFromManualGroup,
-  getAvailablePerformanceAccounts,
-  getUnusedPerformanceAccounts,
-  getUngroupedPortfolioAccounts,
+  getAvailableAccounts,
+  getUnusedAccounts,
+  getUngroupedLiquidAssetsAccounts,
   calculateManualGroupBalance,
   clearManualAccountGroups,
-  // Portfolio inputs persistence
-  getPortfolioInputs,
-  setPortfolioInputs as savePortfolioInputsToLocalStorage,
-  clearPortfolioInputs
+  // Liquid Assets inputs persistence
+  getLiquidAssetsInputs,
+  setLiquidAssetsInputs as saveLiquidAssetsInputsToLocalStorage,
+  clearLiquidAssetsInputs
 } from '../utils/localStorage';
 import { generateDataFilename } from '../utils/calculationHelpers';
 import CSVImportExport from './CSVImportExport';
 import { 
-  syncPortfolioBalanceToPerformance,
-  syncPerformanceAccountsFromLatestPortfolio,
+  syncLiquidAssetsBalanceToAccounts,
+  syncAccountsFromLatestLiquidAssets,
   generateAccountName
-} from '../utils/portfolioPerformanceSync';
+} from '../utils/liquidAssetsAccountsSync';
 import { 
-  getPerformanceSyncSettings,
-  setPerformanceSyncSettings
+  getAccountSyncSettings,
+  setAccountSyncSettings
 } from '../utils/localStorage';
-import '../styles/portfolio.css';
+import '../styles/liquid-assets.css';
 
-const Portfolio = () => {
-  const [portfolioInputs, setPortfolioInputs] = useState([]);
+const LiquidAssets = () => {
+  const [liquidAssetsInputs, setLiquidAssetsInputs] = useState([]);
   const [currentYearData, setCurrentYearData] = useState({});
   const [users, setUsers] = useState([]);
   const [errors, setErrors] = useState({});
   const [successMessage, setSuccessMessage] = useState('');
-  const [portfolioRecords, setPortfolioRecords] = useState([]);
+  const [liquidAssetsRecords, setLiquidAssetsRecords] = useState([]);
   const [showRecords, setShowRecords] = useState(false);
   const [sortRecordsNewestFirst, setSortRecordsNewestFirst] = useState(true);
   const [syncSettings, setSyncSettings] = useState({});
@@ -62,7 +62,7 @@ const Portfolio = () => {
   const [showExpandedFields, setShowExpandedFields] = useState(false);
   const [collapsedAccounts, setCollapsedAccounts] = useState(() => {
     try {
-      const saved = localStorage.getItem('portfolioCollapsedAccounts');
+      const saved = localStorage.getItem('liquidAssetsCollapsedAccounts');
       return saved ? new Set(JSON.parse(saved)) : new Set();
     } catch (error) {
       return new Set();
@@ -70,13 +70,13 @@ const Portfolio = () => {
   });
 
   // Validation options
-  const TAX_TYPES = ['Tax-Free', 'Tax-Deferred', 'After-Tax'];
-  const ACCOUNT_TYPES = ['IRA', 'Brokerage', '401k', 'ESPP', 'HSA'];
+  const TAX_TYPES = ['Tax-Free', 'Tax-Deferred', 'After-Tax', 'Cash'];
+  const ACCOUNT_TYPES = ['IRA', 'Brokerage', '401k', 'ESPP', 'HSA', 'Cash'];
 
   // Save collapsed accounts state to localStorage whenever it changes
   useEffect(() => {
     try {
-      localStorage.setItem('portfolioCollapsedAccounts', JSON.stringify([...collapsedAccounts]));
+      localStorage.setItem('liquidAssetsCollapsedAccounts', JSON.stringify([...collapsedAccounts]));
     } catch (error) {
       console.error('Failed to save collapsed accounts state:', error);
     }
@@ -87,17 +87,17 @@ const Portfolio = () => {
     initializeSharedAccounts();
     
     loadCurrentYearData();
-    loadPortfolioRecords();
+    loadLiquidAssetsRecords();
     loadManualGroups();
     
     // Load sync settings
-    const settings = getPerformanceSyncSettings();
+    const settings = getAccountSyncSettings();
     setSyncSettings(settings);
 
     // Listen for global reset event
     const handleResetAllData = () => {
-      // Reset all portfolio component state
-      setPortfolioInputs([{
+      // Reset all liquid assets component state
+      setLiquidAssetsInputs([{
         id: generateUniqueId(),
         accountName: '',
         owner: '',
@@ -112,7 +112,7 @@ const Portfolio = () => {
         withdrawals: ''
       }]);
       setCurrentYearData({});
-            setPortfolioRecords([]);
+            setLiquidAssetsRecords([]);
       setErrors({});
       setSuccessMessage('');
             setShowRecords(false);
@@ -120,16 +120,16 @@ const Portfolio = () => {
       setShowManualGrouping(false);
       setCollapsedAccounts(new Set());
       
-      // Also clear shared accounts, manual groups, and portfolio inputs when global reset happens
+      // Also clear shared accounts, manual groups, and liquid assets inputs when global reset happens
       clearSharedAccounts();
       clearManualAccountGroups();
-      clearPortfolioInputs();
-      localStorage.removeItem('portfolioCollapsedAccounts');
+      clearLiquidAssetsInputs();
+      localStorage.removeItem('liquidAssetsCollapsedAccounts');
     };
 
-    // Listen for shared accounts updates from Performance component
+    // Listen for shared accounts updates from Accounts component
     const handleSharedAccountsUpdated = () => {
-      // Refresh portfolio inputs when shared accounts are updated
+      // Refresh liquid assets inputs when shared accounts are updated
       loadCurrentYearData();
     };
 
@@ -138,10 +138,10 @@ const Portfolio = () => {
       loadManualGroups();
     };
 
-    // Listen for portfolio inputs updates but preserve current financial data
-    const handlePortfolioInputsUpdated = () => {
+    // Listen for liquid assets inputs updates but preserve current financial data
+    const handleLiquidAssetsInputsUpdated = () => {
       const currentFinancialData = {};
-      portfolioInputs.forEach((input) => {
+      liquidAssetsInputs.forEach((input) => {
         currentFinancialData[input.id] = {
           amount: input.amount || '',
           contributions: input.contributions || '',
@@ -152,11 +152,11 @@ const Portfolio = () => {
         };
       });
       
-      loadPortfolioInputs();
+      loadLiquidAssetsInputs();
       
       // Restore financial data after loading
       setTimeout(() => {
-        setPortfolioInputs(currentInputs => 
+        setLiquidAssetsInputs(currentInputs => 
           currentInputs.map(input => ({
             ...input,
             ...currentFinancialData[input.id] || {
@@ -175,26 +175,26 @@ const Portfolio = () => {
     window.addEventListener('resetAllData', handleResetAllData);
     window.addEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
     window.addEventListener('manualAccountGroupsUpdated', handleManualGroupsUpdated);
-    window.addEventListener('portfolioInputsUpdated', handlePortfolioInputsUpdated);
+    window.addEventListener('liquidAssetsInputsUpdated', handleLiquidAssetsInputsUpdated);
 
     // Cleanup event listeners
     return () => {
       window.removeEventListener('resetAllData', handleResetAllData);
       window.removeEventListener('sharedAccountsUpdated', handleSharedAccountsUpdated);
       window.removeEventListener('manualAccountGroupsUpdated', handleManualGroupsUpdated);
-      window.removeEventListener('portfolioInputsUpdated', handlePortfolioInputsUpdated);
+      window.removeEventListener('liquidAssetsInputsUpdated', handleLiquidAssetsInputsUpdated);
     };
   }, []);
 
-  // Save portfolio inputs to localStorage whenever they change
+  // Save liquid assets inputs to localStorage whenever they change
   // Removed automatic saving useEffect to prevent input refresh issues
-  // Portfolio account definitions are now saved manually when adding/removing accounts
+  // Liquid assets account definitions are now saved manually when adding/removing accounts
   // Amount values are intentionally not persisted
 
 
-  const loadPortfolioRecords = () => {
-    const records = getPortfolioRecords();
-    setPortfolioRecords(records);
+  const loadLiquidAssetsRecords = () => {
+    const records = getLiquidAssetsRecords();
+    setLiquidAssetsRecords(records);
   };
 
   const loadManualGroups = () => {
@@ -202,8 +202,8 @@ const Portfolio = () => {
     setManualGroups(groups);
   };
 
-  const loadPortfolioInputs = () => {
-    const savedInputs = getPortfolioInputs();
+  const loadLiquidAssetsInputs = () => {
+    const savedInputs = getLiquidAssetsInputs();
     if (savedInputs.length > 0) {
       // Load account setup fields but always start with empty financial data
       const inputsWithEmptyFinancialData = savedInputs.map(input => ({
@@ -221,26 +221,26 @@ const Portfolio = () => {
         fees: '',
         withdrawals: ''
       }));
-      setPortfolioInputs(inputsWithEmptyFinancialData);
+      setLiquidAssetsInputs(inputsWithEmptyFinancialData);
     }
   };
 
   // Wrapper to avoid naming conflict with state setter
   // Excludes all financial data from persistence - only saves account setup fields
-  const savePortfolioInputsToStorage = (inputs) => {
+  const saveLiquidAssetsInputsToStorage = (inputs) => {
     // Remove all financial data fields before saving to localStorage
     const inputsWithoutFinancialData = inputs.map(input => {
       const { amount, contributions, employerMatch, gains, fees, withdrawals, ...inputWithoutFinancialData } = input;
       return inputWithoutFinancialData;
     });
     
-    const result = savePortfolioInputsToLocalStorage(inputsWithoutFinancialData);
+    const result = saveLiquidAssetsInputsToLocalStorage(inputsWithoutFinancialData);
     return result;
   };
 
   const loadCurrentYearData = (forceReloadAccounts = false) => {
     const currentYear = new Date().getFullYear();
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     const paycheckData = getPaycheckData();
     
     
@@ -253,8 +253,8 @@ const Portfolio = () => {
       userList.push(paycheckData.spouse.name.trim());
     }
     
-    // Get all existing users from historical data for the current year
-    const existingUsers = Object.keys(historicalData[currentYear]?.users || {});
+    // Get all existing users from annual data for the current year
+    const existingUsers = Object.keys(annualData[currentYear]?.users || {});
     
     // Combine paycheck users with historical users and remove duplicates
     const allUsers = [...new Set([...userList, ...existingUsers])];
@@ -280,7 +280,7 @@ const Portfolio = () => {
     
     
     setUsers(ownerOptions);
-    setCurrentYearData(historicalData[currentYear] || { users: {} });
+    setCurrentYearData(annualData[currentYear] || { users: {} });
     
     // Only auto-populate portfolio inputs from shared accounts when explicitly forced
     // Don't auto-populate on initial load to keep form clean for new entries
@@ -289,7 +289,7 @@ const Portfolio = () => {
       
       // Convert shared accounts to portfolio inputs, maintaining Portfolio as master
       const allAccounts = sharedAccounts.map(account => {
-        // For accounts without tax type (from Performance), infer based on account type
+        // For accounts without tax type (from Accounts), infer based on account type
         let taxType = account.taxType;
         if (!taxType && account.accountType) {
           if (account.accountType === 'HSA' || account.accountType === 'ESPP') {
@@ -300,6 +300,8 @@ const Portfolio = () => {
             taxType = 'Tax-Free'; // Default to Roth IRA
           } else if (account.accountType === 'Brokerage') {
             taxType = 'After-Tax';
+          } else if (account.accountType === 'Cash') {
+            taxType = 'Cash';
           }
         }
         
@@ -323,10 +325,10 @@ const Portfolio = () => {
       });
       
       if (allAccounts.length > 0) {
-        setPortfolioInputs(allAccounts);
+        setLiquidAssetsInputs(allAccounts);
       } else {
         // If no stored accounts, initialize with empty form
-        setPortfolioInputs([{
+        setLiquidAssetsInputs([{
           id: generateUniqueId(),
           taxType: '',
           amount: '',
@@ -343,7 +345,7 @@ const Portfolio = () => {
       }
     } else {
       // Load saved account setup fields, but keep financial data empty
-      const savedInputs = getPortfolioInputs();
+      const savedInputs = getLiquidAssetsInputs();
       if (savedInputs.length > 0) {
         // Load account setup fields but always start with empty financial data
         const inputsWithEmptyFinancialData = savedInputs.map(input => ({
@@ -361,10 +363,10 @@ const Portfolio = () => {
           fees: '',
           withdrawals: ''
         }));
-        setPortfolioInputs(inputsWithEmptyFinancialData);
-      } else if (portfolioInputs.length === 0) {
+        setLiquidAssetsInputs(inputsWithEmptyFinancialData);
+      } else if (liquidAssetsInputs.length === 0) {
         // Initialize with empty form on first load
-        setPortfolioInputs([{
+        setLiquidAssetsInputs([{
           id: generateUniqueId(),
           taxType: '',
           amount: '',
@@ -386,7 +388,7 @@ const Portfolio = () => {
     const newErrors = {};
     let hasErrors = false;
 
-    portfolioInputs.forEach((input, index) => {
+    liquidAssetsInputs.forEach((input, index) => {
       const inputErrors = {};
       
       // Validate required fields for account name generation
@@ -444,7 +446,7 @@ const Portfolio = () => {
   };
 
   const handleInputChange = (index, field, value) => {
-    const updatedInputs = [...portfolioInputs];
+    const updatedInputs = [...liquidAssetsInputs];
     updatedInputs[index] = {
       ...updatedInputs[index],
       [field]: value
@@ -454,14 +456,16 @@ const Portfolio = () => {
     if (field === 'accountType') {
       if (value === 'HSA' || value === 'ESPP') {
         updatedInputs[index].taxType = 'After-Tax'; // Default for special accounts
+      } else if (value === 'Cash') {
+        updatedInputs[index].taxType = 'Cash'; // Default for cash accounts
       }
     }
     
-    setPortfolioInputs(updatedInputs);
+    setLiquidAssetsInputs(updatedInputs);
     
     // Save account setup fields when non-financial fields change
     if (['owner', 'taxType', 'accountType', 'investmentCompany', 'description'].includes(field)) {
-      savePortfolioInputsToStorage(updatedInputs);
+      saveLiquidAssetsInputsToStorage(updatedInputs);
     }
     
     // Clear error when user starts typing
@@ -476,16 +480,16 @@ const Portfolio = () => {
   };
 
   const handleDeleteRecord = (recordId) => {
-    if (window.confirm('Are you sure you want to delete this portfolio record? This action cannot be undone.')) {
-      deletePortfolioRecord(recordId);
-      loadPortfolioRecords(); // Refresh the records list
-      setSuccessMessage('Portfolio record deleted successfully');
+    if (window.confirm('Are you sure you want to delete this liquid assets record? This action cannot be undone.')) {
+      deleteLiquidAssetsRecord(recordId);
+      loadLiquidAssetsRecords(); // Refresh the records list
+      setSuccessMessage('Liquid Assets record deleted successfully');
       setTimeout(() => setSuccessMessage(''), 3000);
     }
   };
 
-  const addPortfolioInput = () => {
-    const newInputs = [...portfolioInputs, {
+  const addLiquidAssetsInput = () => {
+    const newInputs = [...liquidAssetsInputs, {
       id: generateUniqueId(),
       taxType: '',
       amount: '',
@@ -499,14 +503,14 @@ const Portfolio = () => {
       fees: '',
       withdrawals: ''
     }];
-    setPortfolioInputs(newInputs);
+    setLiquidAssetsInputs(newInputs);
     // Save account setup fields when adding accounts
-    savePortfolioInputsToStorage(newInputs);
+    saveLiquidAssetsInputsToStorage(newInputs);
   };
 
-  const removePortfolioInput = (index) => {
-    if (portfolioInputs.length > 1) {
-      const accountToRemove = portfolioInputs[index];
+  const removeLiquidAssetsInput = (index) => {
+    if (liquidAssetsInputs.length > 1) {
+      const accountToRemove = liquidAssetsInputs[index];
       
       // Clean up shared accounts if this account has been saved before
       const generatedAccountName = generateAccountName(
@@ -525,10 +529,10 @@ const Portfolio = () => {
         );
       }
       
-      const updatedInputs = portfolioInputs.filter((_, i) => i !== index);
-      setPortfolioInputs(updatedInputs);
+      const updatedInputs = liquidAssetsInputs.filter((_, i) => i !== index);
+      setLiquidAssetsInputs(updatedInputs);
       // Save account setup fields when removing accounts
-      savePortfolioInputsToStorage(updatedInputs);
+      saveLiquidAssetsInputsToStorage(updatedInputs);
       
       // Remove errors for this input
       const newErrors = { ...errors };
@@ -549,18 +553,18 @@ const Portfolio = () => {
     }
   };
 
-  const updateHistoricalData = () => {
-    if (!validateInputs()) {
+  const updateAnnualData = () => {
+    const validationResult = validateInputs();
+    
+    if (!validationResult) {
       return;
     }
-
     try {
       const currentYear = new Date().getFullYear();
-      const historicalData = getHistoricalData();
+      const annualData = getAnnualData();
       
-
-      // Calculate new totals from portfolio inputs
-      const newAmounts = portfolioInputs.reduce((acc, input) => {
+      // Calculate new totals from liquid assets inputs
+      const newAmounts = liquidAssetsInputs.reduce((acc, input) => {
         const amount = parseFloat(input.amount) || 0;
         
         // Use account type first for special accounts, then fall back to tax type
@@ -568,6 +572,8 @@ const Portfolio = () => {
           acc.espp += amount;
         } else if (input.accountType === 'HSA') {
           acc.hsa += amount;
+        } else if (input.accountType === 'Cash') {
+          acc.cash += amount;
         } else {
           // Map by tax type for regular accounts
           switch (input.taxType) {
@@ -581,6 +587,9 @@ const Portfolio = () => {
             case 'Roth':
               acc.brokerage += amount;
               break;
+            case 'Cash':
+              acc.cash += amount;
+              break;
           }
         }
         
@@ -590,20 +599,21 @@ const Portfolio = () => {
         taxDeferred: 0,
         brokerage: 0,
         espp: 0,
-        hsa: 0
+        hsa: 0,
+        cash: 0
       });
 
       // Use new amounts directly
       const totals = newAmounts;
 
       // Update current year entry
-      if (!historicalData[currentYear]) {
-        historicalData[currentYear] = { users: {} };
+      if (!annualData[currentYear]) {
+        annualData[currentYear] = { users: {} };
       }
 
       
-      // Calculate new amounts by owner from portfolio inputs
-      const newAmountsByOwner = portfolioInputs.reduce((acc, input) => {
+      // Calculate new amounts by owner from liquid assets inputs
+      const newAmountsByOwner = liquidAssetsInputs.reduce((acc, input) => {
         const amount = parseFloat(input.amount) || 0;
         const owner = input.owner;
         
@@ -613,7 +623,8 @@ const Portfolio = () => {
             taxDeferred: 0,
             brokerage: 0,
             espp: 0,
-            hsa: 0
+            hsa: 0,
+            cash: 0
           };
         }
         
@@ -622,6 +633,8 @@ const Portfolio = () => {
           acc[owner].espp += amount;
         } else if (input.accountType === 'HSA') {
           acc[owner].hsa += amount;
+        } else if (input.accountType === 'Cash') {
+          acc[owner].cash += amount;
         } else {
           // Map by tax type for regular accounts
           switch (input.taxType) {
@@ -635,6 +648,9 @@ const Portfolio = () => {
             case 'Roth':
               acc[owner].brokerage += amount;
               break;
+            case 'Cash':
+              acc[owner].cash += amount;
+              break;
           }
         }
         
@@ -646,21 +662,22 @@ const Portfolio = () => {
       
 
 
-      // Update root-level investment data (this is how historical data is structured)
-      historicalData[currentYear].taxFree = totals.taxFree;
-      historicalData[currentYear].taxDeferred = totals.taxDeferred;
-      historicalData[currentYear].brokerage = totals.brokerage;
-      historicalData[currentYear].espp = totals.espp;
-      historicalData[currentYear].hsa = totals.hsa;
+      // Update root-level investment data (this is how annual data is structured)
+      annualData[currentYear].taxFree = totals.taxFree;
+      annualData[currentYear].taxDeferred = totals.taxDeferred;
+      annualData[currentYear].brokerage = totals.brokerage;
+      annualData[currentYear].espp = totals.espp;
+      annualData[currentYear].hsa = totals.hsa;
+      annualData[currentYear].cash = totals.cash;
       
 
       // Also store individual owner data in users object for reference
       Object.entries(totalsByOwner).forEach(([ownerName, ownerTotals]) => {
-        if (!historicalData[currentYear].users[ownerName]) {
-          historicalData[currentYear].users[ownerName] = {};
+        if (!annualData[currentYear].users[ownerName]) {
+          annualData[currentYear].users[ownerName] = {};
         }
         
-        const userData = historicalData[currentYear].users[ownerName];
+        const userData = annualData[currentYear].users[ownerName];
         
         // Update investment fields with owner-specific totals for reference
         userData.taxFree = ownerTotals.taxFree;
@@ -668,28 +685,30 @@ const Portfolio = () => {
         userData.brokerage = ownerTotals.brokerage;
         userData.espp = ownerTotals.espp;
         userData.hsa = ownerTotals.hsa;
+        userData.cash = ownerTotals.cash;
         
       });
       
       
-      // Save updated historical data
-      const saveResult = setHistoricalData(historicalData);
+      // Save updated annual data
+      const saveResult = setAnnualData(annualData);
+      
       if (saveResult) {
         const updateTypeText = showExpandedFields ? 'detailed' : 'balance-only';
-        setSuccessMessage(`Successfully updated ${currentYear} investment data! (${updateTypeText} sync to Performance)`);
-        setCurrentYearData(historicalData[currentYear]);
+        setSuccessMessage(`Successfully updated ${currentYear} investment data! (${updateTypeText} sync to Accounts)`);
+        setCurrentYearData(annualData[currentYear]);
         
         // Clear success message after 3 seconds
         setTimeout(() => setSuccessMessage(''), 3000);
         
-        // Clear existing portfolio accounts from shared system and add current ones
+        // Clear existing liquid assets accounts from shared system and add current ones
         // This ensures that deleted accounts don't persist
         const sharedAccounts = getSharedAccounts();
-        const nonPortfolioAccounts = sharedAccounts.filter(acc => acc.source !== 'portfolio');
+        const nonLiquidAssetsAccounts = sharedAccounts.filter(acc => acc.source !== 'liquidAssets');
         
-        // Add current portfolio inputs to shared system
-        const updatedSharedAccounts = [...nonPortfolioAccounts];
-        portfolioInputs.forEach(input => {
+        // Add current liquid assets inputs to shared system
+        const updatedSharedAccounts = [...nonLiquidAssetsAccounts];
+        liquidAssetsInputs.forEach(input => {
           // Generate account name from structured data
           const generatedAccountName = generateAccountName(
             input.owner,
@@ -700,8 +719,8 @@ const Portfolio = () => {
           );
           
           if (generatedAccountName) {
-            // Save to old Portfolio system for backward compatibility
-            addPortfolioAccount(generatedAccountName, input.taxType, input.accountType, input.owner);
+            // Save to old Liquid Assets system for backward compatibility
+            addLiquidAssetsAccount(generatedAccountName, input.taxType, input.accountType, input.owner);
             
             // Add to updated shared accounts list
             const newSharedAccount = {
@@ -711,20 +730,20 @@ const Portfolio = () => {
               accountType: input.accountType,
               investmentCompany: input.investmentCompany || '',
               taxType: input.taxType,
-              source: 'portfolio',
+              source: 'liquidAssets',
               createdAt: new Date().toISOString(),
               updatedAt: new Date().toISOString(),
-              sources: ['portfolio']
+              sources: ['liquidAssets']
             };
             updatedSharedAccounts.push(newSharedAccount);
           }
         });
         
-        // Update shared accounts with only current portfolio state
+        // Update shared accounts with only current liquid assets state
         setSharedAccounts(updatedSharedAccounts);
         
-        // Prepare portfolio data with generated account names for all operations
-        const portfolioDataWithNames = portfolioInputs.map(input => ({
+        // Prepare liquid assets data with generated account names for all operations
+        const liquidAssetsDataWithNames = liquidAssetsInputs.map(input => ({
           ...input,
           accountName: generateAccountName(
             input.owner,
@@ -736,32 +755,43 @@ const Portfolio = () => {
         }));
         
         
-        // Add portfolio record with current date (with generated names)
+        // Add liquid assets record with current date (with generated names)
         const updateType = showExpandedFields ? 'detailed' : 'balance-only';
-        addPortfolioRecord(portfolioDataWithNames, null, updateType);
+        addLiquidAssetsRecord(liquidAssetsDataWithNames, null, updateType);
         
-        // Automatically sync portfolio balances to performance (background sync)
-        const syncResult = syncPortfolioBalanceToPerformance(portfolioDataWithNames, updateType);
+        // Automatically sync liquid assets balances to accounts (background sync)
+        try {
+          syncLiquidAssetsBalanceToAccounts(liquidAssetsDataWithNames, updateType);
+          syncAccountsFromLatestLiquidAssets();
+        } catch (syncError) {
+          console.error('Error during sync operations:', syncError);
+          // Continue with other operations even if sync fails
+        }
         
-        // Also update performance accounts to only show latest portfolio accounts
-        const performanceSyncResult = syncPerformanceAccountsFromLatestPortfolio();
-        
-        // Repopulate portfolio inputs with all available accounts (including from Performance)
-        loadCurrentYearData(true); // Force reload accounts from both sources after update
+        // Repopulate liquid assets inputs with all available accounts (including from Accounts)
+        try {
+          loadCurrentYearData(true); // Force reload accounts from both sources after update
+        } catch (loadError) {
+          console.error('❌ Error loading current year data:', loadError);
+        }
         
         // Clear any validation errors
         setErrors({});
         
         // Refresh records
-        loadPortfolioRecords();
+        try {
+          loadLiquidAssetsRecords();
+        } catch (recordsError) {
+          console.error('Error loading liquid assets records:', recordsError);
+        }
         
       } else {
-        alert('Failed to save historical data. Please try again.');
+        alert('Failed to save annual data. Please try again.');
       }
       
     } catch (error) {
-      console.error('Error updating historical data:', error);
-      alert('Error updating historical data. Please try again.');
+      console.error('Error updating annual data:', error);
+      alert('Error updating annual data. Please try again.');
     }
   };
 
@@ -804,7 +834,7 @@ const Portfolio = () => {
   };
 
   const collapseAllAccounts = () => {
-    const allIds = new Set(portfolioInputs.map(input => input.id));
+    const allIds = new Set(liquidAssetsInputs.map(input => input.id));
     setCollapsedAccounts(allIds);
   };
 
@@ -815,7 +845,7 @@ const Portfolio = () => {
   const handleSyncSettingChange = (setting, value) => {
     const newSettings = { ...syncSettings, [setting]: value };
     setSyncSettings(newSettings);
-    setPerformanceSyncSettings(newSettings);
+    setAccountSyncSettings(newSettings);
   };
 
   // Manual grouping handler functions
@@ -846,23 +876,23 @@ const Portfolio = () => {
     }
   };
 
-  const handleAddToGroup = (groupId, portfolioAccountId) => {
-    if (!portfolioAccountId) return;
+  const handleAddToGroup = (groupId, liquidAssetsAccountId) => {
+    if (!liquidAssetsAccountId) return;
     
-    addAccountToManualGroup(groupId, portfolioAccountId);
+    addAccountToManualGroup(groupId, liquidAssetsAccountId);
     loadManualGroups();
     
-    const account = portfolioInputs.find(acc => acc.id === portfolioAccountId);
+    const account = liquidAssetsInputs.find(acc => acc.id === liquidAssetsAccountId);
     const group = manualGroups[groupId];
     setSuccessMessage(`Added ${account?.accountName || 'account'} to ${group?.name || 'group'}`);
     setTimeout(() => setSuccessMessage(''), 3000);
   };
 
-  const handleRemoveFromGroup = (groupId, portfolioAccountId) => {
-    removeAccountFromManualGroup(groupId, portfolioAccountId);
+  const handleRemoveFromGroup = (groupId, liquidAssetsAccountId) => {
+    removeAccountFromManualGroup(groupId, liquidAssetsAccountId);
     loadManualGroups();
     
-    const account = portfolioInputs.find(acc => acc.id === portfolioAccountId);
+    const account = liquidAssetsInputs.find(acc => acc.id === liquidAssetsAccountId);
     setSuccessMessage(`Removed ${account?.accountName || 'account'} from group`);
     setTimeout(() => setSuccessMessage(''), 3000);
   };
@@ -1009,19 +1039,19 @@ const Portfolio = () => {
   };
 
   const handleCSVImportSuccess = (parsed) => {
-    // Replace current portfolio inputs with CSV data
-    setPortfolioInputs(parsed);
+    // Replace current liquid assets inputs with CSV data
+    setLiquidAssetsInputs(parsed);
     
     // Explicitly save to localStorage after CSV import to ensure persistence
     if (parsed.length > 0) {
       try {
-        const saveResult = savePortfolioInputsToStorage(parsed);
+        const saveResult = saveLiquidAssetsInputsToStorage(parsed);
       } catch (error) {
         // Handle save error silently
       }
     }
     
-    // Add portfolio records for each unique update date in the CSV
+    // Add liquid assets records for each unique update date in the CSV
     const dateGroups = {};
     parsed.forEach(account => {
       const date = account.updateDate;
@@ -1034,18 +1064,18 @@ const Portfolio = () => {
     // Create records for each date group
     Object.entries(dateGroups).forEach(([date, accounts]) => {
       const importSyncMode = showExpandedFields ? 'detailed' : 'balance-only';
-      addPortfolioRecord(accounts, date, importSyncMode);
+      addLiquidAssetsRecord(accounts, date, importSyncMode);
     });
     
     // Refresh records display
-    loadPortfolioRecords();
+    loadLiquidAssetsRecords();
     
     // Clear any existing errors
     setErrors({});
     
     alert(`Successfully imported ${parsed.length} accounts from CSV`);
     if (Object.keys(dateGroups).length > 1) {
-      alert(`Created ${Object.keys(dateGroups).length} portfolio records for different update dates.`);
+      alert(`Created ${Object.keys(dateGroups).length} liquid assets records for different update dates.`);
     }
   };
 
@@ -1053,19 +1083,19 @@ const Portfolio = () => {
     alert(`Error importing CSV: ${error.message}`);
   };
 
-  const getCurrentPortfolioData = () => {
+  const getCurrentLiquidAssetsData = () => {
     const currentDate = new Date().toISOString().split('T')[0];
-    // Add updateDate to current portfolio inputs
-    return portfolioInputs.map(input => ({
+    // Add updateDate to current liquid assets inputs
+    return liquidAssetsInputs.map(input => ({
       ...input,
       updateDate: currentDate
     }));
   };
 
-  const handleResetPortfolioData = () => {
-    if (window.confirm('Are you sure you want to reset all portfolio data? This cannot be undone.')) {
-      // Reset all portfolio component state
-      setPortfolioInputs([{
+  const handleResetLiquidAssetsData = () => {
+    if (window.confirm('Are you sure you want to reset all liquid assets data? This cannot be undone.')) {
+      // Reset all liquid assets component state
+      setLiquidAssetsInputs([{
         id: generateUniqueId(),
         owner: users[0] || 'User',
         taxType: '',
@@ -1080,50 +1110,50 @@ const Portfolio = () => {
         withdrawals: ''
       }]);
       setCurrentYearData({});
-            setPortfolioRecords([]);
+            setLiquidAssetsRecords([]);
       setErrors({});
       setSuccessMessage('');
             setShowRecords(false);
       setCollapsedAccounts(new Set());
       
-      // Clear localStorage data related to portfolio
+      // Clear localStorage data related to liquid assets
       const currentYear = new Date().getFullYear();
-      const historicalData = getHistoricalData();
-      if (historicalData[currentYear]) {
+      const annualData = getAnnualData();
+      if (annualData[currentYear]) {
         // Reset investment fields to 0
-        historicalData[currentYear].taxFree = 0;
-        historicalData[currentYear].taxDeferred = 0;
-        historicalData[currentYear].brokerage = 0;
-        historicalData[currentYear].espp = 0;
-        historicalData[currentYear].hsa = 0;
+        annualData[currentYear].taxFree = 0;
+        annualData[currentYear].taxDeferred = 0;
+        annualData[currentYear].brokerage = 0;
+        annualData[currentYear].espp = 0;
+        annualData[currentYear].hsa = 0;
         
         // Reset user investment data
-        Object.keys(historicalData[currentYear].users || {}).forEach(userName => {
-          if (historicalData[currentYear].users[userName]) {
-            historicalData[currentYear].users[userName].taxFree = 0;
-            historicalData[currentYear].users[userName].taxDeferred = 0;
-            historicalData[currentYear].users[userName].brokerage = 0;
-            historicalData[currentYear].users[userName].espp = 0;
-            historicalData[currentYear].users[userName].hsa = 0;
+        Object.keys(annualData[currentYear].users || {}).forEach(userName => {
+          if (annualData[currentYear].users[userName]) {
+            annualData[currentYear].users[userName].taxFree = 0;
+            annualData[currentYear].users[userName].taxDeferred = 0;
+            annualData[currentYear].users[userName].brokerage = 0;
+            annualData[currentYear].users[userName].espp = 0;
+            annualData[currentYear].users[userName].hsa = 0;
           }
         });
         
-        setHistoricalData(historicalData);
+        setAnnualData(annualData);
       }
       
-      // Also clear shared accounts, manual groups, and portfolio inputs
+      // Also clear shared accounts, manual groups, and liquid assets inputs
       clearSharedAccounts();
       clearManualAccountGroups();
-      clearPortfolioInputs();
-      localStorage.removeItem('portfolioCollapsedAccounts');
+      clearLiquidAssetsInputs();
+      localStorage.removeItem('liquidAssetsCollapsedAccounts');
       
-      alert('Portfolio data has been reset successfully.');
+      alert('Liquid Assets data has been reset successfully.');
     }
   };
 
-  const downloadPortfolioRecordsCSV = () => {
-    if (portfolioRecords.length === 0) {
-      alert('No portfolio records to export.');
+  const downloadLiquidAssetsRecordsCSV = () => {
+    if (liquidAssetsRecords.length === 0) {
+      alert('No liquid assets records to export.');
       return;
     }
 
@@ -1131,7 +1161,7 @@ const Portfolio = () => {
     const allAccounts = [];
     
     // Flatten all accounts from all records
-    portfolioRecords.forEach(record => {
+    liquidAssetsRecords.forEach(record => {
       record.accounts.forEach(account => {
         allAccounts.push({
           owner: account.owner,
@@ -1167,7 +1197,7 @@ const Portfolio = () => {
     
     const link = document.createElement('a');
     link.href = url;
-    link.download = generateDataFilename('portfolio_all_records', users.filter(u => u !== 'Joint'), 'csv');
+    link.download = generateDataFilename('liquidAssets_all_records', users.filter(u => u !== 'Joint'), 'csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -1175,7 +1205,7 @@ const Portfolio = () => {
   };
 
   const getCurrentTotals = () => {
-    return portfolioInputs.reduce((acc, input) => {
+    return liquidAssetsInputs.reduce((acc, input) => {
       const amount = parseFloat(input.amount) || 0;
       
       // Use account type first for special accounts, then fall back to tax type
@@ -1183,6 +1213,8 @@ const Portfolio = () => {
         acc.espp += amount;
       } else if (input.accountType === 'HSA') {
         acc.hsa += amount;
+      } else if (input.accountType === 'Cash') {
+        acc.cash += amount;
       } else {
         // Map by tax type for regular accounts
         switch (input.taxType) {
@@ -1196,6 +1228,9 @@ const Portfolio = () => {
           case 'Roth':
             acc.brokerage += amount;
             break;
+          case 'Cash':
+            acc.cash += amount;
+            break;
         }
       }
       
@@ -1205,7 +1240,8 @@ const Portfolio = () => {
       taxDeferred: 0,
       brokerage: 0,
       hsa: 0,
-      espp: 0
+      espp: 0,
+      cash: 0
     });
   };
 
@@ -1217,8 +1253,8 @@ const Portfolio = () => {
       <Navigation />
       <div className="app-container">
         <div className="header">
-          <h1>📈 Portfolio Data Update</h1>
-          <p>Input current portfolio values to update {currentYear} historical data</p>
+          <h1>📈 Liquid Assets Data Update</h1>
+          <p>Input current liquid assets values to update {currentYear} historical data</p>
         </div>
 
         {successMessage && (
@@ -1244,14 +1280,14 @@ const Portfolio = () => {
           {showManualGrouping && (
             <div>
               <p style={{ margin: '0 0 1rem 0', fontSize: '0.9rem', color: '#6c757d' }}>
-                Group portfolio accounts together to sync their combined balance with specific Performance accounts. 
+                Group liquid assets accounts together to sync their combined balance with specific Accounts accounts. 
                 This gives you full control over which accounts are combined.
               </p>
               
               {Object.entries(manualGroups).map(([groupId, group]) => {
-                const ungroupedAccounts = getUngroupedPortfolioAccounts(portfolioInputs);
-                const unusedPerformanceAccounts = getUnusedPerformanceAccounts();
-                const groupBalance = calculateManualGroupBalance(groupId, portfolioInputs);
+                const ungroupedAccounts = getUngroupedLiquidAssetsAccounts(liquidAssetsInputs);
+                const unusedAccounts = getUnusedAccounts();
+                const groupBalance = calculateManualGroupBalance(groupId, liquidAssetsInputs);
                 
                 return (
                   <div key={groupId} className="account-group" style={{ 
@@ -1288,7 +1324,7 @@ const Portfolio = () => {
                       
                       <div style={{ flex: '1', minWidth: '250px' }}>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: '#6c757d', marginBottom: '0.25rem' }}>
-                          Sync to Performance Account:
+                          Sync to Accounts Account:
                         </label>
                         <select 
                           value={group.performanceAccountName || ''}
@@ -1300,15 +1336,15 @@ const Portfolio = () => {
                             borderRadius: '4px' 
                           }}
                         >
-                          <option value="">Select Performance Account</option>
-                          {/* Show unused performance accounts */}
-                          {unusedPerformanceAccounts.map(acc => (
+                          <option value="">Select Accounts Account</option>
+                          {/* Show unused accounts */}
+                          {unusedAccounts.map(acc => (
                             <option key={acc.id} value={acc.accountName}>
                               {acc.accountName} ({acc.owner}){!acc.isCurrentYear ? ` - ${acc.year}` : ''}
                             </option>
                           ))}
                           {/* Also show the currently selected account for this group (if any) */}
-                          {group.performanceAccountName && !unusedPerformanceAccounts.find(acc => acc.accountName === group.performanceAccountName) && (
+                          {group.performanceAccountName && !unusedAccounts.find(acc => acc.accountName === group.performanceAccountName) && (
                             <option key={`current-${groupId}`} value={group.performanceAccountName}>
                               {group.performanceAccountName} (Currently Selected)
                             </option>
@@ -1333,10 +1369,10 @@ const Portfolio = () => {
                     {/* Portfolio accounts in this group */}
                     <div className="group-accounts" style={{ marginBottom: '1rem' }}>
                       <h4 style={{ fontSize: '0.9rem', color: '#495057', marginBottom: '0.5rem' }}>
-                        Portfolio Accounts in Group ({group.portfolioAccounts.length}):
+                        Liquid Assets Accounts in Group ({(group.liquidAssetsAccounts || []).length}):
                       </h4>
                       
-                      {group.portfolioAccounts.length === 0 ? (
+                      {(!group.liquidAssetsAccounts || group.liquidAssetsAccounts.length === 0) ? (
                         <div style={{ 
                           padding: '1rem', 
                           backgroundColor: '#f8f9fa', 
@@ -1349,8 +1385,8 @@ const Portfolio = () => {
                         </div>
                       ) : (
                         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '0.5rem' }}>
-                          {group.portfolioAccounts.map(accountId => {
-                            const account = portfolioInputs.find(acc => acc.id === accountId);
+                          {(group.liquidAssetsAccounts || []).map(accountId => {
+                            const account = liquidAssetsInputs.find(acc => acc.id === accountId);
                             return account ? (
                               <div 
                                 key={accountId} 
@@ -1403,7 +1439,7 @@ const Portfolio = () => {
                             borderRadius: '4px' 
                           }}
                         >
-                          <option value="">+ Add Portfolio Account to Group</option>
+                          <option value="">+ Add Liquid Assets Account to Group</option>
                           {ungroupedAccounts.map(acc => (
                             <option key={acc.id} value={acc.id}>
                               {generateAccountName(acc.owner, acc.taxType, acc.accountType, acc.investmentCompany, acc.description)} - {formatCurrency(acc.amount)}
@@ -1448,7 +1484,7 @@ const Portfolio = () => {
                     No manual account groups yet
                   </div>
                   <div style={{ fontSize: '0.9rem', color: '#868e96' }}>
-                    Create groups to combine multiple portfolio accounts and sync them to specific Performance accounts
+                    Create groups to combine multiple portfolio accounts and sync them to specific Accounts accounts
                   </div>
                 </div>
               )}
@@ -1467,11 +1503,11 @@ const Portfolio = () => {
           )}
         </div>
 
-        {/* Portfolio Accounts Table */}
-        <div className="portfolio-accounts">
+        {/* Liquid Assets Accounts Table */}
+        <div className="liquid-assets-accounts">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
             <div>
-              <h2>Portfolio Account Values</h2>
+              <h2>Liquid Assets Account Values</h2>
               <p>Enter your current account values from investment websites:</p>
               {showExpandedFields ? (
                 <p style={{ fontSize: '0.9rem', color: '#28a745', margin: '0.5rem 0' }}>
@@ -1496,7 +1532,7 @@ const Portfolio = () => {
           </div>
 
           {/* Bulk Actions */}
-          {portfolioInputs.length > 1 && (
+          {liquidAssetsInputs.length > 1 && (
             <div className="bulk-actions" style={{
               padding: '0.75rem',
               backgroundColor: '#f8f9fa',
@@ -1525,14 +1561,14 @@ const Portfolio = () => {
                   📋 Expand All Setup Fields
                 </button>
                 <span style={{ fontSize: '0.8rem', color: '#6c757d', marginLeft: 'auto' }}>
-                  {collapsedAccounts.size} of {portfolioInputs.length} accounts collapsed
+                  {collapsedAccounts.size} of {liquidAssetsInputs.length} accounts collapsed
                 </span>
               </div>
             </div>
           )}
           
           <div className="accounts-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {portfolioInputs.map((input, index) => {
+            {liquidAssetsInputs.map((input, index) => {
               const isCollapsed = collapsedAccounts.has(input.id);
               const accountName = generateAccountName(input.owner, input.taxType, input.accountType, input.investmentCompany, input.description);
               
@@ -1588,9 +1624,9 @@ const Portfolio = () => {
                       </div>
                       <button 
                         type="button" 
-                        onClick={() => removePortfolioInput(index)}
+                        onClick={() => removeLiquidAssetsInput(index)}
                         className="btn-delete"
-                        disabled={portfolioInputs.length === 1}
+                        disabled={liquidAssetsInputs.length === 1}
                         title="Delete account"
                         style={{ fontSize: '0.8rem', padding: '0.2rem 0.4rem', flexShrink: 0 }}
                       >
@@ -1892,11 +1928,11 @@ const Portfolio = () => {
           </div>
 
           <div className="form-actions">
-            <button type="button" onClick={addPortfolioInput} className="btn-secondary">
+            <button type="button" onClick={addLiquidAssetsInput} className="btn-secondary">
               + Add Another Account
             </button>
-            <button type="button" onClick={updateHistoricalData} className="btn-primary">
-              {showExpandedFields ? 'Update Performance Data (Detailed)' : 'Update Performance Data (Balance Only)'}
+            <button type="button" onClick={updateAnnualData} className="btn-primary">
+              {showExpandedFields ? 'Update Accounts Data (Detailed)' : 'Update Accounts Data (Balance Only)'}
             </button>
           </div>
 
@@ -1905,7 +1941,7 @@ const Portfolio = () => {
           <CSVImportExport
             title="CSV Import/Export"
             subtitle="Import account data from a CSV file or download the current data as CSV."
-            data={getCurrentPortfolioData()}
+            data={getCurrentLiquidAssetsData()}
             headers={getCSVHeaders()}
             formatRowData={formatCSVRow}
             parseRowData={parseCSVRow}
@@ -1913,10 +1949,10 @@ const Portfolio = () => {
             onImportError={handleCSVImportError}
             generateTemplate={generateTemplateData}
             compact={true}
-            dataType="portfolio_current"
+            dataType="liquidAssets_current"
             userNames={users.filter(u => u !== 'Joint')}
             showResetButton={true}
-            onReset={handleResetPortfolioData}
+            onReset={handleResetLiquidAssetsData}
             className="csv-section"
           />
         </div>
@@ -1986,7 +2022,7 @@ const Portfolio = () => {
               // Add total card
               const totalCard = (
                 <div key="total" className="summary-card summary-card-total">
-                  <h3>📊 Total Portfolio</h3>
+                  <h3>📊 Total Liquid Assets</h3>
                   <div className="summary-amounts">
                     <div className="current-amount">
                       <span className="amount-label">Current:</span>
@@ -2018,12 +2054,12 @@ const Portfolio = () => {
 
 
 
-        {/* Portfolio Records */}
-        {portfolioRecords.length > 0 && (
-          <div className="portfolio-records-section">
-            <div className="portfolio-records-header">
-              <h2>📋 Portfolio Records</h2>
-              <div className="portfolio-records-controls">
+        {/* Liquid Assets Records */}
+        {liquidAssetsRecords.length > 0 && (
+          <div className="liquid-assets-records-section">
+            <div className="liquid-assets-records-header">
+              <h2>📋 Liquid Assets Records</h2>
+              <div className="liquid-assets-records-controls">
                 <button 
                   type="button" 
                   onClick={() => setSortRecordsNewestFirst(!sortRecordsNewestFirst)}
@@ -2037,14 +2073,14 @@ const Portfolio = () => {
                   onClick={() => setShowRecords(!showRecords)}
                   className="btn-secondary"
                 >
-                  {showRecords ? 'Hide Records' : `Show All Records (${portfolioRecords.length})`}
+                  {showRecords ? 'Hide Records' : `Show All Records (${liquidAssetsRecords.length})`}
                 </button>
               </div>
             </div>
             
             {showRecords && (
-              <div className="portfolio-records-list">
-                {portfolioRecords
+              <div className="liquid-assets-records-list">
+                {liquidAssetsRecords
                   .sort((a, b) => {
                     if (sortRecordsNewestFirst) {
                       return new Date(b.updateDate) - new Date(a.updateDate);
@@ -2053,7 +2089,7 @@ const Portfolio = () => {
                     }
                   })
                   .map(record => (
-                  <div key={record.id} className="portfolio-record">
+                  <div key={record.id} className="liquid-assets-record">
                     <div className="record-header">
                       <div className="record-date">
                         <strong>{record.updateDate}</strong>
@@ -2116,7 +2152,7 @@ const Portfolio = () => {
                 <div className="records-export-section">
                   <button 
                     type="button" 
-                    onClick={() => downloadPortfolioRecordsCSV()}
+                    onClick={() => downloadLiquidAssetsRecordsCSV()}
                     className="btn-csv-export"
                   >
                     📤 Export All Records as CSV
@@ -2131,4 +2167,4 @@ const Portfolio = () => {
   );
 };
 
-export default Portfolio;
+export default LiquidAssets;

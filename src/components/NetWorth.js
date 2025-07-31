@@ -206,13 +206,18 @@ const NetWorth = () => {
       setAssetLiabilityData(getAssetLiabilityData());
     };
 
+    // Listen for both new and old event names for backward compatibility
+    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
     window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     
     return () => {
+      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
       window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
       window.removeEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);

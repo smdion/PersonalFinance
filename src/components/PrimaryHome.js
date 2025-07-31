@@ -8,7 +8,7 @@ import {
   STORAGE_KEYS
 } from '../utils/localStorage';
 import CSVImportExport from './CSVImportExport';
-import '../styles/portfolio.css';
+import '../styles/liquid-assets.css';
 
 const PrimaryHome = () => {
   const [homeData, setHomeData] = useState({

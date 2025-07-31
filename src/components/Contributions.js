@@ -100,12 +100,17 @@ const Contributions = () => {
     };
 
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+    // Listen for both new and old event names for backward compatibility
+    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
     window.addEventListener('historicalDataUpdated', handleHistoricalUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
+      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
       window.removeEventListener('historicalDataUpdated', handleHistoricalUpdate);
     };
   }, []);

@@ -194,10 +194,13 @@ const Performance = () => {
       setPaycheckDataState(paycheck);
     };
 
+    // Listen for both new and old event names for backward compatibility
+    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
     window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     
     return () => {
+      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     };

@@ -3,7 +3,6 @@ import { FormContext } from '../context/FormContext';
 import { getPaycheckData, setPaycheckData, getHistoricalData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
-import { getMostRecentPortfolioAccounts } from '../utils/portfolioPerformanceSync';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
 import DataManager from './DataManager';

@@ -6,7 +6,7 @@ import {
   getPaycheckData
 } from '../utils/localStorage';
 import CSVImportExport from './CSVImportExport';
-import '../styles/portfolio.css';
+import '../styles/liquid-assets.css';
 
 // Helper function to convert plural type to singular
 const getSingularType = (type) => {

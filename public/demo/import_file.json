@@ -464,7 +464,7 @@
     },
     "combinedMonthlyTakeHome": 9000
   },
-  "historicalData": {
+  "annualData": {
     "hist_2021_demo": {
       "entryId": "hist_2021_demo",
       "year": 2021,
@@ -611,7 +611,7 @@
       "othLia": 15000
     }
   },
-  "performanceData": {
+  "accountData": {
     "entry_2021_alex401k": {
       "entryId": "entry_2021_alex401k",
       "year": 2021,
@@ -1006,7 +1006,7 @@
     "netWorthMode": "market",
     "activeTab": "overview",
     "showAllYearsInChart": false,
-    "showAllYearsInPortfolioChart": false,
+    "showAllYearsInLiquidAssetsChart": false,
     "showAllYearsInNetWorthBreakdownChart": false,
     "showAllYearsInMoneyGuyChart": false,
     "useThreeYearIncomeAverage": false,
@@ -1015,7 +1015,7 @@
   },
   "savingsData": {},
   "retirementData": {},
-  "portfolioAccounts": [
+  "liquidAssetsAccounts": [
     {
       "id": "demo-portfolio-account-1",
       "accountName": "Fidelity 401k",
@@ -1049,7 +1049,7 @@
       "createdAt": "2024-01-01T12:00:00.000Z"
     }
   ],
-  "portfolioRecords": [
+  "liquidAssetsRecords": [
     {
       "id": "demo-portfolio-record-1",
       "updateDate": "2025-01-15",
@@ -1101,7 +1101,7 @@
       "totalAmount": 146400
     }
   ],
-  "portfolioInputs": [
+  "liquidAssetsInputs": [
     {
       "id": "demo-input-1",
       "accountName": "Fidelity 401k",
@@ -1147,11 +1147,11 @@
       "accountType": "401k",
       "investmentCompany": "Fidelity",
       "taxType": "Tax-Deferred",
-      "source": "portfolio",
+      "source": "liquidAssets",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z",
       "sources": [
-        "portfolio",
+        "liquidAssets",
         "performance"
       ]
     },
@@ -1162,11 +1162,11 @@
       "accountType": "401k",
       "investmentCompany": "Vanguard",
       "taxType": "Tax-Deferred",
-      "source": "portfolio",
+      "source": "liquidAssets",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z",
       "sources": [
-        "portfolio",
+        "liquidAssets",
         "performance"
       ]
     },
@@ -1177,11 +1177,11 @@
       "accountType": "Brokerage",
       "investmentCompany": "Charles Schwab",
       "taxType": "After-Tax",
-      "source": "portfolio",
+      "source": "liquidAssets",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z",
       "sources": [
-        "portfolio",
+        "liquidAssets",
         "performance"
       ]
     },
@@ -1192,11 +1192,11 @@
       "accountType": "Savings",
       "investmentCompany": "Marcus by Goldman Sachs",
       "taxType": "After-Tax",
-      "source": "portfolio",
+      "source": "liquidAssets",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z",
       "sources": [
-        "portfolio",
+        "liquidAssets",
         "performance"
       ]
     }

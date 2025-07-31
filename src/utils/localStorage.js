@@ -16,15 +16,15 @@ export const STORAGE_KEYS = {
   PAYCHECK_DATA: 'paycheckData',
   FORM_DATA: 'formData',
   APP_SETTINGS: 'appSettings',
-  HISTORICAL_DATA: 'historicalData',
-  PERFORMANCE_DATA: 'performanceData',
+  ANNUAL_DATA: 'annualData',
+  ACCOUNT_DATA: 'accountData',
   NETWORTH_SETTINGS: 'networthSettings',
   PERFORMANCE_SETTINGS: 'performanceSettings',
   SAVINGS_DATA: 'savingsData',
   RETIREMENT_DATA: 'retirementData',
-  PORTFOLIO_ACCOUNTS: 'portfolioAccounts',
-  PORTFOLIO_RECORDS: 'portfolioRecords',
-  PORTFOLIO_INPUTS: 'portfolioInputs',
+  LIQUID_ASSETS_ACCOUNTS: 'liquidAssetsAccounts',
+  LIQUID_ASSETS_RECORDS: 'liquidAssetsRecords',
+  LIQUID_ASSETS_INPUTS: 'liquidAssetsInputs',
   SHARED_ACCOUNTS: 'sharedAccounts',
   MANUAL_ACCOUNT_GROUPS: 'manualAccountGroups',
   PRIMARY_HOME_DATA: 'primaryHomeData',
@@ -246,38 +246,38 @@ export const migrateAllDataForNameChange = (oldName, newName) => {
   if (!oldName || !newName || oldName === newName) return;
   
   
-  // Migrate historical data - Force save
+  // Migrate annual data - Force save
   try {
-    const historicalData = getFromStorage(STORAGE_KEYS.HISTORICAL_DATA, {});
-    const migratedHistorical = migrateDataForNameChange(historicalData, oldName, newName);
+    const annualData = getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
+    const migratedAnnual = migrateDataForNameChange(annualData, oldName, newName);
     
     // Force immediate save
-    const saveResult = setToStorage(STORAGE_KEYS.HISTORICAL_DATA, migratedHistorical);
+    const saveResult = setToStorage(STORAGE_KEYS.ANNUAL_DATA, migratedAnnual);
     
     if (saveResult) {
     }
   } catch (error) {
-    console.error('Error migrating historical data:', error);
+    console.error('Error migrating annual data:', error);
   }
   
-  // Migrate performance data - Force save
+  // Migrate account data - Force save
   try {
-    const performanceData = getFromStorage(STORAGE_KEYS.PERFORMANCE_DATA, {});
-    const migratedPerformance = migrateDataForNameChange(performanceData, oldName, newName);
+    const accountData = getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {});
+    const migratedAccount = migrateDataForNameChange(accountData, oldName, newName);
     
     // Force immediate save
-    const saveResult = setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, migratedPerformance);
+    const saveResult = setToStorage(STORAGE_KEYS.ACCOUNT_DATA, migratedAccount);
     
     if (saveResult) {
     }
   } catch (error) {
-    console.error('Error migrating performance data:', error);
+    console.error('Error migrating account data:', error);
   }
   
   // Dispatch events to notify components of the data changes - with delay to ensure saves are complete
   setTimeout(() => {
-    dispatchGlobalEvent('historicalDataUpdated', getFromStorage(STORAGE_KEYS.HISTORICAL_DATA, {}));
-    dispatchGlobalEvent('performanceDataUpdated', getFromStorage(STORAGE_KEYS.PERFORMANCE_DATA, {}));
+    dispatchGlobalEvent('annualDataUpdated', getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {}));
+    dispatchGlobalEvent('accountDataUpdated', getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {}));
   }, 200);
 };
 
@@ -317,7 +317,7 @@ export const setAppSettings = (data) => {
 };
 
 // Performance sync settings utilities
-export const getPerformanceSyncSettings = () => {
+export const getAccountSyncSettings = () => {
   const appSettings = getAppSettings();
   return {
     combineAccountsAcrossOwners: appSettings.combineAccountsAcrossOwners ?? false,
@@ -325,7 +325,7 @@ export const getPerformanceSyncSettings = () => {
   };
 };
 
-export const setPerformanceSyncSettings = (settings) => {
+export const setAccountSyncSettings = (settings) => {
   const appSettings = getAppSettings();
   const updatedSettings = {
     ...appSettings,
@@ -360,72 +360,72 @@ export const setReadOnlyOverrideSettings = (settings) => {
   return setAppSettings(updatedSettings);
 };
 
-export const getHistoricalDataWithNameMapping = () => {
+export const getAnnualDataWithNameMapping = () => {
   try {
-    const data = getFromStorage(STORAGE_KEYS.HISTORICAL_DATA, {});
+    const data = getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
     // Apply name mapping to ensure current names are displayed
     return applyNameMappingToData(data);
   } catch (error) {
-    console.error('Error loading historical data with name mapping:', error);
+    console.error('Error loading annual data with name mapping:', error);
     return {};
   }
 };
 
-export const getHistoricalData = () => {
+export const getAnnualData = () => {
   // Always return data with name mapping applied for consistency
-  return getHistoricalDataWithNameMapping();
+  return getAnnualDataWithNameMapping();
 };
 
-export const setHistoricalData = (data) => {
+export const setAnnualData = (data) => {
   
   // Don't apply name mapping when saving - data should already have correct names
-  const result = setToStorage(STORAGE_KEYS.HISTORICAL_DATA, data);
+  const result = setToStorage(STORAGE_KEYS.ANNUAL_DATA, data);
   return result;
 };
 
-export const setHistoricalDataWithNameMapping = (data) => {
+export const setAnnualDataWithNameMapping = (data) => {
   
   // Don't apply name mapping when saving - data should already have correct names
-  const result = setHistoricalData(data);
+  const result = setAnnualData(data);
   if (result) {
     // Dispatch update event to notify components
     setTimeout(() => {
-      dispatchGlobalEvent('historicalDataUpdated', data);
+      dispatchGlobalEvent('annualDataUpdated', data);
     }, 50);
   }
   return result;
 };
 
-export const getPerformanceDataWithNameMapping = () => {
+export const getAccountDataWithNameMapping = () => {
   try {
-    const data = getFromStorage(STORAGE_KEYS.PERFORMANCE_DATA, {});
+    const data = getFromStorage(STORAGE_KEYS.ACCOUNT_DATA, {});
     // Apply name mapping to ensure current names are displayed
     return applyNameMappingToData(data);
   } catch (error) {
-    console.error('Error loading performance data with name mapping:', error);
+    console.error('Error loading account data with name mapping:', error);
     return {};
   }
 };
 
-export const getPerformanceData = () => {
+export const getAccountData = () => {
   // Always return data with name mapping applied for consistency
-  return getPerformanceDataWithNameMapping();
+  return getAccountDataWithNameMapping();
 };
 
-export const setPerformanceData = (data) => {
+export const setAccountData = (data) => {
   
   // Don't apply name mapping when saving - data should already have correct names
-  const result = setToStorage(STORAGE_KEYS.PERFORMANCE_DATA, data);
+  const result = setToStorage(STORAGE_KEYS.ACCOUNT_DATA, data);
   return result;
 };
 
-export const setPerformanceDataWithNameMapping = (data) => {
-  const result = setPerformanceData(data);
+export const setAccountDataWithNameMapping = (data) => {
+  const result = setAccountData(data);
   
   if (result) {
     // Dispatch update event to notify components
     setTimeout(() => {
-      dispatchGlobalEvent('performanceDataUpdated', data);
+      dispatchGlobalEvent('accountDataUpdated', data);
     }, 50);
   }
   return result;
@@ -441,17 +441,17 @@ export const exportAllData = () => {
     paycheckData: getPaycheckData(),
     formData: getFormData(),
     appSettings: getAppSettings(),
-    historicalData: getHistoricalData(),
-    performanceData: getPerformanceData(),
+    annualData: getAnnualData(),
+    accountData: getAccountData(),
     retirementData: getRetirementData(),
     primaryHomeData: getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {}),
     assetLiabilityData: getAssetLiabilityData(),
     // New portfolio-related data
     networthSettings: getNetWorthSettings(),
     savingsData: getSavingsData(),
-    portfolioAccounts: getPortfolioAccounts(),
-    portfolioRecords: getPortfolioRecords(),
-    portfolioInputs: getPortfolioInputs(),
+    liquidAssetsAccounts: getLiquidAssetsAccounts(),
+    liquidAssetsRecords: getLiquidAssetsRecords(),
+    liquidAssetsInputs: getLiquidAssetsInputs(),
     sharedAccounts: getSharedAccounts(),
     manualAccountGroups: getManualAccountGroups(),
     // Include name mapping for data integrity
@@ -474,16 +474,16 @@ export const exportAllLocalStorageData = () => {
   Object.entries(STORAGE_KEYS).forEach(([keyName, storageKey]) => {
     let data = getFromStorage(storageKey, null);
     
-    // For performance data, ensure we get the raw data without any transformations
-    if (storageKey === 'performanceData' && data !== null) {
+    // For account data, ensure we get the raw data without any transformations
+    if (storageKey === 'accountData' && data !== null) {
       try {
-        // Get raw performance data directly from localStorage to ensure completeness
-        const rawData = localStorage.getItem('performanceData');
+        // Get raw account data directly from localStorage to ensure completeness
+        const rawData = localStorage.getItem('accountData');
         if (rawData) {
           data = JSON.parse(rawData);
         }
       } catch (error) {
-        console.error('Error getting raw performance data for export:', error);
+        console.error('Error getting raw account data for export:', error);
         // Fall back to the transformed data if raw access fails
       }
     }
@@ -559,12 +559,12 @@ export const exportAllLocalStorageDataFiltered = () => {
   Object.entries(STORAGE_KEYS).forEach(([keyName, storageKey]) => {
     let data = getFromStorage(storageKey, null);
     
-    // Apply filtering to historical and performance data if dual mode is disabled
+    // Apply filtering to annual and account data if dual mode is disabled
     if (!isDualMode && data !== null) {
-      if (storageKey === 'historicalData') {
-        data = filterHistoricalDataForSingleMode(data, userNames[0]);
-      } else if (storageKey === 'performanceData') {
-        data = filterPerformanceDataForSingleMode(data, userNames[0]);
+      if (storageKey === 'annualData') {
+        data = filterAnnualDataForSingleMode(data, userNames[0]);
+      } else if (storageKey === 'accountData') {
+        data = filterAccountDataForSingleMode(data, userNames[0]);
       }
     }
     
@@ -612,13 +612,13 @@ export const exportAllLocalStorageDataFiltered = () => {
   return allData;
 };
 
-// Helper function to filter historical data for single mode
-const filterHistoricalDataForSingleMode = (historicalData, primaryUserName) => {
-  if (!historicalData || typeof historicalData !== 'object') return historicalData;
+// Helper function to filter annual data for single mode
+const filterAnnualDataForSingleMode = (annualData, primaryUserName) => {
+  if (!annualData || typeof annualData !== 'object') return annualData;
   
   const filteredData = {};
   
-  Object.entries(historicalData).forEach(([year, yearData]) => {
+  Object.entries(annualData).forEach(([year, yearData]) => {
     if (yearData && typeof yearData === 'object' && yearData.users) {
       // Filter out user data that isn't the primary user or Joint
       const filteredUsers = {};
@@ -642,13 +642,13 @@ const filterHistoricalDataForSingleMode = (historicalData, primaryUserName) => {
   return filteredData;
 };
 
-// Helper function to filter performance data for single mode
-const filterPerformanceDataForSingleMode = (performanceData, primaryUserName) => {
-  if (!performanceData || typeof performanceData !== 'object') return performanceData;
+// Helper function to filter account data for single mode
+const filterAccountDataForSingleMode = (accountData, primaryUserName) => {
+  if (!accountData || typeof accountData !== 'object') return accountData;
   
   const filteredData = {};
   
-  Object.entries(performanceData).forEach(([entryId, entry]) => {
+  Object.entries(accountData).forEach(([entryId, entry]) => {
     if (entry && typeof entry === 'object' && entry.users) {
       // Filter out user data that isn't the primary user or Joint
       const filteredUsers = {};
@@ -730,11 +730,11 @@ export const exportAllAsCSV = () => {
   const exports = {};
   const timestamp = new Date().toISOString().split('T')[0];
   
-  // Portfolio Records CSV
-  const portfolioRecords = getPortfolioRecords();
-  if (portfolioRecords.length > 0) {
+  // Liquid Assets Records CSV
+  const liquidAssetsRecords = getLiquidAssetsRecords();
+  if (liquidAssetsRecords.length > 0) {
     const allAccounts = [];
-    portfolioRecords.forEach(record => {
+    liquidAssetsRecords.forEach(record => {
       record.accounts.forEach(account => {
         allAccounts.push({
           ...account,
@@ -764,8 +764,8 @@ export const exportAllAsCSV = () => {
         ]);
       });
       
-      exports.portfolioRecords = {
-        filename: `portfolio_records_${timestamp}.csv`,
+      exports.liquidAssetsRecords = {
+        filename: `liquid_assets_records_${timestamp}.csv`,
         content: rows.map(row =>
           row.map(value => {
             const stringValue = value == null ? '' : String(value);
@@ -779,15 +779,15 @@ export const exportAllAsCSV = () => {
     }
   }
   
-  // Performance Data CSV - filtered based on dual calculator setting
-  const performanceData = getPerformanceData();
+  // Account Data CSV - filtered based on dual calculator setting
+  const accountData = getAccountData();
   const paycheckData = getPaycheckData();
   const isDualMode = paycheckData?.settings?.showSpouseCalculator ?? true;
   const primaryUserName = paycheckData?.your?.name?.trim();
   
-  if (Object.keys(performanceData).length > 0) {
-    const performanceRows = [];
-    Object.values(performanceData).forEach(entry => {
+  if (Object.keys(accountData).length > 0) {
+    const accountRows = [];
+    Object.values(accountData).forEach(entry => {
       if (entry.users) {
         Object.entries(entry.users).forEach(([owner, userData]) => {
           // Filter users based on dual calculator setting
@@ -797,7 +797,7 @@ export const exportAllAsCSV = () => {
               return; // Skip this user
             }
           }
-          performanceRows.push({
+          accountRows.push({
             year: entry.year || '',
             owner: owner,
             accountName: userData.accountName || '',
@@ -815,16 +815,16 @@ export const exportAllAsCSV = () => {
       }
     });
     
-    if (performanceRows.length > 0) {
+    if (accountRows.length > 0) {
       const headers = ['year', 'owner', 'accountName', 'accountType', 'balance', 'contributions', 'employerMatch', 'gains', 'fees', 'withdrawals', 'balanceUpdatedFrom', 'balanceUpdatedAt'];
       const rows = [headers];
       
-      performanceRows.forEach(row => {
+      accountRows.forEach(row => {
         rows.push(Object.values(row));
       });
       
-      exports.performanceData = {
-        filename: `performance_data_${timestamp}.csv`,
+      exports.accountData = {
+        filename: `account_data_${timestamp}.csv`,
         content: rows.map(row =>
           row.map(value => {
             const stringValue = value == null ? '' : String(value);
@@ -838,13 +838,13 @@ export const exportAllAsCSV = () => {
     }
   }
   
-  // Historical Data CSV - filtered based on dual calculator setting
-  const historicalData = getHistoricalData();
-  if (Object.keys(historicalData).length > 0) {
-    const historicalRows = [];
-    Object.entries(historicalData).forEach(([year, yearData]) => {
+  // Annual Data CSV - filtered based on dual calculator setting
+  const annualData = getAnnualData();
+  if (Object.keys(annualData).length > 0) {
+    const annualRows = [];
+    Object.entries(annualData).forEach(([year, yearData]) => {
       // Add combined totals row
-      historicalRows.push({
+      annualRows.push({
         year: year,
         owner: 'TOTAL',
         taxFree: yearData.taxFree || 0,
@@ -865,7 +865,7 @@ export const exportAllAsCSV = () => {
               return; // Skip this user
             }
           }
-          historicalRows.push({
+          annualRows.push({
             year: year,
             owner: owner,
             taxFree: userData.taxFree || 0,
@@ -879,16 +879,16 @@ export const exportAllAsCSV = () => {
       }
     });
     
-    if (historicalRows.length > 0) {
+    if (annualRows.length > 0) {
       const headers = ['year', 'owner', 'taxFree', 'taxDeferred', 'brokerage', 'espp', 'hsa', 'cash'];
       const rows = [headers];
       
-      historicalRows.forEach(row => {
+      annualRows.forEach(row => {
         rows.push(Object.values(row));
       });
       
-      exports.historicalData = {
-        filename: `historical_data_${timestamp}.csv`,
+      exports.annualData = {
+        filename: `annual_data_${timestamp}.csv`,
         content: rows.map(row =>
           row.map(value => {
             const stringValue = value == null ? '' : String(value);
@@ -905,7 +905,7 @@ export const exportAllAsCSV = () => {
   // Manual Account Groups CSV
   const manualGroups = getManualAccountGroups();
   if (Object.keys(manualGroups).length > 0) {
-    const headers = ['groupId', 'groupName', 'performanceAccountName', 'owner', 'portfolioAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
+    const headers = ['groupId', 'groupName', 'performanceAccountName', 'owner', 'liquidAssetsAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
     const rows = [headers];
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
@@ -914,7 +914,7 @@ export const exportAllAsCSV = () => {
         group.name || '',
         group.performanceAccountName || '',
         group.owner || '',
-        (group.portfolioAccounts || []).join(';'), // Use semicolon separator for array
+        (group.liquidAssetsAccounts || []).join(';'), // Use semicolon separator for array
         group.lastSync || '',
         group.createdAt || '',
         group.updatedAt || ''
@@ -935,13 +935,13 @@ export const exportAllAsCSV = () => {
     };
   }
   
-  // Portfolio Inputs CSV (excluding amounts - only account definitions)
-  const portfolioInputs = getPortfolioInputs();
-  if (portfolioInputs.length > 0) {
+  // Liquid Assets Inputs CSV (excluding amounts - only account definitions)
+  const liquidAssetsInputs = getLiquidAssetsInputs();
+  if (liquidAssetsInputs.length > 0) {
     const headers = ['id', 'accountName', 'owner', 'taxType', 'accountType', 'investmentCompany', 'description'];
     const rows = [headers];
     
-    portfolioInputs.forEach(input => {
+    liquidAssetsInputs.forEach(input => {
       rows.push([
         input.id || '',
         input.accountName || '',
@@ -953,8 +953,8 @@ export const exportAllAsCSV = () => {
       ]);
     });
     
-    exports.portfolioInputs = {
-      filename: `portfolio_inputs_${timestamp}.csv`,
+    exports.liquidAssetsInputs = {
+      filename: `liquid_assets_inputs_${timestamp}.csv`,
       content: rows.map(row =>
         row.map(value => {
           const stringValue = value == null ? '' : String(value);
@@ -1142,47 +1142,51 @@ export const importAllData = (importData) => {
       importedSections.push('App Settings');
     }
     
-    if (importData.historicalData !== undefined || importData.historical_data !== undefined) {
+    if (importData.annualData !== undefined || importData.annual_data !== undefined || importData.historicalData !== undefined || importData.historical_data !== undefined) {
+      // Support both new and old key names for backward compatibility
+      const dataToImport = importData.annualData || importData.annual_data || importData.historicalData || importData.historical_data;
       // Clean empty user data before importing
-      let cleanedHistoricalData = cleanEmptyUserData(importData.historicalData || importData.historical_data);
+      let cleanedAnnualData = cleanEmptyUserData(dataToImport);
       
       // Apply dual calculator filtering if single mode is enabled
       const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
       const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
       if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
-        cleanedHistoricalData = filterHistoricalDataForSingleMode(cleanedHistoricalData, currentPaycheckData.your.name.trim());
+        cleanedAnnualData = filterAnnualDataForSingleMode(cleanedAnnualData, currentPaycheckData.your.name.trim());
       }
       
-      setHistoricalData(cleanedHistoricalData);
-      importedSections.push('Historical Data');
+      setAnnualData(cleanedAnnualData);
+      importedSections.push('Annual Data');
     }
     
-    if (importData.performanceData !== undefined || importData.performance_data !== undefined) {
+    if (importData.accountData !== undefined || importData.account_data !== undefined || importData.performanceData !== undefined || importData.performance_data !== undefined) {
+      // Support both new and old key names for backward compatibility
+      const dataToImport = importData.accountData || importData.account_data || importData.performanceData || importData.performance_data;
       // Handle both array and object formats during import
-      let performanceDataToImport = importData.performanceData || importData.performance_data;
-      if (Array.isArray(performanceDataToImport)) {
+      let accountDataToImport = dataToImport;
+      if (Array.isArray(accountDataToImport)) {
         // Convert array to object format
-        performanceDataToImport = performanceDataToImport.reduce((acc, entry) => {
+        accountDataToImport = accountDataToImport.reduce((acc, entry) => {
           acc[entry.entryId] = entry;
           return acc;
         }, {});
       }
       
       // Clean empty user data before importing
-      let cleanedPerformanceData = cleanEmptyUserData(performanceDataToImport);
+      let cleanedAccountData = cleanEmptyUserData(accountDataToImport);
       
       // Apply dual calculator filtering if single mode is enabled
       const currentPaycheckData = importData.paycheckData || importData.paycheck_data;
       const isDualMode = currentPaycheckData?.settings?.showSpouseCalculator ?? true;
       if (!isDualMode && currentPaycheckData?.your?.name?.trim()) {
-        cleanedPerformanceData = filterPerformanceDataForSingleMode(cleanedPerformanceData, currentPaycheckData.your.name.trim());
+        cleanedAccountData = filterAccountDataForSingleMode(cleanedAccountData, currentPaycheckData.your.name.trim());
       }
       
-      const result = setPerformanceData(cleanedPerformanceData);
+      const result = setAccountData(cleanedAccountData);
       if (result) {
-        importedSections.push('Performance Data');
+        importedSections.push('Account Data');
       } else {
-        errors.push('Performance Data: Failed to save');
+        errors.push('Account Data: Failed to save');
       }
     }
     
@@ -1212,14 +1216,14 @@ export const importAllData = (importData) => {
       importedSections.push('Savings Data');
     }
     
-    if (importData.portfolioAccounts !== undefined || importData.portfolio_accounts !== undefined) {
-      setPortfolioAccounts(importData.portfolioAccounts || importData.portfolio_accounts);
-      importedSections.push('Portfolio Accounts');
+    if (importData.liquidAssetsAccounts !== undefined || importData.liquid_assets_accounts !== undefined || importData.portfolioAccounts !== undefined || importData.portfolio_accounts !== undefined) {
+      setLiquidAssetsAccounts(importData.liquidAssetsAccounts || importData.liquid_assets_accounts || importData.portfolioAccounts || importData.portfolio_accounts);
+      importedSections.push('Liquid Assets Accounts');
     }
     
-    if (importData.portfolioRecords !== undefined || importData.portfolio_records !== undefined) {
-      setPortfolioRecords(importData.portfolioRecords || importData.portfolio_records);
-      importedSections.push('Portfolio Records');
+    if (importData.liquidAssetsRecords !== undefined || importData.liquid_assets_records !== undefined || importData.portfolioRecords !== undefined || importData.portfolio_records !== undefined) {
+      setLiquidAssetsRecords(importData.liquidAssetsRecords || importData.liquid_assets_records || importData.portfolioRecords || importData.portfolio_records);
+      importedSections.push('Liquid Assets Records');
     }
     
     if (importData.sharedAccounts !== undefined || importData.shared_accounts !== undefined) {
@@ -1227,9 +1231,9 @@ export const importAllData = (importData) => {
       importedSections.push('Shared Accounts');
     }
     
-    if (importData.portfolioInputs !== undefined || importData.portfolio_inputs !== undefined) {
-      setPortfolioInputs(importData.portfolioInputs || importData.portfolio_inputs);
-      importedSections.push('Portfolio Inputs');
+    if (importData.liquidAssetsInputs !== undefined || importData.liquid_assets_inputs !== undefined || importData.portfolioInputs !== undefined || importData.portfolio_inputs !== undefined) {
+      setLiquidAssetsInputs(importData.liquidAssetsInputs || importData.liquid_assets_inputs || importData.portfolioInputs || importData.portfolio_inputs);
+      importedSections.push('Liquid Assets Inputs');
     }
     
     if (importData.manualAccountGroups !== undefined || importData.manual_account_groups !== undefined) {
@@ -1279,10 +1283,10 @@ export const importAllData = (importData) => {
     setTimeout(() => {
       dispatchGlobalEvent('budgetDataUpdated');
       dispatchGlobalEvent('paycheckDataUpdated');
-      dispatchGlobalEvent('historicalDataUpdated');
-      dispatchGlobalEvent('performanceDataUpdated');
+      dispatchGlobalEvent('annualDataUpdated');
+      dispatchGlobalEvent('accountDataUpdated');
       dispatchGlobalEvent('sharedAccountsUpdated');
-      dispatchGlobalEvent('portfolioInputsUpdated');
+      dispatchGlobalEvent('liquidAssetsInputsUpdated');
       dispatchGlobalEvent('manualAccountGroupsUpdated');
     }, 100);
     
@@ -1416,6 +1420,9 @@ export const clearAllAppData = () => {
       'retirementData',
       'primaryHomeData',
       'assetLiabilityData',
+      'liquidAssetsAccounts',
+      'liquidAssetsRecords', 
+      'liquidAssetsInputs',
       'portfolioAccounts',
       'portfolioRecords',
       'portfolioInputs',
@@ -1437,8 +1444,8 @@ export const clearAllAppData = () => {
     setTimeout(() => {
       dispatchGlobalEvent('budgetDataUpdated', []);
       dispatchGlobalEvent('paycheckDataUpdated', {});
-      dispatchGlobalEvent('historicalDataUpdated', {});
-      dispatchGlobalEvent('performanceDataUpdated', []);
+      dispatchGlobalEvent('annualDataUpdated', {});
+      dispatchGlobalEvent('accountDataUpdated', []);
       dispatchGlobalEvent('formDataUpdated', {});
       dispatchGlobalEvent('resetAllData', true); // Notify all components of complete reset
     }, 50);
@@ -1498,15 +1505,15 @@ export const hasExistingData = () => {
   try {
     const budgetData = getBudgetData();
     const paycheckData = getPaycheckData();
-    const historicalData = getHistoricalData();
-    const performanceData = getPerformanceData();
+    const annualData = getAnnualData();
+    const accountData = getAccountData();
     
     // Check if any meaningful data exists
     return (budgetData && budgetData.length > 0) ||
            (paycheckData && ((paycheckData.your && paycheckData.your.salary) || 
                             (paycheckData.spouse && paycheckData.spouse.salary))) ||
-           (historicalData && Object.keys(historicalData).length > 0) ||
-           (performanceData && Object.keys(performanceData).length > 0);
+           (annualData && Object.keys(annualData).length > 0) ||
+           (accountData && Object.keys(accountData).length > 0);
   } catch (error) {
     console.error('Error checking existing data:', error);
     return false;
@@ -1528,8 +1535,8 @@ export const importDemoData = async () => {
       // Dispatch events to notify all components
       dispatchGlobalEvent('paycheckDataUpdated');
       dispatchGlobalEvent('budgetDataUpdated');
-      dispatchGlobalEvent('historicalDataUpdated');
-      dispatchGlobalEvent('performanceDataUpdated');
+      dispatchGlobalEvent('annualDataUpdated');
+      dispatchGlobalEvent('accountDataUpdated');
       return { success: true, message: 'Demo data loaded successfully!' };
     } else {
       return { success: false, message: result.message };
@@ -1562,9 +1569,9 @@ export const resetAllAppData = () => {
       setPerformanceData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well
-      setPortfolioAccounts([]); // Reset portfolio accounts
-      setPortfolioRecords([]); // Reset portfolio records
-      clearPortfolioInputs(); // Reset portfolio inputs
+      setLiquidAssetsAccounts([]); // Reset liquid assets accounts
+      setLiquidAssetsRecords([]); // Reset liquid assets records
+      clearLiquidAssetsInputs(); // Reset liquid assets inputs
       clearSharedAccounts(); // Reset shared accounts system
       clearManualAccountGroups(); // Reset manual account groups
       setAssetLiabilityData({}); // Reset asset liability data
@@ -1635,14 +1642,14 @@ export const cleanupObsoleteFields = () => {
   }
 };
 
-// Clean up joint data from historical storage since historical data should only track individual users
-export const cleanupJointDataFromHistorical = () => {
+// Clean up joint data from annual storage since annual data should only track individual users
+export const cleanupJointDataFromAnnual = () => {
   try {
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     let hasChanges = false;
     
     const cleanedData = {};
-    Object.entries(historicalData).forEach(([year, yearData]) => {
+    Object.entries(annualData).forEach(([year, yearData]) => {
       if (yearData && yearData.users && yearData.users['Joint']) {
         // Remove Joint data
         const cleanedYearData = { ...yearData };
@@ -1662,13 +1669,13 @@ export const cleanupJointDataFromHistorical = () => {
     });
     
     if (hasChanges) {
-      setHistoricalData(cleanedData);
-      return { success: true, message: 'Removed joint data from historical records' };
+      setAnnualData(cleanedData);
+      return { success: true, message: 'Removed joint data from annual records' };
     } else {
-      return { success: true, message: 'No joint data found in historical records' };
+      return { success: true, message: 'No joint data found in annual records' };
     }
   } catch (error) {
-    console.error('Error cleaning up joint data from historical:', error);
+    console.error('Error cleaning up joint data from annual:', error);
     return { success: false, message: error.message };
   }
 };
@@ -1681,7 +1688,7 @@ export const getNetWorthSettings = () => {
     netWorthMode: 'market',
     activeTab: 'overview',
     showAllYearsInChart: false,
-    showAllYearsInPortfolioChart: false,
+    showAllYearsInLiquidAssetsChart: false,
     showAllYearsInNetWorthBreakdownChart: false,
     showAllYearsInMoneyGuyChart: false,
     useThreeYearIncomeAverage: false,
@@ -1739,17 +1746,17 @@ export const setPrimaryHomeData = (data) => {
   return setToStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, data);
 };
 
-// Portfolio account names utilities
-export const getPortfolioAccounts = () => {
-  return getFromStorage(STORAGE_KEYS.PORTFOLIO_ACCOUNTS, []);
+// Liquid Assets account names utilities
+export const getLiquidAssetsAccounts = () => {
+  return getFromStorage(STORAGE_KEYS.LIQUID_ASSETS_ACCOUNTS, []);
 };
 
-export const setPortfolioAccounts = (accounts) => {
-  return setToStorage(STORAGE_KEYS.PORTFOLIO_ACCOUNTS, accounts);
+export const setLiquidAssetsAccounts = (accounts) => {
+  return setToStorage(STORAGE_KEYS.LIQUID_ASSETS_ACCOUNTS, accounts);
 };
 
-export const addPortfolioAccount = (accountName, taxType, accountType, owner) => {
-  const accounts = getPortfolioAccounts();
+export const addLiquidAssetsAccount = (accountName, taxType, accountType, owner) => {
+  const accounts = getLiquidAssetsAccounts();
   const newAccount = {
     id: generateUniqueId(),
     accountName: accountName.trim(),
@@ -1769,24 +1776,24 @@ export const addPortfolioAccount = (accountName, taxType, accountType, owner) =>
   
   if (!exists) {
     accounts.push(newAccount);
-    setPortfolioAccounts(accounts);
+    setLiquidAssetsAccounts(accounts);
   }
   
   return newAccount;
 };
 
 
-// Portfolio records utilities (comprehensive update tracking with dates)
-export const getPortfolioRecords = () => {
-  return getFromStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, []);
+// Liquid Assets records utilities (comprehensive update tracking with dates)
+export const getLiquidAssetsRecords = () => {
+  return getFromStorage(STORAGE_KEYS.LIQUID_ASSETS_RECORDS, []);
 };
 
-export const setPortfolioRecords = (records) => {
-  return setToStorage(STORAGE_KEYS.PORTFOLIO_RECORDS, records);
+export const setLiquidAssetsRecords = (records) => {
+  return setToStorage(STORAGE_KEYS.LIQUID_ASSETS_RECORDS, records);
 };
 
-export const addPortfolioRecord = (accounts, updateDate = null, syncMode = 'balance-only') => {
-  const records = getPortfolioRecords();
+export const addLiquidAssetsRecord = (accounts, updateDate = null, syncMode = 'balance-only') => {
+  const records = getLiquidAssetsRecords();
   const recordDate = updateDate || new Date().toISOString().split('T')[0];
   
   // Parse date correctly to avoid timezone issues
@@ -1862,20 +1869,20 @@ export const addPortfolioRecord = (accounts, updateDate = null, syncMode = 'bala
     records.splice(500);
   }
   
-  setPortfolioRecords(records);
+  setLiquidAssetsRecords(records);
   return newRecord;
 };
 
-export const deletePortfolioRecord = (recordId) => {
-  const records = getPortfolioRecords();
+export const deleteLiquidAssetsRecord = (recordId) => {
+  const records = getLiquidAssetsRecords();
   const filteredRecords = records.filter(record => record.id !== recordId);
-  setPortfolioRecords(filteredRecords);
+  setLiquidAssetsRecords(filteredRecords);
   return filteredRecords;
 };
 
-// Get last portfolio update information for displaying to users
-export const getLastPortfolioUpdate = () => {
-  const records = getPortfolioRecords();
+// Get last liquid assets update information for displaying to users
+export const getLastLiquidAssetsUpdate = () => {
+  const records = getLiquidAssetsRecords();
   if (records.length === 0) {
     return {
       hasData: false,
@@ -1920,40 +1927,40 @@ export const getLastPortfolioUpdate = () => {
   };
 };
 
-// Portfolio Inputs Management (current form data)
-// These functions handle the current portfolio input values for persistence
+// Liquid Assets Inputs Management (current form data)
+// These functions handle the current liquid assets input values for persistence
 
-// Get current portfolio inputs (form data)
-export const getPortfolioInputs = () => {
-  return getFromStorage(STORAGE_KEYS.PORTFOLIO_INPUTS, []);
+// Get current liquid assets inputs (form data)
+export const getLiquidAssetsInputs = () => {
+  return getFromStorage(STORAGE_KEYS.LIQUID_ASSETS_INPUTS, []);
 };
 
-// Set current portfolio inputs (form data)
-export const setPortfolioInputs = (inputs) => {
-  console.log('🔧 setPortfolioInputs called with:', inputs.length, 'inputs');
-  console.log('🔧 Storage key:', STORAGE_KEYS.PORTFOLIO_INPUTS);
+// Set current liquid assets inputs (form data)
+export const setLiquidAssetsInputs = (inputs) => {
+  console.log('🔧 setLiquidAssetsInputs called with:', inputs.length, 'inputs');
+  console.log('🔧 Storage key:', STORAGE_KEYS.LIQUID_ASSETS_INPUTS);
   console.log('🔧 Input data sample:', inputs[0]);
   
-  const result = setToStorage(STORAGE_KEYS.PORTFOLIO_INPUTS, inputs);
+  const result = setToStorage(STORAGE_KEYS.LIQUID_ASSETS_INPUTS, inputs);
   console.log('🔧 setToStorage result:', result);
   
   if (result) {
-    // Notify components that portfolio inputs have been updated
+    // Notify components that liquid assets inputs have been updated
     setTimeout(() => {
-      dispatchGlobalEvent('portfolioInputsUpdated', inputs);
+      dispatchGlobalEvent('liquidAssetsInputsUpdated', inputs);
     }, 50);
   }
   
-  console.log('🔧 setPortfolioInputs returning:', result);
+  console.log('🔧 setLiquidAssetsInputs returning:', result);
   return result;
 };
 
-// Clear portfolio inputs (used during reset operations)
-export const clearPortfolioInputs = () => {
-  const result = setToStorage(STORAGE_KEYS.PORTFOLIO_INPUTS, []);
+// Clear liquid assets inputs (used during reset operations)
+export const clearLiquidAssetsInputs = () => {
+  const result = setToStorage(STORAGE_KEYS.LIQUID_ASSETS_INPUTS, []);
   if (result) {
     setTimeout(() => {
-      dispatchGlobalEvent('portfolioInputsUpdated', []);
+      dispatchGlobalEvent('liquidAssetsInputsUpdated', []);
     }, 50);
   }
   return result;
@@ -2081,19 +2088,19 @@ export const getAccountsBySource = (source = 'all') => {
   return accounts.filter(acc => acc.source === source);
 };
 
-// Sync Portfolio accounts to shared system
-export const syncPortfolioAccountsToShared = () => {
-  const portfolioAccounts = getPortfolioAccounts();
+// Sync Liquid Assets accounts to shared system
+export const syncLiquidAssetsAccountsToShared = () => {
+  const liquidAssetsAccounts = getLiquidAssetsAccounts();
   let syncCount = 0;
 
-  portfolioAccounts.forEach(acc => {
+  liquidAssetsAccounts.forEach(acc => {
     const synced = addOrUpdateSharedAccount({
       accountName: acc.accountName,
       owner: acc.owner,
       accountType: acc.accountType,
-      investmentCompany: '', // Portfolio doesn't track investment company in old system
+      investmentCompany: '', // Liquid Assets doesn't track investment company in old system
       taxType: acc.taxType,
-      source: 'portfolio'
+      source: 'liquidAssets'
     });
     if (synced) syncCount++;
   });
@@ -2101,13 +2108,13 @@ export const syncPortfolioAccountsToShared = () => {
   return syncCount;
 };
 
-// Sync Performance data accounts to shared system
-export const syncPerformanceAccountsToShared = () => {
-  const performanceData = getPerformanceData();
+// Sync Account data accounts to shared system
+export const syncAccountDataToShared = () => {
+  const accountData = getAccountData();
   let syncCount = 0;
   const processedAccounts = new Set(); // Avoid duplicates in single sync
 
-  Object.values(performanceData).forEach(entry => {
+  Object.values(accountData).forEach(entry => {
     if (entry.users && typeof entry.users === 'object') {
       Object.entries(entry.users).forEach(([owner, userData]) => {
         if (userData.accountName && userData.accountType) {
@@ -2119,8 +2126,8 @@ export const syncPerformanceAccountsToShared = () => {
               owner: owner,
               accountType: userData.accountType,
               investmentCompany: userData.investmentCompany || '',
-              taxType: '', // Performance doesn't track tax type
-              source: 'performance'
+              taxType: '', // Account data doesn't track tax type
+              source: 'account'
             });
             if (synced) syncCount++;
             processedAccounts.add(accountKey);
@@ -2133,26 +2140,26 @@ export const syncPerformanceAccountsToShared = () => {
   return syncCount;
 };
 
-// Full sync - combines accounts from both Portfolio and Performance
+// Full sync - combines accounts from both Liquid Assets and Account data
 export const syncAllAccountsToShared = () => {
-  const portfolioCount = syncPortfolioAccountsToShared();
-  const performanceCount = syncPerformanceAccountsToShared();
+  const liquidAssetsCount = syncLiquidAssetsAccountsToShared();
+  const accountCount = syncAccountDataToShared();
   
   return {
-    portfolioSynced: portfolioCount,
-    performanceSynced: performanceCount,
+    liquidAssetsSynced: liquidAssetsCount,
+    accountSynced: accountCount,
     totalAccounts: getSharedAccounts().length
   };
 };
 
-// Get accounts that can be used in Performance component (from Portfolio)
+// Get accounts that can be used in Performance component (from Liquid Assets)
 export const getAccountsForPerformance = () => {
-  return getSharedAccounts().filter(acc => acc.source === 'portfolio' || acc.source === 'manual');
+  return getSharedAccounts().filter(acc => acc.source === 'liquidAssets' || acc.source === 'manual');
 };
 
-// Get accounts that can be used in Portfolio component (from Performance)
-export const getAccountsForPortfolio = () => {
-  return getSharedAccounts().filter(acc => acc.source === 'performance' || acc.source === 'manual');
+// Get accounts that can be used in Liquid Assets component (from Account data)
+export const getAccountsForLiquidAssets = () => {
+  return getSharedAccounts().filter(acc => acc.source === 'account' || acc.source === 'manual');
 };
 
 // Delete a shared account by ID
@@ -2163,7 +2170,7 @@ export const deleteSharedAccount = (accountId) => {
   return filteredAccounts;
 };
 
-// Delete shared accounts by matching criteria (for portfolio account cleanup)
+// Delete shared accounts by matching criteria (for liquid assets account cleanup)
 export const deleteSharedAccountsByMatch = (accountName, accountType, owner) => {
   const accounts = getSharedAccounts();
   const filteredAccounts = accounts.filter(acc => 
@@ -2236,7 +2243,7 @@ export const createManualAccountGroup = (groupName = '', performanceAccountName 
     id: groupId,
     name: groupName || `Account Group ${Object.keys(groups).length + 1}`,
     performanceAccountName: performanceAccountName,
-    portfolioAccounts: [], // Array of portfolio account IDs
+    liquidAssetsAccounts: [], // Array of liquid assets account IDs
     owner: 'Joint', // Default owner for combined accounts
     totalBalance: 0,
     lastSync: null,
@@ -2282,8 +2289,10 @@ export const deleteManualAccountGroup = (groupId) => {
   return true;
 };
 
-// Add a portfolio account to a manual group
-export const addAccountToManualGroup = (groupId, portfolioAccountId) => {
+// Add a liquid assets account to a manual group
+export const addAccountToManualGroup = (groupId, liquidAssetsAccountId) => {
+  if (!liquidAssetsAccountId) return;
+  
   const groups = getManualAccountGroups();
   
   if (!groups[groupId]) {
@@ -2292,12 +2301,22 @@ export const addAccountToManualGroup = (groupId, portfolioAccountId) => {
   
   // Remove the account from any other groups first
   Object.values(groups).forEach(group => {
-    group.portfolioAccounts = group.portfolioAccounts.filter(id => id !== portfolioAccountId);
+    // Add safety check for liquidAssetsAccounts array
+    if (!group.liquidAssetsAccounts) {
+      group.liquidAssetsAccounts = [];
+    } else if (Array.isArray(group.liquidAssetsAccounts)) {
+      group.liquidAssetsAccounts = group.liquidAssetsAccounts.filter(id => id !== liquidAssetsAccountId);
+    }
   });
   
   // Add to the target group
-  if (!groups[groupId].portfolioAccounts.includes(portfolioAccountId)) {
-    groups[groupId].portfolioAccounts.push(portfolioAccountId);
+  // Initialize liquidAssetsAccounts array if it doesn't exist
+  if (!groups[groupId].liquidAssetsAccounts) {
+    groups[groupId].liquidAssetsAccounts = [];
+  }
+  
+  if (!groups[groupId].liquidAssetsAccounts.includes(liquidAssetsAccountId)) {
+    groups[groupId].liquidAssetsAccounts.push(liquidAssetsAccountId);
     groups[groupId].updatedAt = new Date().toISOString();
   }
   
@@ -2305,15 +2324,21 @@ export const addAccountToManualGroup = (groupId, portfolioAccountId) => {
   return groups[groupId];
 };
 
-// Remove a portfolio account from a manual group
-export const removeAccountFromManualGroup = (groupId, portfolioAccountId) => {
+// Remove a liquid assets account from a manual group
+export const removeAccountFromManualGroup = (groupId, liquidAssetsAccountId) => {
   const groups = getManualAccountGroups();
   
   if (!groups[groupId]) {
     return null;
   }
   
-  groups[groupId].portfolioAccounts = groups[groupId].portfolioAccounts.filter(id => id !== portfolioAccountId);
+  // Initialize liquidAssetsAccounts array if it doesn't exist
+  if (!groups[groupId].liquidAssetsAccounts) {
+    groups[groupId].liquidAssetsAccounts = [];
+  } else if (Array.isArray(groups[groupId].liquidAssetsAccounts)) {
+    groups[groupId].liquidAssetsAccounts = groups[groupId].liquidAssetsAccounts.filter(id => id !== liquidAssetsAccountId);
+  }
+  
   groups[groupId].updatedAt = new Date().toISOString();
   
   setManualAccountGroups(groups);
@@ -2321,14 +2346,14 @@ export const removeAccountFromManualGroup = (groupId, portfolioAccountId) => {
 };
 
 // Get available performance accounts for grouping
-export const getAvailablePerformanceAccounts = () => {
-  const performanceData = getPerformanceData();
+export const getAvailableAccounts = () => {
+  const accountData = getAccountData();
   const currentYear = new Date().getFullYear();
   const availableAccounts = [];
   const accountSet = new Set(); // To avoid duplicates
   
   // Only get accounts from current year
-  Object.values(performanceData).forEach(entry => {
+  Object.values(accountData).forEach(entry => {
     if (entry.year === currentYear && entry.users) {
       Object.entries(entry.users).forEach(([owner, userData]) => {
         // Include accounts that have accountName or can generate one from accountType
@@ -2383,52 +2408,59 @@ export const getAvailablePerformanceAccounts = () => {
   return availableAccounts;
 };
 
-// Get performance accounts that are not already assigned to any manual group
-export const getUnusedPerformanceAccounts = () => {
-  const allPerformanceAccounts = getAvailablePerformanceAccounts();
+// Get accounts that are not already assigned to any manual group
+export const getUnusedAccounts = () => {
+  const allAccounts = getAvailableAccounts();
   const manualGroups = getManualAccountGroups();
   
-  // Collect all performance account names that are already assigned to groups
-  const usedPerformanceAccountNames = new Set();
+  // Collect all account names that are already assigned to groups
+  const usedAccountNames = new Set();
   Object.values(manualGroups).forEach(group => {
     if (group.performanceAccountName) {
-      usedPerformanceAccountNames.add(group.performanceAccountName);
+      usedAccountNames.add(group.performanceAccountName);
     }
   });
   
   // Filter out accounts that are already used
-  const unusedAccounts = allPerformanceAccounts.filter(account => 
-    !usedPerformanceAccountNames.has(account.accountName)
+  const unusedAccounts = allAccounts.filter(account => 
+    !usedAccountNames.has(account.accountName)
   );
   
-  console.log('🎯 Performance accounts filter:', {
-    totalAvailable: allPerformanceAccounts.length,
-    alreadyUsed: usedPerformanceAccountNames.size,
+  console.log('🎯 Accounts filter:', {
+    totalAvailable: allAccounts.length,
+    alreadyUsed: usedAccountNames.size,
     unused: unusedAccounts.length,
-    usedAccountNames: Array.from(usedPerformanceAccountNames)
+    usedAccountNames: Array.from(usedAccountNames)
   });
   
   return unusedAccounts;
 };
 
-// Get portfolio accounts that are not in any manual group
-export const getUngroupedPortfolioAccounts = (portfolioInputs) => {
+// Get liquid assets accounts that are not in any manual group
+export const getUngroupedLiquidAssetsAccounts = (liquidAssetsInputs) => {
   const groups = getManualAccountGroups();
   const groupedAccountIds = new Set();
   
   // Collect all account IDs that are already in groups
   Object.values(groups).forEach(group => {
-    group.portfolioAccounts.forEach(accountId => {
-      groupedAccountIds.add(accountId);
-    });
+    // Add safety check for liquidAssetsAccounts array
+    if (group.liquidAssetsAccounts && Array.isArray(group.liquidAssetsAccounts)) {
+      group.liquidAssetsAccounts.forEach(accountId => {
+        groupedAccountIds.add(accountId);
+      });
+    }
   });
   
-  // Return accounts that are not in any group
-  return portfolioInputs.filter(account => !groupedAccountIds.has(account.id));
+  // Return accounts that are not in any group (also add safety check for liquidAssetsInputs)
+  if (!Array.isArray(liquidAssetsInputs)) {
+    return [];
+  }
+  
+  return liquidAssetsInputs.filter(account => !groupedAccountIds.has(account.id));
 };
 
 // Calculate total balance for a manual group
-export const calculateManualGroupBalance = (groupId, portfolioInputs) => {
+export const calculateManualGroupBalance = (groupId, liquidAssetsInputs) => {
   const groups = getManualAccountGroups();
   const group = groups[groupId];
   
@@ -2436,8 +2468,18 @@ export const calculateManualGroupBalance = (groupId, portfolioInputs) => {
     return 0;
   }
   
-  return group.portfolioAccounts.reduce((total, accountId) => {
-    const account = portfolioInputs.find(acc => acc.id === accountId);
+  // Add safety check for liquidAssetsAccounts array
+  if (!group.liquidAssetsAccounts || !Array.isArray(group.liquidAssetsAccounts)) {
+    return 0;
+  }
+  
+  // Add safety check for liquidAssetsInputs
+  if (!Array.isArray(liquidAssetsInputs)) {
+    return 0;
+  }
+  
+  return group.liquidAssetsAccounts.reduce((total, accountId) => {
+    const account = liquidAssetsInputs.find(acc => acc.id === accountId);
     return total + (parseFloat(account?.amount) || 0);
   }, 0);
 };
@@ -2454,13 +2496,13 @@ export const clearManualAccountGroups = () => {
 };
 
 // Clean up empty historical entries (entries with no users or meaningful data)
-export const cleanupEmptyHistoricalEntries = () => {
+export const cleanupEmptyAnnualEntries = () => {
   try {
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     let hasChanges = false;
     
     const cleanedData = {};
-    Object.entries(historicalData).forEach(([key, entry]) => {
+    Object.entries(annualData).forEach(([key, entry]) => {
       // Keep entry if it has users with meaningful data, or if it has other financial data
       const hasUsers = entry.users && Object.keys(entry.users).length > 0;
       const hasFinancialData = entry.taxFree || entry.taxDeferred || entry.brokerage || 
@@ -2476,8 +2518,8 @@ export const cleanupEmptyHistoricalEntries = () => {
     });
     
     if (hasChanges) {
-      setHistoricalData(cleanedData);
-      return { success: true, message: 'Removed empty historical entries' };
+      setAnnualData(cleanedData);
+      return { success: true, message: 'Removed empty annual entries' };
     } else {
       return { success: true, message: 'No empty entries found' };
     }
@@ -2487,11 +2529,11 @@ export const cleanupEmptyHistoricalEntries = () => {
   }
 };
 
-// Sync paycheck data to historical data for current year
-export const syncPaycheckToHistorical = () => {
+// Sync paycheck data to annual data for current year
+export const syncPaycheckToAnnual = () => {
   try {
     const paycheckData = getPaycheckData();
-    const historicalData = getHistoricalData();
+    const annualData = getAnnualData();
     const currentYear = new Date().getFullYear();
 
     // Get users from paycheck data
@@ -2514,30 +2556,30 @@ export const syncPaycheckToHistorical = () => {
       return true; // No data to sync, but not an error
     }
 
-    // Check if there's already a proper historical entry for current year (like hist_2025_demo)
-    const hasProperHistoricalEntry = Object.keys(historicalData).some(key => {
-      const entry = historicalData[key];
+    // Check if there's already a proper annual entry for current year (like hist_2025_demo)
+    const hasProperAnnualEntry = Object.keys(annualData).some(key => {
+      const entry = annualData[key];
       return entry && entry.year === currentYear && key !== currentYear.toString() && 
-             entry.taxFree !== undefined; // Has full historical data structure
+             entry.taxFree !== undefined; // Has full annual data structure
     });
 
-    // If there's already a proper historical entry, don't create a duplicate simple entry
-    if (hasProperHistoricalEntry) {
+    // If there's already a proper annual entry, don't create a duplicate simple entry
+    if (hasProperAnnualEntry) {
       return true; // Proper entry exists, no need to sync
     }
 
     // Initialize current year data if it doesn't exist
-    if (!historicalData[currentYear]) {
-      historicalData[currentYear] = { users: {} };
+    if (!annualData[currentYear]) {
+      annualData[currentYear] = { users: {} };
     }
 
-    // Update historical data for each user
+    // Update annual data for each user
     users.forEach(user => {
-      if (!historicalData[currentYear].users[user.name]) {
-        historicalData[currentYear].users[user.name] = {};
+      if (!annualData[currentYear].users[user.name]) {
+        annualData[currentYear].users[user.name] = {};
       }
 
-      const userData = historicalData[currentYear].users[user.name];
+      const userData = annualData[currentYear].users[user.name];
       
       // Sync salary, employer, and bonus from paycheck data
       userData.employer = user.data.employer || '';
@@ -2550,28 +2592,28 @@ export const syncPaycheckToHistorical = () => {
     // Calculate AGI as sum of salary and bonus for all users in current year
     let totalAGI = 0;
     users.forEach(user => {
-      const userData = historicalData[currentYear].users[user.name];
+      const userData = annualData[currentYear].users[user.name];
       if (userData) {
         totalAGI += (userData.salary || 0) + (userData.bonus || 0);
       }
     });
     
     // Set the calculated AGI in the current year entry
-    historicalData[currentYear].agi = totalAGI;
+    annualData[currentYear].agi = totalAGI;
 
-    // Save updated historical data
-    const saveResult = setHistoricalData(historicalData);
+    // Save updated annual data
+    const saveResult = setAnnualData(annualData);
     
     if (saveResult) {
       // Dispatch event to notify other components
       setTimeout(() => {
-        dispatchGlobalEvent('historicalDataUpdated', historicalData);
+        dispatchGlobalEvent('annualDataUpdated', annualData);
       }, 50);
     }
     
     return saveResult;
   } catch (error) {
-    console.error('Error syncing paycheck to historical data:', error);
+    console.error('Error syncing paycheck to annual data:', error);
     return false;
   }
 };
@@ -2596,3 +2638,54 @@ export const setAssetLiabilityData = (data) => {
   }
   return result;
 };
+
+// ============================================================================
+// BACKWARD COMPATIBILITY ALIASES
+// ============================================================================
+// These aliases maintain compatibility with existing code during transition
+
+// Historical data aliases (now annual data)
+export const getHistoricalData = getAnnualData;
+export const setHistoricalData = setAnnualData;
+export const getHistoricalDataWithNameMapping = getAnnualDataWithNameMapping;
+export const setHistoricalDataWithNameMapping = setAnnualDataWithNameMapping;
+export const cleanupEmptyHistoricalEntries = cleanupEmptyAnnualEntries;
+export const cleanupJointDataFromHistorical = cleanupJointDataFromAnnual;
+export const syncPaycheckToHistorical = syncPaycheckToAnnual;
+
+// Performance data aliases (now account data)
+export const getPerformanceData = getAccountData;
+export const setPerformanceData = setAccountData;
+export const getPerformanceDataWithNameMapping = getAccountDataWithNameMapping;
+export const setPerformanceDataWithNameMapping = setAccountDataWithNameMapping;
+export const syncPerformanceAccountsToShared = syncAccountDataToShared;
+
+// ============================================================================
+// PORTFOLIO/LIQUID ASSETS BACKWARD COMPATIBILITY ALIASES
+// ============================================================================
+// These aliases maintain compatibility with existing code during transition
+
+// Portfolio accounts aliases (now liquid assets accounts)
+export const getPortfolioAccounts = getLiquidAssetsAccounts;
+export const setPortfolioAccounts = setLiquidAssetsAccounts;
+export const addPortfolioAccount = addLiquidAssetsAccount;
+
+// Portfolio records aliases (now liquid assets records)
+export const getPortfolioRecords = getLiquidAssetsRecords;
+export const setPortfolioRecords = setLiquidAssetsRecords;
+export const addPortfolioRecord = addLiquidAssetsRecord;
+export const deletePortfolioRecord = deleteLiquidAssetsRecord;
+export const getLastPortfolioUpdate = getLastLiquidAssetsUpdate;
+
+// Portfolio inputs aliases (now liquid assets inputs)
+export const getPortfolioInputs = getLiquidAssetsInputs;
+export const setPortfolioInputs = setLiquidAssetsInputs;
+export const clearPortfolioInputs = clearLiquidAssetsInputs;
+
+// Shared accounts aliases
+export const syncPortfolioAccountsToShared = syncLiquidAssetsAccountsToShared;
+export const getAccountsForPortfolio = getAccountsForLiquidAssets;
+
+// Manual groups aliases
+export const getUngroupedPortfolioAccounts = getUngroupedLiquidAssetsAccounts;
+

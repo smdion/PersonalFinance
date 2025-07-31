@@ -1,14 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { 
-  getHistoricalData, 
-  setHistoricalData, 
+  getAnnualData, 
+  setAnnualData, 
   STORAGE_KEYS,
+  syncPaycheckToAnnual,
+  cleanupJointDataFromAnnual,
+  cleanupEmptyAnnualEntries,
+  // Legacy aliases for backward compatibility
   syncPaycheckToHistorical,
   cleanupJointDataFromHistorical,
   cleanupEmptyHistoricalEntries,
-  // Import performance data functions
-  getPerformanceData, 
-  setPerformanceData,
+  // Import accounts data functions
+  getAccountData, 
+  setAccountData,
   // Import shared account functions
   getSharedAccounts,
   addOrUpdateSharedAccount,
@@ -26,7 +30,7 @@ import DataManager from './DataManager';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
 import '../styles/last-update-info.css';
-import { syncPerformanceAccountsFromLatestPortfolio, generateAccountName } from '../utils/portfolioPerformanceSync';
+import { syncAccountsFromLatestLiquidAssets, generateAccountName } from '../utils/liquidAssetsAccountsSync';
 
 const RawData = () => {
   // State for read-only override
@@ -45,38 +49,38 @@ const RawData = () => {
   const syncAssetLiabilityToHistorical = () => {
     try {
       const assetLiabilityData = getAssetLiabilityData();
-      const historicalData = getHistoricalData();
+      const annualData = getAnnualData();
       let hasChanges = false;
 
       // Get current year for asset/liability values (they apply to current year only)
       const currentYear = new Date().getFullYear().toString();
 
       // Initialize current year entry if it doesn't exist
-      if (!historicalData[currentYear]) {
-        historicalData[currentYear] = {};
+      if (!annualData[currentYear]) {
+        annualData[currentYear] = {};
       }
 
       // Sync house value
       if (assetLiabilityData.house && assetLiabilityData.house > 0) {
-        historicalData[currentYear].house = assetLiabilityData.house;
+        annualData[currentYear].house = assetLiabilityData.house;
         hasChanges = true;
       }
 
       // Sync mortgage
       if (assetLiabilityData.mortgage && assetLiabilityData.mortgage > 0) {
-        historicalData[currentYear].mortgage = assetLiabilityData.mortgage;
+        annualData[currentYear].mortgage = assetLiabilityData.mortgage;
         hasChanges = true;
       }
 
       // Sync other assets
       if (assetLiabilityData.othAsset && assetLiabilityData.othAsset > 0) {
-        historicalData[currentYear].othAsset = assetLiabilityData.othAsset;
+        annualData[currentYear].othAsset = assetLiabilityData.othAsset;
         hasChanges = true;
       }
 
       // Sync other liabilities
       if (assetLiabilityData.othLia && assetLiabilityData.othLia > 0) {
-        historicalData[currentYear].othLia = assetLiabilityData.othLia;
+        annualData[currentYear].othLia = assetLiabilityData.othLia;
         hasChanges = true;
       }
 
@@ -100,8 +104,8 @@ const RawData = () => {
         // Update historical data for each year that has improvements
         Object.entries(improvementsByYear).forEach(([year, improvements]) => {
           // Initialize year entry if it doesn't exist
-          if (!historicalData[year]) {
-            historicalData[year] = {};
+          if (!annualData[year]) {
+            annualData[year] = {};
           }
 
           // Calculate total home improvements value for this year
@@ -112,7 +116,7 @@ const RawData = () => {
 
           // Only update if there's a meaningful value
           if (totalValue > 0) {
-            historicalData[year].homeImprovements = totalValue;
+            annualData[year].homeImprovements = totalValue;
             hasChanges = true;
           }
         });
@@ -120,7 +124,7 @@ const RawData = () => {
 
       // Save changes if any were made
       if (hasChanges) {
-        setHistoricalData(historicalData);
+        setAnnualData(annualData);
       }
 
       return hasChanges;
@@ -135,10 +139,12 @@ const RawData = () => {
     syncPaycheckToHistorical();
     cleanupJointDataFromHistorical();
     cleanupEmptyHistoricalEntries();
-    // Initialize shared accounts system for performance data
+    // Initialize shared accounts system for account data
     initializeSharedAccounts();
-    // Sync to show only accounts from latest portfolio record
-    syncPerformanceAccountsFromLatestPortfolio();
+    
+    // Sync to show only accounts from latest liquid assets record
+    syncAccountsFromLatestLiquidAssets();
+    
     // Sync ALL asset liability data to historical data
     syncAssetLiabilityToHistorical();
   }, []);
@@ -159,14 +165,14 @@ const RawData = () => {
     };
   }, []);
 
-  // Custom function to handle when Performance data is updated
-  const handlePerformanceDataUpdate = (data) => {
+  // Custom function to handle when Account data is updated
+  const handleAccountDataUpdate = (data) => {
     // First save the data normally
-    const result = setPerformanceData(data);
+    const result = setAccountData(data);
     
-    // Then sync accounts to shared system (only from latest portfolio)
+    // Then sync accounts to shared system (only from latest liquid assets)
     if (result) {
-      syncPerformanceAccountsFromLatestPortfolio();
+      syncAccountsFromLatestLiquidAssets();
     }
     
     return result;
@@ -229,7 +235,7 @@ const RawData = () => {
         if (accountType && investmentCompany) {
           userData.generatedAccountName = generateAccountName(
             ownerName,
-            '', // Performance doesn't track tax type
+            '', // Accounts doesn't track tax type
             accountType,
             investmentCompany
           );
@@ -258,8 +264,8 @@ const RawData = () => {
               owner: ownerName,
               accountType: accountType,
               investmentCompany: investmentCompany,
-              taxType: '', // Performance doesn't track tax type
-              source: 'performance'
+              taxType: '', // Accounts doesn't track tax type
+              source: 'accounts'
             });
           }
         }
@@ -308,12 +314,12 @@ const RawData = () => {
         name: 'investments',
         title: '📈 Investments',
         fields: [
-          { name: 'taxFree', label: 'Tax-Free', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'taxDeferred', label: 'Tax-Deferred', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'brokerage', label: 'Brokerage', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'espp', label: 'ESPP', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Portfolio Component' },
-          { name: 'cash', label: 'Cash', format: 'currency', className: 'currency' }
+          { name: 'taxFree', label: 'Tax-Free', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' },
+          { name: 'taxDeferred', label: 'Tax-Deferred', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' },
+          { name: 'brokerage', label: 'Brokerage', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' },
+          { name: 'espp', label: 'ESPP', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' },
+          { name: 'hsa', label: 'HSA', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' },
+          { name: 'cash', label: 'Cash', format: 'currency', className: 'currency', readonly: true, lockedBy: 'Liquid Assets Component' }
         ]
       },
       {
@@ -330,8 +336,8 @@ const RawData = () => {
     ]
   };
 
-  // Schema configuration for Performance DataManager
-  const performanceSchema = {
+  // Schema configuration for Account DataManager
+  const accountSchema = {
     primaryKeyLabel: 'Entry ID',
     primaryKeyType: 'text',
     sections: [
@@ -409,7 +415,7 @@ const RawData = () => {
       <div className="app-container">
         <div className="header">
           <h1>📈 Annual & Account Data</h1>
-          <p>Track Your Financial Journey and Account Performance Over Time</p>
+          <p>Track Your Financial Journey and Account Data Over Time</p>
         </div>
 
         {/* Last Update Information */}
@@ -429,7 +435,7 @@ const RawData = () => {
                 🔒 Data Protection Settings
               </span>
               <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                Historical and Performance data are read-only by default
+                Historical and Account data are read-only by default
               </span>
             </div>
             <label style={{ 
@@ -473,7 +479,7 @@ const RawData = () => {
                     Warning: Read-Only Protection is Disabled
                   </div>
                   <div style={{ fontSize: '0.85rem', color: '#7f1d1d', lineHeight: '1.4' }}>
-                    You can now edit Historical and Performance data directly. Most updates should be made through 
+                    You can now edit Historical and Account data directly. Most updates should be made through 
                     the Paycheck Calculator, Portfolio, Asset Manager, and other source components to maintain data consistency.
                   </div>
                 </div>
@@ -511,7 +517,7 @@ const RawData = () => {
                     Disable Read-Only Protection?
                   </h3>
                   <p style={{ margin: 0, fontSize: '0.9rem', color: '#374151', lineHeight: '1.5' }}>
-                    Historical and Performance data are normally read-only because they're automatically updated 
+                    Historical and Account data are normally read-only because they're automatically updated 
                     from other components (Paycheck Calculator, Portfolio, Asset Manager, etc.).
                   </p>
                 </div>
@@ -570,9 +576,9 @@ const RawData = () => {
           key={`historical-${readOnlyOverrideSettings.disableReadOnlyMode}`}
           title="Annual Data"
           subtitle="Add your first year of data to start tracking your financial progress"
-          dataKey={STORAGE_KEYS.HISTORICAL_DATA}
-          getData={getHistoricalData}
-          setData={setHistoricalData}
+          dataKey={STORAGE_KEYS.ANNUAL_DATA}
+          getData={getAnnualData}
+          setData={setAnnualData}
           schema={historicalSchema}
           usePaycheckUsers={true}
           primaryKey="year"
@@ -583,13 +589,13 @@ const RawData = () => {
         />
 
         <DataManager
-          key={`performance-${readOnlyOverrideSettings.disableReadOnlyMode}`}
+          key={`account-${readOnlyOverrideSettings.disableReadOnlyMode}`}
           title="Account Data"
-          subtitle="Account performance data synced from Portfolio component"
-          dataKey={STORAGE_KEYS.PERFORMANCE_DATA}
-          getData={getPerformanceData}
-          setData={handlePerformanceDataUpdate}
-          schema={performanceSchema}
+          subtitle="Account data synced from Liquid Assets component"
+          dataKey={STORAGE_KEYS.ACCOUNT_DATA}
+          getData={getAccountData}
+          setData={handleAccountDataUpdate}
+          schema={accountSchema}
           usePaycheckUsers={true}
           primaryKey="entryId"
           sortField="year"

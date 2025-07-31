@@ -9,10 +9,10 @@ const LastUpdateInfo = ({ className = '', showDetails = true, compact = false })
       <div className={`last-update-info no-data ${className}`}>
         <div className="last-update-icon">📊</div>
         <div className="last-update-content">
-          <div className="last-update-title">Portfolio Data Status</div>
-          <div className="last-update-message">No portfolio data updates yet</div>
+          <div className="last-update-title">Liquid Assets Data Status</div>
+          <div className="last-update-message">No Liquid Assets data updates yet</div>
           <div className="last-update-action">
-            Go to the <a href="/portfolio">Portfolio page</a> to add your first investment data update.
+            Go to the <a href="/portfolio">Liquid Assets page</a> to add your first investment data update.
           </div>
         </div>
       </div>
@@ -65,7 +65,7 @@ const LastUpdateInfo = ({ className = '', showDetails = true, compact = false })
         <div className="last-update-compact-content">
           <span className="last-update-icon">📊</span>
           <span className="last-update-text">
-            Portfolio last updated: <strong>{lastUpdateTime.relativeTime}</strong>
+            Liquid Assets last updated: <strong>{lastUpdateTime.relativeTime}</strong>
             {lastAnyUpdate.syncMode === 'detailed' ? ' (Detailed)' : ' (Balance Only)'}
           </span>
         </div>

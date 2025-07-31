@@ -348,17 +348,23 @@ const DataManager = ({
     window.addEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
     
     // Listen for this component's specific data updates
-    if (dataKey === 'historicalData') {
+    if (dataKey === 'historicalData' || dataKey === 'annualData') {
+      window.addEventListener('annualDataUpdated', handleDataUpdated);
+      // Also listen for old event name for backward compatibility
       window.addEventListener('historicalDataUpdated', handleDataUpdated);
-    } else if (dataKey === 'performanceData') {
+    } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+      window.addEventListener('accountDataUpdated', handleDataUpdated);
+      // Also listen for old event name for backward compatibility
       window.addEventListener('performanceDataUpdated', handleDataUpdated);
     }
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckDataUpdated);
-      if (dataKey === 'historicalData') {
+      if (dataKey === 'historicalData' || dataKey === 'annualData') {
+        window.removeEventListener('annualDataUpdated', handleDataUpdated);
         window.removeEventListener('historicalDataUpdated', handleDataUpdated);
-      } else if (dataKey === 'performanceData') {
+      } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+        window.removeEventListener('accountDataUpdated', handleDataUpdated);
         window.removeEventListener('performanceDataUpdated', handleDataUpdated);
       }
     };
