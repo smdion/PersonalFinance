@@ -82,7 +82,7 @@ export const findMatchingAccountsAccount = (liquidAssetsAccount, accountsAccount
   
   // Generate the expected account name from liquid assets data for exact matching
   const expectedAccountName = generateAccountName(
-    targetOwner,
+    liquidAssetsAccount.owner, // Use original owner with proper capitalization
     liquidAssetsAccount.taxType,
     liquidAssetsAccount.accountType,
     liquidAssetsAccount.investmentCompany,
@@ -97,7 +97,7 @@ export const findMatchingAccountsAccount = (liquidAssetsAccount, accountsAccount
     const acctAccountName = acctAccount.accountName?.trim() || '';
     
     // Check for exact account name match with correct owner
-    if (acctAccountName === expectedAccountName && acctOwner === targetOwner.toLowerCase()) {
+    if (acctAccountName === expectedAccountName && acctOwner === liquidAssetsAccount.owner.toLowerCase()) {
       return acctAccount;
     }
   }
@@ -168,7 +168,6 @@ export const findAccountsAccountByName = (accountName, accountsAccounts) => {
 
 // Sync liquid assets balance updates to accounts using manual account groups
 export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType = 'detailed') => {
-  
   const accountsData = getAccountsData();
   const manualGroups = getManualAccountGroups();
   const currentYear = new Date().getFullYear();
@@ -305,12 +304,16 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
     const updatedGroups = { ...manualGroups };
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
-      if (!group.performanceAccountName) {
+      // Support both old and new field names during transition
+      const targetAccountName = group.accountName || group.performanceAccountName;
+      if (!targetAccountName) {
         return;
       }
       
       // Calculate total balance for this group
-      const totalBalance = (group.liquidAssetsAccounts || []).reduce((sum, accountId) => {
+      // Support both old and new field names during transition
+      const liquidAssetsAccountIds = group.liquidAssetsAccounts || group.portfolioAccounts || [];
+      const totalBalance = liquidAssetsAccountIds.reduce((sum, accountId) => {
         const account = liquidAssetsData.find(acc => acc.id === accountId);
         if (account && account.amount) {
           return sum + parseFloat(account.amount);
@@ -320,7 +323,7 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
       
       // Find the target Accounts account by name
       const targetAcctAccount = findAccountsAccountByName(
-        group.performanceAccountName, 
+        targetAccountName, 
         existingAccountsAccounts
       );
       
@@ -329,13 +332,13 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
         targetAcctAccount.userData.balance = totalBalance;
         
         // CRITICAL: Also update the entry-level balance field that DataManager displays
-        // This matches the Historical data structure pattern
+        // This matches the Annual data structure pattern
         targetAcctAccount.entry.balance = totalBalance;
         
         // Update additional financial fields only for detailed updates
         if (updateType === 'detailed') {
           // Calculate totals for combined fields from all accounts in group
-          const groupTotals = (group.liquidAssetsAccounts || []).reduce((totals, accountId) => {
+          const groupTotals = liquidAssetsAccountIds.reduce((totals, accountId) => {
             const account = liquidAssetsData.find(acc => acc.id === accountId);
             if (account) {
               totals.contributions += account.contributions ? parseFloat(account.contributions) : 0;
@@ -379,7 +382,7 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
         // Calculate totals for combined fields from all accounts in group only for detailed updates
         let groupTotals = { contributions: 0, employerMatch: 0, gains: 0, fees: 0, withdrawals: 0 };
         if (updateType === 'detailed') {
-          groupTotals = (group.liquidAssetsAccounts || []).reduce((totals, accountId) => {
+          groupTotals = liquidAssetsAccountIds.reduce((totals, accountId) => {
             const account = liquidAssetsData.find(acc => acc.id === accountId);
             if (account) {
               totals.contributions += account.contributions ? parseFloat(account.contributions) : 0;
@@ -404,7 +407,7 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
           withdrawals: updateType === 'detailed' ? (groupTotals.withdrawals || '') : '',
           users: {
             [group.owner]: {
-              accountName: group.performanceAccountName,
+              accountName: targetAccountName,
               accountType: 'Combined', // Generic type for manual groups
               investmentCompany: 'Multiple', // Generic company for combined accounts
               balance: totalBalance,
@@ -672,7 +675,8 @@ export const syncAccountsFromLatestLiquidAssets = () => {
   
   // Update shared accounts to only include latest liquid assets accounts
   const sharedAccounts = getSharedAccounts();
-  const updatedSharedAccounts = sharedAccounts.filter(acc => 
+  // Clear out old accounts and liquidAssets entries to refresh with current data
+  sharedAccounts.filter(acc => 
     acc.source !== 'accounts' && acc.source !== 'liquidAssets'
   );
   

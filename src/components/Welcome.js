@@ -452,7 +452,7 @@ const Welcome = () => {
                   <li><strong>Dual Income Household:</strong> Alex ($97k) and Jamie ($69k) with realistic salary progression</li>
                   <li><strong>Complete Budget:</strong> 12 categories with 35+ items across Standard/Tight/Emergency scenarios</li>
                   <li><strong>5 Years of Historical Data:</strong> Financial progression from 2021-2025 with tax information</li>
-                  <li><strong>Investment Performance:</strong> 401k accounts, joint brokerage, and high-yield savings tracking</li>
+                  <li><strong>Investment Accounts:</strong> 401k accounts, joint brokerage, and high-yield savings tracking</li>
                   <li><strong>Net Worth Growth:</strong> Realistic wealth building from $74k to $675k over 5 years</li>
                   <li><strong>Real-Life Scenarios:</strong> Salary increases, bonuses, home improvements, debt payoff</li>
                 </ul>
@@ -503,7 +503,7 @@ const Welcome = () => {
                   <div className="step">
                     <div className="step-number">6</div>
                     <div className="step-content">
-                      <h4>Track Investment Performance</h4>
+                      <h4>Track Investment Accounts</h4>
                       <p>Add individual accounts to monitor balances, contributions, employer matches, gains/losses, and calculate returns over time.</p>
                     </div>
                   </div>
@@ -607,7 +607,7 @@ const Welcome = () => {
                 Track Liabilities
               </Link>
               <Link to="/performance" className="quick-start-button secondary">
-                Track Account Performance
+                Track Account Data
               </Link>
               <Link to="/raw-data" className="quick-start-button secondary">
                 Track Annual Data

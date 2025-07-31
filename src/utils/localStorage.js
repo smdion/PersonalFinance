@@ -18,7 +18,7 @@ export const STORAGE_KEYS = {
   ANNUAL_DATA: 'annualData',
   ACCOUNT_DATA: 'accountData',
   NETWORTH_SETTINGS: 'networthSettings',
-  PERFORMANCE_SETTINGS: 'performanceSettings',
+  ACCOUNT_SETTINGS: 'accountSettings',
   SAVINGS_DATA: 'savingsData',
   RETIREMENT_DATA: 'retirementData',
   LIQUID_ASSETS_ACCOUNTS: 'liquidAssetsAccounts',
@@ -360,7 +360,7 @@ export const setIsDemoData = (value) => {
   return setAppSettings(updatedSettings);
 };
 
-// Performance sync settings utilities
+// Account sync settings utilities
 export const getAccountSyncSettings = () => {
   const appSettings = getAppSettings();
   return {
@@ -491,7 +491,7 @@ export const exportAllData = () => {
     assetLiabilityData: getAssetLiabilityData(),
     // New portfolio-related data
     networthSettings: getNetWorthSettings(),
-    performanceSettings: getPerformanceSettings(),
+    accountSettings: getAccountSettings(),
     savingsData: getSavingsData(),
     liquidAssetsAccounts: getLiquidAssetsAccounts(),
     liquidAssetsRecords: getLiquidAssetsRecords(),
@@ -929,14 +929,14 @@ export const exportAllAsCSV = () => {
   // Manual Account Groups CSV
   const manualGroups = getManualAccountGroups();
   if (Object.keys(manualGroups).length > 0) {
-    const headers = ['groupId', 'groupName', 'performanceAccountName', 'owner', 'liquidAssetsAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
+    const headers = ['groupId', 'groupName', 'accountName', 'owner', 'liquidAssetsAccountIds', 'lastSync', 'createdAt', 'updatedAt'];
     const rows = [headers];
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
       rows.push([
         groupId,
         group.name || '',
-        group.performanceAccountName || '',
+        group.accountName || '',
         group.owner || '',
         (group.liquidAssetsAccounts || []).join(';'), // Use semicolon separator for array
         group.lastSync || '',
@@ -1227,9 +1227,9 @@ export const importAllData = (importData) => {
       importedSections.push('Net Worth Settings');
     }
     
-    if (importData.performanceSettings !== undefined || importData.performance_settings !== undefined) {
-      setPerformanceSettings(importData.performanceSettings || importData.performance_settings);
-      importedSections.push('Performance Settings');
+    if (importData.accountSettings !== undefined || importData.account_settings !== undefined || importData.performanceSettings !== undefined || importData.performance_settings !== undefined) {
+      setAccountSettings(importData.accountSettings || importData.account_settings || importData.performanceSettings || importData.performance_settings);
+      importedSections.push('Account Settings');
     }
     
     if (importData.savingsData !== undefined || importData.savings_data !== undefined) {
@@ -1421,7 +1421,7 @@ export const clearAllAppData = () => {
       'paycheckData', 
       'formData',
       'appSettings',
-      'performanceData',
+      'accountData',
       'networthSettings',
       'retirementData',
       'primaryHomeData',
@@ -1569,7 +1569,7 @@ export const resetAllAppData = () => {
       setPaycheckData({});
       setAppSettings({});
       setAnnualData({});
-      setPerformanceData({}); // Changed from [] to {}
+      setAccountData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well
       setLiquidAssetsAccounts([]); // Reset liquid assets accounts
@@ -1704,9 +1704,9 @@ export const setNetWorthSettings = (settings) => {
   return setToStorage(STORAGE_KEYS.NETWORTH_SETTINGS, settings);
 };
 
-// Performance settings utilities
-export const getPerformanceSettings = () => {
-  return getFromStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, {
+// Account settings utilities
+export const getAccountSettings = () => {
+  return getFromStorage(STORAGE_KEYS.ACCOUNT_SETTINGS, {
     selectedYears: [],
     selectedAccounts: [],
     activeTab: 'overview',
@@ -1718,8 +1718,8 @@ export const getPerformanceSettings = () => {
   });
 };
 
-export const setPerformanceSettings = (settings) => {
-  return setToStorage(STORAGE_KEYS.PERFORMANCE_SETTINGS, settings);
+export const setAccountSettings = (settings) => {
+  return setToStorage(STORAGE_KEYS.ACCOUNT_SETTINGS, settings);
 };
 
 // Savings data utilities
@@ -1967,11 +1967,11 @@ export const clearLiquidAssetsInputs = () => {
 // =============================================================================
 // SHARED ACCOUNT MANAGEMENT SYSTEM
 // =============================================================================
-// This system allows Portfolio and Performance components to share account definitions
+// This system allows Portfolio and Account components to share account definitions
 
 export const SHARED_ACCOUNTS_KEY = STORAGE_KEYS.SHARED_ACCOUNTS;
 
-// Get all shared accounts that both Portfolio and Performance can use
+// Get all shared accounts that both Portfolio and Account can use
 export const getSharedAccounts = () => {
   return getFromStorage(SHARED_ACCOUNTS_KEY, []);
 };
@@ -2031,7 +2031,7 @@ export const addOrUpdateSharedAccount = (accountData) => {
   if (existingIndex >= 0) {
     const existing = accounts[existingIndex];
     
-    // Portfolio data takes precedence over Performance data
+    // Portfolio data takes precedence over Account data
     if (source === 'portfolio' || existing.source !== 'portfolio') {
       accountEntry = {
         id: existing.id,
@@ -2150,8 +2150,8 @@ export const syncAllAccountsToShared = () => {
   };
 };
 
-// Get accounts that can be used in Performance component (from Liquid Assets)
-export const getAccountsForPerformance = () => {
+// Get accounts that can be used in Account component (from Liquid Assets)
+export const getAccountsForAccount = () => {
   return getSharedAccounts().filter(acc => acc.source === 'liquidAssets' || acc.source === 'manual');
 };
 
@@ -2232,14 +2232,14 @@ export const setManualAccountGroups = (groups) => {
 };
 
 // Create a new manual account group
-export const createManualAccountGroup = (groupName = '', performanceAccountName = '') => {
+export const createManualAccountGroup = (groupName = '', accountName = '') => {
   const groups = getManualAccountGroups();
   const groupId = generateUniqueId();
   
   const newGroup = {
     id: groupId,
     name: groupName || `Account Group ${Object.keys(groups).length + 1}`,
-    performanceAccountName: performanceAccountName,
+    accountName: accountName,
     liquidAssetsAccounts: [], // Array of liquid assets account IDs
     owner: 'Joint', // Default owner for combined accounts
     totalBalance: 0,
@@ -2413,8 +2413,8 @@ export const getUnusedAccounts = () => {
   // Collect all account names that are already assigned to groups
   const usedAccountNames = new Set();
   Object.values(manualGroups).forEach(group => {
-    if (group.performanceAccountName) {
-      usedAccountNames.add(group.performanceAccountName);
+    if (group.accountName) {
+      usedAccountNames.add(group.accountName);
     }
   });
   
@@ -2630,7 +2630,7 @@ export const setAssetLiabilityData = (data) => {
 // These aliases maintain compatibility with existing code during transition
 
 
-// Performance data aliases (now account data)
+// Legacy Performance data aliases (backward compatibility)
 export const getPerformanceData = getAccountData;
 export const setPerformanceData = setAccountData;
 export const getPerformanceDataWithNameMapping = getAccountDataWithNameMapping;

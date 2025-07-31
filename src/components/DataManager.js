@@ -352,10 +352,9 @@ const DataManager = ({
       window.addEventListener('annualDataUpdated', handleDataUpdated);
       // Also listen for old event name for backward compatibility
       window.addEventListener('annualDataUpdated', handleDataUpdated);
-    } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+    } else if (dataKey === 'accountData') {
       window.addEventListener('accountDataUpdated', handleDataUpdated);
       // Also listen for old event name for backward compatibility
-      window.addEventListener('performanceDataUpdated', handleDataUpdated);
     }
     
     return () => {
@@ -363,9 +362,8 @@ const DataManager = ({
       if (dataKey === 'annualData') {
         window.removeEventListener('annualDataUpdated', handleDataUpdated);
         window.removeEventListener('annualDataUpdated', handleDataUpdated);
-      } else if (dataKey === 'performanceData' || dataKey === 'accountData') {
+      } else if (dataKey === 'accountData') {
         window.removeEventListener('accountDataUpdated', handleDataUpdated);
-        window.removeEventListener('performanceDataUpdated', handleDataUpdated);
       }
     };
   }, [usePaycheckUsers, entryData, setData, dataKey, getData, title]);
@@ -442,7 +440,7 @@ const DataManager = ({
 
   // Generate unique ID for entries
   const generateEntryId = () => {
-    const prefix = title.toLowerCase().includes('performance') ? 'entry' : 'hist';
+    const prefix = title.toLowerCase().includes('account') ? 'entry' : 'hist';
     return `${prefix}_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
   };
 
@@ -459,7 +457,7 @@ const DataManager = ({
       // For accounts that can be owned by both users, we need special handling
       const userSection = schema.sections.find(s => s.name === 'users');
       if (userSection && userSection.fields.some(f => ['accountName', 'accountType'].includes(f.name))) {
-        // This is likely a performance/account schema - use "Joint" option
+        // This is likely an account schema - use "Joint" option
         baseData.users = {
           'Joint': {}
         };
@@ -1841,8 +1839,8 @@ const DataManager = ({
   // Helper to render the import/export section using the reusable component
   const renderImportExportSection = () => {
     // Determine data type from title
-    const dataType = title.toLowerCase().includes('historical') ? 'historical' : 
-                    title.toLowerCase().includes('performance') ? 'performance' : 'data';
+    const dataType = title.toLowerCase().includes('annual') ? 'annual' : 
+                    title.toLowerCase().includes('account') ? 'accounts' : 'data';
     
     // Get user names for filename
     const filenameUserNames = usePaycheckUsers && userNames.length > 0 ? userNames : [];

@@ -226,8 +226,8 @@ export const generateDescriptiveFilename = (baseType, userNames = [], fileExtens
 // Generate filename specifically for different data types
 export const generateDataFilename = (dataType, userNames = [], fileExtension = 'csv') => {
   const typeMap = {
-    'historical': 'Historical_Financial_Data',
-    'performance': 'Account_Performance_Data',
+    'annual': 'Annual_Financial_Data',
+    'accounts': 'Account_Data',
     'budget': 'Budget_Categories_Data',
     'paycheck': 'Paycheck_Calculator_Data',
     'all_data': 'Complete_Financial_Data'
@@ -242,7 +242,7 @@ export const generateDataFilename = (dataType, userNames = [], fileExtension = '
 // Calculate house value based on mode (market value vs cost basis)
 export const calculateHouseValue = (year, annualEntry, netWorthMode, annualData, assetLiabilityData) => {
   if (netWorthMode === 'market') {
-    // Use online estimated value from historical data
+    // Use online estimated value from annual data
     return annualEntry.house || 0;
   } else {
     // Cost basis: Get purchase price and year from assetLiabilityData primary home
@@ -331,12 +331,12 @@ export const getCumulativeEarnings = (targetYear, annualData) => {
 };
 
 // Process net worth data with all calculations
-export const processNetWorthData = (annualData, performanceData, paycheckData, netWorthMode, assetLiabilityData = null) => {
+export const processNetWorthData = (annualData, accountData, paycheckData, netWorthMode, assetLiabilityData = null) => {
   const years = Object.keys(annualData).map(year => parseInt(year)).sort();
   
   return years.map(year => {
     const annualEntry = annualData[year];
-    const performanceEntry = performanceData[year];
+    const accountEntry = accountData[year];
     
     if (!annualEntry) return null;
     
@@ -358,7 +358,7 @@ export const processNetWorthData = (annualData, performanceData, paycheckData, n
     const cash = annualEntry.cash || 0;
     const otherAssets = annualEntry.othAssets || 0;
     
-    // Get AGI directly from historical data
+    // Get AGI directly from annual data
     const agi = annualEntry.agi || 0;
     
     // Liabilities
@@ -806,8 +806,8 @@ export const calculateProjectedAnnualIncome = (incomePeriodsData, currentSalary,
   return projectedIncome;
 };
 
-// Calculate YTD contributions for a person from Performance data and Historical data
-export const calculateYTDContributionsFromPerformance = (performanceData, userNames, currentYear = new Date().getFullYear(), annualData = null) => {
+// Calculate YTD contributions for a person from Account data and Annual data
+export const calculateYTDContributionsFromAccount = (accountData, userNames, currentYear = new Date().getFullYear(), annualData = null) => {
   const result = {
     traditional401k: 0,
     roth401k: 0,
@@ -823,16 +823,16 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
     totalEmployerHsa: 0
   };
   
-  if (!performanceData || !userNames || userNames.length === 0) {
+  if (!accountData || !userNames || userNames.length === 0) {
     return result;
   }
   
-  // Performance data is organized by entryId, not by year directly
+  // Account data is organized by entryId, not by year directly
   // We need to find all entries for the current year
   const relevantUsers = [...userNames, 'Joint'];
   
-  // Iterate through all performance entries
-  Object.values(performanceData).forEach(entry => {
+  // Iterate through all account entries
+  Object.values(accountData).forEach(entry => {
     // Check if this entry is for the current year
     if (entry.year !== currentYear) return;
     
@@ -897,7 +897,7 @@ export const calculateYTDContributionsFromPerformance = (performanceData, userNa
   result.total401k = result.traditional401k + result.roth401k;
   result.totalIra = result.traditionalIra + result.rothIra;
   
-  // Get HSA employer contributions from historical data if available
+  // Get HSA employer contributions from annual data if available
   if (annualData && annualData[currentYear]) {
     const yearData = annualData[currentYear];
     if (yearData.users) {

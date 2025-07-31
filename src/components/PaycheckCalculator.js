@@ -158,7 +158,7 @@ const PaycheckCalculator = () => {
 
   const [formData, setFormData] = useState({}); // Keep empty initially
 
-  // YTD Income tracking state (contributions now come from Performance data)
+  // YTD Income tracking state (contributions now come from Account data)
   const [incomePeriodsData, setIncomePeriodsData] = useState([]);
   const [spouseIncomePeriodsData, setSpouseIncomePeriodsData] = useState([]);
 

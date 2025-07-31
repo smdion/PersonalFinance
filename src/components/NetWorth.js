@@ -15,7 +15,7 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getAnnualData, getPerformanceData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
+import { getAnnualData, getAccountData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
@@ -35,7 +35,7 @@ ChartJS.register(
 
 const NetWorth = () => {
   const [annualData, setAnnualData] = useState({});
-  const [performanceData, setPerformanceData] = useState({});
+  const [accountData, setAccountData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
   const showSpouseCalculator = useDualCalculator(); // Use shared dual calculator hook
   const [assetLiabilityData, setAssetLiabilityData] = useState({});
@@ -132,13 +132,13 @@ const NetWorth = () => {
   useEffect(() => {
     const loadData = () => {
       const annual = getAnnualData();
-      const performance = getPerformanceData();
+      const accounts = getAccountData();
       const paycheck = getPaycheckData();
       const assetLiability = getAssetLiabilityData();
       const savedSettings = getNetWorthSettings();
       
       setAnnualData(annual);
-      setPerformanceData(performance);
+      setAccountData(accounts);
       setPaycheckData(paycheck);
       setAssetLiabilityData(assetLiability);
       
@@ -194,8 +194,8 @@ const NetWorth = () => {
       });
     };
 
-    const handlePerformanceUpdate = () => {
-      setPerformanceData(getPerformanceData());
+    const handleAccountUpdate = () => {
+      setAccountData(getAccountData());
     };
 
     const handlePaycheckUpdate = () => {
@@ -208,15 +208,13 @@ const NetWorth = () => {
 
     // Listen for both new and old event names for backward compatibility
     window.addEventListener('annualDataUpdated', handleAnnualUpdate);
-    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
+    window.addEventListener('accountDataUpdated', handleAccountUpdate);
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     
     return () => {
       window.removeEventListener('annualDataUpdated', handleAnnualUpdate);
-      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
+      window.removeEventListener('accountDataUpdated', handleAccountUpdate);
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
       window.removeEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);
     };
@@ -367,7 +365,7 @@ const NetWorth = () => {
     
     return years.map(year => {
       const historicalEntry = Object.values(annualData).find(entry => entry.year === year);
-      const performanceEntry = performanceData[year];
+      const accountEntry = accountData[year];
       
       if (!historicalEntry) return null;
       
@@ -421,13 +419,13 @@ const NetWorth = () => {
       const cumulativeEarnings = getCumulativeEarnings(year);
       const wealthScore = cumulativeEarnings > 0 ? (netWorth / cumulativeEarnings) * 100 : null;
       
-      // Calculate contribution rates from performance data
-      let yearPerformanceEntries = Object.values(performanceData).filter(entry => entry.year === year);
+      // Calculate contribution rates from account data
+      let yearAccountEntries = Object.values(accountData).filter(entry => entry.year === year);
       
-      // Filter performance entries based on dual calculator mode
+      // Filter account entries based on dual calculator mode
       if (!showSpouseCalculator && paycheckData?.your?.name?.trim()) {
         const firstUserName = paycheckData.your.name.trim();
-        yearPerformanceEntries = yearPerformanceEntries.filter(entry => {
+        yearAccountEntries = yearAccountEntries.filter(entry => {
           // Include entries for the primary user or Joint accounts
           if (entry.users) {
             return Object.keys(entry.users).some(owner => owner === firstUserName || owner === 'Joint');
@@ -437,8 +435,8 @@ const NetWorth = () => {
         });
       }
       
-      const totalContributions = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.contributions || 0), 0);
-      const totalEmployerMatch = yearPerformanceEntries.reduce((sum, entry) => sum + (entry.employerMatch || 0), 0);
+      const totalContributions = yearAccountEntries.reduce((sum, entry) => sum + (entry.contributions || 0), 0);
+      const totalEmployerMatch = yearAccountEntries.reduce((sum, entry) => sum + (entry.employerMatch || 0), 0);
       
       // Calculate contribution rates as percentage of AGI
       const contributionRateWithMatch = agi > 0 ? ((totalContributions + totalEmployerMatch) / agi) * 100 : 0;
@@ -490,7 +488,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [annualData, performanceData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
+  }, [annualData, accountData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, showSpouseCalculator]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {
@@ -1103,8 +1101,8 @@ const NetWorth = () => {
                 <div className="networth-step">
                   <div className="networth-step-number">2</div>
                   <div className="networth-step-content">
-                    <strong>Include Investment Performance</strong>
-                    <p>Add account performance data on the Performance page for detailed investment analysis</p>
+                    <strong>Include Investment Accounts</strong>
+                    <p>Add account data on the Accounts page for detailed investment analysis</p>
                   </div>
                 </div>
                 

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getPaycheckData, setPaycheckData, getPerformanceData, getAnnualData, getRetirementData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getAccountData, getAnnualData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
@@ -10,7 +10,7 @@ import {
   calculateAge, 
   calculateProjectedAnnualIncome,
   calculateYTDIncome,
-  calculateYTDContributionsFromPerformance, 
+  calculateYTDContributionsFromAccount, 
   calculateRemainingContributionRoom,
   calculateMaxOutPerPaycheckAmounts 
 } from '../utils/calculationHelpers';
@@ -25,7 +25,7 @@ const Contributions = () => {
   const PAY_PERIODS = getPayPeriods();
   
   const [paycheckData, setPaycheckData] = useState({});
-  const [performanceData, setPerformanceData] = useState({});
+  const [accountData, setAccountData] = useState({});
   const [annualData, setAnnualData] = useState({});
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
@@ -80,12 +80,12 @@ const Contributions = () => {
   };
 
   useEffect(() => {
-    // Load paycheck, performance, and historical data
+    // Load paycheck, account, and annual data
     const paycheckData = getPaycheckData();
-    const performanceData = getPerformanceData();
+    const accountData = getAccountData();
     const annualData = getAnnualData();
     setPaycheckData(paycheckData);
-    setPerformanceData(performanceData);
+    setAccountData(accountData);
     setAnnualData(annualData);
     
     // Listen for data updates
@@ -94,29 +94,25 @@ const Contributions = () => {
       setPaycheckData(updatedData);
     };
 
-    const handlePerformanceUpdate = () => {
-      const updatedData = getPerformanceData();
-      setPerformanceData(updatedData);
+    const handleAccountUpdate = () => {
+      const updatedData = getAccountData();
+      setAccountData(updatedData);
     };
 
-    const handleHistoricalUpdate = () => {
+    const handleAnnualUpdate = () => {
       const updatedData = getAnnualData();
       setAnnualData(updatedData);
     };
 
     window.addEventListener('paycheckDataUpdated', handlePaycheckUpdate);
     // Listen for both new and old event names for backward compatibility
-    window.addEventListener('accountDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('performanceDataUpdated', handlePerformanceUpdate);
-    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
-    window.addEventListener('annualDataUpdated', handleHistoricalUpdate);
+    window.addEventListener('accountDataUpdated', handleAccountUpdate);
+    window.addEventListener('annualDataUpdated', handleAnnualUpdate);
     
     return () => {
       window.removeEventListener('paycheckDataUpdated', handlePaycheckUpdate);
-      window.removeEventListener('accountDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('performanceDataUpdated', handlePerformanceUpdate);
-      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
-      window.removeEventListener('annualDataUpdated', handleHistoricalUpdate);
+      window.removeEventListener('accountDataUpdated', handleAccountUpdate);
+      window.removeEventListener('annualDataUpdated', handleAnnualUpdate);
     };
   }, []);
 
@@ -149,15 +145,15 @@ const Contributions = () => {
         progressAGI = calculateProjectedAnnualIncome(person.incomePeriodsData, person.payPeriod || 'biWeekly');
       }
 
-      // Get YTD contributions from Performance data 
+      // Get YTD contributions from Account data 
       const individualUserNames = [person.name].filter(n => n && n.trim());
       const allUserNames = [person.name, spouseData.name, 'Joint'].filter(n => n && n.trim());
       
       // Get individual contributions (401k, HSA, ESPP) - only this person's accounts
-      const individualYtdContributions = calculateYTDContributionsFromPerformance(performanceData, individualUserNames, new Date().getFullYear(), annualData);
+      const individualYtdContributions = calculateYTDContributionsFromAccount(accountData, individualUserNames, new Date().getFullYear(), annualData);
       
       // Get all contributions (for joint accounts like IRA, Brokerage) - all users including Joint
-      const allYtdContributions = calculateYTDContributionsFromPerformance(performanceData, allUserNames, new Date().getFullYear(), annualData);
+      const allYtdContributions = calculateYTDContributionsFromAccount(accountData, allUserNames, new Date().getFullYear(), annualData);
       
       // Determine which accounts are joint and divide contributions evenly
       const actualUsers = [person.name, spouseData.name].filter(n => n && n.trim());
@@ -166,15 +162,15 @@ const Contributions = () => {
       // Start with individual contributions, then override with joint contributions where appropriate
       const ytdContributions = { ...individualYtdContributions };
       
-      // Check for joint accounts in performance data
+      // Check for joint accounts in account data
       const jointAccounts = {
         brokerage: false,
         ira: true // IRA contributions are treated as joint in our math per requirements
       };
       
-      // Check performance data for actual joint accounts
-      if (performanceData && Object.keys(performanceData).length > 0) {
-        Object.values(performanceData).forEach(yearData => {
+      // Check account data for actual joint accounts
+      if (accountData && Object.keys(accountData).length > 0) {
+        Object.values(accountData).forEach(yearData => {
           if (yearData && yearData.users) {
             Object.entries(yearData.users).forEach(([userName, account]) => {
               if (account.accountType) {
@@ -296,7 +292,7 @@ const Contributions = () => {
         annualBrokerage = annualBrokerage / numActualUsers;
       }
       
-      // Determine account types (joint vs individual) from performance data
+      // Determine account types (joint vs individual) from account data
       const accountTypes = {
         k401: 'Individual', // 401k are always individual accounts
         ira: 'Joint', // Our contribution math treats IRA as joint (per requirements)
@@ -427,10 +423,10 @@ const Contributions = () => {
         const ytdHsaEmployee = ytdContributions.hsa || 0;
         
         // For HSA employer contributions, we need to handle this more carefully
-        // If we have historical data for employer HSA, use it; otherwise calculate YTD based on paycheck settings
+        // If we have annual data for employer HSA, use it; otherwise calculate YTD based on paycheck settings
         let ytdHsaEmployer = ytdContributions.totalEmployerHsa || 0;
         
-        // If no historical employer HSA data, calculate YTD based on current settings and elapsed time
+        // If no annual employer HSA data, calculate YTD based on current settings and elapsed time
         if (ytdHsaEmployer === 0 && hsaEmployerContribution > 0) {
           // Calculate how much of the year has elapsed based on pay periods
           const startOfYear = new Date(today.getFullYear(), 0, 1);
@@ -608,7 +604,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, performanceData, annualData, showSpouseCalculator]);
+  }, [paycheckData, accountData, annualData, showSpouseCalculator]);
 
   // Event listeners for navigation controls
   useEffect(() => {
@@ -2626,7 +2622,7 @@ const Contributions = () => {
                     <ul>
                       <li><strong>Remaining Pay Periods:</strong> Calculated from today to end of year based on pay frequency</li>
                       <li><strong>Remaining Months:</strong> Complete months remaining in the year</li>
-                      <li><strong>YTD Employer HSA:</strong> If no historical data, estimated as (annual amount × elapsed months ÷ 12)</li>
+                      <li><strong>YTD Employer HSA:</strong> If no annual data, estimated as (annual amount × elapsed months ÷ 12)</li>
                     </ul>
                   </div>
 

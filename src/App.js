@@ -7,7 +7,7 @@ import PaycheckCalculator from './components/PaycheckCalculator';
 import RawData from './components/RawData';
 import LiquidAssets from './components/LiquidAssets';
 import NetWorth from './components/NetWorth';
-import Performance from './components/Performance';
+import Account from './components/Account';
 import Savings from './components/Savings';
 import Contributions from './components/Contributions';
 import Retirement from './components/Retirement';
@@ -29,7 +29,7 @@ function App() {
             <Route path="/contributions" element={<Contributions />} />
             <Route path="/raw-data" element={<RawData />} />
             <Route path="/networth" element={<NetWorth />} />
-            <Route path="/performance" element={<Performance />} />
+            <Route path="/performance" element={<Account />} />
             <Route path="/retirement" element={<Retirement />} />
             <Route path="/other-assets" element={<Assets />} />
             <Route path="/liabilities" element={<Liabilities />} />

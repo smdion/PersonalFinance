@@ -65,7 +65,7 @@ const Navigation = () => {
           icon: '💎',
           items: [
             { path: '/networth', label: 'Net Worth', icon: '💎' },
-            { path: '/performance', label: 'Performance', icon: '📈' }
+            { path: '/performance', label: 'Accounts', icon: '📈' }
           ]
         }
       ]
