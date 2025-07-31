@@ -4,7 +4,7 @@ import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
 import { getPaycheckData, setPaycheckData, getPerformanceData, getAnnualData, getRetirementData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
-import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
+import { getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
   formatCurrency, 
   calculateAge, 
@@ -19,6 +19,11 @@ import '../styles/last-update-info.css';
 
 const Contributions = () => {
   const navigate = useNavigate();
+  
+  // Get tax constants dynamically
+  const CONTRIBUTION_LIMITS = getContributionLimits();
+  const PAY_PERIODS = getPayPeriods();
+  
   const [paycheckData, setPaycheckData] = useState({});
   const [performanceData, setPerformanceData] = useState({});
   const [annualData, setAnnualData] = useState({});
@@ -115,7 +120,7 @@ const Contributions = () => {
     };
   }, []);
 
-  // Let TaxCalculator handle the dual calculator toggle - just listen for updates
+  // Let PaycheckCalculator handle the dual calculator toggle - just listen for updates
   // No need for toggle handler here, the paycheckDataUpdated listener above handles sync
 
   // Calculate contribution metrics
@@ -240,8 +245,8 @@ const Contributions = () => {
       }
       
       const max401k = isOver50 
-        ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-        : CONTRIBUTION_LIMITS_2025.k401_employee;
+        ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+        : CONTRIBUTION_LIMITS.k401_employee;
 
       // IRA calculations - from budgetImpacting
       const budgetImpacting = person.budgetImpacting || {};
@@ -257,8 +262,8 @@ const Contributions = () => {
       }
       
       const maxIra = isOver50 
-        ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-        : CONTRIBUTION_LIMITS_2025.ira_self;
+        ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+        : CONTRIBUTION_LIMITS.ira_self;
 
       // HSA calculations - from medicalDeductions
       const medicalDeductions = person.medicalDeductions || {};
@@ -272,9 +277,9 @@ const Contributions = () => {
       const hsaCoverage = person.hsaCoverageType || 'none';
       let maxHsa = 0;
       if (hsaCoverage === 'self') {
-        maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        maxHsa = CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       } else if (hsaCoverage === 'family') {
-        maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        maxHsa = CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       }
       
 
@@ -923,16 +928,16 @@ const Contributions = () => {
       const age = p.age || 0;
       const isOver50 = age >= 50;
       return sum + (isOver50 
-        ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-        : CONTRIBUTION_LIMITS_2025.k401_employee);
+        ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+        : CONTRIBUTION_LIMITS.k401_employee);
     }, 0);
     
     const totalIraLimit = people.reduce((sum, p) => {
       const age = p.age || 0;
       const isOver50 = age >= 50;
       return sum + (isOver50 
-        ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-        : CONTRIBUTION_LIMITS_2025.ira_self);
+        ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+        : CONTRIBUTION_LIMITS.ira_self);
     }, 0);
     
     // For HSA, we need to be careful about how we calculate household limits
@@ -943,9 +948,9 @@ const Contributions = () => {
       // Try to access hsaCoverageType from the person's data
       const hsaCoverage = paycheckData[p.name === contributionMetrics.your?.name ? 'your' : 'spouse']?.hsaCoverageType || 'none';
       if (hsaCoverage === 'self') {
-        return sum + CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        return sum + CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       } else if (hsaCoverage === 'family') {
-        return sum + CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+        return sum + CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
       }
       return sum;
     }, 0);

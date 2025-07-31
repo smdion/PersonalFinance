@@ -1254,7 +1254,7 @@ const LiquidAssets = () => {
       <div className="app-container">
         <div className="header">
           <h1>📈 Liquid Assets Data Update</h1>
-          <p>Input current liquid assets values to update {currentYear} historical data</p>
+          <p>Input current liquid assets values to update {currentYear} annual data</p>
         </div>
 
         {successMessage && (

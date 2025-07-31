@@ -1,0 +1,440 @@
+/* ===================================================================
+   TAX CONSTANTS EDITOR STYLES
+   Styles matching the existing codebase patterns
+   ================================================================ */
+
+/* Main content wrapper */
+.tax-constants-content {
+  background: white;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+/* Controls section - matching networth controls pattern */
+.tax-constants-controls {
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 20px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Tab navigation - matching networth tab pattern */
+.section-tabs {
+  display: flex;
+  gap: 4px;
+}
+
+.tab-button {
+  padding: 14px 20px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  white-space: nowrap;
+}
+
+.tab-button.active {
+  font-weight: 600;
+  color: #1e293b;
+  background: linear-gradient(135deg, #ffffff 0%, #f1f5f9 100%);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-1px);
+}
+
+.tab-button.active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #67b3c1 0%, #4d9db8 100%);
+  border-radius: 8px 8px 0 0;
+}
+
+.tab-button:not(.active):hover {
+  color: #374151;
+  background: rgba(59, 130, 246, 0.05);
+  transform: translateY(-1px);
+}
+
+/* Action buttons */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+/* Individual tax constants sections - compact but styled */
+.tax-constants-section {
+  padding: 16px 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.tax-constants-section:last-child {
+  border-bottom: none;
+}
+
+/* Info section for tax constants guidance */
+.tax-constants-info {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f1f5f9;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.tax-constants-info h3 {
+  margin: 0 0 16px 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.info-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.info-card p {
+  margin: 0 0 12px 0;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.info-card p:last-child {
+  margin-bottom: 0;
+}
+
+.info-card strong {
+  color: #1e293b;
+  font-weight: 600;
+}
+
+.info-card ul {
+  margin: 8px 0 12px 0;
+  padding-left: 20px;
+  color: #475569;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.info-card li {
+  margin-bottom: 6px;
+}
+
+.info-card li:last-child {
+  margin-bottom: 0;
+}
+
+.info-card a {
+  color: #4d9db8;
+  text-decoration: none;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.info-card a:hover {
+  color: #67b3c1;
+  text-decoration: underline;
+}
+
+.tax-constants-section h3 {
+  margin: 0 0 12px 0;
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.tax-constants-section h4 {
+  margin: 16px 0 8px 0;
+  color: #475569;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-transform: capitalize;
+  padding-bottom: 4px;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+/* Filing status sections - compact */
+.filing-status-section {
+  margin-bottom: 20px;
+}
+
+.filing-status-section:last-child {
+  margin-bottom: 0;
+}
+
+/* Card layouts for W-4 configs and pay periods - compact */
+.w4-configs,
+.pay-periods {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.w4-config-card,
+.pay-period-card {
+  padding: 12px 16px;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  background: #f8fafc;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.w4-config-card:hover,
+.pay-period-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.w4-config-card h4,
+.pay-period-card h4 {
+  margin: 0 0 8px 0;
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.config-details p {
+  margin: 3px 0;
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.config-details strong {
+  color: #374151;
+  font-weight: 600;
+}
+
+/* Form styling - compact but styled to match patterns */
+.tax-constants-section .form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 12px 16px;
+  margin-top: 8px;
+}
+
+.tax-constants-section .form-group {
+  margin-bottom: 0;
+}
+
+.tax-constants-section .form-label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.tax-constants-section .form-input {
+  width: 100%;
+  max-width: 120px;
+  padding: 6px 10px;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tax-constants-section .form-input:focus {
+  outline: none;
+  border-color: #67b3c1;
+  box-shadow: 0 0 0 3px rgba(103, 179, 193, 0.1);
+}
+
+/* Percentage input suffix */
+.input-suffix {
+  margin-left: 8px;
+  color: #64748b;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+/* Alert styling - matching existing patterns */
+.alert {
+  padding: 16px 20px;
+  border-radius: 12px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 14px;
+}
+
+.alert-warning {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+  border: 2px solid #f59e0b;
+  color: #92400e;
+}
+
+.alert strong {
+  font-weight: 600;
+}
+
+/* Table styling - compact but maintains design consistency */
+.data-table-container {
+  margin-top: 8px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #e2e8f0;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.tax-constants-section .data-table {
+  margin: 0;
+  font-size: 13px;
+}
+
+.tax-constants-section .data-table th {
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  padding: 10px 16px;
+  font-weight: 600;
+  color: #1e293b;
+  border-bottom: 2px solid #e2e8f0;
+  font-size: 0.8rem;
+  text-align: left;
+}
+
+.tax-constants-section .data-table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid #f1f5f9;
+  background: white;
+}
+
+.tax-constants-section .data-table td:last-child {
+  border-right: none;
+}
+
+.tax-constants-section .data-table tr:last-child td {
+  border-bottom: none;
+}
+
+.tax-constants-section .data-table tr:hover td {
+  background: #f8fafc;
+}
+
+.tax-constants-section .data-table input {
+  width: 100%;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 13px;
+  font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.tax-constants-section .data-table input:focus {
+  outline: none;
+  border-color: #67b3c1;
+  box-shadow: 0 0 0 3px rgba(103, 179, 193, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .tax-constants-controls {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 16px 20px;
+  }
+  
+  .section-tabs {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px;
+  }
+  
+  .tab-button {
+    padding: 12px 16px;
+    font-size: 0.85rem;
+    min-height: 44px;
+  }
+  
+  .action-buttons {
+    justify-content: center;
+  }
+  
+  .w4-configs,
+  .pay-periods {
+    grid-template-columns: 1fr;
+  }
+  
+  .tax-constants-section {
+    padding: 12px 16px;
+  }
+  
+  .tax-constants-section .form-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  
+  .data-table-container {
+    overflow-x: auto;
+  }
+  
+  .tax-constants-section .data-table th,
+  .tax-constants-section .data-table td {
+    padding: 8px 12px;
+  }
+  
+  .tax-constants-section .data-table input {
+    min-width: 100px;
+  }
+}
+
+@media (max-width: 480px) {
+  .section-tabs {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .tab-button {
+    text-align: center;
+    padding: 10px 12px;
+    font-size: 0.8rem;
+    min-height: 40px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .tax-constants-section {
+    padding: 12px;
+  }
+  
+  .tax-constants-section h3 {
+    font-size: 1rem;
+  }
+  
+  .tax-constants-section .data-table th,
+  .tax-constants-section .data-table td {
+    padding: 6px 8px;
+  }
+  
+  .tax-constants-section .data-table input {
+    font-size: 12px;
+    padding: 3px 6px;
+  }
+}

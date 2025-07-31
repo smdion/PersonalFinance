@@ -151,7 +151,7 @@ const RawData = () => {
       syncAssetLiabilityToHistorical();
     };
 
-    // Let TaxCalculator handle the dual calculator toggle
+    // Let PaycheckCalculator handle the dual calculator toggle
     // RawData will sync via paycheckDataUpdated event
 
     window.addEventListener('assetLiabilityDataUpdated', handleAssetLiabilityUpdate);

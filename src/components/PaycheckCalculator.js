@@ -1,13 +1,16 @@
 import React, { useState, useCallback, useContext, useEffect, useRef, useMemo } from 'react';
-import { calculateTakeHomePay } from '../utils/taxCalculator';
-import { CONTRIBUTION_LIMITS_2025, PAY_PERIODS } from '../config/taxConstants';
-import PaycheckForm from './PaycheckForm';
-import { FormContext } from '../context/FormContext';
+import { calculateTakeHomePay, getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
+import PaycheckInputFields from './PaycheckInputFields';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { getPaycheckData, setPaycheckData, updateNameMapping, syncPaycheckToAnnual } from '../utils/localStorage';
 import Navigation from './Navigation';
 
-const TaxCalculator = () => {
-  const { formData: contextFormData, updateFormData, updateBudgetImpacting, addBrokerageAccount, updateBrokerageAccount, removeBrokerageAccount } = useContext(FormContext);
+const PaycheckCalculator = () => {
+  const { formData: contextFormData, updateFormData, updateBudgetImpacting, addBrokerageAccount, updateBrokerageAccount, removeBrokerageAccount } = useContext(PaycheckBudgetContext);
+
+  // Get tax constants dynamically
+  const CONTRIBUTION_LIMITS = getContributionLimits();
+  const PAY_PERIODS = getPayPeriods();
 
   // Remove settings menu state and ref
   
@@ -213,8 +216,8 @@ const TaxCalculator = () => {
     const traditional401kAmount = annualSalary * (retirementOptions.traditional401kPercent / 100);
     const roth401kAmount = annualSalary * (retirementOptions.roth401kPercent / 100);
     const maxContribution = retirementOptions.isOver50 
-      ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-      : CONTRIBUTION_LIMITS_2025.k401_employee;
+      ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+      : CONTRIBUTION_LIMITS.k401_employee;
     
     if (traditional401kAmount + roth401kAmount > maxContribution) {
       // Optional: Could show a warning indicator in the UI instead of blocking calculation
@@ -282,8 +285,8 @@ const TaxCalculator = () => {
     const traditional401kAmount = annualSalary * (spouseRetirementOptions.traditional401kPercent / 100);
     const roth401kAmount = annualSalary * (spouseRetirementOptions.roth401kPercent / 100);
     const maxContribution = spouseRetirementOptions.isOver50 
-      ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-      : CONTRIBUTION_LIMITS_2025.k401_employee;
+      ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+      : CONTRIBUTION_LIMITS.k401_employee;
     
     if (traditional401kAmount + roth401kAmount > maxContribution) {
       // Optional: Could show a warning indicator in the UI instead of blocking calculation
@@ -701,7 +704,7 @@ const TaxCalculator = () => {
         </div>
 
         <div className="calculators-grid">
-          <PaycheckForm 
+          <PaycheckInputFields 
             personName="Your"
             name={name}
             setName={setName}
@@ -842,7 +845,7 @@ const TaxCalculator = () => {
           />
           
           {showSpouseCalculator && (
-            <PaycheckForm 
+            <PaycheckInputFields 
               personName="Spouse"
               name={spouseName}
               setName={setSpouseName}
@@ -989,4 +992,4 @@ const TaxCalculator = () => {
   );
 };
 
-export default TaxCalculator;
+export default PaycheckCalculator;

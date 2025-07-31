@@ -1,7 +1,7 @@
 
-// 2025 Annual Federal Wage Withholding Tables (IRS Publication 15-T Percentage Method for Automated Payroll Systems)
+// Annual Federal Wage Withholding Tables (IRS Publication 15-T Percentage Method for Automated Payroll Systems)
 // Standard Method (Single Jobs/Primary Job)
-export const ANNUAL_WAGE_WITHHOLDING_2025 = {
+export const ANNUAL_WAGE_WITHHOLDING = {
   single: [
     { threshold: 0, baseWithholding: 0, rate: 0 },
     { threshold: 6400, baseWithholding: 0, rate: 0.10 },
@@ -44,9 +44,9 @@ export const ANNUAL_WAGE_WITHHOLDING_2025 = {
   ]
 };
 
-// 2025 Annual Multiple Jobs Withholding Tables (IRS Publication 15-T Step 2(c) Method)
+// Annual Multiple Jobs Withholding Tables (IRS Publication 15-T Step 2(c) Method)
 // Higher withholding rates for multiple jobs or working spouse scenarios
-export const ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 = {
+export const ANNUAL_MULTIPLE_JOBS_WITHHOLDING = {
   single: [
     { threshold: 0, baseWithholding: 0, rate: 0 },
     { threshold: 7500, baseWithholding: 0, rate: 0.10 },
@@ -89,8 +89,8 @@ export const ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 = {
   ]
 };
 
-// 2025 Standard Deductions (IRS Publication 15-T)
-export const STANDARD_DEDUCTIONS_2025 = {
+// Standard Deductions (IRS Publication 15-T)
+export const STANDARD_DEDUCTIONS = {
   single: 15000,
   marriedJointly: 30000,
   marriedSeparately: 15000,
@@ -103,8 +103,8 @@ export const PAYROLL_TAX_RATES = {
   medicare: 0.0145 // 1.45%
 };
 
-// 401k contribution limits for 2025
-export const CONTRIBUTION_LIMITS_2025 = {
+// 401k contribution limits
+export const CONTRIBUTION_LIMITS = {
   k401_employee: 23500,
   k401_catchUp: 7500, 
   k401_total: 70000, 
@@ -138,7 +138,7 @@ export const TAX_CREDITS = {
 };
 
 // Allowance amount for old W-4 (2019 and earlier)
-export const ALLOWANCE_AMOUNT_2025 = 4850;
+export const ALLOWANCE_AMOUNT = 4850;
 
 // Pay period configurations
 export const PAY_PERIODS = {

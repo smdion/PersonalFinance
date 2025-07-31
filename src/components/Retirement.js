@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import { FormContext } from '../context/FormContext';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { getPaycheckData, setPaycheckData, getAnnualData, getRetirementData, setRetirementData, getPortfolioRecords, getPerformanceData } from '../utils/localStorage';
 import { useDualCalculator } from '../hooks/useDualCalculator';
 import { formatCurrency, calculateAge, calculateProjectedRemainingContributions } from '../utils/calculationHelpers';
@@ -270,7 +270,7 @@ const transformProjectionsToDataManagerFormat = (yourProjections, spouseProjecti
 
 
 const Retirement = () => {
-  const { formData: contextFormData } = useContext(FormContext);
+  const { formData: contextFormData } = useContext(PaycheckBudgetContext);
 
   // Use shared dual calculator hook
   const showSpouseCalculator = useDualCalculator();

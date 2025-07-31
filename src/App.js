@@ -1,9 +1,9 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { FormProvider } from './context/FormContext';
+import { PaycheckBudgetProvider } from './context/PaycheckBudgetContext';
 import Welcome from './components/Welcome';
 import Budget from './components/Budget';
-import TaxCalculator from './components/TaxCalculator';
+import PaycheckCalculator from './components/PaycheckCalculator';
 import RawData from './components/RawData';
 import LiquidAssets from './components/LiquidAssets';
 import NetWorth from './components/NetWorth';
@@ -14,15 +14,16 @@ import Retirement from './components/Retirement';
 import Assets from './components/Assets';
 import Liabilities from './components/Liabilities';
 import PrimaryHome from './components/PrimaryHome';
+import TaxConstantsEditor from './components/TaxConstantsEditor';
 
 function App() {
   return (
     <Router>
-      <FormProvider>
+      <PaycheckBudgetProvider>
         <div className="App">
           <Routes>
             <Route path="/" element={<Welcome />} />
-            <Route path="/paycheck" element={<TaxCalculator />} />
+            <Route path="/paycheck" element={<PaycheckCalculator />} />
             <Route path="/budget" element={<Budget />} />
             <Route path="/savings" element={<Savings />} />
             <Route path="/contributions" element={<Contributions />} />
@@ -34,9 +35,10 @@ function App() {
             <Route path="/liabilities" element={<Liabilities />} />
             <Route path="/primary-home" element={<PrimaryHome />} />
             <Route path="/liquid-assets" element={<LiquidAssets />} />
+            <Route path="/tax-constants" element={<TaxConstantsEditor />} />
           </Routes>
         </div>
-      </FormProvider>
+      </PaycheckBudgetProvider>
     </Router>
   );
 }

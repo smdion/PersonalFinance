@@ -551,6 +551,10 @@ const Navigation = () => {
                     📥 Import Data
                   </button>
                   <div className="settings-menu-divider"></div>
+                  <a href="/tax-constants" className="settings-menu-item">
+                    ⚙️ Edit Tax Constants
+                  </a>
+                  <div className="settings-menu-divider"></div>
                   <button onClick={resetAllData} className="settings-menu-item danger">
                     🗑️ Reset All Data
                   </button>

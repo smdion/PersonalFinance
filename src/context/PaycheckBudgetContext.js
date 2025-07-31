@@ -1,17 +1,17 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
 import { getFormData, setFormData, setBudgetData, getBudgetData, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 
-export const FormContext = createContext();
+export const PaycheckBudgetContext = createContext();
 
-export const useFormContext = () => {
-  const context = useContext(FormContext);
+export const usePaycheckBudgetContext = () => {
+  const context = useContext(PaycheckBudgetContext);
   if (!context) {
-    throw new Error('useFormContext must be used within a FormProvider');
+    throw new Error('usePaycheckBudgetContext must be used within a PaycheckBudgetProvider');
   }
   return context;
 };
 
-export const FormProvider = ({ children }) => {
+export const PaycheckBudgetProvider = ({ children }) => {
   // Initialize with saved data or defaults
   const initialFormData = {
     combinedMonthlyTakeHome: 0,
@@ -298,8 +298,8 @@ export const FormProvider = ({ children }) => {
   };
 
   return (
-    <FormContext.Provider value={value}>
+    <PaycheckBudgetContext.Provider value={value}>
       {children}
-    </FormContext.Provider>
+    </PaycheckBudgetContext.Provider>
   );
 };

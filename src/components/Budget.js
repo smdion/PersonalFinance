@@ -1,6 +1,6 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
-import { FormContext } from '../context/FormContext';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { getBudgetData, setBudgetData, getPaycheckData, getSavingsData, getIsResettingAllData } from '../utils/localStorage';
 import { calculateExtraPaycheckIncome, generateDataFilename } from '../utils/calculationHelpers';
 import Navigation from './Navigation';
@@ -9,7 +9,7 @@ import Navigation from './Navigation';
 const EMPTY_BUDGET_CATEGORIES = [];
 
 const Budget = () => {
-  const { formData, resetFormData } = useContext(FormContext);
+  const { formData, resetFormData } = useContext(PaycheckBudgetContext);
   
   // Remove settings menu state and ref
   
@@ -91,7 +91,7 @@ const Budget = () => {
     // Load data immediately
     loadBudgetData();
 
-    // Listen for budget data updates from FormContext with consistent event handling
+    // Listen for budget data updates from PaycheckBudgetContext with consistent event handling
     const handleBudgetUpdate = (event) => {
       loadBudgetData();
     };

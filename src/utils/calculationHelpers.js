@@ -1,10 +1,4 @@
-import { 
-  ANNUAL_WAGE_WITHHOLDING_2025, 
-  ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025,
-  PAYROLL_TAX_RATES,
-  CONTRIBUTION_LIMITS_2025,
-  PAY_PERIODS 
-} from '../config/taxConstants';
+import { getTaxConstants } from './localStorage';
 
 // Utility Functions
 export const calculatePercentageOfMax = (amount, max) => {
@@ -58,32 +52,36 @@ export const calculateAge = (birthday) => {
 
 // Contribution Calculation Helpers
 export const calculateRequired401kPercentage = (salary, isOver50) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const maxContribution = isOver50
-    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-    : CONTRIBUTION_LIMITS_2025.k401_employee;
+    ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+    : CONTRIBUTION_LIMITS.k401_employee;
   return ((maxContribution / salary) * 100).toFixed(2);
 };
 
 export const calculateRequiredIraContribution = (isOver50) => {
+  const { CONTRIBUTION_LIMITS } = getTaxConstants();
   const maxContribution = isOver50
-    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-    : CONTRIBUTION_LIMITS_2025.ira_self;
+    ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+    : CONTRIBUTION_LIMITS.ira_self;
   return (maxContribution / 12).toFixed(2);
 };
 
 export const calculateRequiredHsaContribution = (hsaCoverageType, payPeriod, employerHsa, isOver55) => {
+  const { CONTRIBUTION_LIMITS, PAY_PERIODS } = getTaxConstants();
   const maxContribution = hsaCoverageType === 'self'
-    ? CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-    : CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    ? CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+    : CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   return ((maxContribution - employerHsa) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2);
 };
 
 export const calculateRequiredHsaPerPaycheckContribution = (hsaCoverageType, payPeriod, employerHsa, isOver55) => {
   if (hsaCoverageType === 'none') return '0.00';
   
+  const { CONTRIBUTION_LIMITS, PAY_PERIODS } = getTaxConstants();
   const maxContribution = hsaCoverageType === 'self'
-    ? CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0)
-    : CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    ? CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0)
+    : CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   return ((maxContribution - employerHsa) / PAY_PERIODS[payPeriod].periodsPerYear).toFixed(2);
 };
 
@@ -169,11 +167,12 @@ export const calculateWithholdingFromAnnualTable = (annualGrossPay, table) => {
 };
 
 export const calculateAnnualWageWithholding = (annualGrossPay, filingStatus, isMultipleJobs = false) => {
-  const tableToUse = isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 : ANNUAL_WAGE_WITHHOLDING_2025;
+  const { ANNUAL_WAGE_WITHHOLDING, ANNUAL_MULTIPLE_JOBS_WITHHOLDING } = getTaxConstants();
+  const tableToUse = isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING : ANNUAL_WAGE_WITHHOLDING;
   const table = tableToUse[filingStatus];
   
   if (!table) {
-    const fallbackTable = (isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING_2025 : ANNUAL_WAGE_WITHHOLDING_2025).single;
+    const fallbackTable = (isMultipleJobs ? ANNUAL_MULTIPLE_JOBS_WITHHOLDING : ANNUAL_WAGE_WITHHOLDING).single;
     if (!fallbackTable) return 0;
     return calculateWithholdingFromAnnualTable(annualGrossPay, fallbackTable);
   }
@@ -182,6 +181,7 @@ export const calculateAnnualWageWithholding = (annualGrossPay, filingStatus, isM
 };
 
 export const calculatePayrollTaxes = (grossIncome) => {
+  const { PAYROLL_TAX_RATES } = getTaxConstants();
   const socialSecurityTax = grossIncome * PAYROLL_TAX_RATES.socialSecurity;
   const medicareTax = grossIncome * PAYROLL_TAX_RATES.medicare;
   
@@ -622,6 +622,7 @@ export const generateMoneyGuyComparisonData = (filteredData) => {
 
 // Helper function to calculate number of pay periods between two dates
 const calculatePayPeriodsBetweenDates = (startDate, endDate, payPeriod) => {
+  const { PAY_PERIODS } = getTaxConstants();
   const periodsPerYear = PAY_PERIODS[payPeriod].periodsPerYear;
   
   // Calculate the number of days between start and end dates (inclusive)
@@ -919,20 +920,20 @@ export const calculateRemainingContributionRoom = (ytdContributions, age, hsaCov
   
   // 401k limits
   const max401k = isOver50 
-    ? CONTRIBUTION_LIMITS_2025.k401_employee + CONTRIBUTION_LIMITS_2025.k401_catchUp
-    : CONTRIBUTION_LIMITS_2025.k401_employee;
+    ? CONTRIBUTION_LIMITS.k401_employee + CONTRIBUTION_LIMITS.k401_catchUp
+    : CONTRIBUTION_LIMITS.k401_employee;
   
   // IRA limits
   const maxIra = isOver50 
-    ? CONTRIBUTION_LIMITS_2025.ira_self + CONTRIBUTION_LIMITS_2025.ira_catchUp
-    : CONTRIBUTION_LIMITS_2025.ira_self;
+    ? CONTRIBUTION_LIMITS.ira_self + CONTRIBUTION_LIMITS.ira_catchUp
+    : CONTRIBUTION_LIMITS.ira_self;
   
   // HSA limits
   let maxHsa = 0;
   if (hsaCoverage === 'self') {
-    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    maxHsa = CONTRIBUTION_LIMITS.hsa_self + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   } else if (hsaCoverage === 'family') {
-    maxHsa = CONTRIBUTION_LIMITS_2025.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS_2025.hsa_catchUp : 0);
+    maxHsa = CONTRIBUTION_LIMITS.hsa_family + (isOver55 ? CONTRIBUTION_LIMITS.hsa_catchUp : 0);
   }
   
   return {
