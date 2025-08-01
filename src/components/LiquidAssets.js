@@ -40,7 +40,8 @@ import CSVImportExport from './CSVImportExport';
 import { 
   syncLiquidAssetsBalanceToAccounts,
   syncAccountsFromLatestLiquidAssets,
-  generateAccountName
+  generateAccountName,
+  getMostRecentLiquidAssetsAccounts
 } from '../utils/liquidAssetsAccountsSync';
 import { 
   getAccountSyncSettings,
@@ -62,6 +63,8 @@ const LiquidAssets = () => {
   const [manualGroups, setManualGroups] = useState({});
   const [showManualGrouping, setShowManualGrouping] = useState(false);
   const [showExpandedFields, setShowExpandedFields] = useState(false);
+  const [updateMode, setUpdateMode] = useState('individual'); // 'individual' or 'group'
+  const [groupFinancialData, setGroupFinancialData] = useState({}); // For storing group-level financial data
   const [collapsedAccounts, setCollapsedAccounts] = useState(() => {
     try {
       const saved = localStorage.getItem('liquidAssetsCollapsedAccounts');
@@ -84,6 +87,11 @@ const LiquidAssets = () => {
     }
   }, [collapsedAccounts]);
 
+  // Auto-switch update mode when groups, accounts, or detail level changes
+  useEffect(() => {
+    autoSwitchUpdateMode();
+  }, [manualGroups, liquidAssetsInputs, showExpandedFields]);
+
   useEffect(() => {
     // Initialize shared accounts system on component mount
     initializeSharedAccounts();
@@ -105,13 +113,13 @@ const LiquidAssets = () => {
         owner: '',
         taxType: '',
         accountType: '',
-        amount: '',
+        amount: null,
         description: '',
-        contributions: '',
-        employerMatch: '',
-        gains: '',
-        fees: '',
-        withdrawals: ''
+        contributions: null,
+        employerMatch: null,
+        gains: null,
+        fees: null,
+        withdrawals: null
       }]);
       setCurrentYearData({});
             setLiquidAssetsRecords([]);
@@ -120,6 +128,8 @@ const LiquidAssets = () => {
             setShowRecords(false);
       setManualGroups({});
       setShowManualGrouping(false);
+      setUpdateMode('individual');
+      setGroupFinancialData({});
       setCollapsedAccounts(new Set());
       
       // Also clear shared accounts, manual groups, and liquid assets inputs when global reset happens
@@ -163,11 +173,11 @@ const LiquidAssets = () => {
             ...input,
             ...currentFinancialData[input.id] || {
               amount: '',
-              contributions: '',
-              employerMatch: '',
-              gains: '',
-              fees: '',
-              withdrawals: ''
+              contributions: null,
+              employerMatch: null,
+              gains: null,
+              fees: null,
+              withdrawals: null
             }
           }))
         );
@@ -201,6 +211,13 @@ const LiquidAssets = () => {
 
   const loadManualGroups = () => {
     const groups = getManualAccountGroups();
+    console.log('📂 Loading manual groups from localStorage:', groups);
+    console.log('🔍 Group Account ID Mappings:', Object.entries(groups).map(([groupId, group]) => ({
+      groupId,
+      groupName: group.name,
+      expectedAccountIds: group.liquidAssetsAccounts || group.portfolioAccounts || [],
+      targetAccountName: group.accountName || group.performanceAccountName
+    })));
     setManualGroups(groups);
   };
 
@@ -215,13 +232,13 @@ const LiquidAssets = () => {
         accountType: input.accountType || '',
         investmentCompany: input.investmentCompany || '',
         description: input.description || '',
-        // Financial data always starts empty - never persisted
-        amount: '',
-        contributions: '',
-        employerMatch: '',
-        gains: '',
-        fees: '',
-        withdrawals: ''
+        // Financial data always starts null - never persisted
+        amount: null,
+        contributions: null,
+        employerMatch: null,
+        gains: null,
+        fees: null,
+        withdrawals: null
       }));
       setLiquidAssetsInputs(inputsWithEmptyFinancialData);
     }
@@ -287,6 +304,14 @@ const LiquidAssets = () => {
     if (forceReloadAccounts) {
       const sharedAccounts = getSharedAccounts();
       
+      // Instead of replacing all accounts, merge shared accounts with existing definitions
+      // This preserves all account definitions while updating with any new data from sync
+      const existingAccountsMap = new Map();
+      liquidAssetsInputs.forEach(account => {
+        const key = `${account.owner}-${account.accountType}-${account.investmentCompany}`.toLowerCase();
+        existingAccountsMap.set(key, account);
+      });
+      
       // Convert shared accounts to portfolio inputs, maintaining Portfolio as master
       const allAccounts = sharedAccounts.map(account => {
         // For accounts without tax type (from Accounts), infer based on account type
@@ -311,36 +336,53 @@ const LiquidAssets = () => {
           accountType: account.accountType,
           owner: account.owner,
           investmentCompany: account.investmentCompany || '',
-          amount: '', // Always start with empty amount for new updates
+          amount: null, // Always start with null amount for new updates
           description: '', // Initialize description field
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: '',
+          contributions: null,
+          employerMatch: null,
+          gains: null,
+          fees: null,
+          withdrawals: null,
           source: account.source,
           // Show which systems this account appears in
           sources: account.sources || [account.source]
         };
       });
       
-      if (allAccounts.length > 0) {
+      // Merge with existing accounts - keep all existing definitions and add any new ones from shared
+      const mergedAccounts = [...liquidAssetsInputs];
+      
+      allAccounts.forEach(sharedAccount => {
+        const key = `${sharedAccount.owner}-${sharedAccount.accountType}-${sharedAccount.investmentCompany}`.toLowerCase();
+        const existingAccount = existingAccountsMap.get(key);
+        
+        if (!existingAccount) {
+          // This is a new account from shared data, add it
+          mergedAccounts.push(sharedAccount);
+        }
+        // If it already exists, keep the existing definition (preserve user's setup)
+      });
+      
+      if (mergedAccounts.length > 0) {
+        setLiquidAssetsInputs(mergedAccounts);
+      } else if (allAccounts.length > 0) {
+        // Fallback to shared accounts if no existing accounts
         setLiquidAssetsInputs(allAccounts);
       } else {
         // If no stored accounts, initialize with empty form
         setLiquidAssetsInputs([{
           id: generateUniqueId(),
           taxType: '',
-          amount: '',
+          amount: null,
           accountType: '',
           owner: ownerOptions[0] || 'User',
           investmentCompany: '',
           description: '',
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: ''
+          contributions: null,
+          employerMatch: null,
+          gains: null,
+          fees: null,
+          withdrawals: null
         }]);
       }
     } else {
@@ -355,13 +397,13 @@ const LiquidAssets = () => {
           accountType: input.accountType || '',
           investmentCompany: input.investmentCompany || '',
           description: input.description || '',
-          // Financial data always starts empty - never persisted
-          amount: '',
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: ''
+          // Financial data always starts null - never persisted
+          amount: null,
+          contributions: null,
+          employerMatch: null,
+          gains: null,
+          fees: null,
+          withdrawals: null
         }));
         setLiquidAssetsInputs(inputsWithEmptyFinancialData);
       } else if (liquidAssetsInputs.length === 0) {
@@ -369,22 +411,62 @@ const LiquidAssets = () => {
         setLiquidAssetsInputs([{
           id: generateUniqueId(),
           taxType: '',
-          amount: '',
+          amount: null,
           accountType: '',
           owner: ownerOptions[0] || 'User',
           investmentCompany: '',
           description: '',
-          contributions: '',
-          employerMatch: '',
-          gains: '',
-          fees: '',
-          withdrawals: ''
+          contributions: null,
+          employerMatch: null,
+          gains: null,
+          fees: null,
+          withdrawals: null
         }]);
       }
     }
   };
 
+  const validateGroupInputs = () => {
+    console.log('🔍 VALIDATION: Starting group validation');
+    const newErrors = {};
+    let hasErrors = false;
+
+    getGroupsWithAccounts().forEach(([groupId, group], index) => {
+      const groupData = getGroupFinancialData(groupId);
+      console.log(`  📊 Group ${groupId} data:`, groupData);
+      const inputErrors = {};
+      
+      // Only validate detailed financial fields when expanded fields are shown
+      if (showExpandedFields) {
+        ['contributions', 'employerMatch', 'gains', 'fees', 'withdrawals'].forEach(field => {
+          const fieldValue = groupData[field];
+          console.log(`    🔍 Field ${field}: value="${fieldValue}", type=${typeof fieldValue}`);
+          
+          // Only validate if field has a value (null/undefined means preserve existing)
+          if (fieldValue !== null && fieldValue !== undefined && fieldValue !== '' && isNaN(parseFloat(fieldValue))) {
+            console.log(`    ❌ Validation error for ${field}: invalid number`);
+            inputErrors[field] = 'Must be a valid number';
+            hasErrors = true;
+          } else {
+            console.log(`    ✅ Field ${field} is valid (null/empty/valid number)`);
+          }
+        });
+      }
+
+      if (Object.keys(inputErrors).length > 0) {
+        newErrors[`group_${groupId}`] = inputErrors;
+      }
+    });
+
+    setErrors(newErrors);
+    return !hasErrors;
+  };
+
   const validateInputs = () => {
+    if (updateMode === 'group') {
+      return validateGroupInputs();
+    }
+
     const newErrors = {};
     let hasErrors = false;
 
@@ -418,11 +500,12 @@ const LiquidAssets = () => {
         hasErrors = true;
       }
 
-      if (!input.amount || isNaN(parseFloat(input.amount))) {
+      // Allow null amount (preserves existing data) but validate if provided
+      if (input.amount !== null && input.amount !== '' && (!input.amount || isNaN(parseFloat(input.amount)))) {
         inputErrors.amount = 'Valid amount is required';
         hasErrors = true;
-      } else if (parseFloat(input.amount) < 0) {
-        inputErrors.amount = 'Amount must be positive';
+      } else if (input.amount !== null && input.amount !== '' && parseFloat(input.amount) < 0) {
+        inputErrors.amount = 'Amount must be positive'; 
         hasErrors = true;
       }
 
@@ -492,16 +575,16 @@ const LiquidAssets = () => {
     const newInputs = [...liquidAssetsInputs, {
       id: generateUniqueId(),
       taxType: '',
-      amount: '',
+      amount: null,
       accountType: '',
       owner: users[0] || 'User',
       investmentCompany: '',
       description: '',
-      contributions: '',
-      employerMatch: '',
-      gains: '',
-      fees: '',
-      withdrawals: ''
+      contributions: null,
+      employerMatch: null,
+      gains: null,
+      fees: null,
+      withdrawals: null
     }];
     setLiquidAssetsInputs(newInputs);
     // Save account setup fields when adding accounts
@@ -560,109 +643,331 @@ const LiquidAssets = () => {
       return;
     }
     try {
+      console.log('🔄 LiquidAssets: Starting sync process');
+      console.log('📊 Update Mode:', updateMode);
+      console.log('🔍 Show Expanded Fields:', showExpandedFields);
+      
       const currentYear = new Date().getFullYear();
       const annualData = getAnnualData();
       
-      // Calculate new totals from liquid assets inputs
-      const newAmounts = liquidAssetsInputs.reduce((acc, input) => {
-        const amount = parseFloat(input.amount) || 0;
+      let totals, totalsByOwner, liquidAssetsDataWithNames;
+      
+      if (updateMode === 'individual') {
+        // Individual Mode: Calculate deltas for accounts with data and add to existing totals
+        const allAccounts = liquidAssetsInputs;
         
-        // Use account type first for special accounts, then fall back to tax type
-        if (input.accountType === 'ESPP') {
-          acc.espp += amount;
-        } else if (input.accountType === 'HSA') {
-          acc.hsa += amount;
-        } else if (input.accountType === 'Cash') {
-          acc.cash += amount;
-        } else {
-          // Map by tax type for regular accounts
-          switch (input.taxType) {
-            case 'Tax-Free':
-              acc.taxFree += amount;
-              break;
-            case 'Tax-Deferred':
-              acc.taxDeferred += amount;
-              break;
-            case 'After-Tax':
-            case 'Roth':
-              acc.brokerage += amount;
-              break;
-            case 'Cash':
-              acc.cash += amount;
-              break;
+        // Get existing annual data totals
+        const existingTotals = {
+          taxFree: annualData[currentYear]?.taxFree || 0,
+          taxDeferred: annualData[currentYear]?.taxDeferred || 0,
+          brokerage: annualData[currentYear]?.brokerage || 0,
+          espp: annualData[currentYear]?.espp || 0,
+          hsa: annualData[currentYear]?.hsa || 0,
+          cash: annualData[currentYear]?.cash || 0
+        };
+        
+        // Calculate deltas only for accounts that have amounts (are being updated)
+        const accountsWithData = allAccounts.filter(acc => 
+          acc.amount !== null && acc.amount !== undefined && acc.amount !== ''
+        );
+        
+        // Get previous values from the most recent liquid assets record to calculate deltas
+        const mostRecentRecord = getMostRecentLiquidAssetsAccounts();
+        const previousAccountValues = new Map();
+        
+        mostRecentRecord.forEach(prevAccount => {
+          previousAccountValues.set(prevAccount.id, prevAccount.amount || 0);
+        });
+        
+        // Calculate deltas for updated accounts only
+        const deltas = {
+          taxFree: 0,
+          taxDeferred: 0,
+          brokerage: 0,
+          espp: 0,
+          hsa: 0,
+          cash: 0
+        };
+        
+        accountsWithData.forEach(input => {
+          const newAmount = parseFloat(input.amount) || 0;
+          const previousAmount = previousAccountValues.get(input.id) || 0;
+          const delta = newAmount - previousAmount;
+          
+          
+          // Apply delta to appropriate category
+          if (input.accountType === 'ESPP') {
+            deltas.espp += delta;
+          } else if (input.accountType === 'HSA') {
+            deltas.hsa += delta;
+          } else if (input.accountType === 'Cash') {
+            deltas.cash += delta;
+          } else {
+            // Map by tax type for regular accounts
+            switch (input.taxType) {
+              case 'Tax-Free':
+                deltas.taxFree += delta;
+                break;
+              case 'Tax-Deferred':
+                deltas.taxDeferred += delta;
+                break;
+              case 'After-Tax':
+              case 'Roth':
+                deltas.brokerage += delta;
+                break;
+              case 'Cash':
+                deltas.cash += delta;
+                break;
+            }
           }
-        }
+        });
         
-        return acc;
-      }, {
-        taxFree: 0,
-        taxDeferred: 0,
-        brokerage: 0,
-        espp: 0,
-        hsa: 0,
-        cash: 0
-      });
+        // Apply deltas to existing totals
+        totals = {
+          taxFree: existingTotals.taxFree + deltas.taxFree,
+          taxDeferred: existingTotals.taxDeferred + deltas.taxDeferred,
+          brokerage: existingTotals.brokerage + deltas.brokerage,
+          espp: existingTotals.espp + deltas.espp,
+          hsa: existingTotals.hsa + deltas.hsa,
+          cash: existingTotals.cash + deltas.cash
+        };
+        
 
-      // Use new amounts directly
-      const totals = newAmounts;
+        // Calculate deltas by owner for updated accounts only
+        const existingTotalsByOwner = annualData[currentYear]?.users || {};
+        const deltasByOwner = {};
+        
+        accountsWithData.forEach(input => {
+          const newAmount = parseFloat(input.amount) || 0;
+          const previousAmount = previousAccountValues.get(input.id) || 0;
+          const delta = newAmount - previousAmount;
+          const owner = input.owner;
+          
+          if (!deltasByOwner[owner]) {
+            deltasByOwner[owner] = {
+              taxFree: 0,
+              taxDeferred: 0,
+              brokerage: 0,
+              espp: 0,
+              hsa: 0,
+              cash: 0
+            };
+          }
+          
+          // Apply delta to appropriate category by owner
+          if (input.accountType === 'ESPP') {
+            deltasByOwner[owner].espp += delta;
+          } else if (input.accountType === 'HSA') {
+            deltasByOwner[owner].hsa += delta;
+          } else if (input.accountType === 'Cash') {
+            deltasByOwner[owner].cash += delta;
+          } else {
+            // Map by tax type for regular accounts
+            switch (input.taxType) {
+              case 'Tax-Free':
+                deltasByOwner[owner].taxFree += delta;
+                break;
+              case 'Tax-Deferred':
+                deltasByOwner[owner].taxDeferred += delta;
+                break;
+              case 'After-Tax':
+              case 'Roth':
+                deltasByOwner[owner].brokerage += delta;
+                break;
+              case 'Cash':
+                deltasByOwner[owner].cash += delta;
+                break;
+            }
+          }
+        });
+        
+        // Apply owner deltas to existing totals
+        totalsByOwner = { ...existingTotalsByOwner };
+        Object.entries(deltasByOwner).forEach(([owner, ownerDeltas]) => {
+          if (!totalsByOwner[owner]) {
+            totalsByOwner[owner] = {
+              taxFree: 0,
+              taxDeferred: 0,
+              brokerage: 0,
+              espp: 0,
+              hsa: 0,
+              cash: 0
+            };
+          }
+          
+          totalsByOwner[owner].taxFree = (totalsByOwner[owner].taxFree || 0) + ownerDeltas.taxFree;
+          totalsByOwner[owner].taxDeferred = (totalsByOwner[owner].taxDeferred || 0) + ownerDeltas.taxDeferred;
+          totalsByOwner[owner].brokerage = (totalsByOwner[owner].brokerage || 0) + ownerDeltas.brokerage;
+          totalsByOwner[owner].espp = (totalsByOwner[owner].espp || 0) + ownerDeltas.espp;
+          totalsByOwner[owner].hsa = (totalsByOwner[owner].hsa || 0) + ownerDeltas.hsa;
+          totalsByOwner[owner].cash = (totalsByOwner[owner].cash || 0) + ownerDeltas.cash;
+        });
+        
+        // Prepare liquid assets data with generated account names
+        liquidAssetsDataWithNames = allAccounts.map(input => ({
+          ...input,
+          accountName: generateAccountName(
+            input.owner,
+            input.taxType,
+            input.accountType,
+            input.investmentCompany,
+            input.description
+          )
+        }));
+        
+
+      } else {
+        // Group Mode: Use group data to create virtual accounts
+        console.log('🏢 Group Mode: Processing groups');
+        const groupsWithAccounts = getGroupsWithAccounts();
+        console.log('📊 Groups with accounts:', groupsWithAccounts);
+        
+        // Create virtual accounts for each group based on group financial data
+        const virtualAccounts = [];
+        groupsWithAccounts.forEach(([groupId, group]) => {
+          const groupData = getGroupFinancialData(groupId);
+          console.log(`🔍 Group ${groupId} data:`, groupData);
+          
+          // Calculate group balance from individual accounts in the group
+          const groupBalance = calculateManualGroupBalance(groupId, liquidAssetsInputs);
+          
+          // Create a virtual account representing the group (even if balance is 0 for detailed updates)
+          if (groupBalance > 0 || Object.values(groupData).some(value => value !== null && value !== undefined)) {
+            // Use the first account in the group as a template for account properties
+            const firstAccount = liquidAssetsInputs.find(acc => 
+              group.liquidAssetsAccounts && group.liquidAssetsAccounts.includes(acc.id)
+            );
+            
+            if (firstAccount && group.accountName) {
+              // Use the first liquidAssetsAccount ID from the group instead of generating new ID
+              const targetAccountId = group.liquidAssetsAccounts && group.liquidAssetsAccounts.length > 0 
+                ? group.liquidAssetsAccounts[0] 
+                : `group_${groupId}`;
+              console.log(`🆔 Using account ID for group ${groupId}: ${targetAccountId}`);
+              
+              const virtualAccount = {
+                id: targetAccountId,
+                accountName: group.accountName,
+                owner: group.owner || 'Joint',
+                taxType: firstAccount.taxType,
+                accountType: firstAccount.accountType,
+                investmentCompany: firstAccount.investmentCompany,
+                description: `Group: ${group.name}`,
+                amount: groupBalance.toString(), // Use calculated balance from individual accounts
+                contributions: groupData.contributions,
+                employerMatch: groupData.employerMatch,
+                gains: groupData.gains,
+                fees: groupData.fees,
+                withdrawals: groupData.withdrawals
+              };
+              console.log(`✅ Created virtual account for group ${groupId}:`, virtualAccount);
+              virtualAccounts.push(virtualAccount);
+            }
+          }
+        });
+
+        // Calculate totals from virtual accounts
+        const newAmounts = virtualAccounts.reduce((acc, input) => {
+          const amount = parseFloat(input.amount) || 0;
+          
+          // Use account type first for special accounts, then fall back to tax type
+          if (input.accountType === 'ESPP') {
+            acc.espp += amount;
+          } else if (input.accountType === 'HSA') {
+            acc.hsa += amount;
+          } else if (input.accountType === 'Cash') {
+            acc.cash += amount;
+          } else {
+            // Map by tax type for regular accounts
+            switch (input.taxType) {
+              case 'Tax-Free':
+                acc.taxFree += amount;
+                break;
+              case 'Tax-Deferred':
+                acc.taxDeferred += amount;
+                break;
+              case 'After-Tax':
+              case 'Roth':
+                acc.brokerage += amount;
+                break;
+              case 'Cash':
+                acc.cash += amount;
+                break;
+            }
+          }
+          
+          return acc;
+        }, {
+          taxFree: 0,
+          taxDeferred: 0,
+          brokerage: 0,
+          espp: 0,
+          hsa: 0,
+          cash: 0
+        });
+
+        totals = newAmounts;
+
+        // Calculate amounts by owner from virtual accounts
+        const newAmountsByOwner = virtualAccounts.reduce((acc, input) => {
+          const amount = parseFloat(input.amount) || 0;
+          const owner = input.owner;
+          
+          if (!acc[owner]) {
+            acc[owner] = {
+              taxFree: 0,
+              taxDeferred: 0,
+              brokerage: 0,
+              espp: 0,
+              hsa: 0,
+              cash: 0
+            };
+          }
+          
+          // Use account type first for special accounts, then fall back to tax type
+          if (input.accountType === 'ESPP') {
+            acc[owner].espp += amount;
+          } else if (input.accountType === 'HSA') {
+            acc[owner].hsa += amount;
+          } else if (input.accountType === 'Cash') {
+            acc[owner].cash += amount;
+          } else {
+            // Map by tax type for regular accounts
+            switch (input.taxType) {
+              case 'Tax-Free':
+                acc[owner].taxFree += amount;
+                break;
+              case 'Tax-Deferred':
+                acc[owner].taxDeferred += amount;
+                break;
+              case 'After-Tax':
+              case 'Roth':
+                acc[owner].brokerage += amount;
+                break;
+              case 'Cash':
+                acc[owner].cash += amount;
+                break;
+            }
+          }
+          
+          return acc;
+        }, {});
+        
+        totalsByOwner = newAmountsByOwner;
+        liquidAssetsDataWithNames = virtualAccounts;
+        console.log('🏢 Group Mode: Final liquidAssetsDataWithNames:', liquidAssetsDataWithNames);
+        console.log('🆔 Available Liquid Assets Account IDs:', liquidAssetsDataWithNames.map(acc => ({ id: acc.id, accountName: acc.accountName })));
+      }
 
       // Update current year entry
       if (!annualData[currentYear]) {
         annualData[currentYear] = { users: {} };
       }
-
-      
-      // Calculate new amounts by owner from liquid assets inputs
-      const newAmountsByOwner = liquidAssetsInputs.reduce((acc, input) => {
-        const amount = parseFloat(input.amount) || 0;
-        const owner = input.owner;
-        
-        if (!acc[owner]) {
-          acc[owner] = {
-            taxFree: 0,
-            taxDeferred: 0,
-            brokerage: 0,
-            espp: 0,
-            hsa: 0,
-            cash: 0
-          };
-        }
-        
-        // Use account type first for special accounts, then fall back to tax type
-        if (input.accountType === 'ESPP') {
-          acc[owner].espp += amount;
-        } else if (input.accountType === 'HSA') {
-          acc[owner].hsa += amount;
-        } else if (input.accountType === 'Cash') {
-          acc[owner].cash += amount;
-        } else {
-          // Map by tax type for regular accounts
-          switch (input.taxType) {
-            case 'Tax-Free':
-              acc[owner].taxFree += amount;
-              break;
-            case 'Tax-Deferred':
-              acc[owner].taxDeferred += amount;
-              break;
-            case 'After-Tax':
-            case 'Roth':
-              acc[owner].brokerage += amount;
-              break;
-            case 'Cash':
-              acc[owner].cash += amount;
-              break;
-          }
-        }
-        
-        return acc;
-      }, {});
-      
-      // Use new amounts by owner directly
-      const totalsByOwner = newAmountsByOwner;
       
 
 
       // Update root-level investment data (this is how annual data is structured)
+      
       annualData[currentYear].taxFree = totals.taxFree;
       annualData[currentYear].taxDeferred = totals.taxDeferred;
       annualData[currentYear].brokerage = totals.brokerage;
@@ -694,8 +999,15 @@ const LiquidAssets = () => {
       const saveResult = setAnnualData(annualData);
       
       if (saveResult) {
-        const updateTypeText = showExpandedFields ? 'detailed' : 'balance-only';
-        setSuccessMessage(`Successfully updated ${currentYear} investment data! (${updateTypeText} sync to Accounts)`);
+        let updateTypeText;
+        if (updateMode === 'individual') {
+          updateTypeText = 'balance-only'; // Individual mode is always balance-only
+        } else {
+          // Group mode (only available in detailed mode)
+          updateTypeText = 'detailed (balance preserved)';
+        }
+        const modeText = updateMode === 'individual' ? 'individual accounts' : 'account groups';
+        setSuccessMessage(`Successfully updated ${currentYear} investment data from ${modeText}! (${updateTypeText} sync to Accounts)`);
         setCurrentYearData(annualData[currentYear]);
         
         // Scroll to top to show success message
@@ -711,9 +1023,10 @@ const LiquidAssets = () => {
         
         // Add current liquid assets inputs to shared system
         const updatedSharedAccounts = [...nonLiquidAssetsAccounts];
-        liquidAssetsInputs.forEach(input => {
-          // Generate account name from structured data
-          const generatedAccountName = generateAccountName(
+        liquidAssetsDataWithNames.forEach(input => {
+          // For group mode, we use the group's account name directly
+          // For individual mode, we generate the account name
+          const accountName = updateMode === 'group' ? input.accountName : generateAccountName(
             input.owner,
             input.taxType,
             input.accountType,
@@ -721,14 +1034,14 @@ const LiquidAssets = () => {
             input.description
           );
           
-          if (generatedAccountName) {
+          if (accountName) {
             // Save to old Liquid Assets system for backward compatibility
-            addLiquidAssetsAccount(generatedAccountName, input.taxType, input.accountType, input.owner);
+            addLiquidAssetsAccount(accountName, input.taxType, input.accountType, input.owner);
             
             // Add to updated shared accounts list
             const newSharedAccount = {
               id: generateUniqueId(),
-              accountName: generatedAccountName,
+              accountName: accountName,
               owner: input.owner,
               accountType: input.accountType,
               investmentCompany: input.investmentCompany || '',
@@ -745,8 +1058,20 @@ const LiquidAssets = () => {
         // Update shared accounts with only current liquid assets state
         setSharedAccounts(updatedSharedAccounts);
         
-        // Prepare liquid assets data with generated account names for all operations
-        const liquidAssetsDataWithNames = liquidAssetsInputs.map(input => ({
+        
+        // Add liquid assets record with current date (with generated names)
+        let updateType;
+        if (updateMode === 'individual') {
+          updateType = 'balance-only'; // Individual mode always does balance-only
+        } else {
+          // Group mode (only available in detailed mode)
+          updateType = 'detailed-group-preserve-balance';
+          console.log('📊 Group Financial Data:', groupFinancialData);
+        }
+        
+        // Ensure ALL account definitions are saved to the record, not just processed ones
+        // This prevents losing account definitions when only some accounts have data
+        const allAccountsWithNames = liquidAssetsInputs.map(input => ({
           ...input,
           accountName: generateAccountName(
             input.owner,
@@ -758,16 +1083,21 @@ const LiquidAssets = () => {
         }));
         
         
-        // Add liquid assets record with current date (with generated names)
-        const updateType = showExpandedFields ? 'detailed' : 'balance-only';
-        addLiquidAssetsRecord(liquidAssetsDataWithNames, null, updateType);
+        addLiquidAssetsRecord(allAccountsWithNames, null, updateType);
         
         // Automatically sync liquid assets balances to accounts (background sync)
         try {
-          syncLiquidAssetsBalanceToAccounts(liquidAssetsDataWithNames, updateType);
+          console.log('🔄 Calling syncLiquidAssetsBalanceToAccounts with:');
+          console.log('  📊 Data:', liquidAssetsDataWithNames);
+          console.log('  🔧 Update Type:', updateType);
+          console.log('  🎯 Update Mode:', updateMode);
+          
+          const syncResult = syncLiquidAssetsBalanceToAccounts(liquidAssetsDataWithNames, updateType, updateMode);
+          console.log('✅ Sync Result:', syncResult);
+          
           syncAccountsFromLatestLiquidAssets();
         } catch (syncError) {
-          console.error('Error during sync operations:', syncError);
+          console.error('❌ Error during sync operations:', syncError);
           // Continue with other operations even if sync fails
         }
         
@@ -823,6 +1153,70 @@ const LiquidAssets = () => {
     return `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
   };
 
+  // Helper functions for update mode management
+  const getGroupsWithAccounts = () => {
+    return Object.entries(manualGroups).filter(([groupId, group]) => 
+      group.liquidAssetsAccounts && group.liquidAssetsAccounts.length > 0
+    );
+  };
+
+  const getUngroupedAccounts = () => {
+    return getUngroupedLiquidAssetsAccounts(liquidAssetsInputs);
+  };
+
+  const hasAccountsInGroups = () => {
+    return getGroupsWithAccounts().length > 0;
+  };
+
+  const hasUngroupedAccounts = () => {
+    return getUngroupedAccounts().length > 0;
+  };
+
+  const getCurrentUpdateTargets = () => {
+    // Update mode is now automatic based on showExpandedFields
+    if (!showExpandedFields) {
+      return liquidAssetsInputs; // Balance mode: show ALL accounts for individual balance updates
+    } else {
+      return getGroupsWithAccounts(); // Detailed mode: show only groups that have accounts
+    }
+  };
+
+  // Handle group financial data changes
+  const handleGroupFinancialDataChange = (groupId, field, value) => {
+    setGroupFinancialData(prev => ({
+      ...prev,
+      [groupId]: {
+        ...prev[groupId],
+        [field]: value
+      }
+    }));
+  };
+
+  // Get group financial data with defaults (null means don't update)
+  const getGroupFinancialData = (groupId) => {
+    return groupFinancialData[groupId] || {
+      amount: null,
+      contributions: null,
+      employerMatch: null,
+      gains: null,
+      fees: null,
+      withdrawals: null
+    };
+  };
+
+  // Auto-switch update mode based on detail level (now automatic)
+  const autoSwitchUpdateMode = () => {
+    if (showExpandedFields) {
+      // Detailed mode: always use group mode if groups exist
+      if (hasAccountsInGroups()) {
+        setUpdateMode('group');
+      }
+    } else {
+      // Balance mode: always use individual mode
+      setUpdateMode('individual');
+    }
+  };
+
   // Helper functions for managing collapsed state
   const toggleAccountCollapse = (accountId) => {
     setCollapsedAccounts(prev => {
@@ -865,8 +1259,11 @@ const LiquidAssets = () => {
   };
 
   const handleUpdateGroupAccountReference = (groupId, accountName) => {
-    updateManualAccountGroup(groupId, { accountName });
+    console.log('🔄 Updating group account reference:', { groupId, accountName });
+    const result = updateManualAccountGroup(groupId, { accountName });
+    console.log('✅ Update result:', result);
     loadManualGroups();
+    console.log('🔄 Reloaded manual groups after update');
   };
 
   const handleDeleteGroup = (groupId) => {
@@ -1104,19 +1501,21 @@ const LiquidAssets = () => {
         taxType: '',
         accountType: '',
         investmentCompany: '',
-        amount: '',
+        amount: null,
         description: '',
-        contributions: '',
-        employerMatch: '',
-        gains: '',
-        fees: '',
-        withdrawals: ''
+        contributions: null,
+        employerMatch: null,
+        gains: null,
+        fees: null,
+        withdrawals: null
       }]);
       setCurrentYearData({});
             setLiquidAssetsRecords([]);
       setErrors({});
       setSuccessMessage('');
             setShowRecords(false);
+      setUpdateMode('individual');
+      setGroupFinancialData({});
       setCollapsedAccounts(new Set());
       
       // Clear localStorage data related to liquid assets
@@ -1208,44 +1607,95 @@ const LiquidAssets = () => {
   };
 
   const getCurrentTotals = () => {
-    return liquidAssetsInputs.reduce((acc, input) => {
-      const amount = parseFloat(input.amount) || 0;
-      
-      // Use account type first for special accounts, then fall back to tax type
-      if (input.accountType === 'ESPP') {
-        acc.espp += amount;
-      } else if (input.accountType === 'HSA') {
-        acc.hsa += amount;
-      } else if (input.accountType === 'Cash') {
-        acc.cash += amount;
-      } else {
-        // Map by tax type for regular accounts
-        switch (input.taxType) {
-          case 'Tax-Free':
-            acc.taxFree += amount;
-            break;
-          case 'Tax-Deferred':
-            acc.taxDeferred += amount;
-            break;
-          case 'After-Tax':
-          case 'Roth':
-            acc.brokerage += amount;
-            break;
-          case 'Cash':
-            acc.cash += amount;
-            break;
+    if (updateMode === 'individual') {
+      return liquidAssetsInputs.reduce((acc, input) => {
+        const amount = parseFloat(input.amount) || 0;
+        
+        // Use account type first for special accounts, then fall back to tax type
+        if (input.accountType === 'ESPP') {
+          acc.espp += amount;
+        } else if (input.accountType === 'HSA') {
+          acc.hsa += amount;
+        } else if (input.accountType === 'Cash') {
+          acc.cash += amount;
+        } else {
+          // Map by tax type for regular accounts
+          switch (input.taxType) {
+            case 'Tax-Free':
+              acc.taxFree += amount;
+              break;
+            case 'Tax-Deferred':
+              acc.taxDeferred += amount;
+              break;
+            case 'After-Tax':
+            case 'Roth':
+              acc.brokerage += amount;
+              break;
+            case 'Cash':
+              acc.cash += amount;
+              break;
+          }
         }
-      }
-      
-      return acc;
-    }, {
-      taxFree: 0,
-      taxDeferred: 0,
-      brokerage: 0,
-      hsa: 0,
-      espp: 0,
-      cash: 0
-    });
+        
+        return acc;
+      }, {
+        taxFree: 0,
+        taxDeferred: 0,
+        brokerage: 0,
+        hsa: 0,
+        espp: 0,
+        cash: 0
+      });
+    } else {
+      // Group mode: sum balances from accounts in groups
+      return getGroupsWithAccounts().reduce((acc, [groupId, group]) => {
+        const amount = calculateManualGroupBalance(groupId, liquidAssetsInputs);
+        
+        if (amount > 0) {
+          // Use the first account in the group to determine how to categorize the amount
+          const firstAccount = liquidAssetsInputs.find(input => 
+            group.liquidAssetsAccounts && group.liquidAssetsAccounts.includes(input.id)
+          );
+          
+          if (firstAccount) {
+            // Use account type first for special accounts, then fall back to tax type
+            if (firstAccount.accountType === 'ESPP') {
+              acc.espp += amount;
+            } else if (firstAccount.accountType === 'HSA') {
+              acc.hsa += amount;
+            } else if (firstAccount.accountType === 'Cash') {
+              acc.cash += amount;
+            } else {
+              // Map by tax type for regular accounts
+              switch (firstAccount.taxType) {
+                case 'Tax-Free':
+                  acc.taxFree += amount;
+                  break;
+                case 'Tax-Deferred':
+                  acc.taxDeferred += amount;
+                  break;
+                case 'After-Tax':
+                case 'Roth':
+                  acc.brokerage += amount;
+                  break;
+                case 'Cash':
+                  acc.cash += amount;
+                  break;
+              }
+            }
+          }
+        }
+        
+        return acc;
+      }, {
+        taxFree: 0,
+        taxDeferred: 0,
+        brokerage: 0,
+        hsa: 0,
+        espp: 0,
+        cash: 0
+      });
+    }
   };
 
   const currentTotals = getCurrentTotals();
@@ -1330,8 +1780,11 @@ const LiquidAssets = () => {
                           Sync to Accounts Account:
                         </label>
                         <select 
-                          value={group.accountName || ''}
-                          onChange={(e) => handleUpdateGroupAccountReference(groupId, e.target.value)}
+                          value={group.accountName || group.performanceAccountName || ''}
+                          onChange={(e) => {
+                            console.log('🔄 Dropdown change detected:', { groupId, oldValue: group.accountName, newValue: e.target.value });
+                            handleUpdateGroupAccountReference(groupId, e.target.value);
+                          }}
                           style={{ 
                             width: '100%', 
                             padding: '0.5rem', 
@@ -1508,21 +1961,43 @@ const LiquidAssets = () => {
 
         {/* Liquid Assets Accounts Table */}
         <div className="liquid-assets-accounts">
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-            <div>
+          {/* Update Mode Controls */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1rem', gap: '2rem' }}>
+            <div style={{ flex: 1 }}>
               <h2>Liquid Assets Account Values</h2>
               <p>Enter current account values from investment websites:</p>
+              
+              {/* Blank Input Behavior Note */}
+              <div style={{ 
+                margin: '0.5rem 0', 
+                padding: '0.75rem', 
+                backgroundColor: '#e3f2fd', 
+                borderRadius: '6px', 
+                border: '1px solid #90caf9',
+                fontSize: '0.85rem',
+                color: '#1565c0'
+              }}>
+                💡 <strong>Tip:</strong> Leave any input field blank to preserve existing data in your accounts. Only fill in fields you want to update.
+              </div>
+
+              {/* Data Mode Status */}
               {showExpandedFields ? (
                 <p style={{ fontSize: '0.9rem', color: '#28a745', margin: '0.5rem 0' }}>
-                  📊 <strong>Detailed Update Mode:</strong> Will sync balance + employee contributions, employer match, gains/losses, fees, and withdrawals
+                  📊 <strong>Detailed Update Mode:</strong> 
+                  {updateMode === 'individual' 
+                    ? ' Individual mode only syncs balances. Create account groups for detailed updates.'
+                    : ' Will sync only detailed financial data (contributions, match, gains, fees, withdrawals) to grouped accounts. Preserves existing account balances.'}
+                  <span style={{ fontStyle: 'italic', color: '#6c757d' }}> → Auto-switched to {updateMode === 'individual' ? 'Individual' : 'Group'} mode</span>
                 </p>
               ) : (
                 <p style={{ fontSize: '0.9rem', color: '#007bff', margin: '0.5rem 0' }}>
                   ⚡ <strong>Balance Only Mode:</strong> Will sync only account balances (preserves existing detailed data)
+                  <span style={{ fontStyle: 'italic', color: '#6c757d' }}> → Auto-switched to Individual mode</span>
                 </p>
               )}
             </div>
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
+            
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', alignItems: 'flex-end' }}>
               <button 
                 type="button" 
                 onClick={() => setShowExpandedFields(!showExpandedFields)}
@@ -1570,17 +2045,25 @@ const LiquidAssets = () => {
             </div>
           )}
           
-          <div className="accounts-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {liquidAssetsInputs.map((input, index) => {
+          {/* Conditional rendering based on update mode */}
+          {updateMode === 'individual' ? (
+            // Individual Accounts Mode
+            <div className="accounts-list" style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              {liquidAssetsInputs.map((input, index) => {
+                // Check if this account is in a group
+                const groupInfo = Object.entries(manualGroups).find(([groupId, group]) => 
+                  group.liquidAssetsAccounts && group.liquidAssetsAccounts.includes(input.id)
+                );
+                const isInGroup = !!groupInfo;
               const isCollapsed = collapsedAccounts.has(input.id);
               const accountName = generateAccountName(input.owner, input.taxType, input.accountType, input.investmentCompany, input.description);
               
               return (
                 <div key={input.id} className="account-row" style={{
-                  border: '1px solid #ddd',
+                  border: `1px solid ${isInGroup ? '#007bff' : '#ddd'}`,
                   borderRadius: '4px',
                   padding: '0.5rem',
-                  backgroundColor: '#ffffff',
+                  backgroundColor: isInGroup ? '#f8fbff' : '#ffffff',
                   boxShadow: '0 1px 2px rgba(0,0,0,0.05)'
                 }}>
                   {/* Main Account Row - Account Name + Financial Data */}
@@ -1624,6 +2107,16 @@ const LiquidAssets = () => {
                         }}>
                           {accountName || 'Complete setup fields →'}
                         </div>
+                        {isInGroup && (
+                          <div style={{ 
+                            fontSize: '0.75rem',
+                            color: '#007bff',
+                            fontWeight: 'bold',
+                            marginTop: '0.25rem'
+                          }}>
+                            📋 In Group: {groupInfo[1].name}
+                          </div>
+                        )}
                       </div>
                       <button 
                         type="button" 
@@ -1661,8 +2154,8 @@ const LiquidAssets = () => {
                         </label>
                         <input
                           type="number"
-                          value={input.amount || ''}
-                          onChange={(e) => handleInputChange(index, 'amount', e.target.value)}
+                          value={input.amount === null ? '' : (input.amount || '')}
+                          onChange={(e) => handleInputChange(index, 'amount', e.target.value === '' ? null : e.target.value)}
                           placeholder="0.00"
                           step="0.01"
                           min="0"
@@ -1680,150 +2173,7 @@ const LiquidAssets = () => {
                         {errors[index]?.amount && <div style={{ fontSize: '0.6rem', color: '#dc3545', marginTop: '0.1rem' }}>{errors[index].amount}</div>}
                       </div>
 
-                      {/* Expanded Fields - Only in Detailed Mode */}
-                      {showExpandedFields && (
-                        <>
-                          <div className="financial-field" style={{ flex: '0 0 110px' }}>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 'bold', 
-                              marginBottom: '0.1rem', 
-                              color: '#28a745' 
-                            }}>
-                              Employee Contributions
-                            </label>
-                            <input
-                              type="number"
-                              value={input.contributions || ''}
-                              onChange={(e) => handleInputChange(index, 'contributions', e.target.value)}
-                              placeholder="0.00"
-                              step="0.01"
-                              className={errors[index]?.contributions ? 'error' : ''}
-                              style={{ 
-                                width: '100%', 
-                                padding: '0.3rem', 
-                                border: '1px solid #28a745', 
-                                borderRadius: '3px', 
-                                textAlign: 'right',
-                                fontSize: '0.8rem'
-                              }}
-                            />
-                          </div>
-
-                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 'bold', 
-                              marginBottom: '0.1rem', 
-                              color: '#28a745' 
-                            }}>
-                              Match
-                            </label>
-                            <input
-                              type="number"
-                              value={input.employerMatch || ''}
-                              onChange={(e) => handleInputChange(index, 'employerMatch', e.target.value)}
-                              placeholder="0.00"
-                              step="0.01"
-                              className={errors[index]?.employerMatch ? 'error' : ''}
-                              style={{ 
-                                width: '100%', 
-                                padding: '0.3rem', 
-                                border: '1px solid #28a745', 
-                                borderRadius: '3px', 
-                                textAlign: 'right',
-                                fontSize: '0.8rem'
-                              }}
-                            />
-                          </div>
-
-                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 'bold', 
-                              marginBottom: '0.1rem', 
-                              color: '#17a2b8' 
-                            }}>
-                              Gains/Loss
-                            </label>
-                            <input
-                              type="number"
-                              value={input.gains || ''}
-                              onChange={(e) => handleInputChange(index, 'gains', e.target.value)}
-                              placeholder="0.00"
-                              step="0.01"
-                              className={errors[index]?.gains ? 'error' : ''}
-                              style={{ 
-                                width: '100%', 
-                                padding: '0.3rem', 
-                                border: '1px solid #17a2b8', 
-                                borderRadius: '3px', 
-                                textAlign: 'right',
-                                fontSize: '0.8rem'
-                              }}
-                            />
-                          </div>
-
-                          <div className="financial-field" style={{ flex: '0 0 80px' }}>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 'bold', 
-                              marginBottom: '0.1rem', 
-                              color: '#dc3545' 
-                            }}>
-                              Fees
-                            </label>
-                            <input
-                              type="number"
-                              value={input.fees || ''}
-                              onChange={(e) => handleInputChange(index, 'fees', e.target.value)}
-                              placeholder="0.00"
-                              step="0.01"
-                              className={errors[index]?.fees ? 'error' : ''}
-                              style={{ 
-                                width: '100%', 
-                                padding: '0.3rem', 
-                                border: '1px solid #dc3545', 
-                                borderRadius: '3px', 
-                                textAlign: 'right',
-                                fontSize: '0.8rem'
-                              }}
-                            />
-                          </div>
-
-                          <div className="financial-field" style={{ flex: '0 0 100px' }}>
-                            <label style={{ 
-                              display: 'block', 
-                              fontSize: '0.65rem', 
-                              fontWeight: 'bold', 
-                              marginBottom: '0.1rem', 
-                              color: '#fd7e14' 
-                            }}>
-                              Withdrawals
-                            </label>
-                            <input
-                              type="number"
-                              value={input.withdrawals || ''}
-                              onChange={(e) => handleInputChange(index, 'withdrawals', e.target.value)}
-                              placeholder="0.00"
-                              step="0.01"
-                              className={errors[index]?.withdrawals ? 'error' : ''}
-                              style={{ 
-                                width: '100%', 
-                                padding: '0.3rem', 
-                                border: '1px solid #fd7e14', 
-                                borderRadius: '3px', 
-                                textAlign: 'right',
-                                fontSize: '0.8rem'
-                              }}
-                            />
-                          </div>
-                        </>
-                      )}
+                    
                     </div>
                   </div>
 
@@ -1928,14 +2278,263 @@ const LiquidAssets = () => {
                 </div>
               );
             })}
-          </div>
+            </div>
+          ) : (
+            // Group Update Mode
+            <div className="groups-list" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+              {getGroupsWithAccounts().map(([groupId, group]) => {
+                const groupBalance = calculateManualGroupBalance(groupId, liquidAssetsInputs);
+                const groupData = getGroupFinancialData(groupId);
+                
+                return (
+                  <div key={groupId} className="group-update-row" style={{
+                    border: '2px solid #007bff',
+                    borderRadius: '6px',
+                    padding: '1rem',
+                    backgroundColor: '#f8fbff'
+                  }}>
+                    {/* Group Header */}
+                    <div style={{ 
+                      display: 'flex', 
+                      justifyContent: 'space-between', 
+                      alignItems: 'center',
+                      marginBottom: '1rem',
+                      paddingBottom: '0.5rem',
+                      borderBottom: '1px solid #dee2e6'
+                    }}>
+                      <div>
+                        <h3 style={{ margin: 0, color: '#007bff', fontSize: '1.1rem' }}>
+                          📋 {group.name}
+                        </h3>
+                        <div style={{ fontSize: '0.85rem', color: '#6c757d', marginTop: '0.25rem' }}>
+                          Syncs to: <strong>{group.accountName || 'No account selected'}</strong>
+                        </div>
+                        <div style={{ fontSize: '0.8rem', color: '#495057', marginTop: '0.25rem' }}>
+                          Current Balance: <strong>{formatCurrency(groupBalance)}</strong> ({group.liquidAssetsAccounts?.length || 0} accounts)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Group Financial Data Input - Only show detailed fields */}
+                    {showExpandedFields && (
+                      <div className="group-financial-data" style={{ 
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.75rem',
+                        backgroundColor: '#ffffff',
+                        padding: '0.75rem',
+                        borderRadius: '4px',
+                        border: '1px solid #28a745'
+                      }}>
+                          <div className="financial-field" style={{ flex: '0 0 130px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.25rem', 
+                              color: '#28a745' 
+                            }}>
+                              Total Contributions
+                            </label>
+                            <input
+                              type="number"
+                              value={groupData.contributions === null ? '' : groupData.contributions}
+                              onChange={(e) => handleGroupFinancialDataChange(groupId, 'contributions', e.target.value === '' ? null : e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              className={errors[`group_${groupId}`]?.contributions ? 'error' : ''}
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.4rem', 
+                                border: `1px solid ${errors[`group_${groupId}`]?.contributions ? '#dc3545' : '#28a745'}`, 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                            {errors[`group_${groupId}`]?.contributions && <div style={{ fontSize: '0.65rem', color: '#dc3545', marginTop: '0.1rem' }}>{errors[`group_${groupId}`].contributions}</div>}
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 110px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.25rem', 
+                              color: '#28a745' 
+                            }}>
+                              Total Match
+                            </label>
+                            <input
+                              type="number"
+                              value={groupData.employerMatch === null ? '' : groupData.employerMatch}
+                              onChange={(e) => handleGroupFinancialDataChange(groupId, 'employerMatch', e.target.value === '' ? null : e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.4rem', 
+                                border: '1px solid #28a745', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 110px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.25rem', 
+                              color: '#17a2b8' 
+                            }}>
+                              Total Gains/Loss
+                            </label>
+                            <input
+                              type="number"
+                              value={groupData.gains === null ? '' : groupData.gains}
+                              onChange={(e) => handleGroupFinancialDataChange(groupId, 'gains', e.target.value === '' ? null : e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.4rem', 
+                                border: '1px solid #17a2b8', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 90px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.25rem', 
+                              color: '#dc3545' 
+                            }}>
+                              Total Fees
+                            </label>
+                            <input
+                              type="number"
+                              value={groupData.fees === null ? '' : groupData.fees}
+                              onChange={(e) => handleGroupFinancialDataChange(groupId, 'fees', e.target.value === '' ? null : e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.4rem', 
+                                border: '1px solid #dc3545', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+
+                          <div className="financial-field" style={{ flex: '0 0 110px' }}>
+                            <label style={{ 
+                              display: 'block', 
+                              fontSize: '0.7rem', 
+                              fontWeight: 'bold', 
+                              marginBottom: '0.25rem', 
+                              color: '#fd7e14' 
+                            }}>
+                              Total Withdrawals
+                            </label>
+                            <input
+                              type="number"
+                              value={groupData.withdrawals === null ? '' : groupData.withdrawals}
+                              onChange={(e) => handleGroupFinancialDataChange(groupId, 'withdrawals', e.target.value === '' ? null : e.target.value)}
+                              placeholder="0.00"
+                              step="0.01"
+                              style={{ 
+                                width: '100%', 
+                                padding: '0.4rem', 
+                                border: '1px solid #fd7e14', 
+                                borderRadius: '3px', 
+                                textAlign: 'right',
+                                fontSize: '0.9rem'
+                              }}
+                            />
+                          </div>
+                      </div>
+                    )}
+
+                    {/* Group Accounts List */}
+                    <details style={{ marginTop: '1rem' }}>
+                      <summary style={{ 
+                        cursor: 'pointer', 
+                        fontWeight: 'bold', 
+                        color: '#495057',
+                        padding: '0.5rem',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '4px',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        View Individual Accounts in Group ({group.liquidAssetsAccounts?.length || 0})
+                      </summary>
+                      <div style={{ 
+                        marginTop: '0.5rem',
+                        padding: '0.75rem',
+                        backgroundColor: '#f8f9fa',
+                        borderRadius: '4px',
+                        border: '1px solid #dee2e6'
+                      }}>
+                        {(group.liquidAssetsAccounts || []).map(accountId => {
+                          const account = liquidAssetsInputs.find(acc => acc.id === accountId);
+                          if (!account) return null;
+                          
+                          return (
+                            <div key={accountId} style={{
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center',
+                              padding: '0.5rem',
+                              marginBottom: '0.5rem',
+                              backgroundColor: 'white',
+                              borderRadius: '3px',
+                              border: '1px solid #dee2e6'
+                            }}>
+                              <div>
+                                <strong>{generateAccountName(account.owner, account.taxType, account.accountType, account.investmentCompany, account.description)}</strong>
+                                <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+                                  {account.owner} • {account.taxType} • {account.accountType}
+                                </div>
+                              </div>
+                              <div style={{ textAlign: 'right' }}>
+                                <div style={{ fontWeight: 'bold' }}>
+                                  {formatCurrency(account.amount)}
+                                </div>
+                                <div style={{ fontSize: '0.8rem', color: '#6c757d' }}>
+                                  Individual Balance
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </details>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           <div className="form-actions">
-            <button type="button" onClick={addLiquidAssetsInput} className="btn-secondary">
-              + Add Another Account
-            </button>
+            {updateMode === 'individual' && (
+              <button type="button" onClick={addLiquidAssetsInput} className="btn-secondary">
+                + Add Another Account
+              </button>
+            )}
             <button type="button" onClick={updateAnnualData} className="btn-primary">
-              {showExpandedFields ? 'Update Accounts Data (Detailed)' : 'Update Accounts Data (Balance Only)'}
+              {updateMode === 'individual' 
+                ? 'Update Individual Account Balances'
+                : 'Update Account Groups (Detailed)'}
             </button>
           </div>
 

@@ -169,11 +169,19 @@ export const findAccountsAccountByName = (accountName, accountsAccounts) => {
 };
 
 // Sync liquid assets balance updates to accounts using manual account groups
-export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType = 'detailed') => {
+export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType = 'detailed', updateMode = 'auto') => {
+  console.log('🔄 SYNC: Starting syncLiquidAssetsBalanceToAccounts');
+  console.log('  📊 Liquid Assets Data:', liquidAssetsData);
+  console.log('  🔧 Update Type:', updateType);
+  console.log('  🎯 Update Mode:', updateMode);
+  
   const accountsData = getAccountsData();
   const manualGroups = getManualAccountGroups();
   const currentYear = new Date().getFullYear();
   let hasChanges = false;
+  
+  console.log('  📂 Manual Groups:', manualGroups);
+  console.log('  📅 Current Year:', currentYear);
   
   
   // Get ALL existing accounts accounts from ALL current year entries for matching
@@ -212,60 +220,196 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
   }
   
   
-  // If no manual groups exist, handle ungrouped accounts individually (fallback behavior)
-  if (Object.keys(manualGroups).length === 0) {
+  // Process individually if explicitly in individual mode OR if no manual groups exist (fallback behavior)
+  if (updateMode === 'individual' || Object.keys(manualGroups).length === 0) {
+    console.log('🔍 SYNC: Processing accounts individually');
+    console.log('  📊 Accounts to process:', liquidAssetsData.length);
+    console.log('  🎯 Existing accounts for matching:', existingAccountsAccounts.length);
+    
     // Process each liquid assets account individually
-    liquidAssetsData.forEach((account) => {
-      if (!account.accountName || !account.accountType || !account.owner || !account.amount) {
+    liquidAssetsData.forEach((account, index) => {
+      console.log(`\n🔄 SYNC: Processing account ${index + 1}/${liquidAssetsData.length}:`, account);
+      
+      if (!account.accountName || !account.accountType || !account.owner) {
+        console.log(`  ❌ Skipping account - missing required fields:`, {
+          accountName: !!account.accountName,
+          accountType: !!account.accountType,
+          owner: !!account.owner
+        });
         return;
       }
       
-      // Try to find matching accounts account
-      const matchingAcctAccount = findMatchingAccountsAccount(account, existingAccountsAccounts);
+      // Check if this individual account is part of a manual group
+      let groupInfo = null;
+      Object.entries(manualGroups).forEach(([groupId, group]) => {
+        const liquidAssetsAccountIds = group.liquidAssetsAccounts || group.portfolioAccounts || [];
+        if (liquidAssetsAccountIds.includes(account.id)) {
+          groupInfo = { groupId, group };
+          console.log(`  🏢 Account is part of group: ${group.name} (${groupId})`);
+        }
+      });
+      
+      let matchingAcctAccount = null;
+      
+      if (groupInfo) {
+        // This account is part of a group, find the group's Accounts account
+        const targetAccountName = groupInfo.group.accountName || groupInfo.group.performanceAccountName;
+        console.log(`  🎯 Looking for group account: ${targetAccountName}`);
+        matchingAcctAccount = findAccountsAccountByName(targetAccountName, existingAccountsAccounts);
+        if (matchingAcctAccount) {
+          console.log(`    ✅ Found group account for individual update`);
+        } else {
+          console.log(`    ❌ Group account not found: ${targetAccountName}`);
+        }
+      } else {
+        // Not part of a group, try to find matching individual account
+        console.log(`  🔍 Looking for matching individual account in ${existingAccountsAccounts.length} existing accounts`);
+        matchingAcctAccount = findMatchingAccountsAccount(account, existingAccountsAccounts);
+        console.log(`  🎯 Individual match result:`, matchingAcctAccount ? 'FOUND' : 'NOT FOUND');
+        if (matchingAcctAccount) {
+          console.log(`    ✅ Matched with individual account:`, {
+            accountName: matchingAcctAccount.accountName,
+            owner: matchingAcctAccount.owner,
+            accountType: matchingAcctAccount.accountType,
+            currentBalance: matchingAcctAccount.userData.balance
+          });
+        }
+      }
       
       if (matchingAcctAccount) {
-        // Always update balance
-        matchingAcctAccount.userData.balance = parseFloat(account.amount);
-        
-        // CRITICAL: Also update the entry-level balance field that DataManager displays
-        matchingAcctAccount.entry.balance = parseFloat(account.amount);
+        // Update balance only if amount is not null (preserve existing if null)
+        if (account.amount !== null && account.amount !== undefined && account.amount !== '') {
+          const newBalance = parseFloat(account.amount);
+          
+          if (groupInfo) {
+            // This is updating a group account from an individual account
+            // We need to calculate the new group total by replacing this account's contribution
+            console.log(`    🏢 Updating group account balance - calculating new group total`);
+            
+            // Get all accounts in this group
+            const liquidAssetsAccountIds = groupInfo.group.liquidAssetsAccounts || groupInfo.group.portfolioAccounts || [];
+            
+            // Calculate total from all accounts in the group (using updated data)
+            const groupTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              if (accountId === account.id) {
+                // Use the new balance for the current account
+                return sum + newBalance;
+              } else {
+                // Find the other account's balance from liquidAssetsData
+                const otherAccount = liquidAssetsData.find(acc => acc.id === accountId);
+                if (otherAccount && otherAccount.amount !== null && otherAccount.amount !== undefined && otherAccount.amount !== '') {
+                  // Use the amount from liquid assets data if available
+                  return sum + parseFloat(otherAccount.amount);
+                } else {
+                  // Fallback: Try to find existing balance for this account in the same group
+                  // Look through all liquid assets accounts in the group to find one that might have existing balance
+                  const existingAccountInGroup = existingAccountsAccounts.find(existingAcc => {
+                    return existingAcc.accountName === matchingAcctAccount.accountName && 
+                           existingAcc.owner === matchingAcctAccount.owner;
+                  });
+                  
+                  if (existingAccountInGroup && existingAccountInGroup.userData.balance) {
+                    // Get the current group balance and subtract the account being updated
+                    const currentGroupBalance = parseFloat(existingAccountInGroup.userData.balance) || 0;
+                    // This is a rough approximation - in individual mode we can't perfectly split group balances
+                    // So we preserve the existing group balance and just add the new contribution
+                    // This prevents losing existing balances when updating individual accounts
+                    return sum; // Don't add anything here, we'll handle this differently
+                  }
+                }
+              }
+              return sum;
+            }, 0);
+            
+            // Special handling for individual mode: preserve existing group balance and add/update individual contribution
+            const currentGroupBalance = parseFloat(matchingAcctAccount.userData.balance) || 0;
+            let finalGroupTotal = groupTotal;
+            
+            // If we're only updating one account and others don't have amounts, preserve existing group balance
+            const accountsWithAmounts = liquidAssetsAccountIds.filter(id => {
+              const acc = liquidAssetsData.find(a => a.id === id);
+              return acc && acc.amount !== null && acc.amount !== undefined && acc.amount !== '';
+            }).length;
+            
+            if (accountsWithAmounts === 1 && currentGroupBalance > 0) {
+              // Only one account has an amount, preserve existing balance and update the contribution
+              // This is an approximation - we can't perfectly track individual contributions in group mode
+              finalGroupTotal = Math.max(currentGroupBalance, newBalance);
+              console.log(`    🔄 Individual mode: preserving group balance ${currentGroupBalance}, new contribution: ${newBalance}, final: ${finalGroupTotal}`);
+            } else {
+              finalGroupTotal = groupTotal;
+            }
+            
+            console.log(`    💰 Updating group balance from ${matchingAcctAccount.userData.balance} to ${finalGroupTotal} (individual contribution: ${newBalance}, calculated total: ${groupTotal})`);
+            matchingAcctAccount.userData.balance = finalGroupTotal;
+            matchingAcctAccount.entry.balance = finalGroupTotal;
+          } else {
+            // This is a regular individual account update
+            console.log(`    💰 Updating individual balance from ${matchingAcctAccount.userData.balance} to ${newBalance}`);
+            matchingAcctAccount.userData.balance = newBalance;
+            matchingAcctAccount.entry.balance = newBalance;
+          }
+          console.log(`    ✅ Balance updated successfully`);
+        } else {
+          console.log(`    🔒 Preserving existing balance (amount is null/empty): ${matchingAcctAccount.userData.balance}`);
+        }
         
         // Update additional financial fields only for detailed updates
+        console.log(`    🔍 Checking if should update detailed fields - updateType: ${updateType}, groupInfo: ${!!groupInfo}`);
         if (updateType === 'detailed') {
-          if (account.contributions && account.contributions !== '') {
-            matchingAcctAccount.userData.contributions = parseFloat(account.contributions);
-            matchingAcctAccount.entry.contributions = parseFloat(account.contributions);
-          }
-          if (account.employerMatch && account.employerMatch !== '') {
-            matchingAcctAccount.userData.employerMatch = parseFloat(account.employerMatch);
-            matchingAcctAccount.entry.employerMatch = parseFloat(account.employerMatch);
-          }
-          if (account.gains && account.gains !== '') {
-            matchingAcctAccount.userData.gains = parseFloat(account.gains);
-            matchingAcctAccount.entry.gains = parseFloat(account.gains);
-          }
-          if (account.fees && account.fees !== '') {
-            matchingAcctAccount.userData.fees = parseFloat(account.fees);
-            matchingAcctAccount.entry.fees = parseFloat(account.fees);
-          }
-          if (account.withdrawals && account.withdrawals !== '') {
-            matchingAcctAccount.userData.withdrawals = parseFloat(account.withdrawals);
-            matchingAcctAccount.entry.withdrawals = parseFloat(account.withdrawals);
-          }
+          console.log(`    ⚠️  WARNING: Individual mode should never have updateType === 'detailed'!`);
+          console.log(`    📊 Processing detailed fields for ${groupInfo ? 'group' : 'individual'} account`);
           
-          // Track detailed update
-          matchingAcctAccount.userData.lastDetailedUpdate = new Date().toISOString();
-          matchingAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-individual-detailed';
+          // For group accounts updated from individual mode, we should NOT update detailed fields
+          // Individual mode should only update balance, not detailed data
+          if (groupInfo) {
+            console.log(`    🚫 Skipping detailed field updates for group account - individual mode should only update balance`);
+          } else {
+            console.log(`    ✅ Updating detailed fields for individual account`);
+            if (account.contributions && account.contributions !== '') {
+              matchingAcctAccount.userData.contributions = parseFloat(account.contributions);
+              matchingAcctAccount.entry.contributions = parseFloat(account.contributions);
+            }
+            if (account.employerMatch && account.employerMatch !== '') {
+              matchingAcctAccount.userData.employerMatch = parseFloat(account.employerMatch);
+              matchingAcctAccount.entry.employerMatch = parseFloat(account.employerMatch);
+            }
+            if (account.gains && account.gains !== '') {
+              matchingAcctAccount.userData.gains = parseFloat(account.gains);
+              matchingAcctAccount.entry.gains = parseFloat(account.gains);
+            }
+            if (account.fees && account.fees !== '') {
+              matchingAcctAccount.userData.fees = parseFloat(account.fees);
+              matchingAcctAccount.entry.fees = parseFloat(account.fees);
+            }
+            if (account.withdrawals && account.withdrawals !== '') {
+              matchingAcctAccount.userData.withdrawals = parseFloat(account.withdrawals);
+              matchingAcctAccount.entry.withdrawals = parseFloat(account.withdrawals);
+            }
+            
+            // Track detailed update
+            matchingAcctAccount.userData.lastDetailedUpdate = new Date().toISOString();
+            matchingAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-individual-detailed';
+          }
         } else {
           // Track balance-only update (preserve existing detailed data)
-          matchingAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-individual-balance-only';
+          matchingAcctAccount.userData.balanceUpdatedFrom = groupInfo ? 
+            'liquidAssets-individual-to-group-balance-only' : 
+            'liquidAssets-individual-balance-only';
+        }
+        
+        // Add group tracking info if applicable
+        if (groupInfo) {
+          matchingAcctAccount.userData.manualGroupId = groupInfo.groupId;
+          matchingAcctAccount.userData.manualGroupName = groupInfo.group.name;
+          matchingAcctAccount.userData.updatedFromIndividualAccount = account.id;
         }
         
         matchingAcctAccount.userData.balanceUpdatedAt = new Date().toISOString();
         matchingAcctAccount.userData.lastUpdateType = updateType;
         hasChanges = true;
-      } else {
-        // Create new accounts account entry for ungrouped account
+      } else if (account.amount !== null && account.amount !== undefined && account.amount !== '') {
+        // Create new accounts account entry for ungrouped account (only if amount is provided)
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         // Only include detailed fields if this is a detailed update
         const newAccountsEntry = {
@@ -283,16 +427,28 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
               accountName: account.accountName,
               accountType: account.accountType,
               investmentCompany: account.investmentCompany || '',
-              balance: parseFloat(account.amount),
-              contributions: updateType === 'detailed' && account.contributions ? parseFloat(account.contributions) : '',
-              employerMatch: updateType === 'detailed' && account.employerMatch ? parseFloat(account.employerMatch) : '',
-              gains: updateType === 'detailed' && account.gains ? parseFloat(account.gains) : '',
-              fees: updateType === 'detailed' && account.fees ? parseFloat(account.fees) : '',
-              withdrawals: updateType === 'detailed' && account.withdrawals ? parseFloat(account.withdrawals) : '',
-              balanceUpdatedFrom: updateType === 'detailed' ? 'liquidAssets-individual-detailed' : 'liquidAssets-individual-balance-only',
-              balanceUpdatedAt: new Date().toISOString(),
+              balance: updateType === 'detailed-group-preserve-balance' ? (matchingAccount?.userData?.balance || 0) : parseFloat(account.amount),
+              contributions: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? 
+                (account.contributions === null ? (matchingAccount?.userData?.contributions || '') : 
+                 (account.contributions ? parseFloat(account.contributions) : '')) : '',
+              employerMatch: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? 
+                (account.employerMatch === null ? (matchingAccount?.userData?.employerMatch || '') : 
+                 (account.employerMatch ? parseFloat(account.employerMatch) : '')) : '',
+              gains: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? 
+                (account.gains === null ? (matchingAccount?.userData?.gains || '') : 
+                 (account.gains ? parseFloat(account.gains) : '')) : '',
+              fees: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? 
+                (account.fees === null ? (matchingAccount?.userData?.fees || '') : 
+                 (account.fees ? parseFloat(account.fees) : '')) : '',
+              withdrawals: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? 
+                (account.withdrawals === null ? (matchingAccount?.userData?.withdrawals || '') : 
+                 (account.withdrawals ? parseFloat(account.withdrawals) : '')) : '',
+              balanceUpdatedFrom: updateType === 'detailed' ? 'liquidAssets-individual-detailed' : 
+                                 updateType === 'detailed-group-preserve-balance' ? 'liquidAssets-group-detailed-preserve-balance' : 
+                                 'liquidAssets-individual-balance-only',
+              balanceUpdatedAt: updateType === 'detailed-group-preserve-balance' ? (matchingAccount?.userData?.balanceUpdatedAt || new Date().toISOString()) : new Date().toISOString(),
               lastUpdateType: updateType,
-              lastDetailedUpdate: updateType === 'detailed' ? new Date().toISOString() : undefined
+              lastDetailedUpdate: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? new Date().toISOString() : undefined
             }
           }
         };
@@ -303,25 +459,40 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
     });
   } else {
     // Process manual account groups
+    console.log('🏢 SYNC: Processing manual account groups');
+    console.log('  📊 Groups count:', Object.keys(manualGroups).length);
+    
     const updatedGroups = { ...manualGroups };
     
     Object.entries(manualGroups).forEach(([groupId, group]) => {
+      console.log(`🔍 SYNC: Processing group ${groupId}:`, group);
       // Support both old and new field names during transition
       const targetAccountName = group.accountName || group.performanceAccountName;
+      console.log(`  📋 Target account name: ${targetAccountName}`);
       if (!targetAccountName) {
+        console.log(`  ❌ No target account name found for group ${groupId}`);
         return;
       }
       
       // Calculate total balance for this group
       // Support both old and new field names during transition
       const liquidAssetsAccountIds = group.liquidAssetsAccounts || group.portfolioAccounts || [];
+      console.log(`  📊 Liquid assets account IDs: ${JSON.stringify(liquidAssetsAccountIds)}`);
+      console.log(`  🔍 Available liquid assets IDs:`, liquidAssetsData.map(acc => acc.id));
+      console.log(`  💰 Available liquid assets with amounts:`, liquidAssetsData.filter(acc => acc.amount && acc.amount !== '').map(acc => ({ id: acc.id, amount: acc.amount })));
+      
       const totalBalance = liquidAssetsAccountIds.reduce((sum, accountId) => {
         const account = liquidAssetsData.find(acc => acc.id === accountId);
         if (account && account.amount) {
+          console.log(`    ✅ Found account ${accountId} with amount: ${account.amount}`);
           return sum + parseFloat(account.amount);
+        } else {
+          console.log(`    ❌ Account ${accountId} not found or has no amount`);
         }
         return sum;
       }, 0);
+      
+      console.log(`  💰 Total balance calculated: ${totalBalance}`);
       
       // Find the target Accounts account by name
       const targetAcctAccount = findAccountsAccountByName(
@@ -330,12 +501,27 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
       );
       
       if (targetAcctAccount) {
-        // Always update balance
-        targetAcctAccount.userData.balance = totalBalance;
+        console.log(`💰 SYNC: Found target account for group ${groupId}:`, targetAccountName);
+        console.log(`  📊 Current balance: ${targetAcctAccount.userData.balance}`);
+        console.log(`  🆕 New total balance: ${totalBalance}`);
+        console.log(`  🔧 Update type: ${updateType}`);
         
-        // CRITICAL: Also update the entry-level balance field that DataManager displays
-        // This matches the Annual data structure pattern
-        targetAcctAccount.entry.balance = totalBalance;
+        // Update balance based on update type
+        if (updateType === 'detailed-group-preserve-balance') {
+          console.log(`🔒 SYNC: Preserving existing balance for detailed-group-preserve-balance`);
+          console.log(`  📊 Existing balance will remain: ${targetAcctAccount.userData.balance}`);
+          // Don't update balance - preserve existing
+        } else {
+          console.log(`🔄 SYNC: Updating balance to ${totalBalance} for update type: ${updateType}`);
+          // Update balance for all other cases (balance comes from sum of liquid assets)
+          targetAcctAccount.userData.balance = totalBalance;
+          
+          // CRITICAL: Also update the entry-level balance field that DataManager displays
+          // This matches the Annual data structure pattern
+          targetAcctAccount.entry.balance = totalBalance;
+        }
+        
+        console.log(`✅ SYNC: Balance update complete. Final balance: ${targetAcctAccount.userData.balance}`);
         
         // Update additional financial fields only for detailed updates
         if (updateType === 'detailed') {
@@ -367,6 +553,78 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
           // Track detailed update
           targetAcctAccount.userData.lastDetailedUpdate = new Date().toISOString();
           targetAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-manual-group-detailed';
+        } else if (updateType === 'detailed-group-preserve-balance') {
+          // Calculate totals for combined fields, but preserve existing data for null values
+          // First check if ANY account in the group has non-null values for each field
+          const hasAnyValues = liquidAssetsAccountIds.reduce((hasValues, accountId) => {
+            const account = liquidAssetsData.find(acc => acc.id === accountId);
+            if (account) {
+              if (account.contributions !== null && account.contributions !== undefined && account.contributions !== '') {
+                hasValues.hasContributions = true;
+              }
+              if (account.employerMatch !== null && account.employerMatch !== undefined && account.employerMatch !== '') {
+                hasValues.hasEmployerMatch = true;
+              }
+              if (account.gains !== null && account.gains !== undefined && account.gains !== '') {
+                hasValues.hasGains = true;
+              }
+              if (account.fees !== null && account.fees !== undefined && account.fees !== '') {
+                hasValues.hasFees = true;
+              }
+              if (account.withdrawals !== null && account.withdrawals !== undefined && account.withdrawals !== '') {
+                hasValues.hasWithdrawals = true;
+              }
+            }
+            return hasValues;
+          }, { 
+            hasContributions: false, hasEmployerMatch: false, hasGains: false, hasFees: false, hasWithdrawals: false
+          });
+
+          // Only calculate and update totals for fields that have non-null values in the input
+          if (hasAnyValues.hasContributions) {
+            const contributionsTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.contributions ? parseFloat(account.contributions) : 0);
+            }, 0);
+            targetAcctAccount.userData.contributions = contributionsTotal || '';
+            targetAcctAccount.entry.contributions = contributionsTotal || '';
+          }
+          if (hasAnyValues.hasEmployerMatch) {
+            const employerMatchTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.employerMatch ? parseFloat(account.employerMatch) : 0);
+            }, 0);
+            targetAcctAccount.userData.employerMatch = employerMatchTotal || '';
+            targetAcctAccount.entry.employerMatch = employerMatchTotal || '';
+          }
+          if (hasAnyValues.hasGains) {
+            const gainsTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.gains ? parseFloat(account.gains) : 0);
+            }, 0);
+            targetAcctAccount.userData.gains = gainsTotal || '';
+            targetAcctAccount.entry.gains = gainsTotal || '';
+          }
+          if (hasAnyValues.hasFees) {
+            const feesTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.fees ? parseFloat(account.fees) : 0);
+            }, 0);
+            targetAcctAccount.userData.fees = feesTotal || '';
+            targetAcctAccount.entry.fees = feesTotal || '';
+          }
+          if (hasAnyValues.hasWithdrawals) {
+            const withdrawalsTotal = liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.withdrawals ? parseFloat(account.withdrawals) : 0);
+            }, 0);
+            targetAcctAccount.userData.withdrawals = withdrawalsTotal || '';
+            targetAcctAccount.entry.withdrawals = withdrawalsTotal || '';
+          }
+          
+          // Track detailed update
+          targetAcctAccount.userData.lastDetailedUpdate = new Date().toISOString();
+          targetAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-manual-group-detailed-preserve-balance';
         } else {
           // Track balance-only update (preserve existing detailed data)
           targetAcctAccount.userData.balanceUpdatedFrom = 'liquidAssets-manual-group-balance-only';
@@ -378,6 +636,7 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
         targetAcctAccount.userData.manualGroupName = group.name;
         hasChanges = true;
       } else {
+        console.log(`🆕 SYNC: Creating new account for group ${groupId}: ${targetAccountName}`);
         // Create new Accounts account for this manual group
         const newEntryId = `entry_${Date.now()}_${Math.random().toString(36).substring(2, 11)}`;
         
@@ -395,6 +654,55 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
             }
             return totals;
           }, { contributions: 0, employerMatch: 0, gains: 0, fees: 0, withdrawals: 0 });
+        } else if (updateType === 'detailed-group-preserve-balance') {
+          // For new accounts with preserve balance, only calculate totals for fields that have non-null values
+          const hasAnyValues = liquidAssetsAccountIds.reduce((hasValues, accountId) => {
+            const account = liquidAssetsData.find(acc => acc.id === accountId);
+            if (account) {
+              if (account.contributions !== null && account.contributions !== undefined && account.contributions !== '') {
+                hasValues.hasContributions = true;
+              }
+              if (account.employerMatch !== null && account.employerMatch !== undefined && account.employerMatch !== '') {
+                hasValues.hasEmployerMatch = true;
+              }
+              if (account.gains !== null && account.gains !== undefined && account.gains !== '') {
+                hasValues.hasGains = true;
+              }
+              if (account.fees !== null && account.fees !== undefined && account.fees !== '') {
+                hasValues.hasFees = true;
+              }
+              if (account.withdrawals !== null && account.withdrawals !== undefined && account.withdrawals !== '') {
+                hasValues.hasWithdrawals = true;
+              }
+            }
+            return hasValues;
+          }, { 
+            hasContributions: false, hasEmployerMatch: false, hasGains: false, hasFees: false, hasWithdrawals: false
+          });
+
+          // Only calculate totals for fields that have values, leave others as empty string
+          groupTotals = {
+            contributions: hasAnyValues.hasContributions ? liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.contributions ? parseFloat(account.contributions) : 0);
+            }, 0) : '',
+            employerMatch: hasAnyValues.hasEmployerMatch ? liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.employerMatch ? parseFloat(account.employerMatch) : 0);
+            }, 0) : '',
+            gains: hasAnyValues.hasGains ? liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.gains ? parseFloat(account.gains) : 0);
+            }, 0) : '',
+            fees: hasAnyValues.hasFees ? liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.fees ? parseFloat(account.fees) : 0);
+            }, 0) : '',
+            withdrawals: hasAnyValues.hasWithdrawals ? liquidAssetsAccountIds.reduce((sum, accountId) => {
+              const account = liquidAssetsData.find(acc => acc.id === accountId);
+              return sum + (account && account.withdrawals ? parseFloat(account.withdrawals) : 0);
+            }, 0) : ''
+          };
         }
 
         const newAccountsEntry = {
@@ -412,16 +720,18 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
               accountName: targetAccountName,
               accountType: 'Combined', // Generic type for manual groups
               investmentCompany: 'Multiple', // Generic company for combined accounts
-              balance: totalBalance,
-              contributions: updateType === 'detailed' ? (groupTotals.contributions || '') : '',
-              employerMatch: updateType === 'detailed' ? (groupTotals.employerMatch || '') : '',
-              gains: updateType === 'detailed' ? (groupTotals.gains || '') : '',
-              fees: updateType === 'detailed' ? (groupTotals.fees || '') : '',
-              withdrawals: updateType === 'detailed' ? (groupTotals.withdrawals || '') : '',
-              balanceUpdatedFrom: updateType === 'detailed' ? 'liquidAssets-manual-group-detailed' : 'liquidAssets-manual-group-balance-only',
-              balanceUpdatedAt: new Date().toISOString(),
+              balance: updateType === 'detailed-group-preserve-balance' ? (existingAccount?.userData?.balance || totalBalance) : totalBalance,
+              contributions: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? (groupTotals.contributions || '') : '',
+              employerMatch: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? (groupTotals.employerMatch || '') : '',
+              gains: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? (groupTotals.gains || '') : '',
+              fees: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? (groupTotals.fees || '') : '',
+              withdrawals: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? (groupTotals.withdrawals || '') : '',
+              balanceUpdatedFrom: updateType === 'detailed' ? 'liquidAssets-manual-group-detailed' : 
+                                 updateType === 'detailed-group-preserve-balance' ? 'liquidAssets-manual-group-detailed-preserve-balance' : 
+                                 'liquidAssets-manual-group-balance-only',
+              balanceUpdatedAt: updateType === 'detailed-group-preserve-balance' ? (existingAccount?.userData?.balanceUpdatedAt || new Date().toISOString()) : new Date().toISOString(),
               lastUpdateType: updateType,
-              lastDetailedUpdate: updateType === 'detailed' ? new Date().toISOString() : undefined,
+              lastDetailedUpdate: (updateType === 'detailed' || updateType === 'detailed-group-preserve-balance') ? new Date().toISOString() : undefined,
               manualGroupId: groupId,
               manualGroupName: group.name
             }
@@ -464,7 +774,9 @@ export const syncLiquidAssetsBalanceToAccounts = (liquidAssetsData, updateType =
     hasChanges,
     liquidAssetsAccountsProcessed: liquidAssetsAccountCount,
     manualGroupsProcessed: manualGroupCount,
-    syncMethod: manualGroupCount > 0 ? 'manual-groups' : 'individual-fallback',
+    syncMethod: updateMode === 'individual' ? 'individual-mode' : 
+                (manualGroupCount > 0 ? 'manual-groups' : 'individual-fallback'),
+    updateMode: updateMode,
     year: currentYear
   };
 };
