@@ -6,6 +6,10 @@
   },
   "users": [
     {
+      "id": "user0",
+      "name": "Joint"
+    },
+    {
       "id": "user1",
       "name": "Alex Johnson",
       "employer": "Tech Employer",
@@ -111,7 +115,7 @@
       "name": "Alex Johnson's Fidelity 401k",
       "type": "401k",
       "investmentCompany": "Fidelity",
-      "owner": "Alex Johnson",
+      "ownerId": "user1",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z"
     },
@@ -120,7 +124,7 @@
       "name": "Jamie Lee's Vanguard 401k",
       "type": "401k",
       "investmentCompany": "Vanguard",
-      "owner": "Jamie Lee",
+      "ownerId": "user2",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z"
     },
@@ -129,7 +133,7 @@
       "name": "Schwab Joint Brokerage",
       "type": "Brokerage", 
       "investmentCompany": "Charles Schwab",
-      "owner": "Joint",
+      "ownerId": "user0",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z"
     },
@@ -138,7 +142,7 @@
       "name": "Marcus High Yield Savings",
       "type": "Savings",
       "investmentCompany": "Marcus by Goldman Sachs", 
-      "owner": "Joint",
+      "ownerId": "user0",
       "createdAt": "2024-01-01T12:00:00.000Z",
       "updatedAt": "2025-01-15T12:00:00.000Z"
     }
