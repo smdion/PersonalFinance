@@ -1,1406 +1,527 @@
 {
-  "exportedAt": "2025-07-31T22:11:28.756Z",
-  "version": "2.0.0",
-  "dataSource": "localStorage-filtered",
-  "budgetData": [
+  "metadata": {
+    "exportedAt": "2025-07-31T22:11:28.756Z",
+    "version": "3.0.0",
+    "dataSource": "normalized-structure"
+  },
+  "users": [
     {
-      "id": "budget-impacting",
-      "name": "Budget Impacting Contributions",
-      "isAutoManaged": true,
-      "items": [
-        {
-          "id": "user1-traditional-ira",
-          "name": "Alex Johnson Traditional IRA",
-          "standard": 500,
-          "tight": 500,
-          "emergency": 500
-        },
-        {
-          "id": "user1-roth-ira",
-          "name": "Alex Johnson Roth IRA",
-          "standard": 300,
-          "tight": 300,
-          "emergency": 300
-        },
-        {
-          "id": "user2-traditional-ira",
-          "name": "Jamie Lee Traditional IRA",
-          "standard": 400,
-          "tight": 400,
-          "emergency": 400
-        }
-      ]
-    },
-    {
-      "id": "cat_housing",
-      "name": "Housing",
-      "items": [
-        {
-          "id": "rent",
-          "name": "Rent/Mortgage",
-          "standard": 1800,
-          "tight": 1500,
-          "emergency": 0
-        },
-        {
-          "id": "utilities",
-          "name": "Utilities",
-          "standard": 250,
-          "tight": 200,
-          "emergency": 120
-        },
-        {
-          "id": "internet",
-          "name": "Internet",
-          "standard": 70,
-          "tight": 50,
-          "emergency": 0
-        },
-        {
-          "id": "insurance",
-          "name": "Home Insurance",
-          "standard": 95,
-          "tight": 95,
-          "emergency": 95
-        }
-      ]
-    },
-    {
-      "id": "cat_transportation",
-      "name": "Transportation",
-      "items": [
-        {
-          "id": "car_payment",
-          "name": "Car Payment",
-          "standard": 450,
-          "tight": 0,
-          "emergency": 0
-        },
-        {
-          "id": "gas",
-          "name": "Gas",
-          "standard": 180,
-          "tight": 120,
-          "emergency": 60
-        },
-        {
-          "id": "auto_insurance",
-          "name": "Auto Insurance",
-          "standard": 140,
-          "tight": 120,
-          "emergency": 100
-        },
-        {
-          "id": "maintenance",
-          "name": "Car Maintenance",
-          "standard": 75,
-          "tight": 50,
-          "emergency": 25
-        }
-      ]
-    },
-    {
-      "id": "cat_food",
-      "name": "Food & Groceries",
-      "items": [
-        {
-          "id": "groceries",
-          "name": "Groceries",
-          "standard": 800,
-          "tight": 550,
-          "emergency": 350
-        },
-        {
-          "id": "dining",
-          "name": "Dining Out",
-          "standard": 300,
-          "tight": 120,
-          "emergency": 0
-        },
-        {
-          "id": "coffee",
-          "name": "Coffee/Snacks",
-          "standard": 60,
-          "tight": 30,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_health",
-      "name": "Health & Medical",
-      "items": [
-        {
-          "id": "copays",
-          "name": "Medical Copays",
-          "standard": 80,
-          "tight": 50,
-          "emergency": 30
-        },
-        {
-          "id": "prescriptions",
-          "name": "Prescriptions",
-          "standard": 45,
-          "tight": 30,
-          "emergency": 20
-        },
-        {
-          "id": "dental",
-          "name": "Dental Care",
-          "standard": 40,
-          "tight": 20,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_kids",
-      "name": "Childcare & Education",
-      "items": [
-        {
-          "id": "childcare",
-          "name": "Childcare",
-          "standard": 650,
-          "tight": 400,
-          "emergency": 0
-        },
-        {
-          "id": "school_supplies",
-          "name": "School Supplies",
-          "standard": 50,
-          "tight": 25,
-          "emergency": 0
-        },
-        {
-          "id": "activities",
-          "name": "Kids Activities",
-          "standard": 120,
-          "tight": 60,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_utilities",
-      "name": "Subscriptions & Communication",
-      "items": [
-        {
-          "id": "cell_phone",
-          "name": "Cell Phone",
-          "standard": 110,
-          "tight": 80,
-          "emergency": 50
-        },
-        {
-          "id": "streaming",
-          "name": "Streaming Services",
-          "standard": 65,
-          "tight": 35,
-          "emergency": 0
-        },
-        {
-          "id": "spotify",
-          "name": "Music Subscription",
-          "standard": 15,
-          "tight": 10,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_personal",
-      "name": "Personal Care & Clothing",
-      "items": [
-        {
-          "id": "clothing",
-          "name": "Clothing",
-          "standard": 120,
-          "tight": 60,
-          "emergency": 0
-        },
-        {
-          "id": "haircuts",
-          "name": "Haircuts/Salon",
-          "standard": 80,
-          "tight": 50,
-          "emergency": 25
-        },
-        {
-          "id": "personal_care",
-          "name": "Personal Care Items",
-          "standard": 50,
-          "tight": 30,
-          "emergency": 15
-        }
-      ]
-    },
-    {
-      "id": "cat_savings",
-      "name": "Savings & Debt",
-      "items": [
-        {
-          "id": "emergency_fund",
-          "name": "Emergency Fund",
-          "standard": 500,
-          "tight": 250,
-          "emergency": 0
-        },
-        {
-          "id": "house_downpayment",
-          "name": "House Down Payment",
-          "standard": 400,
-          "tight": 200,
-          "emergency": 0
-        },
-        {
-          "id": "student_loans",
-          "name": "Student Loan Payment",
-          "standard": 280,
-          "tight": 280,
-          "emergency": 140
-        },
-        {
-          "id": "credit_cards",
-          "name": "Credit Card Payment",
-          "standard": 150,
-          "tight": 100,
-          "emergency": 75
-        }
-      ]
-    },
-    {
-      "id": "cat_entertainment",
-      "name": "Entertainment & Recreation",
-      "items": [
-        {
-          "id": "entertainment",
-          "name": "Movies/Events",
-          "standard": 100,
-          "tight": 50,
-          "emergency": 0
-        },
-        {
-          "id": "hobbies",
-          "name": "Hobbies",
-          "standard": 80,
-          "tight": 40,
-          "emergency": 0
-        },
-        {
-          "id": "vacation_fund",
-          "name": "Vacation Fund",
-          "standard": 250,
-          "tight": 100,
-          "emergency": 0
-        },
-        {
-          "id": "gym",
-          "name": "Gym Membership",
-          "standard": 45,
-          "tight": 25,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_gifts",
-      "name": "Gifts & Donations",
-      "items": [
-        {
-          "id": "birthday_gifts",
-          "name": "Birthday/Holiday Gifts",
-          "standard": 100,
-          "tight": 50,
-          "emergency": 0
-        },
-        {
-          "id": "charity",
-          "name": "Charitable Donations",
-          "standard": 75,
-          "tight": 40,
-          "emergency": 0
-        }
-      ]
-    },
-    {
-      "id": "cat_misc",
-      "name": "Miscellaneous",
-      "items": [
-        {
-          "id": "pet_care",
-          "name": "Pet Care",
-          "standard": 90,
-          "tight": 60,
-          "emergency": 30
-        },
-        {
-          "id": "household_items",
-          "name": "Household Items",
-          "standard": 65,
-          "tight": 40,
-          "emergency": 20
-        },
-        {
-          "id": "unexpected",
-          "name": "Unexpected Expenses",
-          "standard": 100,
-          "tight": 50,
-          "emergency": 25
-        }
-      ]
-    }
-  ],
-  "paycheckData": {
-    "user1": {
+      "id": "user1",
       "name": "Alex Johnson",
       "employer": "Tech Employer",
       "birthday": "1987-04-15",
-      "salary": "97000",
-      "payPeriod": "biWeekly",
-      "filingStatus": "marriedJointly",
-      "w4Type": "new",
-      "w4Options": {
-        "multipleJobs": true,
-        "qualifyingChildren": 0,
-        "otherDependents": 0,
-        "additionalIncome": 0,
-        "extraWithholding": 0
+      "paycheck": {
+        "payPeriod": "biWeekly",
+        "filingStatus": "marriedJointly",
+        "w4Type": "new",
+        "w4Options": {
+          "multipleJobs": true,
+          "qualifyingChildren": 0,
+          "otherDependents": 0,
+          "additionalIncome": 0,
+          "extraWithholding": 0
+        },
+        "retirementOptions": {
+          "traditional401kPercent": 8,
+          "roth401kPercent": 2,
+          "isOver50": false
+        },
+        "medicalDeductions": {
+          "hsa": 150,
+          "employerHsa": 50,
+          "fsa": 0,
+          "dental": 30,
+          "vision": 10,
+          "medical": 120
+        },
+        "esppDeductionPercent": 5,
+        "bonusTarget": 9500,
+        "bonusMultiplier": 0.1,
+        "hsaCoverageType": "family",
+        "payWeekType": "odd"
       },
-      "retirementOptions": {
-        "traditional401kPercent": 8,
-        "roth401kPercent": 2,
-        "isOver50": false
+      "retirement": {
+        "ageAtRetirement": 65,
+        "ageOfDeath": 95,
+        "raisesInRetirement": 2,
+        "employeeContributionForMatch": 4
       },
-      "medicalDeductions": {
-        "hsa": 150,
-        "employerHsa": 50,
-        "fsa": 0,
-        "dental": 30,
-        "vision": 10,
-        "medical": 120
-      },
-      "esppDeductionPercent": 5,
       "budgetImpacting": {
         "traditionalIraMonthly": 500,
         "rothIraMonthly": 300,
         "brokerageAccounts": []
-      },
-      "bonusMultiplier": 0.1,
-      "bonusTarget": 9500,
-      "overrideBonus": "",
-      "remove401kFromBonus": false,
-      "effectiveBonus": 9215,
-      "hsaCoverageType": "family",
-      "payWeekType": "odd",
-      "netTakeHomePaycheck": 2298.3423076923077,
-      "incomePeriodsData": []
+      }
     },
-    "user2": {
+    {
+      "id": "user2", 
       "name": "Jamie Lee",
       "employer": "Bio Med Company",
       "birthday": "1990-09-22",
-      "salary": "150000",
-      "payPeriod": "biWeekly",
-      "filingStatus": "marriedJointly",
-      "w4Type": "new",
-      "w4Options": {
-        "multipleJobs": true,
-        "qualifyingChildren": 0,
-        "otherDependents": 0,
-        "additionalIncome": 0,
-        "extraWithholding": 0
+      "paycheck": {
+        "payPeriod": "biWeekly",
+        "filingStatus": "marriedJointly",
+        "w4Type": "new",
+        "w4Options": {
+          "multipleJobs": true,
+          "qualifyingChildren": 0,
+          "otherDependents": 0,
+          "additionalIncome": 0,
+          "extraWithholding": 0
+        },
+        "retirementOptions": {
+          "traditional401kPercent": 6,
+          "roth401kPercent": 4,
+          "isOver50": false
+        },
+        "medicalDeductions": {
+          "hsa": 0,
+          "employerHsa": 0,
+          "fsa": 100,
+          "dental": 20,
+          "vision": 10,
+          "medical": 80
+        },
+        "esppDeductionPercent": 0,
+        "bonusTarget": 3350,
+        "bonusMultiplier": 0.05,
+        "hsaCoverageType": "self",
+        "payWeekType": "even"
       },
-      "retirementOptions": {
-        "traditional401kPercent": 6,
-        "roth401kPercent": 4,
-        "isOver50": false
+      "retirement": {
+        "ageAtRetirement": 65,
+        "ageOfDeath": 95,
+        "raisesInRetirement": 2
       },
-      "medicalDeductions": {
-        "hsa": 0,
-        "employerHsa": 0,
-        "fsa": 100,
-        "dental": 20,
-        "vision": 10,
-        "medical": 80
-      },
-      "esppDeductionPercent": 0,
       "budgetImpacting": {
         "traditionalIraMonthly": 400,
         "rothIraMonthly": 0,
-        "brokerageAccounts": []
-      },
-      "bonusMultiplier": 0.05,
-      "bonusTarget": 3350,
-      "overrideBonus": "",
-      "remove401kFromBonus": false,
-      "effectiveBonus": 2512.5,
-      "hsaCoverageType": "self",
-      "payWeekType": "even",
-      "netTakeHomePaycheck": 3703.4,
-      "incomePeriodsData": []
-    },
-    "settings": {
-      "isMultiUserMode": true
-    },
-    "formData": {
-      "combinedMonthlyTakeHome": 11829.561538461538,
-      "combinedTakeHomePerPayPeriod": 5914.780769230769,
-      "biWeeklyType": "even",
-      "isMultiUserMode": true
+        "brokerageAccounts": [
+          {
+            "id": "brokerage-account-1",
+            "name": "Retirement Brokerage",
+            "monthlyAmount": 250
+          }
+        ]
+      }
     }
-  },
-  "appSettings": {
-    "combineAccountsAcrossOwners": false,
-    "performanceSync": {},
-    "hasSeenBetaWelcome": true
-  },
-  "annualData": {
-    "hist_2021_demo": {
-      "entryId": "hist_2021_demo",
+  ],
+  "accounts": [
+    {
+      "id": "account-1",
+      "name": "Alex Johnson's Fidelity 401k",
+      "type": "401k",
+      "investmentCompany": "Fidelity",
+      "owner": "Alex Johnson",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    },
+    {
+      "id": "account-2", 
+      "name": "Jamie Lee's Vanguard 401k",
+      "type": "401k",
+      "investmentCompany": "Vanguard",
+      "owner": "Jamie Lee",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    },
+    {
+      "id": "account-3",
+      "name": "Schwab Joint Brokerage",
+      "type": "Brokerage", 
+      "investmentCompany": "Charles Schwab",
+      "owner": "Joint",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    },
+    {
+      "id": "account-4",
+      "name": "Marcus High Yield Savings",
+      "type": "Savings",
+      "investmentCompany": "Marcus by Goldman Sachs", 
+      "owner": "Joint",
+      "createdAt": "2024-01-01T12:00:00.000Z",
+      "updatedAt": "2025-01-15T12:00:00.000Z"
+    }
+  ],
+  "subAccounts": [
+    {
+      "id": "subaccount-1",
+      "parentAccountId": "account-1",
+      "name": "Traditional 401k",
+      "taxType": "Tax-Deferred"
+    },
+    {
+      "id": "subaccount-2",
+      "parentAccountId": "account-1", 
+      "name": "Roth 401k",
+      "taxType": "Tax-Free"
+    },
+    {
+      "id": "subaccount-3",
+      "parentAccountId": "account-2",
+      "name": "Traditional 401k", 
+      "taxType": "Tax-Deferred"
+    },
+    {
+      "id": "subaccount-4",
+      "parentAccountId": "account-2",
+      "name": "Roth 401k",
+      "taxType": "Tax-Free"
+    },
+    {
+      "id": "subaccount-5",
+      "parentAccountId": "account-3",
+      "name": "Brokerage Account",
+      "taxType": "After-Tax"
+    },
+    {
+      "id": "subaccount-6", 
+      "parentAccountId": "account-4",
+      "name": "High Yield Savings",
+      "taxType": "After-Tax"
+    }
+  ],
+  "budgetCategories": [
+    { "id": "budget-category-1", "name": "Budget Impacting Contributions", "order": 1, "isAutoManaged": true },
+    { "id": "budget-category-2", "name": "Housing", "order": 2 },
+    { "id": "budget-category-3", "name": "Transportation", "order": 3 },
+    { "id": "budget-category-4", "name": "Food & Groceries", "order": 4 },
+    { "id": "budget-category-5", "name": "Health & Medical", "order": 5 },
+    { "id": "budget-category-6", "name": "Childcare & Education", "order": 6 },
+    { "id": "budget-category-7", "name": "Subscriptions & Communication", "order": 7 },
+    { "id": "budget-category-8", "name": "Personal Care & Clothing", "order": 8 },
+    { "id": "budget-category-9", "name": "Savings & Debt", "order": 9 },
+    { "id": "budget-category-10", "name": "Entertainment & Recreation", "order": 10 },
+    { "id": "budget-category-11", "name": "Gifts & Donations", "order": 11 },
+    { "id": "budget-category-12", "name": "Miscellaneous", "order": 12 }
+  ],
+  "budgetItems": [
+    {
+      "id": "budget-item-1",
+      "userId": "user1",
+      "name": "Alex Johnson Traditional IRA",
+      "categoryId": "budget-category-1",
+      "amounts": { "standard": 500, "tight": 500, "emergency": 500 }
+    },
+    {
+      "id": "budget-item-2", 
+      "userId": "user1",
+      "name": "Alex Johnson Roth IRA",
+      "categoryId": "budget-category-1",
+      "amounts": { "standard": 300, "tight": 300, "emergency": 300 }
+    },
+    {
+      "id": "budget-item-3",
+      "userId": "user2",
+      "name": "Jamie Lee Traditional IRA", 
+      "categoryId": "budget-category-1",
+      "amounts": { "standard": 400, "tight": 400, "emergency": 400 }
+    },
+    {
+      "id": "budget-item-4",
+      "userId": "user1",
+      "name": "Rent/Mortgage",
+      "categoryId": "budget-category-2",
+      "amounts": { "standard": 1800, "tight": 1500, "emergency": 0 }
+    },
+    {
+      "id": "budget-item-5",
+      "userId": "user1",
+      "name": "Utilities", 
+      "categoryId": "budget-category-2",
+      "amounts": { "standard": 250, "tight": 200, "emergency": 120 }
+    },
+    {
+      "id": "budget-item-6",
+      "userId": "user1",
+      "name": "Internet",
+      "categoryId": "budget-category-2", 
+      "amounts": { "standard": 70, "tight": 50, "emergency": 0 }
+    },
+    {
+      "id": "budget-item-7",
+      "userId": "user1",
+      "name": "Home Insurance",
+      "categoryId": "budget-category-2",
+      "amounts": { "standard": 95, "tight": 95, "emergency": 95 }
+    },
+    {
+      "id": "budget-item-8",
+      "userId": "user1",
+      "name": "Car Payment",
+      "categoryId": "budget-category-3",
+      "amounts": { "standard": 450, "tight": 0, "emergency": 0 }
+    },
+    {
+      "id": "budget-item-9",
+      "userId": "user1",
+      "name": "Gas", 
+      "categoryId": "budget-category-3",
+      "amounts": { "standard": 180, "tight": 120, "emergency": 60 }
+    },
+    {
+      "id": "budget-item-10",
+      "userId": "user1",
+      "name": "Auto Insurance",
+      "categoryId": "budget-category-3",
+      "amounts": { "standard": 140, "tight": 120, "emergency": 100 }
+    },
+    {
+      "id": "budget-item-11",
+      "userId": "user1",
+      "name": "Car Maintenance",
+      "categoryId": "budget-category-3", 
+      "amounts": { "standard": 75, "tight": 50, "emergency": 25 }
+    },
+    {
+      "id": "budget-item-12",
+      "userId": "user1",
+      "name": "Groceries",
+      "categoryId": "budget-category-4",
+      "amounts": { "standard": 800, "tight": 550, "emergency": 350 }
+    },
+    {
+      "id": "budget-item-13",
+      "userId": "user2",
+      "name": "Dining Out",
+      "categoryId": "budget-category-4",
+      "amounts": { "standard": 300, "tight": 120, "emergency": 0 }
+    },
+    {
+      "id": "budget-item-14",
+      "userId": "user1",
+      "name": "Emergency Fund",
+      "categoryId": "budget-category-9", 
+      "amounts": { "standard": 500, "tight": 250, "emergency": 0 }
+    },
+    {
+      "id": "budget-item-15",
+      "userId": "user1",
+      "name": "House Down Payment", 
+      "categoryId": "budget-category-9",
+      "amounts": { "standard": 400, "tight": 200, "emergency": 0 }
+    }
+  ],
+  "annualData": [
+    {
       "year": 2021,
+      "id": "annual-data-1",
       "users": {
-        "Alex Johnson": {
-          "salary": 87000,
-          "bonus": 8000
-        },
-        "Jamie Lee": {
-          "salary": 60000,
-          "bonus": 2500
-        }
+        "user1": { "salary": 87000, "bonus": 8000 },
+        "user2": { "salary": 60000, "bonus": 2500 }
       },
       "agi": 147000,
       "ssaEarnings": 142800,
       "effectiveTaxRate": 0.185,
       "taxPaid": 27195,
-      "taxFree": 4000,
-      "taxDeferred": 50000,
-      "brokerage": 10000,
-      "espp": 2000,
-      "hsa": 4000,
-      "cash": 19000,
-      "house": 320000,
-      "homeImprovements": 8000,
-      "mortgage": 256000,
-      "othAsset": 8000,
-      "othLia": 22000
+      "totals": {
+        "taxFree": 4000,
+        "taxDeferred": 50000,
+        "brokerage": 10000,
+        "espp": 2000,
+        "hsa": 4000,
+        "cash": 19000
+      },
+      "assets": {
+        "house": 320000,
+        "homeImprovements": 8000,
+        "other": 8000
+      },
+      "liabilities": {
+        "mortgage": 256000,
+        "other": 22000
+      }
     },
-    "hist_2022_demo": {
-      "entryId": "hist_2022_demo",
+    {
       "year": 2022,
+      "id": "annual-data-2",
       "users": {
-        "Alex Johnson": {
-          "salary": 90000,
-          "bonus": 9000
-        },
-        "Jamie Lee": {
-          "salary": 63000,
-          "bonus": 3000
-        }
+        "user1": { "salary": 90000, "bonus": 9000 },
+        "user2": { "salary": 63000, "bonus": 3000 }
       },
       "agi": 162000,
       "ssaEarnings": 147000,
       "effectiveTaxRate": 0.192,
       "taxPaid": 31104,
-      "taxFree": 4500,
-      "taxDeferred": 58000,
-      "brokerage": 13000,
-      "espp": 2500,
-      "hsa": 4500,
-      "cash": 22000,
-      "house": 340000,
-      "homeImprovements": 12000,
-      "mortgage": 245000,
-      "othAsset": 10000,
-      "othLia": 20000
-    },
-    "hist_2023_demo": {
-      "entryId": "hist_2023_demo",
-      "year": 2023,
-      "users": {
-        "Alex Johnson": {
-          "salary": 93000,
-          "bonus": 9500
-        },
-        "Jamie Lee": {
-          "salary": 65000,
-          "bonus": 3200
-        }
+      "totals": {
+        "taxFree": 4500,
+        "taxDeferred": 58000,
+        "brokerage": 13000,
+        "espp": 2500,
+        "hsa": 4500,
+        "cash": 22000
       },
-      "agi": 170700,
-      "ssaEarnings": 158000,
-      "effectiveTaxRate": 0.201,
-      "taxPaid": 34311,
-      "taxFree": 5000,
-      "taxDeferred": 68000,
-      "brokerage": 16000,
-      "espp": 3000,
-      "hsa": 5000,
-      "cash": 25000,
-      "house": 355000,
-      "homeImprovements": 16000,
-      "mortgage": 233000,
-      "othAsset": 12000,
-      "othLia": 18000
-    },
-    "hist_2024_demo": {
-      "entryId": "hist_2024_demo",
-      "year": 2024,
-      "users": {
-        "Alex Johnson": {
-          "salary": 95000,
-          "bonus": 10000
-        },
-        "Jamie Lee": {
-          "salary": 67000,
-          "bonus": 3350
-        }
+      "assets": {
+        "house": 340000,
+        "homeImprovements": 12000,
+        "other": 10000
       },
-      "agi": 175350,
-      "ssaEarnings": 162000,
-      "effectiveTaxRate": 0.208,
-      "taxPaid": 36473,
-      "taxFree": 5500,
-      "taxDeferred": 79000,
-      "brokerage": 19000,
-      "espp": 3500,
-      "hsa": 5500,
-      "cash": 28000,
-      "house": 370000,
-      "homeImprovements": 20000,
-      "mortgage": 220000,
-      "othAsset": 13000,
-      "othLia": 16000
+      "liabilities": {
+        "mortgage": 245000,
+        "other": 20000
+      }
     },
-    "hist_2025_demo": {
-      "entryId": "hist_2025_demo",
+    {
       "year": 2025,
+      "id": "annual-data-3",
       "users": {
-        "Alex Johnson": {
-          "salary": 97000,
-          "bonus": 10500
-        },
-        "Jamie Lee": {
-          "salary": 69000,
-          "bonus": 3500
-        }
+        "user1": { "salary": 97000, "bonus": 10500 },
+        "user2": { "salary": 69000, "bonus": 3500 }
       },
       "agi": 180000,
       "ssaEarnings": 166000,
       "effectiveTaxRate": 0.212,
       "taxPaid": 38160,
-      "taxFree": 6000,
-      "taxDeferred": 90000,
-      "brokerage": 22000,
-      "espp": 4000,
-      "hsa": 6000,
-      "cash": 31000,
-      "house": 385000,
-      "homeImprovements": 24000,
-      "mortgage": 207000,
-      "othAsset": 15000,
-      "othLia": 15000
+      "totals": {
+        "taxFree": 6000,
+        "taxDeferred": 90000,
+        "brokerage": 22000,
+        "espp": 4000,
+        "hsa": 6000,
+        "cash": 31000
+      },
+      "assets": {
+        "house": 385000,
+        "homeImprovements": 24000,
+        "other": 15000
+      },
+      "liabilities": {
+        "mortgage": 207000,
+        "other": 15000
+      }
     }
-  },
-  "accountData": {
-    "entry_2021_alex401k": {
-      "entryId": "entry_2021_alex401k",
+  ],
+  "subAccountPerformance": [
+    {
+      "subAccountId": "subaccount-1",
       "year": 2021,
-      "users": {
-        "Alex Johnson": {
-          "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Fidelity",
-          "balance": 32000,
-          "contributions": 7000,
-          "employerMatch": 3500,
-          "gains": 2500,
-          "fees": 50,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 32000,
-      "contributions": 7000,
-      "employerMatch": 3500,
-      "gains": 2500,
-      "fees": 50,
+      "balance": 25600,
+      "contributions": 5600,
+      "employerMatch": 2800,
+      "gains": 2000,
+      "fees": 40,
       "withdrawals": 0
     },
-    "entry_2022_alex401k": {
-      "entryId": "entry_2022_alex401k",
-      "year": 2022,
-      "users": {
-        "Alex Johnson": {
-          "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Fidelity",
-          "balance": 37000,
-          "contributions": 7500,
-          "employerMatch": 3700,
-          "gains": 2800,
-          "fees": 55,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 37000,
-      "contributions": 7500,
-      "employerMatch": 3700,
-      "gains": 2800,
-      "fees": 55,
+    {
+      "subAccountId": "subaccount-2", 
+      "year": 2021,
+      "balance": 6400,
+      "contributions": 1400,
+      "employerMatch": 700,
+      "gains": 500,
+      "fees": 10,
       "withdrawals": 0
     },
-    "entry_2023_alex401k": {
-      "entryId": "entry_2023_alex401k",
-      "year": 2023,
-      "users": {
-        "Alex Johnson": {
-          "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Fidelity",
-          "balance": 43000,
-          "contributions": 8000,
-          "employerMatch": 3900,
-          "gains": 3500,
-          "fees": 60,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 43000,
-      "contributions": 8000,
-      "employerMatch": 3900,
-      "gains": 3500,
-      "fees": 60,
-      "withdrawals": 0
-    },
-    "entry_2024_alex401k": {
-      "entryId": "entry_2024_alex401k",
-      "year": 2024,
-      "users": {
-        "Alex Johnson": {
-          "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Fidelity",
-          "balance": 50000,
-          "contributions": 8500,
-          "employerMatch": 4100,
-          "gains": 4000,
-          "fees": 65,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 50000,
-      "contributions": 8500,
-      "employerMatch": 4100,
-      "gains": 4000,
-      "fees": 65,
-      "withdrawals": 0
-    },
-    "entry_2025_alex401k": {
-      "entryId": "entry_2025_alex401k",
+    {
+      "subAccountId": "subaccount-1",
       "year": 2025,
-      "users": {
-        "Alex Johnson": {
-          "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Fidelity",
-          "balance": 57000,
-          "contributions": 9000,
-          "employerMatch": 4300,
-          "gains": 4500,
-          "fees": 70,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
-        }
-      },
-      "balance": 57000,
-      "contributions": 9000,
-      "employerMatch": 4300,
-      "gains": 4500,
-      "fees": 70,
+      "balance": 45600,
+      "contributions": 7200,
+      "employerMatch": 3440,
+      "gains": 3600,
+      "fees": 56,
       "withdrawals": 0
     },
-    "entry_2021_jamie401k": {
-      "entryId": "entry_2021_jamie401k",
-      "year": 2021,
-      "users": {
-        "Jamie Lee": {
-          "accountName": "Jamie Lee's Vanguard 401k (Traditional)",
-          "accountType": "401k",
-          "investmentCompany": "Vanguard",
-          "balance": 18000,
-          "contributions": 4000,
-          "employerMatch": 1800,
-          "gains": 1200,
-          "fees": 30,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 18000,
-      "contributions": 4000,
-      "employerMatch": 1800,
-      "gains": 1200,
-      "fees": 30,
+    {
+      "subAccountId": "subaccount-2",
+      "year": 2025, 
+      "balance": 11400,
+      "contributions": 1800,
+      "employerMatch": 860,
+      "gains": 900,
+      "fees": 14,
       "withdrawals": 0
     },
-    "entry_2022_jamie401k": {
-      "entryId": "entry_2022_jamie401k",
-      "year": 2022,
-      "users": {
-        "Jamie Lee": {
-          "accountName": "Vanguard",
-          "accountType": "401k",
-          "investmentCompany": "Vanguard",
-          "balance": 21000,
-          "contributions": 4200,
-          "employerMatch": 1900,
-          "gains": 1400,
-          "fees": 32,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
-        }
-      },
-      "balance": 21000,
-      "contributions": 4200,
-      "employerMatch": 1900,
-      "gains": 1400,
+    {
+      "subAccountId": "subaccount-3",
+      "year": 2025,
+      "balance": 26400,
+      "contributions": 3920,
+      "employerMatch": 1760,
+      "gains": 1680,
       "fees": 32,
       "withdrawals": 0
     },
-    "entry_2023_jamie401k": {
-      "entryId": "entry_2023_jamie401k",
-      "year": 2023,
-      "users": {
-        "Jamie Lee": {
-          "accountName": "Vanguard",
-          "accountType": "401k",
-          "investmentCompany": "Vanguard",
-          "balance": 25000,
-          "contributions": 4500,
-          "employerMatch": 2000,
-          "gains": 1700,
-          "fees": 35,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2024_jamie401k": {
-      "entryId": "entry_2024_jamie401k",
-      "year": 2024,
-      "users": {
-        "Jamie Lee": {
-          "accountName": "Vanguard",
-          "accountType": "401k",
-          "investmentCompany": "Vanguard",
-          "balance": 29000,
-          "contributions": 4700,
-          "employerMatch": 2100,
-          "gains": 1900,
-          "fees": 38,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2025_jamie401k": {
-      "entryId": "entry_2025_jamie401k",
+    {
+      "subAccountId": "subaccount-4",
       "year": 2025,
-      "users": {
-        "Jamie Lee": {
-          "accountName": "Vanguard",
-          "accountType": "401k",
-          "investmentCompany": "Vanguard",
-          "balance": 33000,
-          "contributions": 4900,
-          "employerMatch": 2200,
-          "gains": 2100,
-          "fees": 40,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
-        }
-      }
+      "balance": 6600,
+      "contributions": 980,
+      "employerMatch": 440,
+      "gains": 420,
+      "fees": 8,
+      "withdrawals": 0
     },
-    "entry_2021_joint_brokerage": {
-      "entryId": "entry_2021_joint_brokerage",
-      "year": 2021,
-      "users": {
-        "Joint": {
-          "accountName": "Schwab",
-          "accountType": "Brokerage",
-          "investmentCompany": "Charles Schwab",
-          "balance": 15000,
-          "contributions": 3000,
-          "employerMatch": 0,
-          "gains": 1500,
-          "fees": 25,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2021-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2022_joint_brokerage": {
-      "entryId": "entry_2022_joint_brokerage",
-      "year": 2022,
-      "users": {
-        "Joint": {
-          "accountName": "Schwab",
-          "accountType": "Brokerage",
-          "investmentCompany": "Charles Schwab",
-          "balance": 18500,
-          "contributions": 3200,
-          "employerMatch": 0,
-          "gains": 1700,
-          "fees": 30,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2022-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2023_joint_brokerage": {
-      "entryId": "entry_2023_joint_brokerage",
-      "year": 2023,
-      "users": {
-        "Joint": {
-          "accountName": "Schwab",
-          "accountType": "Brokerage",
-          "investmentCompany": "Charles Schwab",
-          "balance": 22500,
-          "contributions": 3500,
-          "employerMatch": 0,
-          "gains": 2000,
-          "fees": 35,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2024_joint_brokerage": {
-      "entryId": "entry_2024_joint_brokerage",
-      "year": 2024,
-      "users": {
-        "Joint": {
-          "accountName": "Schwab",
-          "accountType": "Brokerage",
-          "investmentCompany": "Charles Schwab",
-          "balance": 26800,
-          "contributions": 3800,
-          "employerMatch": 0,
-          "gains": 2300,
-          "fees": 40,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2025_joint_brokerage": {
-      "entryId": "entry_2025_joint_brokerage",
+    {
+      "subAccountId": "subaccount-5",
       "year": 2025,
-      "users": {
-        "Joint": {
-          "accountName": "Schwab",
-          "accountType": "Brokerage",
-          "investmentCompany": "Charles Schwab",
-          "balance": 31200,
-          "contributions": 4000,
-          "employerMatch": 0,
-          "gains": 2600,
-          "fees": 45,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
-        }
-      }
+      "balance": 31200,
+      "contributions": 4000,
+      "employerMatch": 0,
+      "gains": 2600,
+      "fees": 45,
+      "withdrawals": 0
     },
-    "entry_2023_joint_savings": {
-      "entryId": "entry_2023_joint_savings",
-      "year": 2023,
-      "users": {
-        "Joint": {
-          "accountName": "Marcus",
-          "accountType": "Savings",
-          "investmentCompany": "Marcus by Goldman Sachs",
-          "balance": 12000,
-          "contributions": 6000,
-          "employerMatch": 0,
-          "gains": 500,
-          "fees": 0,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2023-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2024_joint_savings": {
-      "entryId": "entry_2024_joint_savings",
-      "year": 2024,
-      "users": {
-        "Joint": {
-          "accountName": "Marcus",
-          "accountType": "Savings",
-          "investmentCompany": "Marcus by Goldman Sachs",
-          "balance": 18500,
-          "contributions": 6000,
-          "employerMatch": 0,
-          "gains": 800,
-          "fees": 0,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2024-12-31T23:59:59.000Z"
-        }
-      }
-    },
-    "entry_2025_joint_savings": {
-      "entryId": "entry_2025_joint_savings",
+    {
+      "subAccountId": "subaccount-6",
       "year": 2025,
-      "users": {
-        "Joint": {
-          "accountName": "Marcus",
-          "accountType": "Savings",
-          "investmentCompany": "Marcus by Goldman Sachs",
-          "balance": 25200,
-          "contributions": 6000,
-          "employerMatch": 0,
-          "gains": 1100,
-          "fees": 0,
-          "withdrawals": 0,
-          "balanceUpdatedFrom": "manual",
-          "balanceUpdatedAt": "2025-01-15T12:00:00.000Z"
-        }
-      }
+      "balance": 25200,
+      "contributions": 6000,
+      "employerMatch": 0,
+      "gains": 1100,
+      "fees": 0,
+      "withdrawals": 0
     }
-  },
-  "networthSettings": {
-    "selectedYears": [
-      2021,
-      2022,
-      2023,
-      2024,
-      2025
-    ],
-    "netWorthMode": "market",
-    "activeTab": "overview",
-    "showAllYearsInChart": false,
-    "showAllYearsInPortfolioChart": false,
-    "showAllYearsInNetWorthBreakdownChart": false,
-    "showAllYearsInMoneyGuyChart": false,
-    "useThreeYearIncomeAverage": false,
-    "useReverseChronological": false,
-    "isCompactTable": false
-  },
-  "savingsData": {
-    "cat_savings-emergency_fund": {
-      "id": "cat_savings-emergency_fund",
+  ],
+  "savingsGoals": [
+    {
+      "id": "savings-goal-1",
       "name": "Emergency Fund",
       "currentBalance": 0,
       "monthlyContribution": 500,
-      "category": "cat_savings",
-      "item": "emergency_fund",
-      "createdDate": "2025-07-31T22:02:46.680Z",
-      "lastUpdatedMonth": "2025-6",
-      "monthlyContributions": {},
-      "monthlyContributionPercentages": {},
-      "monthlyPurchases": {},
-      "purchases": []
+      "linkedBudgetItemId": "budget-item-14",
+      "createdAt": "2025-07-31T22:02:46.680Z",
+      "lastUpdatedMonth": "2025-6"
     },
-    "cat_savings-house_downpayment": {
-      "id": "cat_savings-house_downpayment",
-      "name": "House Down Payment",
+    {
+      "id": "savings-goal-2",
+      "name": "House Down Payment", 
       "currentBalance": 0,
       "monthlyContribution": 400,
-      "category": "cat_savings",
-      "item": "house_downpayment",
-      "createdDate": "2025-07-31T22:02:46.680Z",
-      "lastUpdatedMonth": "2025-6",
-      "monthlyContributions": {},
-      "monthlyContributionPercentages": {},
-      "monthlyPurchases": {},
-      "purchases": []
-    },
-    "cat_savings-student_loans": {
-      "id": "cat_savings-student_loans",
-      "name": "Student Loan Payment",
-      "currentBalance": 0,
-      "monthlyContribution": 280,
-      "category": "cat_savings",
-      "item": "student_loans",
-      "createdDate": "2025-07-31T22:02:46.680Z",
-      "lastUpdatedMonth": "2025-6",
-      "monthlyContributions": {},
-      "monthlyContributionPercentages": {},
-      "monthlyPurchases": {},
-      "purchases": []
-    },
-    "cat_savings-credit_cards": {
-      "id": "cat_savings-credit_cards",
-      "name": "Credit Card Payment",
-      "currentBalance": 0,
-      "monthlyContribution": 150,
-      "category": "cat_savings",
-      "item": "credit_cards",
-      "createdDate": "2025-07-31T22:02:46.680Z",
-      "lastUpdatedMonth": "2025-6",
-      "monthlyContributions": {},
-      "monthlyContributionPercentages": {},
-      "monthlyPurchases": {},
-      "purchases": []
-    }
-  },
-  "retirementData": {
-    "user1": {
-      "ageAtRetirement": 65,
-      "ageOfDeath": 95,
-      "raisesInRetirement": 2,
-      "employeeContributionForMatch": 4
-    },
-    "sharedInputs": {
-      "annualInflation": 2.5,
-      "retirementReturnRate": 5.5
-    },
-    "user2": {
-      "ageAtRetirement": 65,
-      "ageOfDeath": 95,
-      "raisesInRetirement": 2
-    }
-  },
-  "liquidAssetsAccounts": [
-    {
-      "id": "demo-portfolio-account-1",
-      "accountName": "Fidelity 401k",
-      "taxType": "Tax-Deferred",
-      "accountType": "401k",
-      "owner": "Alex Johnson",
-      "createdAt": "2024-01-01T12:00:00.000Z"
-    },
-    {
-      "id": "demo-portfolio-account-2",
-      "accountName": "Vanguard 401k",
-      "taxType": "Tax-Deferred",
-      "accountType": "401k",
-      "owner": "Jamie Lee",
-      "createdAt": "2024-01-01T12:00:00.000Z"
-    },
-    {
-      "id": "demo-portfolio-account-3",
-      "accountName": "Schwab Joint Brokerage",
-      "taxType": "After-Tax",
-      "accountType": "Brokerage",
-      "owner": "Joint",
-      "createdAt": "2024-01-01T12:00:00.000Z"
-    },
-    {
-      "id": "demo-portfolio-account-4",
-      "accountName": "Marcus High Yield Savings",
-      "taxType": "After-Tax",
-      "accountType": "Savings",
-      "owner": "Joint",
-      "createdAt": "2024-01-01T12:00:00.000Z"
+      "linkedBudgetItemId": "budget-item-15",
+      "createdAt": "2025-07-31T22:02:46.680Z",
+      "lastUpdatedMonth": "2025-6"
     }
   ],
-  "liquidAssetsRecords": [
-    {
-      "id": "demo-portfolio-record-1",
-      "updateDate": "2025-01-15",
-      "timestamp": 1736960400000,
-      "year": 2025,
-      "month": 1,
-      "accountsCount": 4,
-      "accounts": [
-        {
-          "accountName": "Fidelity 401k",
-          "owner": "Alex Johnson",
-          "taxType": "Tax-Deferred",
-          "accountType": "401k",
-          "amount": 57000,
-          "updateDate": "2025-01-15"
-        },
-        {
-          "accountName": "Vanguard 401k",
-          "owner": "Jamie Lee",
-          "taxType": "Tax-Deferred",
-          "accountType": "401k",
-          "amount": 33000,
-          "updateDate": "2025-01-15"
-        },
-        {
-          "accountName": "Schwab Joint Brokerage",
-          "owner": "Joint",
-          "taxType": "After-Tax",
-          "accountType": "Brokerage",
-          "amount": 31200,
-          "updateDate": "2025-01-15"
-        },
-        {
-          "accountName": "Marcus High Yield Savings",
-          "owner": "Joint",
-          "taxType": "After-Tax",
-          "accountType": "Savings",
-          "amount": 25200,
-          "updateDate": "2025-01-15"
-        }
-      ],
-      "totals": {
-        "taxFree": 0,
-        "taxDeferred": 90000,
-        "brokerage": 56400,
-        "hsa": 0,
-        "espp": 0
-      },
-      "totalAmount": 146400
-    }
-  ],
-  "liquidAssetsInputs": [
-    {
-      "id": "demo-input-1",
-      "owner": "Alex Johnson",
-      "taxType": "Tax-Deferred",
-      "accountType": "401k",
-      "investmentCompany": "Fidelity",
-      "description": "Primary retirement account"
-    },
-    {
-      "id": "demo-input-2",
-      "owner": "Jamie Lee",
-      "taxType": "Tax-Deferred",
-      "accountType": "401k",
-      "investmentCompany": "Vanguard",
-      "description": "Primary retirement account"
-    },
-    {
-      "id": "demo-input-3",
-      "owner": "Joint",
-      "taxType": "After-Tax",
-      "accountType": "Brokerage",
-      "investmentCompany": "Charles Schwab",
-      "description": "Joint taxable investment account"
-    },
-    {
-      "id": "demo-input-4",
-      "owner": "Joint",
-      "taxType": "Cash",
-      "accountType": "Cash",
-      "investmentCompany": "Marcus by Goldman Sachs",
-      "description": "High yield savings account"
-    }
-  ],
-  "sharedAccounts": [
-    {
-      "id": "demo-shared-1",
-      "accountName": "Fidelity 401k",
-      "owner": "Alex Johnson",
-      "accountType": "401k",
-      "investmentCompany": "Fidelity",
-      "taxType": "Tax-Deferred",
-      "source": "liquidAssets",
-      "createdAt": "2024-01-01T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z",
-      "sources": [
-        "liquidAssets",
-        "performance"
-      ]
-    },
-    {
-      "id": "demo-shared-2",
-      "accountName": "Vanguard 401k",
-      "owner": "Jamie Lee",
-      "accountType": "401k",
-      "investmentCompany": "Vanguard",
-      "taxType": "Tax-Deferred",
-      "source": "liquidAssets",
-      "createdAt": "2024-01-01T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z",
-      "sources": [
-        "liquidAssets",
-        "performance"
-      ]
-    },
-    {
-      "id": "demo-shared-3",
-      "accountName": "Schwab Joint Brokerage",
-      "owner": "Joint",
-      "accountType": "Brokerage",
-      "investmentCompany": "Charles Schwab",
-      "taxType": "After-Tax",
-      "source": "liquidAssets",
-      "createdAt": "2024-01-01T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z",
-      "sources": [
-        "liquidAssets",
-        "performance"
-      ]
-    },
-    {
-      "id": "demo-shared-4",
-      "accountName": "Marcus High Yield Savings",
-      "owner": "Joint",
-      "accountType": "Savings",
-      "investmentCompany": "Marcus by Goldman Sachs",
-      "taxType": "After-Tax",
-      "source": "liquidAssets",
-      "createdAt": "2024-01-01T12:00:00.000Z",
-      "updatedAt": "2025-01-15T12:00:00.000Z",
-      "sources": [
-        "liquidAssets",
-        "performance"
-      ]
-    },
-    {
-      "id": "1753999557522-jb7ojmrz6",
-      "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-      "owner": "Alex Johnson",
-      "accountType": "401k",
-      "investmentCompany": "Fidelity",
-      "taxType": "",
-      "source": "accounts",
-      "createdAt": "2025-07-31T22:05:57.522Z",
-      "updatedAt": "2025-07-31T22:11:28.724Z",
-      "sources": [
-        "accounts"
-      ]
-    },
-    {
-      "id": "1753999557522-5ugdoevgh",
-      "accountName": "Vanguard",
-      "owner": "Jamie Lee",
-      "accountType": "401k",
-      "investmentCompany": "Vanguard",
-      "taxType": "",
-      "source": "accounts",
-      "createdAt": "2025-07-31T22:05:57.522Z",
-      "updatedAt": "2025-07-31T22:11:28.724Z",
-      "sources": [
-        "accounts"
-      ]
-    },
-    {
-      "id": "1753999557522-nxlvg0iak",
-      "accountName": "Schwab",
-      "owner": "Joint",
-      "accountType": "Brokerage",
-      "investmentCompany": "Charles Schwab",
-      "taxType": "",
-      "source": "accounts",
-      "createdAt": "2025-07-31T22:05:57.522Z",
-      "updatedAt": "2025-07-31T22:11:28.724Z",
-      "sources": [
-        "accounts"
-      ]
-    },
-    {
-      "id": "1753999557522-qvuns7ji1",
-      "accountName": "Marcus",
-      "owner": "Joint",
-      "accountType": "Savings",
-      "investmentCompany": "Marcus by Goldman Sachs",
-      "taxType": "",
-      "source": "accounts",
-      "createdAt": "2025-07-31T22:05:57.522Z",
-      "updatedAt": "2025-07-31T22:11:28.724Z",
-      "sources": [
-        "accounts"
-      ]
-    }
-  ],
-  "liquidAssetsAccountGroups": {
-    "1753999462891-6iwsydkir": {
-      "id": "1753999462891-6iwsydkir",
-      "name": "Alex 401k",
-      "accountName": "Alex Johnson's Fidelity 401k (Traditional)",
-      "liquidAssetsAccounts": [
-        "demo-input-1"
-      ],
-      "owner": "Joint",
-      "totalBalance": 0,
-      "lastSync": null,
-      "createdAt": "2025-07-31T22:04:22.891Z",
-      "updatedAt": "2025-07-31T22:04:34.650Z"
-    },
-    "1753999476459-qkmo2dsol": {
-      "id": "1753999476459-qkmo2dsol",
-      "name": "HYSA",
-      "accountName": "Marcus",
-      "liquidAssetsAccounts": [
-        "demo-input-4"
-      ],
-      "owner": "Joint",
-      "totalBalance": 0,
-      "lastSync": null,
-      "createdAt": "2025-07-31T22:04:36.459Z",
-      "updatedAt": "2025-07-31T22:04:51.374Z"
-    },
-    "1753999493255-b4wl6zblt": {
-      "id": "1753999493255-b4wl6zblt",
-      "name": "Brokerage",
-      "accountName": "Schwab",
-      "liquidAssetsAccounts": [
-        "demo-input-3"
-      ],
-      "owner": "Joint",
-      "totalBalance": 0,
-      "lastSync": null,
-      "createdAt": "2025-07-31T22:04:53.255Z",
-      "updatedAt": "2025-07-31T22:05:04.671Z"
-    },
-    "1753999506782-7mc4oy7et": {
-      "id": "1753999506782-7mc4oy7et",
-      "name": "Jamie 401k",
-      "accountName": "Vanguard",
-      "liquidAssetsAccounts": [
-        "demo-input-2"
-      ],
-      "owner": "Joint",
-      "totalBalance": 0,
-      "lastSync": null,
-      "createdAt": "2025-07-31T22:05:06.782Z",
-      "updatedAt": "2025-07-31T22:05:13.360Z"
-    }
-  },
-  "primaryHomeData": {
-    "homeData": {
-      "propertyName": "Main Street Home",
+  "primaryHome": {
+    "property": {
+      "name": "Main Street Home",
       "address": "123 Main Street, Suburb City, ST 12345",
       "purchaseDate": "2020-03-15",
       "purchasePrice": 285000,
       "currentValue": 385000,
       "propertyType": "Single Family Home",
       "estimationSource": "Zillow/Redfin Estimate",
-      "estimationDate": "2025-01-15",
-      "homeImprovements": {
-        "totalSpent": 24000,
-        "majorProjects": [
-          {
-            "project": "Kitchen Remodel",
-            "date": "2022-06-01",
-            "cost": 15000
-          },
-          {
-            "project": "Bathroom Renovation",
-            "date": "2023-08-15",
-            "cost": 9000
-          }
-        ]
-      }
+      "estimationDate": "2025-01-15"
     },
-    "mortgageData": {
-      "lenderName": "First National Bank",
-      "originalLoanAmount": 228000,
+    "improvements": {
+      "totalSpent": 24000,
+      "projects": [
+        {
+          "name": "Kitchen Remodel",
+          "date": "2022-06-01",
+          "cost": 15000
+        },
+        {
+          "name": "Bathroom Renovation",
+          "date": "2023-08-15", 
+          "cost": 9000
+        }
+      ]
+    },
+    "mortgage": {
+      "lender": "First National Bank",
+      "originalAmount": 228000,
       "currentBalance": 207000,
       "interestRate": 3.25,
       "loanTerm": 30,
@@ -1410,460 +531,70 @@
       "pmiAmount": 0,
       "escrowAmount": 450
     },
-    "isComplete": true,
-    "lastUpdated": "2025-01-15T12:00:00.000Z"
+    "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
   },
-  "assetLiabilityData": {
-    "houseDetails": [
-      {
-        "name": "Main Street Home",
-        "type": "Primary Home",
-        "amount": 410000,
-        "originalPurchasePrice": "",
-        "purchaseDate": "",
-        "propertyType": "Primary Home"
-      }
-    ],
-    "mortgageDetails": [],
-    "othAssetDetails": [
-      {
-        "name": "Classic Car Collection",
-        "type": "Vehicle",
-        "amount": 40000
-      }
-    ],
-    "othLiaDetails": [
-      {
-        "name": "Personal Loan",
-        "type": "Personal Loan",
-        "amount": 3500
-      }
-    ]
-  },
-  "taxConstants": {
-    "ANNUAL_WAGE_WITHHOLDING": {
-      "single": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 6400,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 18325,
-          "baseWithholding": 1192.5,
-          "rate": 0.12
-        },
-        {
-          "threshold": 54875,
-          "baseWithholding": 5578.5,
-          "rate": 0.22
-        },
-        {
-          "threshold": 109750,
-          "baseWithholding": 17651,
-          "rate": 0.24
-        },
-        {
-          "threshold": 203700,
-          "baseWithholding": 40199,
-          "rate": 0.32
-        },
-        {
-          "threshold": 256925,
-          "baseWithholding": 57231,
-          "rate": 0.35
-        },
-        {
-          "threshold": 632750,
-          "baseWithholding": 183647.25,
-          "rate": 0.37
-        }
-      ],
-      "marriedJointly": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 17100,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 40950,
-          "baseWithholding": 2385,
-          "rate": 0.12
-        },
-        {
-          "threshold": 114050,
-          "baseWithholding": 115700,
-          "rate": 0.22
-        },
-        {
-          "threshold": 223800,
-          "baseWithholding": 35302,
-          "rate": 0.24
-        },
-        {
-          "threshold": 411700,
-          "baseWithholding": 80398,
-          "rate": 0.32
-        },
-        {
-          "threshold": 518150,
-          "baseWithholding": 114462,
-          "rate": 0.35
-        },
-        {
-          "threshold": 768700,
-          "baseWithholding": 202154.5,
-          "rate": 0.37
-        }
-      ],
-      "marriedSeparately": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 6400,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 18325,
-          "baseWithholding": 1192.5,
-          "rate": 0.12
-        },
-        {
-          "threshold": 54875,
-          "baseWithholding": 5578.5,
-          "rate": 0.22
-        },
-        {
-          "threshold": 109750,
-          "baseWithholding": 17651,
-          "rate": 0.24
-        },
-        {
-          "threshold": 203700,
-          "baseWithholding": 40199,
-          "rate": 0.32
-        },
-        {
-          "threshold": 256925,
-          "baseWithholding": 57231,
-          "rate": 0.35
-        },
-        {
-          "threshold": 632750,
-          "baseWithholding": 183647.25,
-          "rate": 0.37
-        }
-      ],
-      "headOfHousehold": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 13900,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 30900,
-          "baseWithholding": 1700,
-          "rate": 0.12
-        },
-        {
-          "threshold": 78750,
-          "baseWithholding": 7442,
-          "rate": 0.22
-        },
-        {
-          "threshold": 117250,
-          "baseWithholding": 15912,
-          "rate": 0.24
-        },
-        {
-          "threshold": 211200,
-          "baseWithholding": 38460,
-          "rate": 0.32
-        },
-        {
-          "threshold": 264400,
-          "baseWithholding": 55484,
-          "rate": 0.35
-        },
-        {
-          "threshold": 640250,
-          "baseWithholding": 187031.5,
-          "rate": 0.37
-        }
-      ]
-    },
-    "ANNUAL_MULTIPLE_JOBS_WITHHOLDING": {
-      "single": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 7500,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 13463,
-          "baseWithholding": 596.25,
-          "rate": 0.12
-        },
-        {
-          "threshold": 31738,
-          "baseWithholding": 2789.25,
-          "rate": 0.22
-        },
-        {
-          "threshold": 59175,
-          "baseWithholding": 8825.5,
-          "rate": 0.24
-        },
-        {
-          "threshold": 106150,
-          "baseWithholding": 20099.5,
-          "rate": 0.32
-        },
-        {
-          "threshold": 132763,
-          "baseWithholding": 28615.5,
-          "rate": 0.35
-        },
-        {
-          "threshold": 320675,
-          "baseWithholding": 94354.88,
-          "rate": 0.37
-        }
-      ],
-      "marriedJointly": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 15000,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 26925,
-          "baseWithholding": 1182.5,
-          "rate": 0.12
-        },
-        {
-          "threshold": 63475,
-          "baseWithholding": 5578.5,
-          "rate": 0.22
-        },
-        {
-          "threshold": 118350,
-          "baseWithholding": 17651,
-          "rate": 0.24
-        },
-        {
-          "threshold": 212300,
-          "baseWithholding": 40199,
-          "rate": 0.32
-        },
-        {
-          "threshold": 265525,
-          "baseWithholding": 57231,
-          "rate": 0.35
-        },
-        {
-          "threshold": 390800,
-          "baseWithholding": 101077.25,
-          "rate": 0.37
-        }
-      ],
-      "marriedSeparately": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 7500,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 13463,
-          "baseWithholding": 596.25,
-          "rate": 0.12
-        },
-        {
-          "threshold": 31738,
-          "baseWithholding": 2789.25,
-          "rate": 0.22
-        },
-        {
-          "threshold": 59175,
-          "baseWithholding": 8825.5,
-          "rate": 0.24
-        },
-        {
-          "threshold": 106150,
-          "baseWithholding": 20099.5,
-          "rate": 0.32
-        },
-        {
-          "threshold": 132763,
-          "baseWithholding": 28615.5,
-          "rate": 0.35
-        },
-        {
-          "threshold": 320675,
-          "baseWithholding": 94354.88,
-          "rate": 0.37
-        }
-      ],
-      "headOfHousehold": [
-        {
-          "threshold": 0,
-          "baseWithholding": 0,
-          "rate": 0
-        },
-        {
-          "threshold": 11250,
-          "baseWithholding": 0,
-          "rate": 0.1
-        },
-        {
-          "threshold": 19750,
-          "baseWithholding": 850,
-          "rate": 0.12
-        },
-        {
-          "threshold": 43675,
-          "baseWithholding": 3272,
-          "rate": 0.22
-        },
-        {
-          "threshold": 62925,
-          "baseWithholding": 7956,
-          "rate": 0.24
-        },
-        {
-          "threshold": 109000,
-          "baseWithholding": 19230,
-          "rate": 0.32
-        },
-        {
-          "threshold": 136500,
-          "baseWithholding": 27742,
-          "rate": 0.35
-        },
-        {
-          "threshold": 324425,
-          "baseWithholding": 93515.75,
-          "rate": 0.37
-        }
-      ]
-    },
-    "STANDARD_DEDUCTIONS": {
-      "single": 15000,
-      "marriedJointly": 30000,
-      "marriedSeparately": 15000,
-      "headOfHousehold": 22500
-    },
-    "PAYROLL_TAX_RATES": {
-      "socialSecurity": 0.062,
-      "medicare": 0.0145
-    },
-    "CONTRIBUTION_LIMITS": {
-      "k401_employee": 23500,
-      "k401_catchUp": 7500,
-      "k401_total": 70000,
-      "hsa_self": 4300,
-      "hsa_family": 8550,
-      "hsa_catchUp": 1000,
-      "ira_self": 7000,
-      "ira_catchUp": 1000
-    },
-    "W4_CONFIGS": {
-      "new": {
-        "name": "2020+ W-4 Form",
-        "allowances": false,
-        "extraWithholding": true,
-        "dependentCredits": true
-      },
-      "old": {
-        "name": "2019 and Earlier W-4 Form",
-        "allowances": true,
-        "extraWithholding": true,
-        "dependentCredits": false
-      }
-    },
-    "TAX_CREDITS": {
-      "childTaxCredit": 2000,
-      "otherDependentCredit": 500
-    },
-    "ALLOWANCE_AMOUNT": 4850,
-    "PAY_PERIODS": {
-      "weekly": {
-        "name": "Weekly",
-        "periodsPerYear": 52
-      },
-      "biWeekly": {
-        "name": "Bi-Weekly",
-        "periodsPerYear": 26
-      },
-      "semiMonthly": {
-        "name": "Semi-Monthly",
-        "periodsPerYear": 24
-      },
-      "monthly": {
-        "name": "Monthly",
-        "periodsPerYear": 12
-      }
+  "otherAssets": [
+    {
+      "id": "other-asset-1",
+      "name": "Classic Car Collection",
+      "type": "Vehicle",
+      "currentValue": 40000,
+      "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
+    }
+  ],
+  "otherLiabilities": [
+    {
+      "id": "other-liability-1",
+      "name": "Personal Loan", 
+      "type": "Personal Loan",
+      "currentBalance": 3500,
+      "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
+    }
+  ],
+  "retirementPlanning": {
+    "sharedInputs": {
+      "annualInflation": 2.5,
+      "retirementReturnRate": 5.5
     }
   },
-  "liquidAssetsCollapsedAccounts": [
-    "demo-input-1",
-    "demo-input-2",
-    "demo-input-3",
-    "demo-input-4"
-  ],
-  "formData": {
-    "showSpouseCalculator": true,
-    "user1BudgetImpacting": {
-      "traditionalIraMonthly": 500,
-      "rothIraMonthly": 300,
-      "brokerageAccounts": []
-    },
-    "user2BudgetImpacting": {
-      "traditionalIraMonthly": 400,
-      "rothIraMonthly": 0,
-      "brokerageAccounts": [
-        {
-          "id": "demo-spouse-retirement-brokerage",
-          "name": "Retirement Brokerage",
-          "monthlyAmount": 250
+  "uiState": {
+    "collapsedAccounts": [
+      "account-1",
+      "account-2",
+      "account-3", 
+      "account-4"
+    ],
+    "accountGroups": [
+      {
+        "id": "account-group-1",
+        "name": "Alex 401k",
+        "accountIds": ["account-1"],
+        "createdAt": "2025-07-31T22:04:22.891Z"
+      },
+      {
+        "id": "account-group-2", 
+        "name": "Jamie 401k",
+        "accountIds": ["account-2"],
+        "createdAt": "2025-07-31T22:05:06.782Z"
+      }
+    ],
+    "settings": {
+        "app": {
+            "combineAccountsAcrossOwners": false,
+            "hasSeenBetaWelcome": true
+        },
+            "networth": {
+            "selectedYears": [2021, 2022, 2023, 2024, 2025],
+            "netWorthMode": "market",
+            "activeTab": "overview",
+            "showAllYearsInChart": false,
+            "useThreeYearIncomeAverage": false,
+            "useReverseChronological": false,
+            "isCompactTable": false
+        },
+            "paycheck": {
+            "isMultiUserMode": true
         }
-      ]
-    },
-    "combinedMonthlyTakeHome": 9000
-  },
-  "nameMapping": {}
+    }
+  }
 }
