@@ -1414,6 +1414,11 @@
     "lastUpdated": "2025-01-15T12:00:00.000Z"
   },
   "assetLiabilityData": {
+    "users": {},
+    "house": 410000,
+    "mortgage": 0,
+    "othAsset": 40000,
+    "othLia": 3500,
     "houseDetails": [
       {
         "name": "Main Street Home",
