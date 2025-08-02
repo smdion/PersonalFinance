@@ -1,14 +1,5 @@
 import React, { createContext, useState, useEffect, useCallback, useContext } from 'react';
-import { 
-  getFormData, 
-  setFormData, 
-  setBudgetData, 
-  getBudgetData, 
-  getPaycheckData, 
-  setPaycheckData,
-  getUsers as getStorageUsers,
-  resolveUserDisplayName 
-} from '../utils/localStorage';
+import { getFormData, setFormData, setBudgetData, getBudgetData, getPaycheckData, setPaycheckData } from '../utils/localStorage';
 
 export const PaycheckBudgetContext = createContext();
 
@@ -39,7 +30,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
     return { ...initialFormData, ...savedData };
   });
 
-  // Get budget impacting data from paycheck data (maintaining compatibility with legacy structure)
+  // Get budget impacting data from paycheck data
   const [budgetImpactingData, setBudgetImpactingData] = useState(() => {
     const paycheckData = getPaycheckData();
     return {
@@ -48,33 +39,6 @@ export const PaycheckBudgetProvider = ({ children }) => {
     };
   });
 
-  // Helper function to get users from normalized structure
-  const getUsers = useCallback(() => {
-    // Use the fixed localStorage getUsers function directly
-    const allUsers = getStorageUsers();
-    
-    // Filter to only user1 and user2 for PaycheckCalculator compatibility
-    const filteredUsers = allUsers.filter(user => user.id === 'user1' || user.id === 'user2');
-    
-    return filteredUsers;
-  }, []);
-
-  // Helper function to update user data (works with both structures)
-  const updateUserBudgetImpacting = useCallback((userId, budgetImpacting) => {
-    const paycheckData = getPaycheckData();
-    
-    // Update legacy structure for compatibility
-    const updatedPaycheckData = {
-      ...paycheckData,
-      [userId]: {
-        ...paycheckData[userId],
-        budgetImpacting
-      }
-    };
-    
-    setPaycheckData(updatedPaycheckData);
-  }, []);
-
   // Save form data to localStorage whenever it changes
   useEffect(() => {
     setFormData(formData);
@@ -82,9 +46,20 @@ export const PaycheckBudgetProvider = ({ children }) => {
 
   // Save budget impacting data to paycheck data whenever it changes
   useEffect(() => {
-    updateUserBudgetImpacting('user1', budgetImpactingData.user1BudgetImpacting);
-    updateUserBudgetImpacting('user2', budgetImpactingData.user2BudgetImpacting);
-  }, [budgetImpactingData, updateUserBudgetImpacting]);
+    const paycheckData = getPaycheckData();
+    const updatedPaycheckData = {
+      ...paycheckData,
+      user1: {
+        ...paycheckData.user1,
+        budgetImpacting: budgetImpactingData.user1BudgetImpacting
+      },
+      user2: {
+        ...paycheckData.user2,
+        budgetImpacting: budgetImpactingData.user2BudgetImpacting
+      }
+    };
+    setPaycheckData(updatedPaycheckData);
+  }, [budgetImpactingData]);
 
   const updateFormData = useCallback((key, value) => {
     setFormDataState((prev) => ({ ...prev, [key]: value }));
@@ -164,8 +139,8 @@ export const PaycheckBudgetProvider = ({ children }) => {
     };
   }, [resetFormData]);
 
-  // Helper function to create budget items for a person (updated for normalized structure)
-  const createBudgetItemsForPerson = useCallback((personData, personId, personLabel) => {
+  // Helper function to create budget items for a person
+  const createBudgetItemsForPerson = useCallback((personData, personPrefix, personLabel) => {
     const items = [];
     
     // Add traditional IRA and Roth IRA if they have values
@@ -177,9 +152,8 @@ export const PaycheckBudgetProvider = ({ children }) => {
     iraContributions.forEach(({ key, label }) => {
       if (personData[key] > 0) {
         items.push({
-          id: `${personId}-${key.replace('Monthly', '').replace(/([A-Z])/g, '-$1').toLowerCase()}`,
+          id: `${personPrefix}-${key.replace('Monthly', '').replace(/([A-Z])/g, '-$1').toLowerCase()}`,
           name: `${personLabel} ${label}`,
-          userId: personId, // Add userId for normalized structure
           standard: personData[key],
           tight: personData[key],
           emergency: personData[key]
@@ -192,9 +166,8 @@ export const PaycheckBudgetProvider = ({ children }) => {
       personData.brokerageAccounts.forEach((account) => {
         if (account.monthlyAmount > 0) {
           items.push({
-            id: `${personId}-brokerage-${account.id}`,
+            id: `${personPrefix}-brokerage-${account.id}`,
             name: `${personLabel} ${account.name}`,
-            userId: personId, // Add userId for normalized structure
             standard: account.monthlyAmount,
             tight: account.monthlyAmount,
             emergency: account.monthlyAmount
@@ -206,40 +179,35 @@ export const PaycheckBudgetProvider = ({ children }) => {
     return items;
   }, []);
 
-  // Enhanced function to sync budget categories with normalized structure awareness
+  // Function to sync budget categories with budget impacting contributions
   const syncBudgetCategories = useCallback(() => {
-    const users = getUsers();
+    // Get paycheck data to access current names
+    const { getPaycheckData } = require('../utils/localStorage');
+    const paycheckData = getPaycheckData();
+    
     let budgetCategories = getBudgetData();
     
-    // Find existing budget impacting category
     const existingCategoryIndex = budgetCategories.findIndex(cat => cat.id === 'budget-impacting');
     
-    // Create the budget impacting contributions items with current names
+    // Create the budget impacting contributions items with CURRENT names
     let budgetItems = [];
     
-    // Add user1 contributions
-    const user1 = users.find(u => u.id === 'user1');
-    if (user1) {
-      const user1Name = resolveUserDisplayName('user1') || user1.name || 'User 1';
+    // Add user1 contributions with actual current name
+    const user1Name = paycheckData?.user1?.name?.trim() || 'User 1';
+    budgetItems = budgetItems.concat(
+      createBudgetItemsForPerson(budgetImpactingData.user1BudgetImpacting, 'user1', user1Name)
+    );
+
+    // Add user2 contributions ONLY if multi-user mode is enabled with actual current name
+    const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+    if (isMultiUserMode) {
+      const user2Name = paycheckData?.user2?.name?.trim() || 'User 2';
       budgetItems = budgetItems.concat(
-        createBudgetItemsForPerson(budgetImpactingData.user1BudgetImpacting, 'user1', user1Name)
+        createBudgetItemsForPerson(budgetImpactingData.user2BudgetImpacting, 'user2', user2Name)
       );
     }
 
-    // Add user2 contributions if multi-user mode is enabled
-    const paycheckData = getPaycheckData();
-    const isMultiUserMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
-    if (isMultiUserMode) {
-      const user2 = users.find(u => u.id === 'user2');
-      if (user2) {
-        const user2Name = resolveUserDisplayName('user2') || user2.name || 'User 2';
-        budgetItems = budgetItems.concat(
-          createBudgetItemsForPerson(budgetImpactingData.user2BudgetImpacting, 'user2', user2Name)
-        );
-      }
-    }
-
-    // Update or create the budget category
+    // Always update the category if there are items OR if it already exists
     if (budgetItems.length > 0 || existingCategoryIndex >= 0) {
       const budgetCategory = {
         id: 'budget-impacting',
@@ -265,7 +233,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
     
     // Dispatch event to notify components
     window.dispatchEvent(new CustomEvent('budgetDataUpdated', { detail: budgetCategories }));
-  }, [budgetImpactingData.user1BudgetImpacting, budgetImpactingData.user2BudgetImpacting, createBudgetItemsForPerson, getUsers]);
+  }, [budgetImpactingData.user1BudgetImpacting, budgetImpactingData.user2BudgetImpacting, createBudgetItemsForPerson]);
 
   // Run sync with a slight delay to ensure all data is loaded
   useEffect(() => {
@@ -285,6 +253,7 @@ export const PaycheckBudgetProvider = ({ children }) => {
     return () => clearTimeout(timer);
   }, [budgetImpactingData.user1BudgetImpacting, budgetImpactingData.user2BudgetImpacting]);
 
+
   // Add effect to listen for paycheck data updates and re-sync names
   useEffect(() => {
     const handlePaycheckDataUpdate = () => {
@@ -301,28 +270,22 @@ export const PaycheckBudgetProvider = ({ children }) => {
     };
   }, [syncBudgetCategories]);
 
-  // Enhanced multi-user mode detection
-  const isMultiUserMode = useCallback(() => {
-    const paycheckData = getPaycheckData();
-    return paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
-  }, []);
-
   const value = {
     formData: {
       ...formData,
       yourBudgetImpacting: budgetImpactingData.user1BudgetImpacting,
       spouseBudgetImpacting: budgetImpactingData.user2BudgetImpacting,
-      isMultiUserMode: isMultiUserMode()
+      isMultiUserMode: (() => {
+        const paycheckData = getPaycheckData();
+        return paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
+      })()
     }, 
     updateFormData, 
     updateBudgetImpacting, 
     addBrokerageAccount,
     updateBrokerageAccount,
     removeBrokerageAccount,
-    resetFormData,
-    // Add new normalized-structure aware methods
-    getUsers,
-    isMultiUserMode
+    resetFormData
   };
 
   return (

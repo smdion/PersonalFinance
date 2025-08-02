@@ -265,11 +265,15 @@ const LiquidAssets = () => {
     
     // Get users from paycheck data - always use current normalized user names
     const userList = [];
-    if (paycheckData?.user1?.name?.trim()) {
-      userList.push(paycheckData.user1.name.trim());
+    const user1Name = resolveUserDisplayName('user1');
+    if (user1Name) {
+      userList.push(user1Name);
     }
-    if (paycheckData?.user2?.name?.trim() && (paycheckData?.settings?.activeUsers?.includes('user2') ?? true)) {
-      userList.push(paycheckData.user2.name.trim());
+    if (paycheckData?.settings?.activeUsers?.includes('user2') ?? true) {
+      const user2Name = resolveUserDisplayName('user2');
+      if (user2Name) {
+        userList.push(user2Name);
+      }
     }
     
     // Use only current paycheck users to avoid showing legacy data

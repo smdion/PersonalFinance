@@ -1,9 +1,11 @@
-import React, { useState, useEffect, useMemo } from 'react';
+// React import moved above
 import { useNavigate } from 'react-router-dom';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getPaycheckData, setPaycheckData, getAccountData, getAnnualData, getRetirementData } from '../utils/localStorage';
+import { getPaycheckData, setPaycheckData, getAccountData, getAnnualData, getRetirementData, resolveUserDisplayName } from '../utils/localStorage';
 import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { getContributionLimits, getPayPeriods } from '../utils/paycheckCalculations';
 import { 
   formatCurrency, 
@@ -20,6 +22,9 @@ import '../styles/last-update-info.css';
 const Contributions = () => {
   const navigate = useNavigate();
   
+  // Context integration for normalized data support
+  const { getUsers, isMultiUserMode: contextIsMultiUserMode } = useContext(PaycheckBudgetContext);
+  
   // Get tax constants dynamically
   const CONTRIBUTION_LIMITS = getContributionLimits();
   const PAY_PERIODS = getPayPeriods();
@@ -30,7 +35,16 @@ const Contributions = () => {
   const [activeTab, setActiveTab] = useState('standard');
   const [activePersonTab, setActivePersonTab] = useState('standard');
   const { activeUsers } = useMultiUserCalculator(); // Use multi-user calculator hook
-  const isMultiUserMode = activeUsers.includes('user2');
+  const isMultiUserMode = typeof contextIsMultiUserMode === 'function' ? contextIsMultiUserMode() : activeUsers.includes('user2');
+  
+  // Get available users dynamically
+  const availableUsers = useMemo(() => {
+    const users = getUsers ? getUsers() : [];
+    return users.length > 0 ? users : [
+      { id: 'user1', name: resolveUserDisplayName('user1') },
+      { id: 'user2', name: resolveUserDisplayName('user2') }
+    ];
+  }, [getUsers]);
   const [showHelp, setShowHelp] = useState(false);
   
   // State for collapsible sections
@@ -43,6 +57,7 @@ const Contributions = () => {
     total: false
   });
   
+  // Dynamic expandedPersonSections - starts with default, updates with users
   const [expandedPersonSections, setExpandedPersonSections] = useState({
     user1: {
       k401: false,
@@ -61,6 +76,22 @@ const Contributions = () => {
       personalTotal: false
     }
   });
+  
+  // Update expanded sections when users change
+  useEffect(() => {
+    const newSections = {};
+    availableUsers.forEach(user => {
+      newSections[user.id] = expandedPersonSections[user.id] || {
+        k401: false,
+        ira: false,
+        hsa: false,
+        espp: false,
+        brokerage: false,
+        personalTotal: false
+      };
+    });
+    setExpandedPersonSections(newSections);
+  }, [availableUsers]);
 
   // Toggle functions for expand/collapse
   const toggleHouseholdSection = (section) => {
@@ -120,12 +151,21 @@ const Contributions = () => {
   // Let PaycheckCalculator handle the dual calculator toggle - just listen for updates
   // No need for toggle handler here, the paycheckDataUpdated listener above handles sync
 
-  // Calculate contribution metrics
+  // Calculate contribution metrics with dynamic user support
   const contributionMetrics = useMemo(() => {
-    if (!paycheckData?.user1) return { hasData: false };
+    // Check if we have any user data
+    const hasAnyUserData = availableUsers.some(user => paycheckData[user.id]);
+    if (!hasAnyUserData) return { hasData: false };
 
-    const user1Data = paycheckData.user1;
-    const user2Data = paycheckData.user2 || {};
+    // Get data for all available users
+    const userData = {};
+    availableUsers.forEach(user => {
+      userData[user.id] = paycheckData[user.id] || {};
+    });
+    
+    // Legacy compatibility
+    const user1Data = userData.user1 || {};
+    const user2Data = userData.user2 || {};
     const showUser2 = isMultiUserMode;
 
     // Helper function to calculate user's metrics
@@ -606,7 +646,7 @@ const Contributions = () => {
     }
 
     return metrics;
-  }, [paycheckData, accountData, annualData, isMultiUserMode]);
+  }, [paycheckData, accountData, annualData, isMultiUserMode, availableUsers]);
 
   // Event listeners for navigation controls
   useEffect(() => {

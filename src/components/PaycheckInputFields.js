@@ -136,25 +136,30 @@ const PaycheckInputFields = ({
 
   const handleRetirementOptionChange = (field, value) => {
     if (field === 'isOver50') {
-      setRetirementOptions(prev => ({
-        ...prev,
+      const newOptions = {
+        ...retirementOptions,
         [field]: value
-      }));
+      };
+      setRetirementOptions(newOptions);
     } else if (field === 'traditional401kPercent' || field === 'roth401kPercent') {
       // Handle percentage fields with unified approach
       const rawValue = typeof value === 'string' ? value.replace(/%/g, '') : value;
-      setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
-      setRetirementOptions(prev => ({
-        ...prev,
-        [field]: parseFloat(rawValue) || 0
-      }));
+      const numericValue = parseFloat(rawValue) || 0;
+      setCurrencyInputValues(prev => ({ ...prev, [field]: value }));
+      const newOptions = {
+        ...retirementOptions,
+        [field]: numericValue
+      };
+      setRetirementOptions(newOptions);
     } else {
       // Handle other numeric fields normally
       const rawValue = typeof value === 'string' ? value.replace(/%/g, '') : value;
-      setRetirementOptions(prev => ({
-        ...prev,
-        [field]: parseFloat(rawValue) || 0
-      }));
+      const numericValue = parseFloat(rawValue) || 0;
+      const newOptions = {
+        ...retirementOptions,
+        [field]: numericValue
+      };
+      setRetirementOptions(newOptions);
     }
   };
 
@@ -196,11 +201,13 @@ const PaycheckInputFields = ({
 
   const handleBudgetImpactingChange = (field, value) => {
     const rawValue = value.replace(/[$,]/g, '');
-    setCurrencyInputValues(prev => ({ ...prev, [field]: value })); // Keep raw input as-is while typing
-    setBudgetImpacting(prev => ({
-      ...prev,
-      [field]: parseFloat(rawValue) || 0
-    }));
+    const numericValue = parseFloat(rawValue) || 0;
+    setCurrencyInputValues(prev => ({ ...prev, [field]: value }));
+    const newBudget = {
+      ...budgetImpacting,
+      [field]: numericValue
+    };
+    setBudgetImpacting(newBudget);
   };
 
   // Local state for salary input editing
@@ -210,6 +217,7 @@ const PaycheckInputFields = ({
   // Local state for all currency input editing
   const [currencyInputValues, setCurrencyInputValues] = useState({});
   const [currencyInputsFocused, setCurrencyInputsFocused] = useState({});
+  
 
   // Update local input value when salary prop changes (but not when focused)
   useEffect(() => {
@@ -225,7 +233,11 @@ const PaycheckInputFields = ({
     // Budget impacting fields
     ['traditionalIraMonthly', 'rothIraMonthly'].forEach(field => {
       if (!currencyInputsFocused[field]) {
-        newValues[field] = budgetImpacting[field] ? formatCurrency(budgetImpacting[field]) : '';
+        // Only update if the current input value doesn't exist or is different from what we expect
+        const expectedValue = budgetImpacting[field] && budgetImpacting[field] > 0 ? formatCurrency(budgetImpacting[field]) : '';
+        if (currencyInputValues[field] === undefined || currencyInputValues[field] === null) {
+          newValues[field] = expectedValue;
+        }
       }
     });
 
@@ -273,16 +285,20 @@ const PaycheckInputFields = ({
       });
     }
 
-    // Percentage fields
+    // Percentage fields - Fix: Always update these to ensure they're properly initialized
     ['traditional401kPercent', 'roth401kPercent'].forEach(field => {
       if (!currencyInputsFocused[field]) {
-        newValues[field] = retirementOptions[field] ? formatPercentageDisplay(retirementOptions[field]) : '';
+        // Only update if the current input value doesn't exist or is different from what we expect
+        const expectedValue = retirementOptions[field] && retirementOptions[field] > 0 ? formatPercentageDisplay(retirementOptions[field]) : '';
+        if (currencyInputValues[field] === undefined || currencyInputValues[field] === null) {
+          newValues[field] = expectedValue;
+        }
       }
     });
 
     // ESPP percentage field
     if (!currencyInputsFocused['esppDeductionPercent']) {
-      newValues['esppDeductionPercent'] = esppDeductionPercent ? formatPercentageDisplay(esppDeductionPercent) : '';
+      newValues['esppDeductionPercent'] = esppDeductionPercent && esppDeductionPercent > 0 ? formatPercentageDisplay(esppDeductionPercent) : '';
     }
 
     setCurrencyInputValues(prev => ({ ...prev, ...newValues }));
@@ -586,7 +602,7 @@ const PaycheckInputFields = ({
                     type="text"
                     id={`traditional401kPercent-${personName}`}
                     className="form-input"
-                    value={currencyInputValues.traditional401kPercent || ''}
+                    value={currencyInputValues.traditional401kPercent ?? ''}
                     onChange={(e) => handleRetirementOptionChange('traditional401kPercent', e.target.value)}
                     onFocus={() => handleCurrencyInputFocus('traditional401kPercent', retirementOptions)}
                     onBlur={() => handleCurrencyInputBlur('traditional401kPercent', retirementOptions, formatPercentageDisplay)}
@@ -602,7 +618,7 @@ const PaycheckInputFields = ({
                     type="text"
                     id={`roth401kPercent-${personName}`}
                     className="form-input"
-                    value={currencyInputValues.roth401kPercent || ''}
+                    value={currencyInputValues.roth401kPercent ?? ''}
                     onChange={(e) => handleRetirementOptionChange('roth401kPercent', e.target.value)}
                     onFocus={() => handleCurrencyInputFocus('roth401kPercent', retirementOptions)}
                     onBlur={() => handleCurrencyInputBlur('roth401kPercent', retirementOptions, formatPercentageDisplay)}
@@ -1053,7 +1069,7 @@ const PaycheckInputFields = ({
                     type="text"
                     id={`traditionalIraMonthly-${personName}`}
                     className="form-input"
-                    value={currencyInputValues.traditionalIraMonthly || ''}
+                    value={currencyInputValues.traditionalIraMonthly ?? ''}
                     onChange={(e) => handleBudgetImpactingChange('traditionalIraMonthly', e.target.value)}
                     onFocus={() => handleCurrencyInputFocus('traditionalIraMonthly', budgetImpacting)}
                     onBlur={() => handleCurrencyInputBlur('traditionalIraMonthly', budgetImpacting, formatCurrency)}
@@ -1069,7 +1085,7 @@ const PaycheckInputFields = ({
                     type="text"
                     id={`rothIraMonthly-${personName}`}
                     className="form-input"
-                    value={currencyInputValues.rothIraMonthly || ''}
+                    value={currencyInputValues.rothIraMonthly ?? ''}
                     onChange={(e) => handleBudgetImpactingChange('rothIraMonthly', e.target.value)}
                     onFocus={() => handleCurrencyInputFocus('rothIraMonthly', budgetImpacting)}
                     onBlur={() => handleCurrencyInputBlur('rothIraMonthly', budgetImpacting, formatCurrency)}

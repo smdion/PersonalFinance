@@ -203,18 +203,20 @@ const retirementProjectionsSchema = {
   ]
 };
 
-// Transform retirement projections to DataManager format
-const transformProjectionsToDataManagerFormat = (user1Projections, user2Projections, paycheckData, currentYear, getActualEmployerMatchForYear) => {
+// Transform retirement projections to DataManager format - now supports dynamic users
+const transformProjectionsToDataManagerFormat = (userProjections, paycheckData, currentYear, getActualEmployerMatchForYear) => {
   const data = {};
   
+  // userProjections is now an object with userId keys: { user1: [...], user2: [...] }
+  const projectionArrays = Object.values(userProjections).filter(proj => Array.isArray(proj));
+  if (projectionArrays.length === 0) return data;
+  
   // Get the maximum length of projections
-  const maxLength = Math.max(user1Projections.length, user2Projections.length);
+  const maxLength = Math.max(...projectionArrays.map(proj => proj.length));
   
   for (let i = 0; i < maxLength; i++) {
-    const user1Proj = user1Projections[i];
-    const user2Proj = user2Projections[i];
-    const year = user1Proj?.year || user2Proj?.year;
-    
+    // Get year from any available projection
+    const year = projectionArrays.find(projArray => projArray[i])?.at(i)?.year;
     if (!year) continue;
     
     const entry = {
@@ -222,41 +224,26 @@ const transformProjectionsToDataManagerFormat = (user1Projections, user2Projecti
       users: {}
     };
     
-    // Add user1 data if available
-    if (user1Proj) {
-      entry.users['user1'] = {
-        age: user1Proj.age,
-        salary: user1Proj.salary || 0,
-        employeeContributions: user1Proj.contributions?.employee || 0,
-        employerMatch: user1Proj.contributions?.employer || 0,
-        totalContributions: user1Proj.contributions?.total || 0,
-        withdrawal: user1Proj.withdrawal || 0,
-        taxFree: user1Proj.balances?.taxFree || 0,
-        taxDeferred: user1Proj.balances?.taxDeferred || 0,
-        afterTax: user1Proj.balances?.afterTax || 0,
-        totalBalance: user1Proj.totalBalance || 0,
-        returnRate: (user1Proj.returnRate || 0) / 100,
-        contributions: user1Proj.contributions // Include full contributions object with breakdown
-      };
-    }
-    
-    // Add user2 data if available
-    if (user2Proj) {
-      entry.users['user2'] = {
-        age: user2Proj.age,
-        salary: user2Proj.salary || 0,
-        employeeContributions: user2Proj.contributions?.employee || 0,
-        employerMatch: user2Proj.contributions?.employer || 0,
-        totalContributions: user2Proj.contributions?.total || 0,
-        withdrawal: user2Proj.withdrawal || 0,
-        taxFree: user2Proj.balances?.taxFree || 0,
-        taxDeferred: user2Proj.balances?.taxDeferred || 0,
-        afterTax: user2Proj.balances?.afterTax || 0,
-        totalBalance: user2Proj.totalBalance || 0,
-        returnRate: (user2Proj.returnRate || 0) / 100,
-        contributions: user2Proj.contributions // Include full contributions object with breakdown
-      };
-    }
+    // Add data for all users dynamically
+    Object.entries(userProjections).forEach(([userId, projections]) => {
+      const userProj = projections[i];
+      if (userProj) {
+        entry.users[userId] = {
+          age: userProj.age,
+          salary: userProj.salary || 0,
+          employeeContributions: userProj.contributions?.employee || 0,
+          employerMatch: userProj.contributions?.employer || 0,
+          totalContributions: userProj.contributions?.total || 0,
+          withdrawal: userProj.withdrawal || 0,
+          taxFree: userProj.balances?.taxFree || 0,
+          taxDeferred: userProj.balances?.taxDeferred || 0,
+          afterTax: userProj.balances?.afterTax || 0,
+          totalBalance: userProj.totalBalance || 0,
+          returnRate: (userProj.returnRate || 0) / 100,
+          contributions: userProj.contributions // Include full contributions object with breakdown
+        };
+      }
+    });
     
     data[`proj_${year}`] = entry;
   }
@@ -695,9 +682,14 @@ const Retirement = () => {
   // Transform projections data for DataManager
   useEffect(() => {
     if (user1Projections.length > 0 || user2Projections.length > 0) {
+      // Create userProjections object with dynamic user support
+      const userProjections = {
+        user1: user1Projections,
+        user2: user2Projections
+      };
+      
       const transformedData = transformProjectionsToDataManagerFormat(
-        user1Projections, 
-        user2Projections, 
+        userProjections, 
         paycheckData, 
         currentYear, 
         getActualEmployerMatchForYear

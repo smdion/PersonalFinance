@@ -540,7 +540,7 @@ const DataManager = ({
       
       // Check if we have any "Joint" data
       const hasJointData = Object.values(entryData).some(entry => 
-        entry.users && entry.users['Joint']
+        entry.users && typeof entry.users === 'object' && entry.users['Joint']
       );
       
       // Add user-specific field classes using actual user names plus "Joint" if needed
@@ -573,7 +573,7 @@ const DataManager = ({
     // Handle user fields - including "Joint" option
     if (userNames.length > 0) {
       // Check if this entry has "Joint" data
-      if (entry.users && entry.users['Joint']) {
+      if (entry.users && typeof entry.users === 'object' && entry.users['Joint']) {
         formData.users = { 'Joint': entry.users['Joint'] };
       } else {
         formData.users = userNames.reduce((acc, name) => ({
@@ -1705,7 +1705,7 @@ const DataManager = ({
     const userSection = schema.sections.find(s => s.name === 'users');
     const fieldConfig = userSection?.fields.find(f => f.name === field);
     // Fix: Only access entry.users[userName] if it exists
-    const value = entry.users && entry.users[userName] ? entry.users[userName][field] : undefined;
+    const value = entry.users && typeof entry.users === 'object' && entry.users[userName] ? entry.users[userName][field] : undefined;
     const currentYear = new Date().getFullYear();
     const isCurrentYear = entry.year === currentYear;
     const isReadonly = !disableReadOnly && fieldConfig?.readonly && isCurrentYear;
@@ -1762,7 +1762,7 @@ const DataManager = ({
 
     // Check if this field should have a tooltip (employee contributions or employer match)
     if ((field === 'employeeContributions' || field === 'employerMatch') && 
-        entry.users && entry.users[userName] && 
+        entry.users && typeof entry.users === 'object' && entry.users[userName] && 
         entry.users[userName].contributions && 
         entry.users[userName].contributions.breakdown) {
       

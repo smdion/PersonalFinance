@@ -12,10 +12,23 @@ export const getIsResettingAllData = () => {
 };
 
 export const STORAGE_KEYS = {
+  USERS: 'users',
+  ACCOUNTS: 'accounts',
+  SUB_ACCOUNTS: 'subAccounts',
+  BUDGET_CATEGORIES: 'budgetCategories',
+  BUDGET_ITEMS: 'budgetItems',
+  ANNUAL_DATA: 'annualData',
+  SUB_ACCOUNT_PERFORMANCE: 'subAccountPerformance',
+  SAVINGS_GOALS: 'savingsGoals',
+  PRIMARY_HOME: 'primaryHome',
+  OTHER_ASSETS: 'otherAssets',
+  OTHER_LIABILITIES: 'otherLiabilities',
+  RETIREMENT_PLANNING: 'retirementPlanning',
+  UI_STATE: 'uiState',
+  // Legacy keys for backward compatibility during migration
   BUDGET_DATA: 'budgetData',
   PAYCHECK_DATA: 'paycheckData',
   APP_SETTINGS: 'appSettings',
-  ANNUAL_DATA: 'annualData',
   ACCOUNT_DATA: 'accountData',
   NETWORTH_SETTINGS: 'networthSettings',
   ACCOUNT_SETTINGS: 'accountSettings',
@@ -79,7 +92,212 @@ export const removeFromStorage = (key) => {
 
 
 
-// Specific data utilities
+// New structure data utilities
+export const getUsers = () => {
+  try {
+    const rawUsers = localStorage.getItem(STORAGE_KEYS.USERS);
+    if (rawUsers) {
+      return JSON.parse(rawUsers);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing users from localStorage:', error);
+    return [];
+  }
+};
+
+export const setUsers = (data) => {
+  return setToStorage(STORAGE_KEYS.USERS, data);
+};
+
+export const getAccounts = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.ACCOUNTS);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing accounts from localStorage:', error);
+    return [];
+  }
+};
+
+export const setAccounts = (data) => {
+  return setToStorage(STORAGE_KEYS.ACCOUNTS, data);
+};
+
+export const getSubAccounts = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.SUB_ACCOUNTS);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing sub accounts from localStorage:', error);
+    return [];
+  }
+};
+
+export const setSubAccounts = (data) => {
+  return setToStorage(STORAGE_KEYS.SUB_ACCOUNTS, data);
+};
+
+export const getBudgetCategories = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.BUDGET_CATEGORIES);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing budget categories from localStorage:', error);
+    return [];
+  }
+};
+
+export const setBudgetCategories = (data) => {
+  return setToStorage(STORAGE_KEYS.BUDGET_CATEGORIES, data);
+};
+
+export const getBudgetItems = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.BUDGET_ITEMS);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing budget items from localStorage:', error);
+    return [];
+  }
+};
+
+export const setBudgetItems = (data) => {
+  return setToStorage(STORAGE_KEYS.BUDGET_ITEMS, data);
+};
+
+export const getSubAccountPerformance = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.SUB_ACCOUNT_PERFORMANCE);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing sub account performance from localStorage:', error);
+    return [];
+  }
+};
+
+export const setSubAccountPerformance = (data) => {
+  return setToStorage(STORAGE_KEYS.SUB_ACCOUNT_PERFORMANCE, data);
+};
+
+export const getSavingsGoals = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.SAVINGS_GOALS);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing savings goals from localStorage:', error);
+    return [];
+  }
+};
+
+export const setSavingsGoals = (data) => {
+  return setToStorage(STORAGE_KEYS.SAVINGS_GOALS, data);
+};
+
+export const getPrimaryHome = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.PRIMARY_HOME);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return {};
+  } catch (error) {
+    console.error('Error parsing primary home from localStorage:', error);
+    return {};
+  }
+};
+
+export const setPrimaryHome = (data) => {
+  return setToStorage(STORAGE_KEYS.PRIMARY_HOME, data);
+};
+
+export const getOtherAssets = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.OTHER_ASSETS);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing other assets from localStorage:', error);
+    return [];
+  }
+};
+
+export const setOtherAssets = (data) => {
+  return setToStorage(STORAGE_KEYS.OTHER_ASSETS, data);
+};
+
+export const getOtherLiabilities = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.OTHER_LIABILITIES);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return [];
+  } catch (error) {
+    console.error('Error parsing other liabilities from localStorage:', error);
+    return [];
+  }
+};
+
+export const setOtherLiabilities = (data) => {
+  return setToStorage(STORAGE_KEYS.OTHER_LIABILITIES, data);
+};
+
+export const getRetirementPlanning = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.RETIREMENT_PLANNING);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return {};
+  } catch (error) {
+    console.error('Error parsing retirement planning from localStorage:', error);
+    return {};
+  }
+};
+
+export const setRetirementPlanning = (data) => {
+  return setToStorage(STORAGE_KEYS.RETIREMENT_PLANNING, data);
+};
+
+export const getUIState = () => {
+  try {
+    const rawData = localStorage.getItem(STORAGE_KEYS.UI_STATE);
+    if (rawData) {
+      return JSON.parse(rawData);
+    }
+    return {};
+  } catch (error) {
+    console.error('Error parsing UI state from localStorage:', error);
+    return {};
+  }
+};
+
+export const setUIState = (data) => {
+  return setToStorage(STORAGE_KEYS.UI_STATE, data);
+};
+
+// Legacy data utilities (for backward compatibility)
 export const getBudgetData = () => {
   return getFromStorage(STORAGE_KEYS.BUDGET_DATA, []);
 };
@@ -245,7 +463,8 @@ export const setReadOnlyOverrideSettings = (settings) => {
 
 export const getAnnualData = () => {
   try {
-    return getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
+    const annualData = getFromStorage(STORAGE_KEYS.ANNUAL_DATA, {});
+    return annualData;
   } catch (error) {
     console.error('Error loading annual data:', error);
     return {};
@@ -289,17 +508,33 @@ export const setAccountData = (data) => {
 export const exportAllData = () => {
   const timestamp = new Date().toISOString();
   const exportData = {
-    exportedAt: timestamp,
-    version: '2.0.0', // Updated version to reflect new data structure
+    metadata: {
+      exportedAt: timestamp,
+      version: '3.0.0', // Updated version to reflect new normalized structure
+      dataSource: 'normalized-structure'
+    },
+    // New normalized structure
+    users: getUsers(),
+    accounts: getAccounts(),
+    subAccounts: getSubAccounts(),
+    budgetCategories: getBudgetCategories(),
+    budgetItems: getBudgetItems(),
+    annualData: getAnnualData(),
+    subAccountPerformance: getSubAccountPerformance(),
+    savingsGoals: getSavingsGoals(),
+    primaryHome: getPrimaryHome(),
+    otherAssets: getOtherAssets(),
+    otherLiabilities: getOtherLiabilities(),
+    retirementPlanning: getRetirementPlanning(),
+    uiState: getUIState(),
+    // Legacy data for backward compatibility
     budgetData: getBudgetData(),
     paycheckData: getPaycheckData(),
     appSettings: getAppSettings(),
-    annualData: getAnnualData(),
     accountData: getAccountData(),
     retirementData: getRetirementData(),
     primaryHomeData: getFromStorage(STORAGE_KEYS.PRIMARY_HOME_DATA, {}),
     assetLiabilityData: getAssetLiabilityData(),
-    // New portfolio-related data
     networthSettings: getNetWorthSettings(),
     accountSettings: getAccountSettings(),
     savingsData: getSavingsData(),
@@ -308,7 +543,6 @@ export const exportAllData = () => {
     liquidAssetsInputs: getLiquidAssetsInputs(),
     sharedAccounts: getSharedAccounts(),
     liquidAssetsAccountGroups: getManualAccountGroups(),
-    // Tax constants data
     taxConstants: getTaxConstants(),
   };
   
@@ -904,7 +1138,68 @@ export const importAllData = (importData) => {
     
     // Clear the in-memory cache (nameMapping removed with normalized data)
     
-    // Import each section if it exists (handle both camelCase and snake_case for backward compatibility)
+    // Import new normalized structure first
+    if (importData.users !== undefined) {
+      setUsers(importData.users);
+      importedSections.push('Users');
+    }
+    
+    if (importData.accounts !== undefined) {
+      setAccounts(importData.accounts);
+      importedSections.push('Accounts');
+    }
+    
+    if (importData.subAccounts !== undefined) {
+      setSubAccounts(importData.subAccounts);
+      importedSections.push('Sub Accounts');
+    }
+    
+    if (importData.budgetCategories !== undefined) {
+      setBudgetCategories(importData.budgetCategories);
+      importedSections.push('Budget Categories');
+    }
+    
+    if (importData.budgetItems !== undefined) {
+      setBudgetItems(importData.budgetItems);
+      importedSections.push('Budget Items');
+    }
+    
+    if (importData.subAccountPerformance !== undefined) {
+      setSubAccountPerformance(importData.subAccountPerformance);
+      importedSections.push('Sub Account Performance');
+    }
+    
+    if (importData.savingsGoals !== undefined) {
+      setSavingsGoals(importData.savingsGoals);
+      importedSections.push('Savings Goals');
+    }
+    
+    if (importData.primaryHome !== undefined) {
+      setPrimaryHome(importData.primaryHome);
+      importedSections.push('Primary Home');
+    }
+    
+    if (importData.otherAssets !== undefined) {
+      setOtherAssets(importData.otherAssets);
+      importedSections.push('Other Assets');
+    }
+    
+    if (importData.otherLiabilities !== undefined) {
+      setOtherLiabilities(importData.otherLiabilities);
+      importedSections.push('Other Liabilities');
+    }
+    
+    if (importData.retirementPlanning !== undefined) {
+      setRetirementPlanning(importData.retirementPlanning);
+      importedSections.push('Retirement Planning');
+    }
+    
+    if (importData.uiState !== undefined) {
+      setUIState(importData.uiState);
+      importedSections.push('UI State');
+    }
+
+    // Import legacy sections (handle both camelCase and snake_case for backward compatibility)
     if (importData.budgetData !== undefined || importData.budget_data !== undefined) {
       setBudgetData(importData.budgetData || importData.budget_data);
       importedSections.push('Budget Data');
@@ -1173,6 +1468,7 @@ export const triggerFileImport = () => {
 // Clear all app data globally
 export const clearAllAppData = () => {
   try {
+    // Clear all storage keys including both new and legacy
     Object.values(STORAGE_KEYS).forEach(key => {
       removeFromStorage(key);
     });
@@ -1327,11 +1623,25 @@ export const resetAllAppData = () => {
     const success = clearAllAppData();
     
     if (success) {
-      // Reset to default empty states - Updated for object format
+      // Reset new normalized structure
+      setUsers([]);
+      setAccounts([]);
+      setSubAccounts([]);
+      setBudgetCategories([]);
+      setBudgetItems([]);
+      setAnnualData({});
+      setSubAccountPerformance([]);
+      setSavingsGoals([]);
+      setPrimaryHome({});
+      setOtherAssets([]);
+      setOtherLiabilities([]);
+      setRetirementPlanning({});
+      setUIState({});
+      
+      // Reset legacy data structures for backward compatibility
       setBudgetData([]);
       setPaycheckData({});
       setAppSettings({});
-      setAnnualData({});
       setAccountData({}); // Changed from [] to {}
       setSavingsData({}); // Reset savings data as well
       setRetirementData({}); // Reset retirement data as well

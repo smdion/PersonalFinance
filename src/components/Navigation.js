@@ -221,12 +221,14 @@ const Navigation = () => {
 
   const importData = async () => {
     try {
-      const { triggerFileImport, importAllData } = await import('../utils/localStorage');
+      const { triggerFileImport } = await import('../utils/localStorage');
+      const { importDataWithMigration } = await import('../utils/dataImportWithMigration');
       const jsonData = await triggerFileImport();
-      const result = importAllData(jsonData);
+      const result = importDataWithMigration(jsonData);
       
       if (result.success) {
-        if (window.confirm('Data imported successfully! The page will refresh to show the imported data.')) {
+        const migrationMsg = result.migrationApplied ? ' (with data structure migration)' : '';
+        if (window.confirm(`Data imported successfully${migrationMsg}! The page will refresh to show the imported data.`)) {
           window.location.reload();
         }
       } else {

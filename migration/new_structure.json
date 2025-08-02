@@ -1,0 +1,604 @@
+{
+    "metadata": {
+      "exportedAt": "2025-07-31T22:11:28.756Z",
+      "version": "3.0.0",
+      "dataSource": "normalized-structure"
+    },
+    "users": [
+      {
+        "id": "user0",
+        "name": "Joint"
+      },
+      {
+        "id": "user1",
+        "name": "Alex Johnson",
+        "employer": "Tech Employer",
+        "birthday": "1987-04-15",
+        "paycheck": {
+          "payPeriod": "biWeekly",
+          "filingStatus": "marriedJointly",
+          "w4Type": "new",
+          "w4Options": {
+            "multipleJobs": true,
+            "qualifyingChildren": 0,
+            "otherDependents": 0,
+            "additionalIncome": 0,
+            "extraWithholding": 0
+          },
+          "retirementOptions": {
+            "traditional401kPercent": 8,
+            "roth401kPercent": 2,
+            "isOver50": false
+          },
+          "medicalDeductions": {
+            "hsa": 150,
+            "employerHsa": 50,
+            "fsa": 0,
+            "dental": 30,
+            "vision": 10,
+            "medical": 120
+          },
+          "esppDeductionPercent": 5,
+          "bonusTarget": 9500,
+          "bonusMultiplier": 0.1,
+          "hsaCoverageType": "family",
+          "payWeekType": "odd"
+        },
+        "retirement": {
+          "ageAtRetirement": 65,
+          "ageOfDeath": 95,
+          "raisesInRetirement": 2,
+          "employeeContributionForMatch": 4
+        },
+        "budgetImpacting": {
+          "traditionalIraMonthly": 500,
+          "rothIraMonthly": 300,
+          "brokerageAccounts": []
+        }
+      },
+      {
+        "id": "user2", 
+        "name": "Jamie Lee",
+        "employer": "Bio Med Company",
+        "birthday": "1990-09-22",
+        "paycheck": {
+          "payPeriod": "biWeekly",
+          "filingStatus": "marriedJointly",
+          "w4Type": "new",
+          "w4Options": {
+            "multipleJobs": true,
+            "qualifyingChildren": 0,
+            "otherDependents": 0,
+            "additionalIncome": 0,
+            "extraWithholding": 0
+          },
+          "retirementOptions": {
+            "traditional401kPercent": 6,
+            "roth401kPercent": 4,
+            "isOver50": false
+          },
+          "medicalDeductions": {
+            "hsa": 0,
+            "employerHsa": 0,
+            "fsa": 100,
+            "dental": 20,
+            "vision": 10,
+            "medical": 80
+          },
+          "esppDeductionPercent": 0,
+          "bonusTarget": 3350,
+          "bonusMultiplier": 0.05,
+          "hsaCoverageType": "self",
+          "payWeekType": "even"
+        },
+        "retirement": {
+          "ageAtRetirement": 65,
+          "ageOfDeath": 95,
+          "raisesInRetirement": 2
+        },
+        "budgetImpacting": {
+          "traditionalIraMonthly": 400,
+          "rothIraMonthly": 0,
+          "brokerageAccounts": [
+            {
+              "id": "brokerage-account-1",
+              "name": "Retirement Brokerage",
+              "monthlyAmount": 250
+            }
+          ]
+        }
+      }
+    ],
+    "accounts": [
+      {
+        "id": "account-1",
+        "name": "Alex Johnson's Fidelity 401k",
+        "type": "401k",
+        "investmentCompany": "Fidelity",
+        "ownerId": "user1",
+        "createdAt": "2024-01-01T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      },
+      {
+        "id": "account-2", 
+        "name": "Jamie Lee's Vanguard 401k",
+        "type": "401k",
+        "investmentCompany": "Vanguard",
+        "ownerId": "user2",
+        "createdAt": "2024-01-01T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      },
+      {
+        "id": "account-3",
+        "name": "Schwab Joint Brokerage",
+        "type": "Brokerage", 
+        "investmentCompany": "Charles Schwab",
+        "ownerId": "user0",
+        "createdAt": "2024-01-01T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      },
+      {
+        "id": "account-4",
+        "name": "Marcus High Yield Savings",
+        "type": "Savings",
+        "investmentCompany": "Marcus by Goldman Sachs", 
+        "ownerId": "user0",
+        "createdAt": "2024-01-01T12:00:00.000Z",
+        "updatedAt": "2025-01-15T12:00:00.000Z"
+      }
+    ],
+    "subAccounts": [
+      {
+        "id": "subaccount-1",
+        "parentAccountId": "account-1",
+        "name": "Traditional 401k",
+        "taxType": "Tax-Deferred"
+      },
+      {
+        "id": "subaccount-2",
+        "parentAccountId": "account-1", 
+        "name": "Roth 401k",
+        "taxType": "Tax-Free"
+      },
+      {
+        "id": "subaccount-3",
+        "parentAccountId": "account-2",
+        "name": "Traditional 401k", 
+        "taxType": "Tax-Deferred"
+      },
+      {
+        "id": "subaccount-4",
+        "parentAccountId": "account-2",
+        "name": "Roth 401k",
+        "taxType": "Tax-Free"
+      },
+      {
+        "id": "subaccount-5",
+        "parentAccountId": "account-3",
+        "name": "Brokerage Account",
+        "taxType": "After-Tax"
+      },
+      {
+        "id": "subaccount-6", 
+        "parentAccountId": "account-4",
+        "name": "High Yield Savings",
+        "taxType": "After-Tax"
+      }
+    ],
+    "budgetCategories": [
+      { "id": "budget-category-1", "name": "Budget Impacting Contributions", "order": 1, "isAutoManaged": true },
+      { "id": "budget-category-2", "name": "Housing", "order": 2 },
+      { "id": "budget-category-3", "name": "Transportation", "order": 3 },
+      { "id": "budget-category-4", "name": "Food & Groceries", "order": 4 },
+      { "id": "budget-category-5", "name": "Health & Medical", "order": 5 },
+      { "id": "budget-category-6", "name": "Childcare & Education", "order": 6 },
+      { "id": "budget-category-7", "name": "Subscriptions & Communication", "order": 7 },
+      { "id": "budget-category-8", "name": "Personal Care & Clothing", "order": 8 },
+      { "id": "budget-category-9", "name": "Savings & Debt", "order": 9 },
+      { "id": "budget-category-10", "name": "Entertainment & Recreation", "order": 10 },
+      { "id": "budget-category-11", "name": "Gifts & Donations", "order": 11 },
+      { "id": "budget-category-12", "name": "Miscellaneous", "order": 12 }
+    ],
+    "budgetItems": [
+      {
+        "id": "budget-item-1",
+        "userId": "user1",
+        "name": "Alex Johnson Traditional IRA",
+        "categoryId": "budget-category-1",
+        "amounts": { "standard": 500, "tight": 500, "emergency": 500 }
+      },
+      {
+        "id": "budget-item-2", 
+        "userId": "user1",
+        "name": "Alex Johnson Roth IRA",
+        "categoryId": "budget-category-1",
+        "amounts": { "standard": 300, "tight": 300, "emergency": 300 }
+      },
+      {
+        "id": "budget-item-3",
+        "userId": "user2",
+        "name": "Jamie Lee Traditional IRA", 
+        "categoryId": "budget-category-1",
+        "amounts": { "standard": 400, "tight": 400, "emergency": 400 }
+      },
+      {
+        "id": "budget-item-4",
+        "userId": "user1",
+        "name": "Rent/Mortgage",
+        "categoryId": "budget-category-2",
+        "amounts": { "standard": 1800, "tight": 1500, "emergency": 0 }
+      },
+      {
+        "id": "budget-item-5",
+        "userId": "user1",
+        "name": "Utilities", 
+        "categoryId": "budget-category-2",
+        "amounts": { "standard": 250, "tight": 200, "emergency": 120 }
+      },
+      {
+        "id": "budget-item-6",
+        "userId": "user1",
+        "name": "Internet",
+        "categoryId": "budget-category-2", 
+        "amounts": { "standard": 70, "tight": 50, "emergency": 0 }
+      },
+      {
+        "id": "budget-item-7",
+        "userId": "user1",
+        "name": "Home Insurance",
+        "categoryId": "budget-category-2",
+        "amounts": { "standard": 95, "tight": 95, "emergency": 95 }
+      },
+      {
+        "id": "budget-item-8",
+        "userId": "user1",
+        "name": "Car Payment",
+        "categoryId": "budget-category-3",
+        "amounts": { "standard": 450, "tight": 0, "emergency": 0 }
+      },
+      {
+        "id": "budget-item-9",
+        "userId": "user1",
+        "name": "Gas", 
+        "categoryId": "budget-category-3",
+        "amounts": { "standard": 180, "tight": 120, "emergency": 60 }
+      },
+      {
+        "id": "budget-item-10",
+        "userId": "user1",
+        "name": "Auto Insurance",
+        "categoryId": "budget-category-3",
+        "amounts": { "standard": 140, "tight": 120, "emergency": 100 }
+      },
+      {
+        "id": "budget-item-11",
+        "userId": "user1",
+        "name": "Car Maintenance",
+        "categoryId": "budget-category-3", 
+        "amounts": { "standard": 75, "tight": 50, "emergency": 25 }
+      },
+      {
+        "id": "budget-item-12",
+        "userId": "user1",
+        "name": "Groceries",
+        "categoryId": "budget-category-4",
+        "amounts": { "standard": 800, "tight": 550, "emergency": 350 }
+      },
+      {
+        "id": "budget-item-13",
+        "userId": "user2",
+        "name": "Dining Out",
+        "categoryId": "budget-category-4",
+        "amounts": { "standard": 300, "tight": 120, "emergency": 0 }
+      },
+      {
+        "id": "budget-item-14",
+        "userId": "user1",
+        "name": "Emergency Fund",
+        "categoryId": "budget-category-9", 
+        "amounts": { "standard": 500, "tight": 250, "emergency": 0 }
+      },
+      {
+        "id": "budget-item-15",
+        "userId": "user1",
+        "name": "House Down Payment", 
+        "categoryId": "budget-category-9",
+        "amounts": { "standard": 400, "tight": 200, "emergency": 0 }
+      }
+    ],
+    "annualData": [
+      {
+        "year": 2021,
+        "id": "annual-data-1",
+        "users": {
+          "user1": { "salary": 87000, "bonus": 8000 },
+          "user2": { "salary": 60000, "bonus": 2500 }
+        },
+        "agi": 147000,
+        "ssaEarnings": 142800,
+        "effectiveTaxRate": 0.185,
+        "taxPaid": 27195,
+        "totals": {
+          "taxFree": 4000,
+          "taxDeferred": 50000,
+          "brokerage": 10000,
+          "espp": 2000,
+          "hsa": 4000,
+          "cash": 19000
+        },
+        "assets": {
+          "house": 320000,
+          "homeImprovements": 8000,
+          "other": 8000
+        },
+        "liabilities": {
+          "mortgage": 256000,
+          "other": 22000
+        }
+      },
+      {
+        "year": 2022,
+        "id": "annual-data-2",
+        "users": {
+          "user1": { "salary": 90000, "bonus": 9000 },
+          "user2": { "salary": 63000, "bonus": 3000 }
+        },
+        "agi": 162000,
+        "ssaEarnings": 147000,
+        "effectiveTaxRate": 0.192,
+        "taxPaid": 31104,
+        "totals": {
+          "taxFree": 4500,
+          "taxDeferred": 58000,
+          "brokerage": 13000,
+          "espp": 2500,
+          "hsa": 4500,
+          "cash": 22000
+        },
+        "assets": {
+          "house": 340000,
+          "homeImprovements": 12000,
+          "other": 10000
+        },
+        "liabilities": {
+          "mortgage": 245000,
+          "other": 20000
+        }
+      },
+      {
+        "year": 2025,
+        "id": "annual-data-3",
+        "users": {
+          "user1": { "salary": 97000, "bonus": 10500 },
+          "user2": { "salary": 69000, "bonus": 3500 }
+        },
+        "agi": 180000,
+        "ssaEarnings": 166000,
+        "effectiveTaxRate": 0.212,
+        "taxPaid": 38160,
+        "totals": {
+          "taxFree": 6000,
+          "taxDeferred": 90000,
+          "brokerage": 22000,
+          "espp": 4000,
+          "hsa": 6000,
+          "cash": 31000
+        },
+        "assets": {
+          "house": 385000,
+          "homeImprovements": 24000,
+          "other": 15000
+        },
+        "liabilities": {
+          "mortgage": 207000,
+          "other": 15000
+        }
+      }
+    ],
+    "subAccountPerformance": [
+      {
+        "subAccountId": "subaccount-1",
+        "year": 2021,
+        "balance": 25600,
+        "contributions": 5600,
+        "employerMatch": 2800,
+        "gains": 2000,
+        "fees": 40,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-2", 
+        "year": 2021,
+        "balance": 6400,
+        "contributions": 1400,
+        "employerMatch": 700,
+        "gains": 500,
+        "fees": 10,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-1",
+        "year": 2025,
+        "balance": 45600,
+        "contributions": 7200,
+        "employerMatch": 3440,
+        "gains": 3600,
+        "fees": 56,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-2",
+        "year": 2025, 
+        "balance": 11400,
+        "contributions": 1800,
+        "employerMatch": 860,
+        "gains": 900,
+        "fees": 14,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-3",
+        "year": 2025,
+        "balance": 26400,
+        "contributions": 3920,
+        "employerMatch": 1760,
+        "gains": 1680,
+        "fees": 32,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-4",
+        "year": 2025,
+        "balance": 6600,
+        "contributions": 980,
+        "employerMatch": 440,
+        "gains": 420,
+        "fees": 8,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-5",
+        "year": 2025,
+        "balance": 31200,
+        "contributions": 4000,
+        "employerMatch": 0,
+        "gains": 2600,
+        "fees": 45,
+        "withdrawals": 0
+      },
+      {
+        "subAccountId": "subaccount-6",
+        "year": 2025,
+        "balance": 25200,
+        "contributions": 6000,
+        "employerMatch": 0,
+        "gains": 1100,
+        "fees": 0,
+        "withdrawals": 0
+      }
+    ],
+    "savingsGoals": [
+      {
+        "id": "savings-goal-1",
+        "name": "Emergency Fund",
+        "currentBalance": 0,
+        "monthlyContribution": 500,
+        "linkedBudgetItemId": "budget-item-14",
+        "createdAt": "2025-07-31T22:02:46.680Z",
+        "lastUpdatedMonth": "2025-6"
+      },
+      {
+        "id": "savings-goal-2",
+        "name": "House Down Payment", 
+        "currentBalance": 0,
+        "monthlyContribution": 400,
+        "linkedBudgetItemId": "budget-item-15",
+        "createdAt": "2025-07-31T22:02:46.680Z",
+        "lastUpdatedMonth": "2025-6"
+      }
+    ],
+    "primaryHome": {
+      "property": {
+        "name": "Main Street Home",
+        "address": "123 Main Street, Suburb City, ST 12345",
+        "purchaseDate": "2020-03-15",
+        "purchasePrice": 285000,
+        "currentValue": 385000,
+        "propertyType": "Single Family Home",
+        "estimationSource": "Zillow/Redfin Estimate",
+        "estimationDate": "2025-01-15"
+      },
+      "improvements": {
+        "totalSpent": 24000,
+        "projects": [
+          {
+            "name": "Kitchen Remodel",
+            "date": "2022-06-01",
+            "cost": 15000
+          },
+          {
+            "name": "Bathroom Renovation",
+            "date": "2023-08-15", 
+            "cost": 9000
+          }
+        ]
+      },
+      "mortgage": {
+        "lender": "First National Bank",
+        "originalAmount": 228000,
+        "currentBalance": 207000,
+        "interestRate": 3.25,
+        "loanTerm": 30,
+        "monthlyPayment": 993,
+        "loanType": "Conventional 30-Year Fixed",
+        "startDate": "2020-04-01",
+        "pmiAmount": 0,
+        "escrowAmount": 450
+      },
+      "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
+    },
+    "otherAssets": [
+      {
+        "id": "other-asset-1",
+        "name": "Classic Car Collection",
+        "type": "Vehicle",
+        "currentValue": 40000,
+        "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
+      }
+    ],
+    "otherLiabilities": [
+      {
+        "id": "other-liability-1",
+        "name": "Personal Loan", 
+        "type": "Personal Loan",
+        "currentBalance": 3500,
+        "lastUpdatedAt": "2025-01-15T12:00:00.000Z"
+      }
+    ],
+    "retirementPlanning": {
+      "sharedInputs": {
+        "annualInflation": 2.5,
+        "retirementReturnRate": 5.5
+      }
+    },
+    "uiState": {
+      "collapsedAccounts": [
+        "account-1",
+        "account-2",
+        "account-3", 
+        "account-4"
+      ],
+      "accountGroups": [
+        {
+          "id": "account-group-1",
+          "name": "Alex 401k",
+          "accountIds": ["account-1"],
+          "createdAt": "2025-07-31T22:04:22.891Z"
+        },
+        {
+          "id": "account-group-2", 
+          "name": "Jamie 401k",
+          "accountIds": ["account-2"],
+          "createdAt": "2025-07-31T22:05:06.782Z"
+        }
+      ],
+      "settings": {
+          "app": {
+              "combineAccountsAcrossOwners": false,
+              "hasSeenBetaWelcome": true
+          },
+              "networth": {
+              "selectedYears": [2021, 2022, 2023, 2024, 2025],
+              "netWorthMode": "market",
+              "activeTab": "overview",
+              "showAllYearsInChart": false,
+              "useThreeYearIncomeAverage": false,
+              "useReverseChronological": false,
+              "isCompactTable": false
+          },
+              "paycheck": {
+              "isMultiUserMode": true
+          }
+      }
+    }
+  }

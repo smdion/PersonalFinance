@@ -1,7 +1,7 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
-import { getBudgetData, setBudgetData, getPaycheckData, getSavingsData, getIsResettingAllData } from '../utils/localStorage';
+import { getBudgetData, setBudgetData, getBudgetCategories, setBudgetCategories, getBudgetItems, setBudgetItems, getPaycheckData, getSavingsData, getIsResettingAllData, resolveUserDisplayName } from '../utils/localStorage';
 import { calculateExtraPaycheckIncome, generateDataFilename } from '../utils/calculationHelpers';
 import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
 import Navigation from './Navigation';
@@ -10,9 +10,9 @@ import Navigation from './Navigation';
 const EMPTY_BUDGET_CATEGORIES = [];
 
 const Budget = () => {
-  const { formData, resetFormData } = useContext(PaycheckBudgetContext);
-  const { activeUsers } = useMultiUserCalculator();
-  const isMultiUserMode = activeUsers.includes('user2');
+  const { formData, resetFormData, getUsers, isMultiUserMode } = useContext(PaycheckBudgetContext);
+  const { activeUsers, getUsers: hookGetUsers } = useMultiUserCalculator();
+  const multiUserMode = typeof isMultiUserMode === 'function' ? isMultiUserMode() : activeUsers.includes('user2');
   
   // Remove settings menu state and ref
   
@@ -28,24 +28,67 @@ const Budget = () => {
   
   // Add state for paycheck data
   const [paycheckData, setPaycheckData] = useState(null);
+  
+  // Ref to prevent infinite loops during initial load
+  const isLoadingRef = useRef(false);
+  const lastSavedDataRef = useRef(null);
 
   
   // Load budget data from localStorage on mount and listen for updates
   useEffect(() => {
     const loadBudgetData = () => {
       try {
-        const savedData = getBudgetData();
-        if (savedData && savedData.length > 0) {
-          setBudgetCategories(savedData);          
+        isLoadingRef.current = true;
+        console.log('🎯 Budget: Loading budget data...');
+        
+        // Try to load from new normalized structure first
+        const categories = getBudgetCategories();
+        const items = getBudgetItems();
+        
+        console.log('🎯 Budget: Categories from storage:', categories);
+        console.log('🎯 Budget: Items from storage:', items);
+        
+        if (categories && categories.length > 0) {
+          // Convert normalized structure back to nested format for component
+          const nestedCategories = categories.map(category => {
+            const categoryItems = (items || []).filter(item => item.categoryId === category.id);
+            console.log(`🎯 Budget: Category ${category.name} has ${categoryItems.length} items`);
+            
+            return {
+              ...category,
+              items: categoryItems.map(item => ({
+                ...item,
+                // Flatten amounts structure if it exists, otherwise use direct properties
+                standard: item.amounts?.standard ?? item.standard ?? 0,
+                tight: item.amounts?.tight ?? item.tight ?? 0,
+                emergency: item.amounts?.emergency ?? item.emergency ?? 0
+              }))
+            };
+          });
+          
+          console.log('🎯 Budget: Converted to nested format:', nestedCategories);
+          console.log('🎯 Budget: Total items across all categories:', nestedCategories.reduce((sum, cat) => sum + (cat.items?.length || 0), 0));
+          setBudgetCategories(nestedCategories);
         } else {
-          // Initialize with empty budget categories instead of hardcoded defaults
-          setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
-          setBudgetData(EMPTY_BUDGET_CATEGORIES);
+          // Fallback to legacy format
+          console.log('🎯 Budget: No normalized data, trying legacy format...');
+          const savedData = getBudgetData();
+          if (savedData && savedData.length > 0) {
+            console.log('🎯 Budget: Using legacy data:', savedData);
+            setBudgetCategories(savedData);          
+          } else {
+            // Initialize with empty budget categories instead of hardcoded defaults
+            console.log('🎯 Budget: No data found, initializing empty categories');
+            setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
+            setBudgetData(EMPTY_BUDGET_CATEGORIES);
+          }
         }
+        isLoadingRef.current = false;
       } catch (error) {
         console.error('Error loading budget data:', error);
         // Reset to empty categories on error
         setBudgetCategories(EMPTY_BUDGET_CATEGORIES);
+        isLoadingRef.current = false;
       }
     };
 
@@ -161,15 +204,62 @@ const Budget = () => {
   }, [paycheckData]);
 
   // Save budget data to localStorage whenever it changes (with error handling)
-  useEffect(() => {
-    if (budgetCategories && budgetCategories.length > 0) {
+  const saveBudgetData = React.useCallback((categories) => {
+    if (categories && categories.length > 0 && !isLoadingRef.current) {
+      // Check if data has actually changed
+      const currentDataStr = JSON.stringify(categories);
+      if (lastSavedDataRef.current === currentDataStr) {
+        return; // No changes, skip saving
+      }
+      
       try {
-        setBudgetData(budgetCategories);
+        console.log('🎯 Budget: Saving budget data...');
+        
+        // Save to legacy format for backward compatibility
+        setBudgetData(categories);
+        
+        // Also save to new normalized format
+        const normalizedCategories = categories.map(category => ({
+          id: category.id,
+          name: category.name,
+          order: category.order || 0,
+          isAutoManaged: category.isAutoManaged || false
+        }));
+        
+        const items = [];
+        categories.forEach(category => {
+          if (category.items && category.items.length > 0) {
+            category.items.forEach(item => {
+              items.push({
+                id: item.id,
+                userId: item.userId || "user0",
+                name: item.name,
+                categoryId: category.id,
+                amounts: {
+                  standard: item.standard || 0,
+                  tight: item.tight || 0,
+                  emergency: item.emergency || 0
+                }
+              });
+            });
+          }
+        });
+        
+        console.log('🎯 Budget: Saving categories:', normalizedCategories);
+        console.log('🎯 Budget: Saving items:', items);
+        
+        setBudgetCategories(normalizedCategories);
+        setBudgetItems(items);
+        
+        // Update the last saved data reference
+        lastSavedDataRef.current = currentDataStr;
       } catch (error) {
         console.error('Error saving budget data:', error);
       }
     }
-  }, [budgetCategories]);
+  }, []);
+
+  // Disable auto-save - only save on explicit user actions
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -184,9 +274,12 @@ const Budget = () => {
         name: newCategoryName.trim(),
         items: []
       };
-      setBudgetCategories([...budgetCategories, newCategory]);
+      const newCategories = [...budgetCategories, newCategory];
+      setBudgetCategories(newCategories);
       setNewCategoryName('');
       setShowAddCategory(false);
+      // Manually save after user action
+      saveBudgetData(newCategories);
     }
   };
 
@@ -196,7 +289,10 @@ const Budget = () => {
       alert('This category is automatically managed by your paycheck calculator settings and cannot be deleted.');
       return;
     }
-    setBudgetCategories(budgetCategories.filter(cat => cat.id !== categoryId));
+    const newCategories = budgetCategories.filter(cat => cat.id !== categoryId);
+    setBudgetCategories(newCategories);
+    // Manually save after user action
+    saveBudgetData(newCategories);
   };
 
   const addItem = (categoryId) => {
@@ -214,11 +310,14 @@ const Budget = () => {
       emergency: 0
     };
     
-    setBudgetCategories(budgetCategories.map(category =>
+    const newCategories = budgetCategories.map(category =>
       category.id === categoryId
         ? { ...category, items: [...category.items, newItem] }
         : category
-    ));
+    );
+    setBudgetCategories(newCategories);
+    // Manually save after user action
+    saveBudgetData(newCategories);
   };
 
   const updateItem = (categoryId, itemId, field, value) => {
@@ -230,18 +329,21 @@ const Budget = () => {
     
     const numericValue = field === 'name' ? value : (parseFloat(value) || 0);
     
-    setBudgetCategories(budgetCategories.map(category =>
+    const newCategories = budgetCategories.map(category =>
       category.id === categoryId
         ? {
             ...category,
-            items: category.items.map(item =>
+            items: (category.items || []).map(item =>
               item.id === itemId
                 ? { ...item, [field]: numericValue }
                 : item
             )
           }
         : category
-    ));
+    );
+    setBudgetCategories(newCategories);
+    // Manually save after user action
+    saveBudgetData(newCategories);
   };
 
   const deleteItem = (categoryId, itemId) => {
@@ -273,7 +375,7 @@ const Budget = () => {
       if (hasSignificantData) {
         // Show confirmation dialog
         const category = budgetCategories.find(cat => cat.id === categoryId);
-        const item = category?.items.find(itm => itm.id === itemId);
+        const item = category?.items?.find(itm => itm.id === itemId);
         
         setSavingsRemovalConfirmation({
           categoryId,
@@ -291,21 +393,27 @@ const Budget = () => {
   };
   
   const performItemDeletion = (categoryId, itemId) => {
-    setBudgetCategories(budgetCategories.map(category =>
+    const newCategories = budgetCategories.map(category =>
       category.id === categoryId
-        ? { ...category, items: category.items.filter(item => item.id !== itemId) }
+        ? { ...category, items: (category.items || []).filter(item => item.id !== itemId) }
         : category
-    ));
+    );
+    setBudgetCategories(newCategories);
+    // Manually save after user action
+    saveBudgetData(newCategories);
   };
 
   const calculateTotalByMode = (mode) => {
-    return budgetCategories.reduce((total, category) =>
-      total + category.items.reduce((catTotal, item) => catTotal + (item[mode] || 0), 0)
-    , 0);
+    return budgetCategories.reduce((total, category) => {
+      // Ensure category.items exists and is an array
+      const items = category.items || [];
+      return total + items.reduce((catTotal, item) => catTotal + (item[mode] || 0), 0);
+    }, 0);
   };
 
   const calculateCategoryTotal = (category, mode) => {
-    return category.items.reduce((total, item) => total + (item[mode] || 0), 0);
+    const items = category.items || [];
+    return items.reduce((total, item) => total + (item[mode] || 0), 0);
   };
 
   const calculateCategoryPercentage = (category, mode) => {
@@ -363,6 +471,8 @@ const Budget = () => {
     reorderedCategories.splice(destinationIndex, 0, movedCategory);
 
     setBudgetCategories(reorderedCategories);
+    // Manually save after user action
+    saveBudgetData(reorderedCategories);
   };
 
   // Handle reset to default categories
@@ -826,7 +936,7 @@ const Budget = () => {
                           {!collapsedCategories.has(category.id) && (
                             <>
                               <div className="budget-items">
-                                {category.items.map(item => (
+                                {(category.items || []).map(item => (
                                   <div key={item.id} className={`budget-item ${category.isAutoManaged ? 'auto-managed-item' : ''}`}>
                                     <div className="item-name">
                                       <input

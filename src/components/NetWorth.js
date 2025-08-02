@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useContext } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -15,8 +15,9 @@ import {
 import ChartDataLabels from 'chartjs-plugin-datalabels';
 import Navigation from './Navigation';
 import LastUpdateInfo from './LastUpdateInfo';
-import { getAnnualData, getAccountData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData } from '../utils/localStorage';
+import { getAnnualData, getAccountData, getPaycheckData, getNetWorthSettings, setNetWorthSettings, getAssetLiabilityData, resolveUserDisplayName } from '../utils/localStorage';
 import { useMultiUserCalculator } from '../hooks/useMultiUserCalculator';
+import { PaycheckBudgetContext } from '../context/PaycheckBudgetContext';
 import { formatCurrency } from '../utils/calculationHelpers';
 import '../styles/last-update-info.css';
 
@@ -34,11 +35,23 @@ ChartJS.register(
 );
 
 const NetWorth = () => {
+  // Context integration for normalized data support
+  const { getUsers, isMultiUserMode: contextIsMultiUserMode } = useContext(PaycheckBudgetContext);
+  
   const [annualData, setAnnualData] = useState({});
   const [accountData, setAccountData] = useState({});
   const [paycheckData, setPaycheckData] = useState(null);
   const { activeUsers } = useMultiUserCalculator(); // Use multi-user calculator hook
-  const isMultiUserMode = activeUsers.includes('user2');
+  const isMultiUserMode = typeof contextIsMultiUserMode === 'function' ? contextIsMultiUserMode() : activeUsers.includes('user2');
+  
+  // Get available users dynamically
+  const availableUsers = useMemo(() => {
+    const users = getUsers ? getUsers() : [];
+    return users.length > 0 ? users : [
+      { id: 'user1', name: resolveUserDisplayName('user1') },
+      { id: 'user2', name: resolveUserDisplayName('user2') }
+    ];
+  }, [getUsers]);
   const [assetLiabilityData, setAssetLiabilityData] = useState({});
   const [selectedYears, setSelectedYears] = useState([]);
   const [netWorthMode, setNetWorthMode] = useState('market'); // 'market' or 'costBasis'
@@ -289,8 +302,12 @@ const NetWorth = () => {
     if (!paycheckData) return null;
     
     const birthdays = [];
-    if (paycheckData.user1?.birthday) birthdays.push(paycheckData.user1.birthday);
-    if (paycheckData.user2?.birthday) birthdays.push(paycheckData.user2.birthday);
+    // Collect birthdays from all available users dynamically
+    availableUsers.forEach(user => {
+      if (paycheckData[user.id]?.birthday) {
+        birthdays.push(paycheckData[user.id].birthday);
+      }
+    });
     
     if (birthdays.length === 0) return null;
     
@@ -424,16 +441,20 @@ const NetWorth = () => {
       let yearAccountEntries = Object.values(accountData).filter(entry => entry.year === year);
       
       // Filter account entries based on dual calculator mode
-      if (!isMultiUserMode && paycheckData?.user1?.name?.trim()) {
-        const firstUserName = paycheckData.user1.name.trim();
-        yearAccountEntries = yearAccountEntries.filter(entry => {
-          // Include entries for the primary user or Joint accounts
-          if (entry.users) {
-            return Object.keys(entry.users).some(owner => owner === firstUserName || owner === 'Joint');
-          }
-          // For entries without user data, include them (backward compatibility)
-          return true;
-        });
+      if (!isMultiUserMode) {
+        // Get the first available user's name dynamically
+        const firstUser = availableUsers.find(user => paycheckData?.[user.id]?.name?.trim());
+        if (firstUser) {
+          const firstUserName = paycheckData[firstUser.id].name.trim();
+          yearAccountEntries = yearAccountEntries.filter(entry => {
+            // Include entries for the primary user or Joint accounts
+            if (entry.users) {
+              return Object.keys(entry.users).some(owner => owner === firstUserName || owner === 'Joint');
+            }
+            // For entries without user data, include them (backward compatibility)
+            return true;
+          });
+        }
       }
       
       const totalContributions = yearAccountEntries.reduce((sum, entry) => sum + (entry.contributions || 0), 0);
@@ -489,7 +510,7 @@ const NetWorth = () => {
         armyPowerScore
       };
     }).filter(Boolean);
-  }, [annualData, accountData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, isMultiUserMode]);
+  }, [annualData, accountData, paycheckData, netWorthMode, useThreeYearIncomeAverage, assetLiabilityData, isMultiUserMode, availableUsers]);
 
   // Filter data for selected years
   const filteredData = useMemo(() => {

@@ -1104,7 +1104,7 @@ const Account = () => {
                     // If dual calculator mode is disabled, only show first user and Joint accounts
                     const isDualMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
                     if (!isDualMode) {
-                      const firstUserName = paycheckData?.user1?.name?.trim();
+                      const firstUserName = resolveUserDisplayName('user1');
                       return account.owner === firstUserName || account.owner === 'Joint';
                     }
                     return true;
@@ -1127,7 +1127,7 @@ const Account = () => {
                   {(() => {
                     const isDualMode = paycheckData?.settings?.activeUsers?.includes('user2') ?? true;
                     const visibleAccounts = isDualMode ? availableAccounts : availableAccounts.filter(account => {
-                      const firstUserName = paycheckData?.user1?.name?.trim();
+                      const firstUserName = resolveUserDisplayName('user1');
                       return account.owner === firstUserName || account.owner === 'Joint';
                     });
                     return `${selectedAccounts.length} of ${visibleAccounts.length} accounts selected`;
